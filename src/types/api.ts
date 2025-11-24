@@ -59,14 +59,14 @@ export type Comment = Entity<{
 export type EventMembership = Entity<{
   eventId: number;
   userId: number;
-  eventRole: "STUDENT" | "Juror";
+  eventRole: "Participant" | "Juror";
   event: Event;
 }>;
 
 export type role = Entity<{
   description?: string;
   id: number;
-  name: "Juror" | "Student";
+  name: "Juror" | "Participant";
   scope: string;
 }>;
 
@@ -119,7 +119,7 @@ export type ProjectParticipant = Entity<{
   lastName: string;
   email: string;
   projectId: string;
-  studentCode?: string;
+  ParticipantCode?: string;
   project: Project;
 }>;
 

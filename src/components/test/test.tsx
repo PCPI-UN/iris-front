@@ -80,11 +80,10 @@ const MOCK_CRITERIA = [
 ]
 
 const SCORE_SCALE = [
-  { value: 1, label: "1" },
-  { value: 2, label: "2" },
-  { value: 3, label: "3" },
-  { value: 4, label: "4" },
-  { value: 5, label: "5" },
+  { value: 1, label: "Insuficiente" },
+  { value: 2, label: "Aceptable" },
+  { value: 3, label: "Bueno" },
+  { value: 4, label: "Excelente" },
 ]
 
 type ProjectEvaluationViewProps = {
@@ -178,246 +177,241 @@ export function ProjectEvaluationView({ projectId = "1" }: ProjectEvaluationView
         <Card className="glass-card border-border bg-card h-fit">
           <CardBody className="p-4 md:p-6">
             <div className="space-y-4 md:space-y-6">
-                <div>
-                  <h2 className="text-lg md:text-xl font-semibold text-balance">{project?.name}</h2>
-                  <p className="mt-2 text-xs md:text-sm text-muted-foreground leading-relaxed">
-                    {project?.description}
-                  </p>
+              <div>
+                <h2 className="text-lg md:text-xl font-semibold text-balance">{project?.name}</h2>
+                <p className="mt-2 text-xs md:text-sm text-muted-foreground leading-relaxed">
+                  {project?.description}
+                </p>
+              </div>
+
+              <div className="space-y-3 md:space-y-4">
+                <div className="flex items-center gap-2 text-xs md:text-sm">
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-medium">Integrantes del equipo</span>
                 </div>
 
-                <div className="space-y-3 md:space-y-4">
+                <div className="flex flex-wrap gap-2">
+                  {project.participants.map((participant, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center gap-2 bg-muted/10 rounded-full pr-3 py-1"
+                      title={`${participant.firstName} ${participant.lastName}`}
+                    >
+                      <div className="h-8 w-8 md:h-10 md:w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium text-xs md:text-sm flex-shrink-0">
+                        {participant.firstName[0]}
+                        {participant.lastName[0]}
+                      </div>
+                      <span className="text-xs md:text-sm font-medium">
+                        {participant.firstName} {participant.lastName}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {project.documents && project.documents.length > 0 && (
+                <div className="space-y-2 pt-2 md:pt-4 border-t border-border">
                   <div className="flex items-center gap-2 text-xs md:text-sm">
-                    <Users className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">Integrantes del equipo</span>
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium">Documentos</span>
                   </div>
 
-                  <div className="flex flex-wrap gap-2">
-                    {project.participants.map((participant, idx) => (
-                      <div
-                        key={idx}
-                        className="flex items-center gap-2 bg-muted/10 rounded-full pr-3 py-1"
-                        title={`${participant.firstName} ${participant.lastName}`}
-                      >
-                        <div className="h-8 w-8 md:h-10 md:w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium text-xs md:text-sm flex-shrink-0">
-                          {participant.firstName[0]}
-                          {participant.lastName[0]}
-                        </div>
-                        <span className="text-xs md:text-sm font-medium">
-                          {participant.firstName} {participant.lastName}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                  <div className="space-y-2 md:space-y-3">
+                    {project.documents.map((doc) => {
+                      const readableType =
+                        doc.type === "POSTER"
+                          ? "Póster"
+                          : doc.type === "ASSOCIATED_DOCUMENT"
+                            ? "Documento asociado"
+                            : doc.type
 
-                {project.documents && project.documents.length > 0 && (
-                  <div className="space-y-2 pt-2 md:pt-4 border-t border-border">
-                    <div className="flex items-center gap-2 text-xs md:text-sm">
-                      <FileText className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium">Documentos</span>
-                    </div>
-
-                    <div className="space-y-2 md:space-y-3">
-                      {project.documents.map((doc) => {
-                        const readableType =
-                          doc.type === "POSTER"
-                            ? "Póster"
-                            : doc.type === "ASSOCIATED_DOCUMENT"
-                              ? "Documento asociado"
-                              : doc.type
-
-                        return (
-                          <div
-                            key={doc.id}
-                            className="w-full flex items-center justify-between p-2 md:p-3 rounded-lg border border-muted/20 bg-muted/5 hover:bg-muted/10 transition-colors cursor-pointer"
-                            onClick={() => window.open(doc.url, "_blank")}
-                          >
-                            <div className="flex items-center gap-2 text-xs md:text-sm min-w-0">
-                              <FileText className="h-4 w-4 text-primary flex-shrink-0" />
-                              <span className="font-medium truncate">{readableType}</span>
-                            </div>
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              className="h-4 w-4 text-muted-foreground flex-shrink-0"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M13 7l5 5m0 0l-5 5m5-5H6"
-                              />
-                            </svg>
+                      return (
+                        <div
+                          key={doc.id}
+                          className="w-full flex items-center justify-between p-2 md:p-3 rounded-lg border border-muted/20 bg-muted/5 hover:bg-muted/10 transition-colors cursor-pointer"
+                          onClick={() => window.open(doc.url, "_blank")}
+                        >
+                          <div className="flex items-center gap-2 text-xs md:text-sm min-w-0">
+                            <FileText className="h-4 w-4 text-primary flex-shrink-0" />
+                            <span className="font-medium truncate">{readableType}</span>
                           </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </CardBody>
-          </Card>
-
-          <Card className="glass-card border-border bg-card">
-            <CardHeader className="p-4 md:p-6">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <div>
-                  <p className="text-base md:text-lg font-semibold">
-                    Evaluación Póster - Proyecto Final de Ingenierías
-                  </p>
-                  <p className="text-xs md:text-sm text-muted-foreground mt-1">
-                    Sección {currentPage + 1} de {allSections.length}
-                  </p>
-                
-                </div>
-              </div>
-            </CardHeader>
-            <CardBody className="space-y-6 md:space-y-8 p-4 md:p-6">
-              {/* Título de la sección */}
-              <div className="border-b border-border pb-3">
-                <h3 className="text-base md:text-lg font-semibold text-balance">{currentSection.name}</h3>
-              </div>
-
-              {/* Criterios con escala simple 1-5 */}
-              <div className="space-y-6 md:space-y-8">
-                {currentSection.subcriteria?.map((criterion) => (
-                  <div key={criterion.id} className="space-y-3 md:space-y-4">
-                    <p className="text-sm md:text-base text-foreground leading-relaxed">{criterion.name}</p>
-
-                    {/* Escala de calificación simple 1-5 */}
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                      {/* Etiqueta Malo */}
-                      <div className="hidden sm:block text-xs md:text-sm text-muted-foreground min-w-[60px] text-right">
-                        Malo
-                      </div>
-
-                      {/* Escala de radio buttons */}
-                      <div className="flex-1 bg-muted/5  border-border rounded-lg p-3 md:p-4">
-                        <div className="flex items-center justify-between gap-2 md:gap-4">
-                          {SCORE_SCALE.map((scale) => (
-                            <button
-                              key={scale.value}
-                              onClick={() => handleScoreChange(criterion.id, scale.value)}
-                              className="flex-1 flex flex-col items-center gap-2 cursor-pointer group min-w-0"
-                              aria-label={`Calificar con ${scale.value}`}
-                            >
-                              <span className="text-xs md:text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
-                                {scale.label}
-                              </span>
-                              <div
-                                className={`h-6 w-6 md:h-7 md:w-7 rounded-full border-2 flex items-center justify-center transition-all ${
-                                  scores[criterion.id] === scale.value
-                                    ? "border-primary bg-primary shadow-md scale-110"
-                                    : "border-muted-foreground/30 group-hover:border-muted-foreground/50"
-                                }`}
-                              >
-                                {scores[criterion.id] === scale.value && (
-                                  <div className="h-3 w-3 md:h-3.5 md:w-3.5 rounded-full bg-primary-foreground" />
-                                )}
-                              </div>
-                            </button>
-                          ))}
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-4 w-4 text-muted-foreground flex-shrink-0"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M13 7l5 5m0 0l-5 5m5-5H6"
+                            />
+                          </svg>
                         </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          </CardBody>
+        </Card>
+
+        <Card className="glass-card border-border bg-card">
+          <CardHeader className="p-4 md:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <p className="text-base md:text-lg font-semibold">
+                  Evaluación Póster - Proyecto Final de Ingenierías
+                </p>
+                <p className="text-xs md:text-sm text-muted-foreground mt-1">
+                  Sección {currentPage + 1} de {allSections.length}
+                </p>
+
+              </div>
+            </div>
+          </CardHeader>
+          <CardBody className="space-y-6 md:space-y-8 p-4 md:p-6">
+            {/* Título de la sección */}
+            <div className="border-b border-border pb-3">
+              <h3 className="text-base md:text-lg font-semibold text-balance">{currentSection.name}</h3>
+            </div>
+
+            {/* Criterios con escala simple 1-5 */}
+            <div className="space-y-6 md:space-y-8">
+              {currentSection.subcriteria?.map((criterion) => (
+                <div key={criterion.id} className="space-y-3 md:space-y-4">
+                  <p className="text-sm md:text-base text-foreground leading-relaxed">{criterion.name}</p>
+
+                  {/* Escala de calificación simple 1-5 */}
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+
+                    {/* Escala de radio buttons */}
+                    <div className="space-y-2">
+                      {/* Labels arriba */}
+                      <div className="flex justify-between text-xs md:text-sm text-muted-foreground px-1">
+                        {SCORE_SCALE.map((scale) => (
+                          <span key={scale.value} className="flex-1 w-full text-center">
+                            {scale.label}
+                          </span>
+                        ))}
                       </div>
 
-                      {/* Etiqueta Excelente */}
-                      <div className="hidden sm:block text-xs md:text-sm text-muted-foreground min-w-[70px]">
-                        Excelente
+                      {/* Botones redondos */}
+                      <div className="flex items-center justify-between gap-2 md:gap-4 bg-muted/5 border-border rounded-lg p-3 md:p-4">
+                        {SCORE_SCALE.map((scale) => (
+                          <button
+                            key={scale.value}
+                            onClick={() => handleScoreChange(criterion.id, scale.value)}
+                            className="flex flex-col items-center gap-2 cursor-pointer group flex-1"
+                          >
+                            <div
+                              className={`h-6 w-6 md:h-7 md:w-7 rounded-full border-2 flex items-center justify-center transition-all ${scores[criterion.id] === scale.value
+                                  ? "border-primary bg-primary shadow-md scale-110"
+                                  : "border-muted-foreground/30 group-hover:border-muted-foreground/50"
+                                }`}
+                            >
+                              {scores[criterion.id] === scale.value && (
+                                <div className="h-3 w-3 md:h-3.5 md:w-3.5 rounded-full bg-primary-foreground" />
+                              )}
+                            </div>
+                          </button>
+                        ))}
                       </div>
                     </div>
                   </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Navegación entre secciones */}
+            <div className="flex items-center justify-between pt-4 md:pt-6 border-t border-border gap-2">
+
+              {/* Flecha Anterior (solo si NO es la primera página) */}
+              {canGoPrevious ? (
+                <Button
+                  onClick={() => setCurrentPage((p) => p - 1)}
+                  className="gap-1 md:gap-2"
+                  size="sm"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  <span className="hidden sm:inline">Anterior</span>
+                </Button>
+              ) : (
+                <div className="w-[90px]" /> // mantiene el layout estable
+              )}
+
+              <div className="flex gap-1.5 md:gap-2">
+                {allSections.map((_, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setCurrentPage(idx)}
+                    className={`h-2 w-2 rounded-full transition-colors ${idx === currentPage ? "bg-primary" : "bg-muted-foreground/30"
+                      }`}
+                    aria-label={`Ir a sección ${idx + 1}`}
+                  />
                 ))}
               </div>
 
-              {/* Navegación entre secciones */}
-<div className="flex items-center justify-between pt-4 md:pt-6 border-t border-border gap-2">
-  
-  {/* Flecha Anterior (solo si NO es la primera página) */}
-  {canGoPrevious ? (
-    <Button
-      onClick={() => setCurrentPage((p) => p - 1)}
-      className="gap-1 md:gap-2"
-      size="sm"
-    >
-      <ChevronLeft className="h-4 w-4" />
-      <span className="hidden sm:inline">Anterior</span>
-    </Button>
-  ) : (
-    <div className="w-[90px]" /> // mantiene el layout estable
-  )}
-
-  <div className="flex gap-1.5 md:gap-2">
-    {allSections.map((_, idx) => (
-      <button
-        key={idx}
-        onClick={() => setCurrentPage(idx)}
-        className={`h-2 w-2 rounded-full transition-colors ${
-          idx === currentPage ? "bg-primary" : "bg-muted-foreground/30"
-        }`}
-        aria-label={`Ir a sección ${idx + 1}`}
-      />
-    ))}
-  </div>
-
-  {/* Flecha Siguiente (solo si NO es la última página) */}
-  {canGoNext ? (
-    <Button
-      onClick={() => setCurrentPage((p) => p + 1)}
-      className="gap-1 md:gap-2"
-      size="sm"
-    >
-      <span className="hidden sm:inline">Siguiente</span>
-      <ChevronRight className="h-4 w-4" />
-    </Button>
-  ) : (
-    <div className="w-[90px]" /> // mantiene el layout estable
-  )}
-
-</div>
-
-
-              {/* Comments y botón de envío - solo en la última sección */}
-              {currentPage === allSections.length - 1 && (
-                <>
-                  <div className="space-y-2 pt-3 md:pt-4">
-                    <Label htmlFor="comments" className="text-xs md:text-sm font-medium">
-                      Comentarios y Retroalimentación
-                    </Label>
-                    <Textarea
-                      id="comments"
-                      placeholder="Escriba sus comentarios adicionales sobre la evaluación..."
-                      value={comments}
-                      onChange={(e) => setComments(e.target.value)}
-                      className="min-h-[80px] md:min-h-[100px] resize-none text-sm"
-                      disabled={isSubmitting}
-                    />
-                  </div>
-
-                  <Button
-                    className="w-full transition-transform hover:scale-[1.01] text-sm md:text-base"
-                    color="primary"
-                    size="lg"
-                    onClick={handleSubmit}
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <span className="mr-2">Enviando...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Send className="mr-2 h-4 w-4" />
-                        Enviar evaluación
-                      </>
-                    )}
-                  </Button>
-                </>
+              {/* Flecha Siguiente (solo si NO es la última página) */}
+              {canGoNext ? (
+                <Button
+                  onClick={() => setCurrentPage((p) => p + 1)}
+                  className="gap-1 md:gap-2"
+                  size="sm"
+                >
+                  <span className="hidden sm:inline">Siguiente</span>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              ) : (
+                <div className="w-[90px]" /> // mantiene el layout estable
               )}
-            </CardBody>
-          </Card>
-        </div>
+
+            </div>
+
+
+            {/* Comments y botón de envío - solo en la última sección */}
+            {currentPage === allSections.length - 1 && (
+              <>
+                <div className="space-y-2 pt-3 md:pt-4">
+                  <Label htmlFor="comments" className="text-xs md:text-sm font-medium">
+                    Comentarios y Retroalimentación
+                  </Label>
+                  <Textarea
+                    id="comments"
+                    placeholder="Escriba sus comentarios adicionales sobre la evaluación..."
+                    value={comments}
+                    onChange={(e) => setComments(e.target.value)}
+                    className="min-h-[80px] md:min-h-[100px] resize-none text-sm"
+                    disabled={isSubmitting}
+                  />
+                </div>
+
+                <Button
+                  className="w-full transition-transform hover:scale-[1.01] text-sm md:text-base"
+                  color="primary"
+                  size="lg"
+                  onClick={handleSubmit}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <span className="mr-2">Enviando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send className="mr-2 h-4 w-4" />
+                      Enviar evaluación
+                    </>
+                  )}
+                </Button>
+              </>
+            )}
+          </CardBody>
+        </Card>
+      </div>
 
       {/* Confirmation Modal */}
       <Modal isOpen={isConfirmModalOpen} onOpenChange={setIsConfirmModalOpen} placement="center">

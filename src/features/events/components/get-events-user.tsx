@@ -49,21 +49,21 @@ export const GetEventsUser = () => {
         router.push(`?page=${newPage}`);
     };
 
-    const getRoleIcon = (role?: "Student" | "Juror") => {
+    const getRoleIcon = (role?: "Participant" | "Juror") => {
         if (role === "Juror") return <Scale className="h-4 w-4" />;
-        if (role === "Student") return <GraduationCap className="h-4 w-4" />;
+        if (role === "Participant") return <GraduationCap className="h-4 w-4" />;
         return null;
     };
 
-    const getRoleColor = (role?: "Student" | "Juror") => {
+    const getRoleColor = (role?: "Participant" | "Juror") => {
         if (role === "Juror") return "warning";
-        if (role === "Student") return "primary";
+        if (role === "Participant") return "primary";
         return "default";
     };
 
-    const getRoleLabel = (role?: "Student" | "Juror") => {
+    const getRoleLabel = (role?: "Participant" | "Juror") => {
         if (role === "Juror") return "Juror";
-        if (role === "Student") return "Student";
+        if (role === "Participant") return "Participant";
         return "Unknown";
     };
 
