@@ -45,17 +45,10 @@ ENV NODE_ENV=development
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-RUN apk add --no-cache dumb-init && \
-    addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 nextjs
+RUN apk add --no-cache dumb-init
 
-# Copy all necessary files from builder and set ownership in one step
-COPY --from=builder --chown=nextjs:nodejs /app /app
-
-# Create .next directory with proper permissions before switching user
-RUN mkdir -p /app/.next && chown -R nextjs:nodejs /app/.next
-
-USER nextjs
+# Copy all necessary files from builder
+COPY --from=builder /app /app
 
 EXPOSE ${PORT}
 
