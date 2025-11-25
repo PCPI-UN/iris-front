@@ -21,6 +21,7 @@ import { Select, SelectItem } from "@/components/ui/select";
 import { useEventsDropdown } from "@/features/events/api/get-events-dropdown";
 import { InviteModal } from "./invite-modal";
 import { AcceptInvitationModal } from "./accept-invitation-modal";
+import { ResendInvitationButton } from "./resend-invitation-button";
 import type { InvitationStatus } from "@/types/api";
 
 export const JuriesList = () => {
@@ -297,7 +298,13 @@ export const JuriesList = () => {
               <TableCell align="center">
                 <div className="flex items-center justify-center gap-2">
                   {item.status === 0 && (
-                    <AcceptInvitationModal invitation={item} />
+                    <>
+                      <AcceptInvitationModal invitation={item} />
+                      <ResendInvitationButton invitation={item} />
+                    </>
+                  )}
+                  {item.status === 3 && (
+                    <ResendInvitationButton invitation={item} />
                   )}
                 </div>
               </TableCell>
