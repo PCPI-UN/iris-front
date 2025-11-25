@@ -47,16 +47,29 @@ function findMatchingRule(pathname: string) {
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
 
+  console.log('[MIDDLEWARE DEBUG] Checking path:', pathname);
+
   if (isPublicPath(pathname)) {
+    console.log('[MIDDLEWARE DEBUG] Public path, allowing access');
     return NextResponse.next()
   }
 
   // Intentar obtener información del usuario desde una cookie
   // NOTA: Ajusta 'user' al nombre real de tu cookie de sesión
   // Si tu backend usa otro nombre (ej: 'session', 'auth-token'), cámbialo aquí
+  const allCookies = req.cookies.getAll();
+  console.log('[MIDDLEWARE DEBUG] All cookies:', allCookies.map(c => c.name));
+  
   const userCookie = req.cookies.get('user')?.value
+  const authTokenCookie = req.cookies.get('bulletproof_react_app_token')?.value
+
+  console.log('[MIDDLEWARE DEBUG] Cookies found:', {
+    hasUserCookie: !!userCookie,
+    hasAuthToken: !!authTokenCookie
+  });
 
   if (!userCookie) {
+    console.log('[MIDDLEWARE DEBUG] No user cookie found, redirecting to login');
     // No autenticado -> redirigir a login con redirect
     const loginUrl = new URL('/auth/login', req.url)
     loginUrl.searchParams.set('redirectTo', pathname)
@@ -68,21 +81,33 @@ export async function middleware(req: NextRequest) {
   try {
     const userData = JSON.parse(userCookie)
     userRole = userData?.role
+    console.log('[MIDDLEWARE DEBUG] User data parsed:', {
+      role: userRole,
+      userData
+    });
   } catch (error) {
-    console.error('Failed to parse user cookie:', error)
+    console.error('[MIDDLEWARE DEBUG] Failed to parse user cookie:', error)
     const loginUrl = new URL('/auth/login', req.url)
     loginUrl.searchParams.set('redirectTo', pathname)
     return NextResponse.redirect(loginUrl)
   }
 
   const rule = findMatchingRule(pathname)
+  console.log('[MIDDLEWARE DEBUG] Rule found for path:', {
+    pathname,
+    rule,
+    userRole,
+    hasAccess: rule ? rule.roles.includes(userRole!) : true
+  });
   
   if (rule) {
     if (!userRole || !rule.roles.includes(userRole)) {
+      console.log('[MIDDLEWARE DEBUG] Access denied, redirecting to /app');
       return NextResponse.redirect(new URL('/app', req.url))
     }
   }
 
+  console.log('[MIDDLEWARE DEBUG] Access granted');
   return NextResponse.next()
 }
 

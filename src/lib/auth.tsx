@@ -14,9 +14,18 @@ import { api } from './api-client';
 // these are not part of features as this is a module shared across features
 
 export const getUser = async (): Promise<User> => {
+  console.log('[AUTH DEBUG] Fetching user from /auth/me');
   const user = await api.get<User>('/auth/me');
 
+  console.log('[AUTH DEBUG] User received:', {
+    id: user?.id,
+    email: user?.email,
+    platformRoles: user?.platformRoles,
+    hasRoles: !!user?.platformRoles?.length
+  });
+
   if (!user || !user.id) {
+    console.error('[AUTH DEBUG] Invalid user data received');
     throw new Error('Invalid user data received from server');
   }
 
@@ -85,11 +94,14 @@ export const loginInputSchema = z.object({
 
 export type LoginInput = z.infer<typeof loginInputSchema>;
 const loginWithEmailAndPassword = async (data: LoginInput): Promise<User> => {
+  console.log('[AUTH DEBUG] Logging in with email:', data.email);
   // 1. Login - setea la cookie en el backend
   await api.post<AuthResponse>('/auth/login', data);
+  console.log('[AUTH DEBUG] Login successful, fetching user data');
 
   // 2. Obtener el usuario autenticado con la cookie
   const user = await getUser();
+  console.log('[AUTH DEBUG] Login complete, user roles:', user.platformRoles);
 
   return user;
 };
