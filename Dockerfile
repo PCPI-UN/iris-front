@@ -10,8 +10,7 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 # ========================
 FROM base AS deps
 COPY package.json pnpm-lock.yaml ./
-RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
-    pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile
 
 # ========================
 # Stage 3: Builder
