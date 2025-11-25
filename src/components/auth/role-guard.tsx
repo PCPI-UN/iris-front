@@ -24,27 +24,12 @@ export function RoleGuard({
   const router = useRouter()
   const { data: user, isLoading } = useUser()
 
-  console.log('[ROLE GUARD DEBUG]', {
-    isLoading,
-    hasUser: !!user,
-    userRoles: user?.platformRoles,
-    requiredRoles: roles
-  });
-
   useEffect(() => {
     if (!isLoading) {
       const hasPermission = user && roles.some(role => user.platformRoles.some(userRole => userRole.name === role))
       
-      console.log('[ROLE GUARD DEBUG] Permission check:', {
-        hasPermission,
-        user: user?.email,
-        userRoles: user?.platformRoles?.map(r => r.name),
-        requiredRoles: roles
-      });
-      
       // Si no tiene permiso, redirigir a /app siempre
       if (!hasPermission) {
-        console.log('[ROLE GUARD DEBUG] Access denied, redirecting to:', redirectTo || '/app');
         const redirectPath = redirectTo || '/app'
         router.replace(redirectPath)
       }

@@ -41,7 +41,6 @@ export function getServerCookies() {
         .map((c) => `${c.name}=${c.value}`)
         .join('; ');
     } catch (error) {
-      console.error('Failed to access cookies:', error);
       return '';
     }
   });

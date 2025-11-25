@@ -12,7 +12,6 @@ export type RejectResponse = {
 };
 
 export const RejectProject = async ({ projectId, reason }: RejectPayload): Promise<RejectResponse> => {
-    console.log("Rechazando proyecto:", projectId,"tipo", typeof(projectId) ,"con motivo:", reason);
   const res = await api.patch<RejectResponse>(`/projects/${projectId}/reject`, { reason });
   return res;
 };
@@ -23,12 +22,8 @@ export const useRejectProject = () => {
   return useMutation({
     mutationFn: ({ projectId, reason }: RejectPayload) => RejectProject({ projectId, reason }),
     onSuccess: (data, variables) => {
-      console.log("Proyecto rechazado:", variables.projectId, "data:", data);
       // Refrescar la lista de proyectos
       queryClient.invalidateQueries({ queryKey: ["projects"] });
-    },
-    onError: (err) => {
-      console.error("Error al rechazar:", err);
     },
   });
 };
