@@ -23,7 +23,10 @@ export async function middleware(req: NextRequest) {
   // Verificar si existe el token de acceso
   const accessToken = req.cookies.get('access_token')?.value
 
+  console.log('Middleware - Access Token:', accessToken)
+
   if (!accessToken) {
+    console.log('Middleware - No Access Token, redirecting to login')
     const loginUrl = new URL('/auth/login', req.url)
     loginUrl.searchParams.set('redirectTo', pathname)
     return NextResponse.redirect(loginUrl)

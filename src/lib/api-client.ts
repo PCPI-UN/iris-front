@@ -134,6 +134,7 @@ async function fetchApi<T>(
     } catch (refreshError) {
       // Si el refresh falla, redirigir al login solo si no estamos ya ahí
       if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/auth')) {
+        console.log('Redirecting to login due to failed token refresh prueba');
         window.location.href = '/auth/login';
       }
       throw refreshError;
