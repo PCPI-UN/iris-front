@@ -1,14 +1,13 @@
-'use client';
+"use client";
 
 import { useRouter, useSearchParams } from 'next/navigation';
 
-import { paths } from '@/config/paths';
-import { LoginForm } from '@/features/auth/components/login-form';
-import { PublicLayout } from '@/components/layouts/public-layout';
-import '@/features/landing/index.css';
+import { paths } from "@/config/paths";
+import { LoginForm } from "@/features/auth/components/login-form";
+import { PublicLayout } from "@/components/layouts/public-layout";
+import "@/features/landing/index.css";
 
 const LoginPage = () => {
-  const router = useRouter();
   const searchParams = useSearchParams();
   // Comentamos redirectTo para siempre ir a /app después del login
   // const redirectTo = searchParams?.get('redirectTo');
@@ -42,9 +41,12 @@ const LoginPage = () => {
         <div className="w-full max-w-md px-4 sm:px-6 lg:px-8">
           <div className="glass-card p-6 sm:p-8 w-full">
             <LoginForm
-              onSuccess={() =>
-                router.replace(paths.app.dashboard.getHref())
-              }
+              onSuccess={() => {
+                // Usar window.location.href en lugar de router.replace
+                // para forzar una recarga completa y asegurar que las cookies
+                // se envíen correctamente en producción
+                window.location.href = paths.app.dashboard.getHref();
+              }}
             />
           </div>
         </div>
