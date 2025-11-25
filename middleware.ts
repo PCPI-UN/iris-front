@@ -16,10 +16,6 @@ function isPublicPath(pathname: string): boolean {
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
 
-  // Mostrar todas las cookies recibidas para depuración
-  const allCookies = Object.fromEntries(req.cookies.getAll().map(cookie => [cookie.name, cookie.value]))
-  console.log('Middleware - Todas las cookies:', allCookies)
-
   if (isPublicPath(pathname)) {
     return NextResponse.next()
   }
@@ -27,17 +23,12 @@ export async function middleware(req: NextRequest) {
   // Verificar si existe el token de acceso
   const accessToken = req.cookies.get('access_token')?.value
 
-  console.log('Middleware - Access Token:', accessToken)
-
   if (!accessToken) {
-    console.log('Middleware - No Access Token, redirecting to login')
     const loginUrl = new URL('/auth/login', req.url)
     loginUrl.searchParams.set('redirectTo', pathname)
     return NextResponse.redirect(loginUrl)
   }
 
-  // El usuario está autenticado, permitir acceso
-  // La autorización de roles se maneja en los componentes con RoleGuard
   return NextResponse.next()
 }
 
