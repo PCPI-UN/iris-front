@@ -1,0 +1,37 @@
+# Dockerfile para desarrollo
+
+# ========================
+# Stage 1: Base
+# ========================
+FROM node:20-alpine AS base
+WORKDIR /app
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+# ========================
+# Stage 2: Dependencies
+# ========================
+FROM base AS deps
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
+
+# ========================
+# Stage 3: Development
+# ========================
+FROM base AS development
+
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NODE_ENV=development
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+
+RUN apk add --no-cache dumb-init
+
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+
+EXPOSE ${PORT}
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD node -e "require('http').get('http://localhost:' + process.env.PORT, (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})" || exit 1
+
+CMD ["dumb-init", "pnpm", "dev"]

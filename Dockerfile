@@ -52,9 +52,8 @@ RUN apk add --no-cache dumb-init && \
 
 COPY --from=deps --chown=nextjs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
-COPY --from=builder --chown=nextjs:nodejs /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
-COPY --from=builder --chown=nextjs:nodejs /app/next.config.js ./next.config.js
+COPY --from=builder /app/public ./public
+COPY --chown=nextjs:nodejs package.json ./
 
 USER nextjs
 
