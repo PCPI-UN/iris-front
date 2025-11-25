@@ -25,14 +25,21 @@ const changePasswordSchema = z.object({
 export const ChangePasswordForm = () => {
 	const { addNotification } = useNotifications();
 	const [isSubmitting, setIsSubmitting] = useState(false);
-	
+
 	// Estados independientes para la visibilidad de cada campo
 	const [showPassword, setShowPassword] = useState(false);
 	const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-	
+
 	const searchParams = useSearchParams();
-	// eslint-disable-next-line no-unused-vars
 	const token = searchParams?.get("token");
+
+	if (!token) {
+		return <div className="space-y-4">No token provided</div>;
+	}
+
+	const handleMicrosoftLogin = () => {
+		window.location.replace(`/api/auth/login/microsoft?invitation_token=${token}`);
+	};
 
 	return (
 		<div className="space-y-4">
@@ -44,7 +51,7 @@ export const ChangePasswordForm = () => {
 						const form = e.target as HTMLFormElement;
 						const formData = new FormData(form);
 						const raw = Object.fromEntries(formData) as Record<string, any>;
-						
+
 						// Aquí Zod validará si las contraseñas coinciden
 						// eslint-disable-next-line no-unused-vars
 						const values = await changePasswordSchema.parseAsync(raw);
@@ -60,7 +67,7 @@ export const ChangePasswordForm = () => {
 					} catch (error: any) {
 						// 4. Manejo de errores específico para Zod
 						let errorMessage = "No se pudo actualizar la contraseña";
-						
+
 						if (error instanceof z.ZodError) {
 							// Tomamos el primer mensaje de error de Zod (ej: "Las contraseñas no coinciden")
 							errorMessage = error.issues[0].message;
@@ -130,7 +137,7 @@ export const ChangePasswordForm = () => {
 						<li>Al menos un caracter especial (ej. !@#$)</li>
 					</ul>
 				</div>
-				
+
 				<Button
 					type="submit"
 					className="w-full"
@@ -140,24 +147,27 @@ export const ChangePasswordForm = () => {
 					Guardar contraseña
 				</Button>
 
-				<div className="w-full flex items-center justify-center mb-2 mt-2">
-					<a
-						className="text-sm font-medium text-gray-400 text-center"
-					>
-						Si eres usuario Uninorte, puedes:
-					</a>
-				</div>
-				<Button
-				className="w-full"
+			</Form>
+
+			<div className="w-full flex items-center justify-center mb-2 mt-2">
+				<a
+					className="text-sm font-medium text-gray-400 text-center"
 				>
+					Si eres usuario Uninorte, puedes:
+				</a>
+			</div>
+			<Button
+				className="w-full"
+				onClick={handleMicrosoftLogin}
+				type="button"
+			>
 				<img
 					src="/microsoft.webp"
 					alt="Microsoft Logo"
 					className="inline-block w-7 h-7"
 				/>
 				Iniciar sesión con Outlook
-				</Button>
-			</Form>
+			</Button>
 		</div>
 	);
 };
