@@ -10,8 +10,8 @@ import { getEventsQueryOptions } from "./get-events";
 
 export const updateEventInputSchema = z.object({
   id: z.number().positive(),
-  name: z.string().min(2).max(100),
-  description: z.string().max(500),
+  name: z.string().min(2).max(255),
+  description: z.string().max(3000),
   accessCode: z.string().optional(),
   isPubliclyJoinable: z.boolean().optional(),
   startDate: z.string().min(10).max(10), 

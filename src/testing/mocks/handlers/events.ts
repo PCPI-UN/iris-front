@@ -30,7 +30,7 @@ type EventDTO = {
   isPublic: boolean;
   evaluationsStatus: "open" | "closed";
   createdAt: string;
-  userEventRole?: "STUDENT" | "JURY";
+  userEventRole?: "Participant" | "JURY";
 };
 
 const mapEventToDTO = (event: any, membership?: any): EventDTO => {
