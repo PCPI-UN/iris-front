@@ -39,12 +39,12 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      target: ${NODE_ENV}
       args:
-        APP_PORT: 3000
+        NODE_ENV: ${NODE_ENV}
         API_URL: ${API_URL}
         NEXT_PUBLIC_ENABLE_API_MOCKING: ${NEXT_PUBLIC_ENABLE_API_MOCKING}
         NEXT_PUBLIC_URL: ${NEXT_PUBLIC_URL}
-        NEXT_PUBLIC_MOCK_API_PORT: ${NEXT_PUBLIC_MOCK_API_PORT}
     
     container_name: iris-frontend
     
@@ -52,9 +52,16 @@ services:
       - "3000:3000"
     
     environment:
-      NODE_ENV: production
+      NODE_ENV: ${NODE_ENV}
       PORT: 3000
       API_URL: ${API_URL}
+      NEXT_PUBLIC_ENABLE_API_MOCKING: ${NEXT_PUBLIC_ENABLE_API_MOCKING}
+      NEXT_PUBLIC_URL: ${NEXT_PUBLIC_URL}
+    
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
     
     depends_on:
       mockapi:
