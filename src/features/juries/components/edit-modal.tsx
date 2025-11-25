@@ -135,7 +135,6 @@ export const EditModal = ({ jury }: EditModalProps) => {
                   });
                 } catch (error) {
                   // Validation errors are handled by the schema
-                  console.error("Validation error:", error);
                 }
               }}
             >

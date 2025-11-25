@@ -10,6 +10,7 @@ import { Form } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { paths } from '@/config/paths';
 import { useLogin, loginInputSchema } from '@/lib/auth';
+import { env } from '@/config/env';
 
 type LoginFormProps = {
   onSuccess: () => void;
@@ -20,6 +21,10 @@ export const LoginForm = ({ onSuccess }: LoginFormProps) => {
   const login = useLogin({
     onSuccess,
   });
+
+  const handleMicrosoftLogin = () => {
+    window.location.replace(`/api/auth/login/microsoft`);
+  };
 
   const searchParams = useSearchParams();
   const redirectTo = searchParams?.get('redirectTo');
@@ -62,7 +67,15 @@ export const LoginForm = ({ onSuccess }: LoginFormProps) => {
             </a>
           }
         />
-        <div className="flex items-center justify-end mb-2">
+
+        <Button
+          isLoading={login.isPending}
+          type="submit"
+          className="w-full mt-2"
+        >
+          Iniciar sesión
+        </Button>
+        <div className="w-full flex items-center justify-center">
           <NextLink
             href={paths.auth.forgot_password.getHref(redirectTo)}
             className="text-sm font-medium text-primary hover:underline"
@@ -70,14 +83,26 @@ export const LoginForm = ({ onSuccess }: LoginFormProps) => {
             ¿Olvidaste tu contraseña?
           </NextLink>
         </div>
-        <Button
-          isLoading={login.isPending}
-          type="submit"
-          className="w-full"
-        >
-          Iniciar sesión
-        </Button>
       </Form>
+      <div className="w-full flex items-center justify-center mb-2 mt-2">
+        <a
+          className="text-sm font-medium text-gray-400 text-center"
+        >
+          Si eres usuario Uninorte, puedes:
+        </a>
+      </div>
+      <Button
+        className="w-full mb-4"
+        onClick={handleMicrosoftLogin}
+        type="button"
+      >
+        <img
+          src="/microsoft.webp"
+          alt="Microsoft Logo"
+          className="inline-block w-7 h-7"
+        />
+        Iniciar sesión con Outlook
+      </Button>
     </div>
   );
 };

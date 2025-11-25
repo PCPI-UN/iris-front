@@ -202,7 +202,7 @@ export const ProjectList = () => {
                       <div>
                         <Button
                           className="w-full"
-                          onClick={() => console.log("Editar proyecto:", project.id)}
+                          onClick={() => {}}
                         >
                           Editar
                         </Button>

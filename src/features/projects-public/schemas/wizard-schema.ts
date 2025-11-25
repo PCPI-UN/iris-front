@@ -9,15 +9,15 @@ export const participantSchema = z.object({
 })
 
 export const projectSchema = z.object({
-  name: z.string().min(3, 'El nombre debe tener al menos 3 caracteres'),
-  description: z.string().optional(),
+  name: z.string().min(3, 'El nombre debe tener al menos 3 caracteres').max(255, 'El nombre no puede exceder 255 caracteres'),
+  description: z.string().max(3000, 'La descripción no puede exceder 3000 caracteres').optional(),
   courseId: z.number().min(1, 'Debe seleccionar un curso'),
 })
 
 export const documentsSchema = z.object({
   poster: z
     .instanceof(File, { message: 'Debe subir un poster' })
-    .refine(file => file.size <= 5 * 1024 * 1024, 'El archivo debe ser menor a 5MB')
+    .refine(file => file.size <= 25 * 1024 * 1024, 'El archivo debe ser menor a 25MB')
     .refine(
       file => ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'].includes(file.type),
       'Solo se permiten PDF, JPG o PNG'
@@ -26,7 +26,7 @@ export const documentsSchema = z.object({
     .array(
       z
         .instanceof(File)
-        .refine(file => file.size <= 5 * 1024 * 1024, 'El archivo debe ser menor a 5MB')
+        .refine(file => file.size <= 25 * 1024 * 1024, 'El archivo debe ser menor a 25MB')
     )
     .default([]),
 })

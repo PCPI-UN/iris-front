@@ -119,7 +119,6 @@ export const UpdateCriteria = ({ criterionId }: UpdateCriteriaProps) => {
                   });
                 } catch (error) {
                   // Validation errors are handled by the schema
-                  console.error("Validation error:", error);
                 }
               }}
             >

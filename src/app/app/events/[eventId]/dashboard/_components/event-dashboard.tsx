@@ -41,7 +41,7 @@ export const EventDashboard = ({ eventId }: EventDashboardProps) => {
     return <JuryDashboard eventId={eventId} />;
   }
 
-  if (events[0].role.name === 'Student') {
+  if (events[0].role.name === 'Participant') {
     return <StudentDashboard eventId={eventId} />;
   }
 

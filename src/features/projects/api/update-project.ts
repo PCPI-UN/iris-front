@@ -10,9 +10,9 @@ import { getProjectsQueryOptions } from "./get-projects";
 export const updateProjectInputSchema = z.object({
   eventId: z.string().optional(),
   courseId: z.string().optional(),
-  name: z.string().optional(),
+  name: z.string().max(255, "El nombre no puede exceder 255 caracteres").optional(),
   logo: z.string().optional(),
-  description: z.string().optional(),
+  description: z.string().max(3000, "La descripción no puede exceder 3000 caracteres").optional(),
   state: z.string().optional(),
   documents: z.array(z.object({
     type: z.string(),

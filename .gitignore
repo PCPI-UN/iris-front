@@ -66,8 +66,3 @@ pm2.log
 
 # mocked database
 mocked-db.json
-
-pnpm-lock.yaml
-yarn.lock
-package-lock.json
-bun.lockb
