@@ -11,9 +11,8 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 # Stage 2: Dependencies
 # ========================
 FROM base AS deps
-COPY package.json ./
-RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
-    pnpm install
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
 
 # ========================
 # Stage 3: Builder
@@ -38,9 +37,9 @@ ENV NODE_ENV=production
 RUN pnpm build
 
 # ========================
-# Stage 4: Production runner
+# Stage 4: Production
 # ========================
-FROM base AS runner
+FROM base AS production
 
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
