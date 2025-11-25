@@ -49,11 +49,11 @@ RUN apk add --no-cache dumb-init && \
     addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
-# Copy all necessary files from builder
+# Copy all necessary files from builder and set ownership in one step
 COPY --from=builder --chown=nextjs:nodejs /app /app
 
-# Asegurar permisos de escritura para nextjs
-RUN chown -R nextjs:nodejs /app
+# Create .next directory with proper permissions before switching user
+RUN mkdir -p /app/.next && chown -R nextjs:nodejs /app/.next
 
 USER nextjs
 
