@@ -1,28 +1,26 @@
-"use client";
+'use client';
 
-import { useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useState } from 'react';
 
-import { paths } from "@/config/paths";
-import { RegisterForm } from "@/features/auth/components/register-form";
+import { paths } from '@/config/paths';
+import { RegisterForm } from '@/features/auth/components/register-form';
 
 const RegisterPage = () => {
+  const router = useRouter();
+
   const searchParams = useSearchParams();
-  const redirectTo = searchParams?.get("redirectTo");
+  const redirectTo = searchParams?.get('redirectTo');
 
   const [chooseTeam, setChooseTeam] = useState(false);
 
   return (
     <RegisterForm
-      onSuccess={() => {
-        // Usar window.location.href en lugar de router.replace
-        // para forzar una recarga completa y asegurar que las cookies
-        // se envíen correctamente en producción
-        const targetUrl = redirectTo
-          ? decodeURIComponent(redirectTo)
-          : paths.app.dashboard.getHref();
-        window.location.href = targetUrl;
-      }}
+      onSuccess={() =>
+        router.replace(
+          `${redirectTo ? `${decodeURIComponent(redirectTo)}` : paths.app.dashboard.getHref()}`,
+        )
+      }
       chooseTeam={chooseTeam}
       setChooseTeam={() => setChooseTeam(!chooseTeam)}
     />
