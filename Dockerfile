@@ -14,7 +14,7 @@ RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile
 
 # ========================
-# Stage 3: Builder (solo para producción)
+# Stage 3: Builder
 # ========================
 FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
@@ -32,11 +32,10 @@ ENV NEXT_PUBLIC_ENABLE_API_MOCKING=${NEXT_PUBLIC_ENABLE_API_MOCKING}
 ENV NEXT_PUBLIC_URL=${NEXT_PUBLIC_URL}
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Build solo si es producción
 RUN pnpm build
 
 # ========================
-# Stage 4: Production runner
+# Stage 4: Production
 # ========================
 FROM base AS production
 WORKDIR /app
@@ -64,26 +63,3 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD node -e "require('http').get('http://localhost:' + process.env.PORT, (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})" || exit 1
 
 CMD ["dumb-init", "pnpm", "start"]
-
-# ========================
-# Stage 5: Development runner
-# ========================
-FROM base AS development
-WORKDIR /app
-
-ENV NODE_ENV=development
-ENV NEXT_TELEMETRY_DISABLED=1
-ENV PORT=3000
-ENV HOSTNAME="0.0.0.0"
-
-RUN apk add --no-cache dumb-init
-
-COPY --from=deps /app/node_modules ./node_modules
-COPY . .
-
-EXPOSE ${PORT}
-
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD node -e "require('http').get('http://localhost:' + process.env.PORT, (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})" || exit 1
-
-CMD ["dumb-init", "pnpm", "dev"]
