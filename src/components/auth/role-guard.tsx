@@ -26,12 +26,20 @@ export function RoleGuard({
 
   useEffect(() => {
     if (!isLoading) {
+      console.log('🛡️ RoleGuard - User:', user)
+      console.log('🛡️ RoleGuard - Required roles:', roles)
+      console.log('🛡️ RoleGuard - User platform roles:', user?.platformRoles)
+      
       const hasPermission = user && roles.some(role => user.platformRoles.some(userRole => userRole.name === role))
+      console.log('🛡️ RoleGuard - Has permission:', hasPermission)
       
       // Si no tiene permiso, redirigir a /app siempre
       if (!hasPermission) {
         const redirectPath = redirectTo || '/app'
+        console.log('❌ RoleGuard - Sin permiso, redirigiendo a:', redirectPath)
         router.replace(redirectPath)
+      } else {
+        console.log('✅ RoleGuard - Permiso concedido')
       }
     }
   }, [isLoading, user, roles, redirectTo, router])
