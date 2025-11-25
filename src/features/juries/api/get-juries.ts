@@ -3,31 +3,65 @@ import { queryOptions, useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
 import { QueryConfig } from "@/lib/react-query";
 
-import { Jury, Meta } from "@/types/api";
+import { JuryInvitation, InvitationsMeta } from "@/types/api";
 
-export const getJuries = ({
-  page,
-}: {
-  page: number;
-}): Promise<{ data: Jury[]; meta: Meta }> => {
-  return api.get(`/juries`, { params: { page } });
+type GetJuryInvitationsParams = {
+  eventId: number;
+  page?: number;
+  limit?: number;
 };
 
-export const getJuriesQueryOptions = ({ page = 1 }: { page?: number }) => {
+type GetJuryInvitationsResponse = {
+  invitations: JuryInvitation[];
+  meta: InvitationsMeta;
+};
+
+export const getJuryInvitations = async ({
+  eventId,
+  page = 1,
+  limit = 10,
+}: GetJuryInvitationsParams): Promise<GetJuryInvitationsResponse> => {
+  const response = await api.get<GetJuryInvitationsResponse>(
+    `/invitations/events/${eventId}`,
+    {
+      params: { roleId: 4, page, limit },
+    }
+  );
+
+  return {
+    invitations: response.invitations || [],
+    meta: response.meta,
+  };
+};
+
+export const getJuryInvitationsQueryOptions = ({
+  eventId,
+  page = 1,
+  limit = 10,
+}: GetJuryInvitationsParams) => {
   return queryOptions({
-    queryKey: ["juries", page],
-    queryFn: () => getJuries({ page }),
+    queryKey: ["jury-invitations", eventId, page, limit],
+    queryFn: () => getJuryInvitations({ eventId, page, limit }),
+    enabled: !!eventId,
   });
 };
 
-type UseJuriesOptions = {
+type UseJuryInvitationsOptions = {
+  eventId?: number;
   page?: number;
-  queryConfig?: QueryConfig<typeof getJuriesQueryOptions>;
+  limit?: number;
+  queryConfig?: QueryConfig<typeof getJuryInvitationsQueryOptions>;
 };
 
-export const useJuries = ({ queryConfig, page }: UseJuriesOptions = {}) => {
+export const useJuryInvitations = ({
+  eventId,
+  page = 1,
+  limit = 10,
+  queryConfig,
+}: UseJuryInvitationsOptions) => {
   return useQuery({
-    ...getJuriesQueryOptions({ page }),
+    ...getJuryInvitationsQueryOptions({ eventId: eventId!, page, limit }),
     ...queryConfig,
+    enabled: !!eventId && (queryConfig?.enabled ?? true),
   });
 };
