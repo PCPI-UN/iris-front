@@ -41,7 +41,6 @@ export type AuthResponse = {
   message: string;
 };
 
-
 export type Discussion = Entity<{
   title: string;
   body: string;
@@ -153,6 +152,42 @@ export type Jury = Entity<{
   projectIds: number[];
   invitationStatus: "pending" | "accepted" | "declined";
 }>;
+
+// Real API types for invitations
+// Status values: 0 = PENDING, 1 = ACCEPTED, 2 = DECLINED, 3 = EXPIRED
+export type InvitationStatus = 0 | 1 | 2 | 3;
+
+export type InvitationRole = {
+  id: number;
+  name: string;
+  description: string;
+  scope: string;
+};
+
+export type JuryInvitation = {
+  id: string;
+  token: string;
+  email: string;
+  targetType: string;
+  targetId: number;
+  status: InvitationStatus;
+  expiresAt: string;
+  invitedByUserId: number;
+  invitedUserId: number | null;
+  roleIds: number[];
+  createdAt: string;
+  roles: InvitationRole[];
+  event: Event;
+  project: any | null;
+};
+
+export type InvitationsMeta = {
+  total: number;
+  itemsOnCurrentPage: number;
+  itemsPerPage: number;
+  currentPage: number;
+  totalPages: number;
+};
 
 export type Administrator = Entity<{
   email: string;

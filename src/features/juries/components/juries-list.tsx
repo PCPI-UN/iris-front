@@ -1,360 +1,310 @@
+"use client";
+
+import { useState, useMemo, useCallback } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableColumn,
+  TableRow,
+  TableCell,
+} from "@/components/ui/table";
+import { SearchIcon, Check } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Chip } from "@/components/ui/chip";
+import { useJuryInvitations } from "../api/get-juries";
+import { Spinner } from "@/components/ui/spinner";
+import { Pagination } from "@/components/ui/pagination";
+import { Input } from "@/components/ui/input";
+import { Select, SelectItem } from "@/components/ui/select";
+import { useEventsDropdown } from "@/features/events/api/get-events-dropdown";
+import { InviteModal } from "./invite-modal";
+import { AcceptInvitationModal } from "./accept-invitation-modal";
+import type { InvitationStatus } from "@/types/api";
 
 export const JuriesList = () => {
-  return <div>Juries List Component</div>;
-}
+  const [filterValue, setFilterValue] = useState("");
+  const [selectedEventKey, setSelectedEventKey] = useState<string>("");
+  const rowsPerPage = 10;
 
-// "use client";
+  const searchParams = useSearchParams();
+  const router = useRouter();
 
-// import { useSearchParams, useRouter } from "next/navigation";
-// import type { Selection } from "@heroui/react";
-// import {
-//   Table,
-//   TableHeader,
-//   TableBody,
-//   TableColumn,
-//   TableRow,
-//   TableCell,
-// } from "@/components/ui/table";
-// import { SearchIcon, ChevronDown } from "lucide-react";
-// import {
-//   Dropdown,
-//   DropdownTrigger,
-//   DropdownMenu,
-//   DropdownItem,
-// } from "@/components/ui/dropdown";
-// import { Button } from "@/components/ui/button";
-// import { Chip } from "@/components/ui/chip";
-// import { useJuries } from "../api/get-juries";
-// import { Spinner } from "@/components/ui/spinner";
-// import { Pagination } from "@/components/ui/pagination";
-// import { Input } from "@/components/ui/input";
-// import { useCallback, useMemo, useState } from "react";
-// import { useEventsDropdown } from "@/features/events/api/get-events-dropdown";
-// import { InviteModal } from "./invite-modal";
-// import { EditModal } from "./edit-modal";
-// import { DeleteJury } from "./delete-jury";
-// import { useAcceptJury } from "../api/accept-jury";
-// import { useNotifications } from "@/components/ui/notifications";
-// import { useQueryClient } from "@tanstack/react-query";
-// import { useProjects } from "@/features/projects/api/get-projects";
-// import { Check } from "lucide-react";
+  const page = useMemo(() => {
+    const raw = searchParams?.get("page") || "1";
+    const n = Number(raw);
+    return Number.isFinite(n) && n > 0 ? n : 1;
+  }, [searchParams]);
 
-// export const JuriesList = () => {
-//   const [filterValue, setFilterValue] = useState("");
-//   const [statusFilter, setStatusFilter] = useState<Selection>("all");
-//   const rowsPerPage = 10;
-//   const { addNotification } = useNotifications();
-//   const queryClient = useQueryClient();
+  const setPageInUrl = useCallback(
+    (n: number) => {
+      const sp = new URLSearchParams(searchParams?.toString());
+      sp.set("page", String(n));
+      router.replace(`?${sp.toString()}`, { scroll: false });
+    },
+    [router, searchParams]
+  );
 
-//   const searchParams = useSearchParams();
-//   const router = useRouter();
+  const eventsQuery = useEventsDropdown();
+  const events = eventsQuery.data?.data || [];
 
-//   const page = useMemo(() => {
-//     const raw = searchParams?.get("page") || "1";
-//     const n = Number(raw);
-//     return Number.isFinite(n) && n > 0 ? n : 1;
-//   }, [searchParams]);
+  const juriesQuery = useJuryInvitations({
+    eventId: selectedEventKey ? Number(selectedEventKey) : undefined,
+    page,
+    limit: rowsPerPage,
+  });
 
-//   const setPageInUrl = useCallback(
-//     (n: number) => {
-//       const sp = new URLSearchParams(searchParams?.toString());
-//       sp.set("page", String(n));
-//       router.replace(`?${sp.toString()}`, { scroll: false });
-//     },
-//     [router, searchParams]
-//   );
+  const invitations = juriesQuery.data?.invitations ?? [];
+  const meta = juriesQuery.data?.meta;
+  const isLoading = juriesQuery.isLoading || eventsQuery.isLoading;
 
-//   const juriesQuery = useJuries({ page });
-//   const eventsQuery = useEventsDropdown();
-  
-//   // Get all projects for display
-//   const projectsQuery = useProjects({ page: 1 });
-//   const allProjects = projectsQuery.data?.data || [];
+  const getStatusColor = (status: InvitationStatus) => {
+    switch (status) {
+      case 1: // ACCEPTED
+        return "success";
+      case 2: // DECLINED
+        return "danger";
+      case 0: // PENDING
+        return "warning";
+      case 3: // EXPIRED
+        return "default";
+      default:
+        return "default";
+    }
+  };
 
-//   const juries = juriesQuery.data?.data ?? [];
-//   const meta = juriesQuery.data?.meta;
-//   const events = eventsQuery.data?.data ?? [];
-//   const isLoading = juriesQuery.isLoading || eventsQuery.isLoading || projectsQuery.isLoading;
+  const getStatusLabel = (status: InvitationStatus) => {
+    switch (status) {
+      case 1:
+        return "Aceptado";
+      case 2:
+        return "Rechazado";
+      case 0:
+        return "Pendiente";
+      case 3:
+        return "Expirado";
+      default:
+        return "Desconocido";
+    }
+  };
 
-//   const eventsMap = useMemo(() => {
-//     const m = new Map<string, string>();
-//     for (const e of events) {
-//       if (e?.id) m.set(String(e.id), e?.name ?? "Unknown Event");
-//     }
-//     return m;
-//   }, [events]);
+  const onSearchChange = useCallback(
+    (value?: string) => {
+      if (value) {
+        setFilterValue(value);
+        setPageInUrl(1);
+      } else {
+        setFilterValue("");
+      }
+    },
+    [setPageInUrl]
+  );
 
-//   const projectsMap = useMemo(() => {
-//     const m = new Map<string, string>();
-//     for (const p of allProjects) {
-//       if (p?.id) m.set(String(p.id), p?.name ?? "Unknown Project");
-//     }
-//     return m;
-//   }, [allProjects]);
+  const onClear = useCallback(() => {
+    setFilterValue("");
+    setPageInUrl(1);
+  }, [setPageInUrl]);
 
-//   const getEventTitle = (eventId: string | number) =>
-//     eventsMap.get(String(eventId)) ?? "Unknown Event";
+  const filteredInvitations = useMemo(() => {
+    if (!filterValue) return invitations;
+    return invitations.filter((inv) =>
+      inv.email.toLowerCase().includes(filterValue.toLowerCase())
+    );
+  }, [invitations, filterValue]);
 
-//   const getProjectTitle = (projectId: string | number) =>
-//     projectsMap.get(String(projectId)) ?? "Unknown Project";
+  const hasSearchFilter = Boolean(filterValue);
+  const pages = meta?.totalPages ?? 1;
+  const totalItems = meta?.total ?? 0;
 
-//   const getEventTitles = (eventIds: string[] = []) => {
-//     return eventIds.map((id) => getEventTitle(id)).join(", ") || "—";
-//   };
+  const topContent = useMemo(() => {
+    return (
+      <div className="flex flex-col gap-4">
+        <div className="flex justify-between gap-3 items-end">
+          <Input
+            isClearable
+            className="w-full sm:max-w-[44%]"
+            placeholder="Buscar por correo…"
+            startContent={<SearchIcon />}
+            value={filterValue}
+            onClear={onClear}
+            onValueChange={onSearchChange}
+          />
+          <div className="flex gap-3">
+            <Select
+              label="Evento"
+              placeholder="Selecciona un evento"
+              className="w-64"
+              selectedKeys={selectedEventKey ? [selectedEventKey] : []}
+              onSelectionChange={(keys) => {
+                const selected = Array.from(keys)[0];
+                setSelectedEventKey(selected ? String(selected) : "");
+                setPageInUrl(1);
+              }}
+              isLoading={eventsQuery.isLoading}
+            >
+              {events.map((event) => (
+                <SelectItem key={String(event.id)}>{event.name}</SelectItem>
+              ))}
+            </Select>
+            <InviteModal />
+          </div>
+        </div>
 
-//   const getProjectTitles = (projectIds: string[] = []) => {
-//     return projectIds.map((id) => getProjectTitle(id)).join(", ") || "—";
-//   };
+        <div className="flex justify-between items-center">
+          <span className="text-default-400 text-small">
+            {selectedEventKey
+              ? hasSearchFilter
+                ? `${filteredInvitations.length} resultados (filtrados de ${totalItems})`
+                : `${totalItems} invitaciones`
+              : "Selecciona un evento para ver las invitaciones"}
+          </span>
+        </div>
+      </div>
+    );
+  }, [
+    filterValue,
+    onSearchChange,
+    onClear,
+    hasSearchFilter,
+    totalItems,
+    selectedEventKey,
+    events,
+    eventsQuery.isLoading,
+    filteredInvitations.length,
+    setPageInUrl,
+  ]);
 
-//   const getStatusColor = (status: string) => {
-//     switch (status) {
-//       case "accepted":
-//         return "success";
-//       case "declined":
-//         return "danger";
-//       case "pending":
-//         return "warning";
-//       default:
-//         return "default";
-//     }
-//   };
+  const bottomContent = useMemo(() => {
+    if (!selectedEventKey) return null;
 
-//   const statusOptions = [
-//     { name: "accepted", uid: "accepted" },
-//     { name: "declined", uid: "declined" },
-//     { name: "pending", uid: "pending" },
-//   ];
+    return (
+      <div className="py-2 px-2 flex justify-between items-center">
+        <Pagination
+          isCompact
+          showControls
+          showShadow
+          color="primary"
+          page={page}
+          total={pages}
+          onChange={(n) => setPageInUrl(n)}
+        />
+        <div className="hidden sm:flex w-[30%] justify-end gap-2">
+          <Button
+            isDisabled={page === 1}
+            size="sm"
+            variant="flat"
+            onPress={() => setPageInUrl(Math.max(1, page - 1))}
+          >
+            Anterior
+          </Button>
+          <Button
+            isDisabled={page === pages}
+            size="sm"
+            variant="flat"
+            onPress={() => setPageInUrl(Math.min(pages, page + 1))}
+          >
+            Siguiente
+          </Button>
+        </div>
+      </div>
+    );
+  }, [page, pages, setPageInUrl, selectedEventKey]);
 
-//   const onRowsPerPageChange = useCallback(
-//     (e: React.ChangeEvent<HTMLSelectElement>) => {
-//       setPageInUrl(1);
-//     },
-//     [setPageInUrl]
-//   );
+  const columns = [
+    { key: "email", label: "Correo" },
+    { key: "event", label: "Evento" },
+    { key: "status", label: "Estado" },
+    { key: "expiresAt", label: "Expira" },
+    { key: "createdAt", label: "Fecha de invitación" },
+    { key: "actions", label: "Acciones" },
+  ];
 
-//   const onSearchChange = useCallback(
-//     (value?: string) => {
-//       if (value) {
-//         setFilterValue(value);
-//         setPageInUrl(1);
-//       } else {
-//         setFilterValue("");
-//       }
-//     },
-//     [setPageInUrl]
-//   );
+  return (
+    <Table
+      aria-label="Lista de invitaciones de jurados"
+      topContent={topContent}
+      topContentPlacement="outside"
+      bottomContent={bottomContent}
+      bottomContentPlacement="outside"
+      classNames={{ wrapper: "min-h-[382px] glass-card" }}
+      selectionMode="none"
+    >
+      <TableHeader columns={columns}>
+        {(column) => (
+          <TableColumn key={column.key} align="center">
+            {column.label}
+          </TableColumn>
+        )}
+      </TableHeader>
 
-//   const onClear = useCallback(() => {
-//     setFilterValue("");
-//     setPageInUrl(1);
-//   }, [setPageInUrl]);
-
-//   const hasSearchFilter = Boolean(filterValue);
-
-//   // Use server-side pagination metadata when available, otherwise fallback to client-side
-//   const pages = meta?.totalPages ?? Math.max(1, Math.ceil(displayJuries.length / rowsPerPage));
-//   const totalItems = meta?.total ?? displayJuries.length;
-  
-//   // Only apply client-side pagination if we have filters, otherwise use server-paginated data directly
-//   const displayJuries = hasSearchFilter || statusFilter !== "all" 
-//     ? filteredJuries 
-//     : juries;
-
-//   const topContent = useMemo(() => {
-//     function capitalize(s: string) {
-//       return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
-//     }
-//     return (
-//       <div className="flex flex-col gap-4">
-//         <div className="flex justify-between gap-3 items-end">
-//           <Input
-//             isClearable
-//             className="w-full sm:max-w-[44%]"
-//             placeholder="Buscar por correo, id o título del evento…"
-//             startContent={<SearchIcon />}
-//             value={filterValue}
-//             onClear={onClear}
-//             onValueChange={onSearchChange}
-//           />
-//           <div className="flex gap-3">
-//             <Dropdown>
-//               <DropdownTrigger className="hidden sm:flex">
-//                 <Button
-//                   color="secondary"
-//                   endContent={<ChevronDown className="text-small" />}
-//                   variant="flat"
-//                 >
-//                   Estado
-//                 </Button>
-//               </DropdownTrigger>
-//               <DropdownMenu
-//                 disallowEmptySelection
-//                 aria-label="Filtrar por estado"
-//                 closeOnSelect={false}
-//                 selectedKeys={statusFilter}
-//                 selectionMode="multiple"
-//                 onSelectionChange={setStatusFilter}
-//               >
-//                 {statusOptions.map((s) => (
-//                   <DropdownItem key={s.uid} className="capitalize">
-//                     {capitalize(s.name)}
-//                   </DropdownItem>
-//                 ))}
-//               </DropdownMenu>
-//             </Dropdown>
-//             <div>
-//               <InviteModal />
-//             </div>
-//           </div>
-//         </div>
-
-//         <div className="flex justify-between items-center">
-//           <span className="text-default-400 text-small">
-//             {hasSearchFilter || statusFilter !== "all" 
-//               ? `${displayJuries.length} resultados (filtrados)` 
-//               : `${totalItems} resultados`}
-//           </span>
-//         </div>
-//       </div>
-//     );
-//   }, [
-//     filterValue,
-//     statusFilter,
-//     onSearchChange,
-//     onRowsPerPageChange,
-//     hasSearchFilter,
-//     totalItems,
-//   ]);
-
-//   const bottomContent = useMemo(() => {
-//     return (
-//       <div className="py-2 px-2 flex justify-between items-center">
-//         <Pagination
-//           isCompact
-//           showControls
-//           showShadow
-//           color="primary"
-//           page={page}
-//           total={pages}
-//           onChange={(n) => setPageInUrl(n)}
-//         />
-//         <div className="hidden sm:flex w-[30%] justify-end gap-2">
-//           <Button
-//             isDisabled={pages === 1}
-//             size="sm"
-//             variant="flat"
-//             onPress={() => setPageInUrl(Math.max(1, page - 1))}
-//           >
-//             Previous
-//           </Button>
-//           <Button
-//             isDisabled={pages === 1}
-//             size="sm"
-//             variant="flat"
-//             onPress={() => setPageInUrl(Math.min(pages, page + 1))}
-//           >
-//             Next
-//           </Button>
-//         </div>
-//       </div>
-//     );
-//   }, [page, pages, setPageInUrl]);
-
-//   const acceptJuryMutation = useAcceptJury({
-//     mutationConfig: {
-//       onSuccess: () => {
-//         addNotification({ type: "success", title: "Jurado aceptado" });
-//         queryClient.invalidateQueries({ queryKey: ["juries"] });
-//       },
-//     },
-//   });
-
-//   const handleAccept = (juryId: string) => {
-//     acceptJuryMutation.mutate({ juryId });
-//   };
-
-//   const columns = [
-//     { key: "email", label: "Correo" },
-//     { key: "events", label: "Eventos" },
-//     { key: "projects", label: "Proyectos" },
-//     { key: "invitationStatus", label: "Estado" },
-//     { key: "createdAt", label: "Fecha de invitación" },
-//     { key: "actions", label: "Acciones" },
-//   ];
-
-//   return (
-//     <Table
-//       aria-label="Juries List (read-only)"
-//       topContent={topContent}
-//       topContentPlacement="outside"
-//       bottomContent={bottomContent}
-//       bottomContentPlacement="outside"
-//       classNames={{ wrapper: "max-h-[382px] glass-card" }}
-//       selectionMode="none"
-//     >
-//       <TableHeader columns={columns}>
-//         {(column) => (
-//           <TableColumn key={column.key} align="center">
-//             {column.label}
-//           </TableColumn>
-//         )}
-//       </TableHeader>
-
-//       <TableBody
-//         emptyContent={isLoading ? undefined : "Sin resultados"}
-//         items={isLoading ? [] : displayJuries}
-//       >
-//         {isLoading ? (
-//           <TableRow key="loading">
-//             <TableCell align="center" className="py-10" colSpan={6}>
-//               <Spinner size="lg" />
-//             </TableCell>
-//           </TableRow>
-//         ) : (
-//           (item: any) => (
-//             <TableRow key={item.id}>
-//               <TableCell align="center">{item.email}</TableCell>
-//               <TableCell align="center">
-//                 {getEventTitles(item.eventIds || [])}
-//               </TableCell>
-//               <TableCell align="center">
-//                 {getProjectTitles(item.projectIds || [])}
-//               </TableCell>
-//               <TableCell align="center">
-//                 <Chip
-//                   className="w-full capitalize"
-//                   color={getStatusColor(item.invitationStatus)}
-//                 >
-//                   {item.invitationStatus}
-//                 </Chip>
-//               </TableCell>
-//               <TableCell align="center">
-//                 {item.createdAt
-//                   ? new Date(item.createdAt).toLocaleDateString()
-//                   : "—"}
-//               </TableCell>
-//               <TableCell align="center">
-//                 <div className="flex items-center justify-center gap-2">
-//                   <EditModal jury={item} />
-//                   {item.invitationStatus === "pending" && (
-//                     <Button
-//                       size="sm"
-//                       variant="light"
-//                       color="success"
-//                       onPress={() => handleAccept(item.id)}
-//                       isIconOnly
-//                       isLoading={acceptJuryMutation.isPending}
-//                     >
-//                       <Check size={16} />
-//                     </Button>
-//                   )}
-//                   <DeleteJury id={item.id} />
-//                 </div>
-//               </TableCell>
-//             </TableRow>
-//           )
-//         )}
-//       </TableBody>
-//     </Table>
-//   );
-// };
+      <TableBody
+        emptyContent={
+          isLoading
+            ? undefined
+            : !selectedEventKey
+              ? "Selecciona un evento para ver las invitaciones"
+              : "No hay invitaciones para este evento"
+        }
+        items={isLoading ? [] : filteredInvitations}
+      >
+        {isLoading ? (
+          <TableRow key="loading">
+            <TableCell
+              align="center"
+              className="py-10"
+              colSpan={columns.length}
+            >
+              <Spinner size="lg" />
+            </TableCell>
+          </TableRow>
+        ) : (
+          (item) => (
+            <TableRow key={item.id}>
+              <TableCell align="center">{item.email}</TableCell>
+              <TableCell align="center">{item.event?.name || "—"}</TableCell>
+              <TableCell align="center">
+                <Chip
+                  className="w-full capitalize"
+                  color={getStatusColor(item.status)}
+                  size="sm"
+                >
+                  {getStatusLabel(item.status)}
+                </Chip>
+              </TableCell>
+              <TableCell align="center">
+                {item.expiresAt
+                  ? new Date(item.expiresAt).toLocaleDateString("es-CO", {
+                      year: "numeric",
+                      month: "short",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })
+                  : "—"}
+              </TableCell>
+              <TableCell align="center">
+                {item.createdAt
+                  ? new Date(item.createdAt).toLocaleDateString("es-CO", {
+                      year: "numeric",
+                      month: "short",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })
+                  : "—"}
+              </TableCell>
+              <TableCell align="center">
+                <div className="flex items-center justify-center gap-2">
+                  {item.status === 0 && (
+                    <AcceptInvitationModal invitation={item} />
+                  )}
+                </div>
+              </TableCell>
+            </TableRow>
+          )
+        )}
+      </TableBody>
+    </Table>
+  );
+};

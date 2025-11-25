@@ -3,44 +3,51 @@ import { z } from "zod";
 
 import { api } from "@/lib/api-client";
 import { MutationConfig } from "@/lib/react-query";
-import { Jury } from "@/types/api";
+import { JuryInvitation } from "@/types/api";
 
-import { getJuriesQueryOptions } from "./get-juries";
-
-export const createJuryInputSchema = z.object({
+export const createJuryInvitationInputSchema = z.object({
   email: z.string().min(1, "Required").email("Invalid email address"),
-  eventIds: z.array(z.string()).min(1, "At least one event is required"),
-  projectIds: z.array(z.string()).optional().default([]),
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  eventId: z.number().min(1, "Event is required"),
 });
 
-export type CreateJuryInput = z.infer<typeof createJuryInputSchema>;
+export type CreateJuryInvitationInput = z.infer<
+  typeof createJuryInvitationInputSchema
+>;
 
-export const createJury = ({
+type CreateJuryInvitationResponse = {
+  message: string;
+  data: JuryInvitation;
+};
+
+export const createJuryInvitation = ({
   data,
 }: {
-  data: CreateJuryInput;
-}): Promise<{ data: Jury }> => {
-  return api.post("/juries", data);
+  data: CreateJuryInvitationInput;
+}): Promise<CreateJuryInvitationResponse> => {
+  const { eventId, ...invitationData } = data;
+  return api.post(`/invitations/events/${eventId}/jurors`, invitationData);
 };
 
-type UseCreateJuryOptions = {
-  mutationConfig?: MutationConfig<typeof createJury>;
+type UseCreateJuryInvitationOptions = {
+  mutationConfig?: MutationConfig<typeof createJuryInvitation>;
 };
 
-export const useCreateJury = ({
+export const useCreateJuryInvitation = ({
   mutationConfig,
-}: UseCreateJuryOptions = {}) => {
+}: UseCreateJuryInvitationOptions = {}) => {
   const queryClient = useQueryClient();
   const { onSuccess, ...restConfig } = mutationConfig || {};
 
   return useMutation({
     onSuccess: (data, variables, ...args) => {
       queryClient.invalidateQueries({
-        queryKey: ["juries"],
+        queryKey: ["jury-invitations"],
       });
       onSuccess?.(data, variables, ...args);
     },
     ...restConfig,
-    mutationFn: createJury,
+    mutationFn: createJuryInvitation,
   });
 };
