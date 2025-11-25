@@ -1,7 +1,6 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
-import NextLink from "next/link";
+import { useRouter, useSearchParams } from 'next/navigation';
 
 import { paths } from "@/config/paths";
 import { LoginForm } from "@/features/auth/components/login-form";

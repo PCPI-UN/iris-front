@@ -9,6 +9,54 @@ import { Spinner } from "@/components/ui/spinner"
 import { AvatarGroup } from "@/features/projects/components/avatar-icon"
 import { useRouter } from "next/navigation"
 
+const MOCK_PROJECTS = [
+  {
+    id: "p1",
+    name: "Sistema de Monitoreo Ambiental con IoT",
+    description:
+      "Proyecto enfocado en medir calidad de aire, ruido y temperatura usando sensores IoT conectados a la nube.",
+    participants: [
+      { firstName: "María", lastName: "González" },
+      { firstName: "Carlos", lastName: "Rodríguez" },
+      { firstName: "Ana", lastName: "Martínez" },
+    ],
+  documents: [
+    { id: "1", type: "POSTER", url: "#", name: "Póster del Proyecto" },
+    { id: "2", type: "ASSOCIATED_DOCUMENT", url: "#", name: "Documento Técnico" },
+    { id: "3", type: "ASSOCIATED_DOCUMENT", url: "#", name: "Manual de Usuario" },
+    ],
+    eventNumber: 12,
+  },
+  {
+    id: "p2",
+    name: "Robot Autónomo para Búsqueda y Rescate",
+    description:
+      "Robot diseñado para identificar víctimas en zonas de riesgo utilizando visión artificial y mapeo 3D.",
+    participants: [
+      { firstName: "Sofía", lastName: "Ramírez" },
+      { firstName: "Diego", lastName: "Pérez" },
+    ],
+    documents: [
+      { id: "3", type: "POSTER", url: "#", name: "Póster del Robot" },
+    ],
+    eventNumber: 7,
+  },
+  {
+    id: "p3",
+    name: "Aplicación de Energía Solar Inteligente",
+    description:
+      "Sistema que optimiza el uso de paneles solares mediante análisis predictivo y monitoreo en tiempo real.",
+    participants: [
+      { firstName: "Luis", lastName: "Torres" },
+      { firstName: "Camila", lastName: "Hernández" },
+      { firstName: "Javier", lastName: "Mendoza" },
+    ],
+    documents: [],
+    eventNumber: 21,
+  },
+];
+
+
 type ProjectListViewProps = {
     eventId: string;
 };
@@ -16,12 +64,14 @@ type ProjectListViewProps = {
 export function ProjectListView({ eventId }: ProjectListViewProps) {
     const router = useRouter();
 
-    const { data, isLoading } = useJuryProjects({
-        page: 1,
-        eventId: eventId,
-    });
+    // const { data, isLoading } = useJuryProjects({
+    //     page: 1,
+    //     eventId: eventId,
+    // });
 
-    const projects = data?.data || [];
+    //const projects = data?.data || [];
+    const projects = MOCK_PROJECTS;
+    const isLoading = false;
 
     if (isLoading) {
         return (
@@ -51,7 +101,7 @@ export function ProjectListView({ eventId }: ProjectListViewProps) {
                     Back
                 </Button>
             </div>
-            <div className="grid gap-6 p-8 sm:grid-cols-1 lg:grid-cols-2">
+            <div className="grid gap-6 p-4 sm:grid-cols-1 lg:grid-cols-2">
                 {projects.map((project) => (
                     <Card
                         key={project.id}
@@ -75,13 +125,29 @@ export function ProjectListView({ eventId }: ProjectListViewProps) {
                                     )}
                                 </div>
 
-                                <div className="flex items-center gap-4 w-full">
-                                    <div className="flex items-center text-default-400 gap-2 min-w-[100px]">
-                                        <Users size={18} />
-                                        <span>Miembros:</span>
-                                    </div>
-                                    <div className="flex-1">
-                                    </div>
+                 <div className="space-y-3 md:space-y-4">
+                   <div className="flex items-center gap-2 text-xs md:text-sm">
+                     <Users className="h-4 w-4 text-muted-foreground" />
+                     <span className="font-medium">Miembros</span>
+                   </div>
+ 
+                   <div className="flex flex-wrap gap-2">
+                     {project.participants.map((participant, idx) => (
+                       <div
+                         key={idx}
+                         className="flex items-center gap-2 bg-muted/10 rounded-full pr-3 py-1"
+                         title={`${participant.firstName} ${participant.lastName}`}
+                       >
+                         <div className="h-8 w-8 md:h-10 md:w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium text-xs md:text-sm flex-shrink-0">
+                           {participant.firstName[0]}
+                           {participant.lastName[0]}
+                         </div>
+                         <span className="text-xs md:text-sm font-medium">
+                           {participant.firstName} {participant.lastName}
+                         </span>
+                       </div>
+                     ))}
+                   </div>
                                 </div>
 
                                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -92,7 +158,7 @@ export function ProjectListView({ eventId }: ProjectListViewProps) {
                             <Button
                                 className="mt-6 w-full transition-transform hover:scale-[1.01]"
                                 color="primary"
-                                onPress={() => router.push(paths.app.evaluations.getHref(project.id))}
+                                onPress={() => router.push(paths.app.test.getHref())}
                             >Evaluate Project</Button>
                         </CardBody>
                     </Card>

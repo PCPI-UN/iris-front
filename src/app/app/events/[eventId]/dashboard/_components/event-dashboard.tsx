@@ -33,24 +33,13 @@ export const EventDashboard = ({ eventId }: EventDashboardProps) => {
   }
 
   const events = eventsQuery.data?.data || [];
-  const currentEvent = events.find(event => event.id === eventId);
-
-  // Si no se encuentra el evento, mostrar mensaje de error
-  if (!currentEvent) {
-    return (
-      <div className="flex flex-col items-center justify-center h-64 space-y-4">
-        <p className="text-lg text-default-500">Event not found</p>
-        <p className="text-sm text-default-400">You don't have access to this event</p>
-      </div>
-    );
-  }
 
   // Renderizar el dashboard según el rol del usuario en este evento
-  if (currentEvent.userEventRole === 'JURY') {
+  if (events[0].role.name === 'Juror') {
     return <JuryDashboard eventId={eventId} />;
   }
 
-  if (currentEvent.userEventRole === 'STUDENT') {
+  if (events[0].role.name === 'Participant') {
     return <StudentDashboard eventId={eventId} />;
   }
 

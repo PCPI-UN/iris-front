@@ -10,6 +10,12 @@ const nextConfig = {
   turbopack: {
     root: __dirname,
   },
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      process.removeAllListeners('warning');
+    }
+    return config;
+  },
   async rewrites() {
     return [
       {

@@ -4,8 +4,6 @@ import { api } from "@/lib/api-client";
 import { MutationConfig } from "@/lib/react-query";
 import { Jury } from "@/types/api";
 
-import { getJuriesQueryOptions } from "./get-juries";
-
 export const deleteJury = ({
   juryId,
 }: {

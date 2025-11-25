@@ -5,8 +5,6 @@ import { api } from "@/lib/api-client";
 import { MutationConfig } from "@/lib/react-query";
 import { Jury } from "@/types/api";
 
-import { getJuriesQueryOptions } from "./get-juries";
-
 export const updateJuryInputSchema = z.object({
   email: z.string().min(1, "Required").email("Invalid email address").optional(),
   eventIds: z.array(z.string()).min(1, "At least one event is required").optional(),

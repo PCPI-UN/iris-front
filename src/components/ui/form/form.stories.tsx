@@ -73,7 +73,7 @@ export const WithSelect: Story = {
           const formData = new FormData(form);
           const data = Object.fromEntries(formData);
           setSubmitted(true);
-          console.log(data);
+          // ...existing code...
         }}
         className="max-w-md space-y-4"
       >
@@ -108,7 +108,7 @@ export const WithSwitch: Story = {
           const form = e.target as HTMLFormElement;
           const formData = new FormData(form);
           const data = Object.fromEntries(formData);
-          console.log(data);
+          // ...existing code...
         }}
         className="max-w-md space-y-4"
       >

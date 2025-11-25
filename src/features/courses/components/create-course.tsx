@@ -77,7 +77,6 @@ export const CreateCourse = () => {
                 
                 const data = {
                   code: rawData.code as string,
-                  name: rawData.name as string,
                   description: rawData.description as string,
                   eventId: Number(selectedEvent),
                   status: "active" as const,
@@ -119,13 +118,6 @@ export const CreateCourse = () => {
                   isRequired 
                 />
 
-                <Input 
-                  label="Course name" 
-                  name="name" 
-                  placeholder="Introduction to Programming"
-                  isRequired 
-                />
-                
                 <Textarea 
                   label="Description" 
                   name="description" 

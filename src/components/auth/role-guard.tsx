@@ -26,9 +26,9 @@ export function RoleGuard({
 
   useEffect(() => {
     if (!isLoading) {
-      const hasPermission = user && roles.some(role => user.platformRoles.some(userRole => userRole.name === role))
       
-      // Si no tiene permiso, redirigir a /app siempre
+      const hasPermission = user && roles.some(role => user.platformRoles.some(userRole => userRole.name === role))
+
       if (!hasPermission) {
         const redirectPath = redirectTo || '/app'
         router.replace(redirectPath)
@@ -36,7 +36,6 @@ export function RoleGuard({
     }
   }, [isLoading, user, roles, redirectTo, router])
 
-  // Mostrar loading mientras se obtiene el usuario
   if (isLoading) {
     return (
       <>
