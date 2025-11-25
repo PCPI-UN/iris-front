@@ -97,12 +97,14 @@ export const UpdateProject = ({ projectId }: UpdateProjectProps) => {
                   label="Title"
                   name="title"
                   defaultValue={project?.name ?? ""}
+                  maxLength={255}
                   isRequired
                 />
                 <Textarea
                   label="Description"
                   name="description"
                   defaultValue={project?.description ?? ""}
+                  maxLength={3000}
                   isRequired
                 />
                 <Input
