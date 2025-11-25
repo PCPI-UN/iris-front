@@ -21,6 +21,7 @@ import { Select, SelectItem } from "@/components/ui/select";
 import { useEventsDropdown } from "@/features/events/api/get-events-dropdown";
 import { InviteModal } from "./invite-modal";
 import { AcceptInvitationModal } from "./accept-invitation-modal";
+import { ResendInvitationButton } from "./resend-invitation-button";
 import type { InvitationStatus } from "@/types/api";
 
 export const JuriesList = () => {
@@ -36,7 +37,75 @@ export const JuriesList = () => {
     const n = Number(raw);
     return Number.isFinite(n) && n > 0 ? n : 1;
   }, [searchParams]);
+  const page = useMemo(() => {
+    const raw = searchParams?.get("page") || "1";
+    const n = Number(raw);
+    return Number.isFinite(n) && n > 0 ? n : 1;
+  }, [searchParams]);
 
+  const setPageInUrl = useCallback(
+    (n: number) => {
+      const sp = new URLSearchParams(searchParams?.toString());
+      sp.set("page", String(n));
+      router.replace(`?${sp.toString()}`, { scroll: false });
+    },
+    [router, searchParams]
+  );
+
+  const eventsQuery = useEventsDropdown();
+  const events = eventsQuery.data?.data || [];
+
+  const juriesQuery = useJuryInvitations({
+    eventId: selectedEventKey ? Number(selectedEventKey) : undefined,
+    page,
+    limit: rowsPerPage,
+  });
+
+  const invitations = juriesQuery.data?.invitations ?? [];
+  const meta = juriesQuery.data?.meta;
+  const isLoading = juriesQuery.isLoading || eventsQuery.isLoading;
+
+  const getStatusColor = (status: InvitationStatus) => {
+    switch (status) {
+      case 1: // ACCEPTED
+        return "success";
+      case 2: // DECLINED
+        return "danger";
+      case 0: // PENDING
+        return "warning";
+      case 3: // EXPIRED
+        return "default";
+      default:
+        return "default";
+    }
+  };
+
+  const getStatusLabel = (status: InvitationStatus) => {
+    switch (status) {
+      case 1:
+        return "Aceptado";
+      case 2:
+        return "Rechazado";
+      case 0:
+        return "Pendiente";
+      case 3:
+        return "Expirado";
+      default:
+        return "Desconocido";
+    }
+  };
+
+  const onSearchChange = useCallback(
+    (value?: string) => {
+      if (value) {
+        setFilterValue(value);
+        setPageInUrl(1);
+      } else {
+        setFilterValue("");
+      }
+    },
+    [setPageInUrl]
+  );
   const setPageInUrl = useCallback(
     (n: number) => {
       const sp = new URLSearchParams(searchParams?.toString());
@@ -297,7 +366,13 @@ export const JuriesList = () => {
               <TableCell align="center">
                 <div className="flex items-center justify-center gap-2">
                   {item.status === 0 && (
-                    <AcceptInvitationModal invitation={item} />
+                    <>
+                      <AcceptInvitationModal invitation={item} />
+                      <ResendInvitationButton invitation={item} />
+                    </>
+                  )}
+                  {item.status === 3 && (
+                    <ResendInvitationButton invitation={item} />
                   )}
                 </div>
               </TableCell>
