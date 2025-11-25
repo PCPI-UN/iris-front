@@ -29,8 +29,6 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(loginUrl)
   }
 
-  // El usuario está autenticado, permitir acceso
-  // La autorización de roles se maneja en los componentes con RoleGuard
   return NextResponse.next()
 }
 

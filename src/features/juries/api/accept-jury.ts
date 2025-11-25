@@ -1,40 +1,49 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { z } from "zod";
 
 import { api } from "@/lib/api-client";
 import { MutationConfig } from "@/lib/react-query";
-import { Jury } from "@/types/api";
 
-import { getJuriesQueryOptions } from "./get-juries";
+export const acceptInvitationInputSchema = z.object({
+  token: z.string().min(1, "Token is required"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  microsoftToken: z.string().optional(),
+});
 
-export const acceptJury = ({
-  juryId,
+export type AcceptInvitationInput = z.infer<typeof acceptInvitationInputSchema>;
+
+type AcceptInvitationResponse = {
+  message: string;
+};
+
+export const acceptInvitation = ({
+  data,
 }: {
-  juryId: string;
-}): Promise<{ data: Jury }> => {
-  return api.patch(`/juries/${juryId}`, {
-    invitationStatus: "accepted",
-  });
+  data: AcceptInvitationInput;
+}): Promise<AcceptInvitationResponse> => {
+  return api.post(`/invitations/accept`, data);
 };
 
-type UseAcceptJuryOptions = {
-  mutationConfig?: MutationConfig<typeof acceptJury>;
+type UseAcceptInvitationOptions = {
+  mutationConfig?: MutationConfig<typeof acceptInvitation>;
 };
 
-export const useAcceptJury = ({
+export const useAcceptInvitation = ({
   mutationConfig,
-}: UseAcceptJuryOptions = {}) => {
+}: UseAcceptInvitationOptions = {}) => {
   const queryClient = useQueryClient();
   const { onSuccess, ...restConfig } = mutationConfig || {};
 
   return useMutation({
     onSuccess: (data, variables, ...args) => {
       queryClient.invalidateQueries({
-        queryKey: ["juries"],
+        queryKey: ["jury-invitations"],
       });
       onSuccess?.(data, variables, ...args);
     },
     ...restConfig,
-    mutationFn: acceptJury,
+    mutationFn: acceptInvitation,
   });
 };
-

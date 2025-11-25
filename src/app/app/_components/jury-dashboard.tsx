@@ -16,10 +16,10 @@ export const JuryDashboard = ({ eventId }: JuryDashboardProps = {}) => {
             <div className='dashboard-page space-y-4 md:space-y-6'>
                 <div className="space-y-1 md:space-y-2">
                     <h1 className="text-2xl md:text-3xl font-bold">
-                        Welcome back, {`${user.data?.firstName} ${user.data?.lastName}`}
+                        Project Jury
                     </h1>
                     <p className="text-sm md:text-base text-muted-foreground">
-                        View and evaluate projects for this event
+                        Review and evaluate projects
                     </p>
                 </div>
                 <div className="w-full overflow-x-auto">

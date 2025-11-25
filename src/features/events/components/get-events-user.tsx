@@ -11,136 +11,192 @@ import { useMyEvents } from "../api/get-my-events";
 import dayjs from "dayjs";
 
 export const formatDateShort = (date: string | number) => {
-  return dayjs(date).format('MMM D, YYYY');
+  return {
+    day: dayjs(date).format("MMM D, YYYY"),
+    time: dayjs(date).format("h:mm A"),
+  };
 };
 
 export const GetEventsUser = () => {
-    const searchParams = useSearchParams();
-    const router = useRouter();
-    const page = searchParams?.get("page") ? Number(searchParams.get("page")) : 1;
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const page = searchParams?.get("page") ? Number(searchParams.get("page")) : 1;
 
-    const eventsQuery = useMyEvents({
-        page: page,
-    });
+  const eventsQuery = useMyEvents({
+    page: page,
+  });
 
-    if (eventsQuery.isLoading) {
-        return (
-            <div className="flex h-48 w-full items-center justify-center">
-                <Spinner size="lg" />
-            </div>
-        );
-    }
-
-    const events = eventsQuery.data?.data;
-    const meta = eventsQuery.data?.meta;
-
-    if (!events) return null;
-
-    if (events.length === 0) {
-        return (
-            <div className="flex flex-col items-center justify-center h-64 space-y-4">
-                <p className="text-lg text-default-500">No events found</p>
-                <p className="text-sm text-default-400">You are not enrolled in any events yet</p>
-            </div>
-        );
-    }
-
-    const handlePageChange = (newPage: number) => {
-        router.push(`?page=${newPage}`);
-    };
-
-    const getRoleIcon = (role?: "STUDENT" | "JURY") => {
-        if (role === "JURY") return <Scale className="h-4 w-4" />;
-        if (role === "STUDENT") return <GraduationCap className="h-4 w-4" />;
-        return null;
-    };
-
-    const getRoleColor = (role?: "STUDENT" | "JURY") => {
-        if (role === "JURY") return "warning";
-        if (role === "STUDENT") return "primary";
-        return "default";
-    };
-
-    const getRoleLabel = (role?: "STUDENT" | "JURY") => {
-        if (role === "JURY") return "Juror";
-        if (role === "STUDENT") return "Student";
-        return "Unknown";
-    };
-
+  if (eventsQuery.isLoading) {
     return (
-        <div className="space-y-4">
-            <div className="grid p-8 gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {events.map((event) => (
-                    <Card shadow="sm" key={event.id} className="glass-card">
-                        <CardBody className="p-6 space-y-4 flex flex-col">
-                            <div className="space-y-2">
-                                <div className="flex items-start justify-between gap-2">
-                                    <h3 className="text-xl font-semibold flex-1">{event.name}</h3>
-                                    {event.userEventRole && (
-                                        <Chip
-                                            color={getRoleColor(event.userEventRole)}
-                                            variant="flat"
-                                            size="sm"
-                                            startContent={getRoleIcon(event.userEventRole)}
-                                        >
-                                            {getRoleLabel(event.userEventRole)}
-                                        </Chip>
-                                    )}
-                                </div>
-                                <p className="text-sm text-default-500">{event.description}</p>
-                            </div>
-
-                            <div className="flex flex-col gap-2 text-sm">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                        <Calendar className="h-4 w-4 text-default-400" />
-                                        <span className="text-default-400">Start:</span>
-                                        <span>{formatDateShort(event.startDate)}</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <Calendar className="h-4 w-4 text-default-400" />
-                                        <span className="text-default-400">End:</span>
-                                        <span>{formatDateShort(event.endDate)}</span>
-                                    </div>
-                                </div>
-                                <div className="flex items-center justify-between p-1">
-                                    <span className="text-sm text-default-400">Evaluations:</span>
-                                    <span
-                                        className={`text-sm font-medium ${
-                                            event.evaluationsOpened === true
-                                                ? "text-green-600"
-                                                : "text-red-600"
-                                        }`}
-                                    >
-                                        {event.evaluationsOpened === true ? "Open" : "Closed"}
-                                    </span>
-                                </div>
-                            </div>
-
-                            <div className="mt-auto pt-2">
-                                <Button
-                                    onPress={() => router.push(`/app/events/${event.id}/dashboard`)}
-                                    color="primary"
-                                    className="w-full transition-transform hover:scale-[1.01]"
-                                >
-                                    {event.userEventRole === "JURY" ? "View Projects" : "View My Project"}
-                                </Button>
-                            </div>
-                        </CardBody>
-                    </Card>
-                ))}
-            </div>
-
-            {meta && meta.totalPages > 1 && (
-                <div className="flex justify-center mt-6">
-                    <Pagination
-                        total={meta.totalPages}
-                        page={page}
-                        onChange={handlePageChange}
-                        showControls
-                    />
-                </div>
-            )}
-        </div>
+      <div className="flex h-48 w-full items-center justify-center">
+        <Spinner size="lg" />
+      </div>
     );
+  }
+
+  const events = eventsQuery.data?.data;
+  const meta = eventsQuery.data?.meta;
+
+  if (!events) return null;
+
+  if (events.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 space-y-4">
+        <p className="text-lg text-default-500">No events found</p>
+        <p className="text-sm text-default-400">
+          You are not enrolled in any events yet
+        </p>
+      </div>
+    );
+  }
+
+  const handlePageChange = (newPage: number) => {
+    router.push(`?page=${newPage}`);
+  };
+
+  const getRoleIcon = (role?: "Participant" | "Juror") => {
+    if (role === "Juror") return <Scale className="h-4 w-4" />;
+    if (role === "Participant") return <GraduationCap className="h-4 w-4" />;
+    return null;
+  };
+
+  const getRoleColor = (role?: "Participant" | "Juror") => {
+    if (role === "Juror") return "warning";
+    if (role === "Participant") return "primary";
+    return "default";
+  };
+
+  const getRoleLabel = (role?: "Participant" | "Juror") => {
+    if (role === "Juror") return "Juror";
+    if (role === "Participant") return "Participant";
+    return "Unknown";
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="grid p-4 gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {events.map((event) => {
+          const start = formatDateShort(event.startDate);
+          const end = formatDateShort(event.endDate);
+
+          return (
+            <Card shadow="sm" key={event.id} className="glass-card">
+              <CardBody className="p-6 space-y-4 flex flex-col">
+                <div className="space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <h3 className="text-xl font-semibold flex-1">
+                      {event.name}
+                    </h3>
+
+                    {event.role && (
+                      <Chip
+                        color={getRoleColor(event.role.name)}
+                        variant="flat"
+                        size="sm"
+                        startContent={getRoleIcon(event.role.name)}
+                      >
+                        {getRoleLabel(event.role.name)}
+                      </Chip>
+                    )}
+                  </div>
+
+                  <p className="text-sm text-default-500">
+                    {event.description}
+                  </p>
+                </div>
+
+                {/* DATE SECTION FIXED */}
+                <div className="flex flex-col gap-2 text-m">
+                  <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                    {/* START */}
+                    <div className="flex items-start gap-2">
+                      <Calendar className="h-4 w-4 text-default-400 mt-1" />
+                      <div className="flex flex-col leading-tight">
+                        <span className="text-default-400">Start:</span>
+                        <span>{start.day}</span>
+                        <span className="text-xs text-default-500">
+                          {start.time}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* END */}
+                    <div className="flex items-start gap-2">
+                      <Calendar className="h-4 w-4 text-default-400 mt-1" />
+                      <div className="flex flex-col leading-tight">
+                        <span className="text-default-400">End:</span>
+                        <span>{end.day}</span>
+                        <span className="text-xs text-default-500">
+                          {end.time}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Evaluations */}
+                  <div className="flex items-center justify-between p-1">
+                    <span className="text-sm text-default-400">
+                      Evaluations:
+                    </span>
+                    <span
+                      className={`text-sm font-medium ${
+                        event.evaluationsOpened === true
+                          ? "text-green-600"
+                          : "text-red-600"
+                      }`}
+                    >
+                      {event.evaluationsOpened === true ? "Open" : "Closed"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* BUTTON */}
+                <div className="mt-auto pt-2">
+                  <Button
+                    onPress={() =>
+                      router.push(`/app/events/${event.id}/dashboard`)
+                    }
+                    color={
+                      event.evaluationsOpened ? "primary" : "default"
+                    }
+                    className={`
+                      w-full 
+                      transition-transform
+                      ${
+                        event.evaluationsOpened
+                          ? "hover:scale-[1.01]"
+                          : "opacity-70 cursor-not-allowed bg-default-200 dark:bg-default-100"
+                      }
+                      md:text-base text-sm
+                      md:py-3 py-2
+                      rounded-xl
+                      font-medium
+                    `}
+                    isDisabled={!event.evaluationsOpened}
+                  >
+                    {event.evaluationsOpened
+                      ? event.role.name === "Juror"
+                        ? "View Projects"
+                        : "View My Project"
+                      : "La feria aún no ha comenzado"}
+                  </Button>
+                </div>
+              </CardBody>
+            </Card>
+          );
+        })}
+      </div>
+
+      {meta && meta.totalPages > 1 && (
+        <div className="flex justify-center mt-6">
+          <Pagination
+            total={meta.totalPages}
+            page={page}
+            onChange={handlePageChange}
+            showControls
+          />
+        </div>
+      )}
+    </div>
+  );
 };

@@ -8,13 +8,13 @@ import { z } from "zod";
 
 // Schema de entrada
 export const createProjectInputSchema = z.object({
-  name: z.string().min(2).max(100),
-  description: z.string().max(500).optional(),
+  name: z.string().min(2).max(255),
+  description: z.string().max(3000),
   eventId: z.string().min(1),
   courseId: z.string().min(1),
   participants: z.string().min(1), // JSON string
   documents: z.string().min(1),    // JSON string
-  files: z.array(z.instanceof(File)).min(1),
+  //files: z.array(z.instanceof(File)).min(1),
 });
 
 export type CreateProjectInput = z.infer<typeof createProjectInputSchema>;
