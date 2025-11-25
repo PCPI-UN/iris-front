@@ -52,6 +52,9 @@ RUN apk add --no-cache dumb-init && \
 # Copy all necessary files from builder
 COPY --from=builder --chown=nextjs:nodejs /app /app
 
+# Asegurar permisos de escritura para nextjs
+RUN chown -R nextjs:nodejs /app
+
 USER nextjs
 
 EXPOSE ${PORT}
