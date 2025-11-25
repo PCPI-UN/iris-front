@@ -16,7 +16,7 @@ RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
     pnpm install
 
 # ========================
-# Stage 3: Builder
+# Stage 3: Development
 # ========================
 FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
@@ -33,17 +33,15 @@ ENV NEXT_PUBLIC_ENABLE_API_MOCKING=${NEXT_PUBLIC_ENABLE_API_MOCKING}
 ENV NEXT_PUBLIC_URL=${NEXT_PUBLIC_URL}
 ENV NEXT_PUBLIC_MOCK_API_PORT=${NEXT_PUBLIC_MOCK_API_PORT}
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV NODE_ENV=production
-
-RUN pnpm build
+ENV NODE_ENV=development
 
 # ========================
-# Stage 4: Production runner
+# Stage 4: Development runner
 # ========================
 FROM base AS runner
 
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV NODE_ENV=production
+ENV NODE_ENV=development
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
@@ -52,10 +50,7 @@ RUN apk add --no-cache dumb-init && \
     adduser --system --uid 1001 nextjs
 
 # Copy all necessary files from builder
-COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
-COPY --from=builder --chown=nextjs:nodejs /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
-COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
+COPY --from=builder --chown=nextjs:nodejs /app /app
 
 USER nextjs
 
@@ -64,4 +59,4 @@ EXPOSE ${PORT}
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD node -e "require('http').get('http://localhost:' + process.env.PORT, (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})" || exit 1
 
-CMD ["dumb-init", "pnpm", "start"]
+CMD ["dumb-init", "pnpm", "dev"]
