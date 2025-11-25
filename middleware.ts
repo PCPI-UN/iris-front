@@ -16,6 +16,10 @@ function isPublicPath(pathname: string): boolean {
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
 
+  // Mostrar todas las cookies recibidas para depuración
+  const allCookies = Object.fromEntries(req.cookies.getAll().map(cookie => [cookie.name, cookie.value]))
+  console.log('Middleware - Todas las cookies:', allCookies)
+
   if (isPublicPath(pathname)) {
     return NextResponse.next()
   }
