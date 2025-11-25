@@ -7,7 +7,6 @@ import { Meta, Project } from "@/types/api";
 export const getProjects = async (
   { page, eventId, state }: { page?: number; eventId?: number, state?: string } = { page: 1 }
 ): Promise<{ data: Project[]; meta: Meta }> => {
-  console.log("Fetching projects for eventId:", eventId, "page:", page);
   const response = await api.get<{
     items: Project[];
     page: number;

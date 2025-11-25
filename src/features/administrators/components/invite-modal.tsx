@@ -86,8 +86,6 @@ export const InviteModal = () => {
                       title: "Error de validación",
                       message: firstError?.message || "Por favor verifica los datos ingresados",
                     });
-                  } else {
-                    console.error("Validation error:", error);
                   }
                 }
               }}

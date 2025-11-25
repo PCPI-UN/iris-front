@@ -156,7 +156,6 @@ export const InviteModal = () => {
                   await createJuryMutation.mutateAsync({ data: values });
                 } catch (error) {
                   // Validation errors are handled by the schema
-                  console.error("Validation error:", error);
                 }
               }}
             >

@@ -27,7 +27,6 @@ import ReactCrop, {
 import { cn } from '@/lib/utils';
 
 import 'react-image-crop/dist/ReactCrop.css';
-import { o } from 'node_modules/msw/lib/core/HttpResponse-DGUjNQHG.mjs';
 
 const centerAspectCrop = (
   mediaWidth: number,
