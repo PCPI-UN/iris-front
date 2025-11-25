@@ -33,8 +33,6 @@ export const EventDashboard = ({ eventId }: EventDashboardProps) => {
   }
 
   const events = eventsQuery.data?.data || [];
-  console.log(events);
-
 
   // Renderizar el dashboard según el rol del usuario en este evento
   if (events[0].role.name === 'Juror') {
