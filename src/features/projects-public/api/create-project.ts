@@ -14,7 +14,7 @@ export const createProjectInputSchema = z.object({
   courseId: z.string().min(1),
   participants: z.string().min(1), // JSON string
   documents: z.string().min(1),    // JSON string
-  files: z.array(z.instanceof(File)).min(1),
+  //files: z.array(z.instanceof(File)).min(1),
 });
 
 export type CreateProjectInput = z.infer<typeof createProjectInputSchema>;
