@@ -5,8 +5,7 @@ import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 
 export const SupportButton = () => {
   const handleDiscordClick = () => {
-    // Aquí puedes agregar el enlace a tu servidor de Discord
-    window.open('https://discord.gg/emYJzYyHuz', '_blank');
+    window.open('https://discord.gg/AaHvrBJ5t7', '_blank');
   };
 
   return (
