@@ -116,7 +116,7 @@ export const UpdateCourse = ({ courseId }: UpdateCourseProps) => {
 
                 const values = await updateCourseInputSchema.parseAsync(data);
 
-                await updateCourseMutation.mutateAsync({
+                updateCourseMutation.mutate({
                   data: values,
                 });
               }}
