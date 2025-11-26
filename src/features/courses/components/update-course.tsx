@@ -115,10 +115,14 @@ export const UpdateCourse = ({ courseId }: UpdateCourseProps) => {
                 };
 
                 const values = await updateCourseInputSchema.parseAsync(data);
-
-                updateCourseMutation.mutate({
+                await updateCourseMutation.mutateAsync({
                   data: values,
                 });
+                addNotification({
+                  type: "success",
+                  title: "Course Updated",
+                });
+                onClose();
               }}
             >
               <ModalHeader className="flex flex-col gap-1">
