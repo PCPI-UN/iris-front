@@ -27,9 +27,18 @@ export const useDeleteCriteria = ({
 
   return useMutation({
     onSuccess: (data, variables, ...args) => {
+      // Remove the specific criterion query from cache to avoid 404 refetch
+      queryClient.removeQueries({
+        queryKey: ["criterions", variables.criterionId],
+      });
+
+      // Invalidate list queries to refresh the list
       queryClient.invalidateQueries({
         queryKey: ["criterions"],
+        exact: false,
+        refetchType: "active",
       });
+
       onSuccess?.(data, variables, ...args);
     },
     ...restConfig,

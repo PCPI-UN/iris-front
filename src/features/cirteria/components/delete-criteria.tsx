@@ -14,10 +14,10 @@ import { useNotifications } from "@/components/ui/notifications";
 import { useUser } from "@/lib/auth";
 
 import { useDeleteCriteria } from "../api/delete-criteria";
-import { useDisclosure } from '@/hooks/use-disclosure';
+import { useDisclosure } from "@/hooks/use-disclosure";
 
 type DeleteCriteriaProps = {
-  criterionId: string;
+  criterionId: number;
 };
 
 export const DeleteCriteria = ({ criterionId }: DeleteCriteriaProps) => {
@@ -47,7 +47,7 @@ export const DeleteCriteria = ({ criterionId }: DeleteCriteriaProps) => {
   return (
     <>
       <Button
-      className="w-full"
+        className="w-full"
         variant="shadow"
         size="sm"
         color="danger"
@@ -63,13 +63,14 @@ export const DeleteCriteria = ({ criterionId }: DeleteCriteriaProps) => {
               <ModalHeader className="flex flex-col gap-1">
                 <h2 className="text-lg font-bold">Delete Criteria</h2>
                 <p className="text-sm font-normal text-gray-500">
-                  Are you sure you want to delete this criteria? This action cannot be undone.
+                  Are you sure you want to delete this criteria? This action
+                  cannot be undone.
                 </p>
               </ModalHeader>
               <ModalBody>
                 <p className="text-sm text-gray-500">
-                  This will permanently delete the evaluation criteria. Any evaluations
-                  that reference this criteria may be affected.
+                  This will permanently delete the evaluation criteria. Any
+                  evaluations that reference this criteria may be affected.
                 </p>
               </ModalBody>
               <ModalFooter>
@@ -92,4 +93,3 @@ export const DeleteCriteria = ({ criterionId }: DeleteCriteriaProps) => {
     </>
   );
 };
-

@@ -207,8 +207,9 @@ export type Criterion = Entity<{
   name: string;
   description: string;
   weight: number;
-  criterionCourses: CriterionCourse[];
-  createdAt: number;
+  active: boolean;
+  courseIds: number[];
+  createdAt?: number;
 }>;
 
 export type CriterionCourse = Entity<{

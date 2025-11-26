@@ -129,8 +129,8 @@ export const CriteriaList = () => {
       ) : (
         <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
           {criteria.map((criterion) => (
-            <Card shadow="sm" key={criterion.id} className="glass-card">
-              <CardBody className="p-4 sm:p-6 space-y-3 sm:space-y-4">
+            <Card shadow="sm" key={criterion.id} className="glass-card ">
+              <CardBody className="p-4 sm:p-6 space-y-3 sm:space-y-4 flex flex-col justify-between">
                 {/* Nombre, descripción y peso */}
                 <div className="space-y-2">
                   <div className="flex items-start justify-between gap-2">

@@ -15,25 +15,24 @@ export const updateCriteriaInputSchema = z.object({
     .min(0, "Weight must be greater than or equal to 0")
     .optional(),
   eventId: z.number().min(1, "Event is required").optional(),
-  criterionCourse: z
-    .array(
-      z.object({
-        courseId: z.number().min(1, "Course is required"),
-      })
-    )
-    .optional(),
+  courseIds: z.array(z.number().min(1, "Course is required")).optional(),
 });
 
 export type UpdateCriteriaInput = z.infer<typeof updateCriteriaInputSchema>;
 
-export const updateCriteria = ({
+export const updateCriteria = async ({
   data,
   criterionId,
 }: {
   data: UpdateCriteriaInput;
   criterionId: number;
 }): Promise<{ data: Criterion }> => {
-  return api.put(`/criterions/${criterionId}`, data);
+  const response = await api.put<Criterion>(`/criterions/${criterionId}`, data);
+
+  // If the response has a 'data' property, use it; otherwise wrap the response
+  return {
+    data: (response as any).data || response,
+  };
 };
 
 type UseUpdateCriteriaOptions = {
@@ -53,7 +52,7 @@ export const useUpdateCriteria = ({
         queryKey: ["criterions"],
       });
       queryClient.refetchQueries({
-        queryKey: getCriterionQueryOptions(data.data.id).queryKey,
+        queryKey: getCriterionQueryOptions(variables.criterionId).queryKey,
       });
       onSuccess?.(data, variables, ...args);
     },
