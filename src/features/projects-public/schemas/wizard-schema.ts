@@ -17,7 +17,7 @@ export const projectSchema = z.object({
 export const documentsSchema = z.object({
   poster: z
     .instanceof(File, { message: 'Debe subir un poster' })
-    .refine(file => file.size <= 25 * 1024 * 1024, 'El archivo debe ser menor a 25MB')
+    .refine(file => file.size <= 4 * 1024 * 1024, 'El archivo debe ser menor a 4MB')
     .refine(
       file => ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'].includes(file.type),
       'Solo se permiten PDF, JPG o PNG'
@@ -26,7 +26,7 @@ export const documentsSchema = z.object({
     .array(
       z
         .instanceof(File)
-        .refine(file => file.size <= 25 * 1024 * 1024, 'El archivo debe ser menor a 25MB')
+        .refine(file => file.size <= 4 * 1024 * 1024, 'Cada archivo debe ser menor a 4MB')
     )
     .default([]),
 })
@@ -35,7 +35,16 @@ export const wizardSchema = z.object({
   participants: z.array(participantSchema).min(1, 'Debe agregar al menos un participante'),
   project: projectSchema,
   documents: documentsSchema,
-})
+}).refine(
+  (data) => {
+    const totalSize = (data.poster?.size || 0) + (Array.isArray(data.additionalDocuments) ? data.additionalDocuments.reduce((acc, file) => acc + (file?.size || 0), 0) : 0);
+    return totalSize <= 25 * 1024 * 1024;
+  },
+  {
+    message: 'El tamaño total de los archivos no debe superar 25MB',
+    path: ['documents'],
+  }
+)
 
 export type ParticipantData = z.infer<typeof participantSchema>
 export type ProjectData = z.infer<typeof projectSchema>
