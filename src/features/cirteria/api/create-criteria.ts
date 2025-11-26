@@ -44,7 +44,7 @@ export const useCreateCriteria = ({
   return useMutation({
     onSuccess: (data, variables, ...args) => {
       queryClient.invalidateQueries({
-        queryKey: ["criterion"],
+        queryKey: ["criterions"],
       });
       onSuccess?.(data, variables, ...args);
     },

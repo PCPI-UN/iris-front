@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { z } from "zod";
 import { Eye, EyeOff } from "lucide-react";
 import { Form } from "@/components/ui/form";
@@ -25,9 +25,20 @@ const changePasswordSchema = z
     path: ["confirmPassword"],
   });
 
-export const ChangePasswordForm = () => {
+type ChangePasswordFormProps = {
+  onTokenValidated?: (tokenType: "ACCOUNT_SETUP" | "RESET_PASSWORD") => void;
+};
+
+export const ChangePasswordForm = ({
+  onTokenValidated,
+}: ChangePasswordFormProps = {}) => {
   const { addNotification } = useNotifications();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isValidating, setIsValidating] = useState(true);
+  const [tokenType, setTokenType] = useState<
+    "ACCOUNT_SETUP" | "RESET_PASSWORD" | null
+  >(null);
+  const [isValidToken, setIsValidToken] = useState(false);
   const router = useRouter();
 
   // Estados independientes para la visibilidad de cada campo
@@ -37,14 +48,94 @@ export const ChangePasswordForm = () => {
   const searchParams = useSearchParams();
   const token = searchParams?.get("token");
 
+  useEffect(() => {
+    const validateToken = async () => {
+      if (!token) {
+        setIsValidating(false);
+        return;
+      }
+
+      try {
+        const response = (await api.get(
+          `/auth/validate-token?token=${token}`
+        )) as {
+          valid: boolean;
+          tokenType: "ACCOUNT_SETUP" | "RESET_PASSWORD";
+        };
+
+        if (response.valid) {
+          setIsValidToken(true);
+          setTokenType(response.tokenType);
+          onTokenValidated?.(response.tokenType);
+        } else {
+          setIsValidToken(false);
+        }
+      } catch (error) {
+        setIsValidToken(false);
+        addNotification({
+          type: "error",
+          title: "Token inválido",
+          message: "El token ha expirado o no es válido.",
+        });
+      } finally {
+        setIsValidating(false);
+      }
+    };
+
+    validateToken();
+  }, [token, addNotification]);
+
   if (!token) {
-    return <div className="space-y-4">No token provided</div>;
+    return (
+      <div className="space-y-4 text-center">
+        <p className="text-destructive">No se proporcionó un token</p>
+      </div>
+    );
+  }
+
+  if (isValidating) {
+    return (
+      <div className="space-y-4 text-center">
+        <p>Validando token...</p>
+      </div>
+    );
+  }
+
+  if (!isValidToken) {
+    return (
+      <div className="space-y-4">
+        <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-4 text-center">
+          <p className="text-red-500 font-medium">El token ha expirado o no es válido.</p>
+        </div>
+        <Button onClick={() => router.push("/auth/login")} className="w-full">
+          Ir al inicio de sesión
+        </Button>
+      </div>
+    );
   }
 
   const handleMicrosoftLogin = () => {
     window.location.replace(
       `/api/auth/login/microsoft?invitation_token=${token}`
     );
+  };
+
+  const isAccountSetup = tokenType === "ACCOUNT_SETUP";
+  const isPasswordReset = tokenType === "RESET_PASSWORD";
+
+  const texts = {
+    passwordLabel: isAccountSetup ? "Contraseña" : "Nueva contraseña",
+    buttonText: isAccountSetup ? "Activar cuenta" : "Cambiar contraseña",
+    successTitle: isAccountSetup ? "Cuenta activada" : "Contraseña actualizada",
+    successMessage: isAccountSetup
+      ? "Tu cuenta ha sido activada exitosamente. Ahora puedes iniciar sesión."
+      : "Tu contraseña ha sido actualizada exitosamente.",
+    errorTitle: isAccountSetup
+      ? "No se pudo activar la cuenta"
+      : "No se pudo cambiar la contraseña",
+    microsoftText: isAccountSetup
+      ? "Si eres usuario Uninorte, también puedes:"
+      : "O si eres usuario Uninorte:",
   };
 
   return (
@@ -69,9 +160,8 @@ export const ChangePasswordForm = () => {
 
             addNotification({
               type: "success",
-              title: "Contraseña establecida",
-              message:
-                "Tu cuenta ha sido confirmada. Ahora puedes iniciar sesión.",
+              title: texts.successTitle,
+              message: texts.successMessage,
             });
 
             // Redirigir al login después de 2 segundos
@@ -80,7 +170,7 @@ export const ChangePasswordForm = () => {
             }, 2000);
           } catch (error: any) {
             // Manejo de errores específico para Zod y API
-            let errorMessage = "No se pudo establecer la contraseña";
+            let errorMessage = texts.errorTitle;
 
             if (error instanceof z.ZodError) {
               // Tomamos el primer mensaje de error de Zod (ej: "Las contraseñas no coinciden")
@@ -102,7 +192,7 @@ export const ChangePasswordForm = () => {
         <Input
           name="password"
           type={showPassword ? "text" : "password"}
-          label="Nueva contraseña"
+          label={texts.passwordLabel}
           placeholder="••••••••"
           isRequired
           endContent={
@@ -157,23 +247,44 @@ export const ChangePasswordForm = () => {
           isLoading={isSubmitting}
           disabled={isSubmitting}
         >
-          Guardar contraseña
+          {texts.buttonText}
         </Button>
       </Form>
 
-      <div className="w-full flex items-center justify-center mb-2 mt-2">
-        <a className="text-sm font-medium text-gray-400 text-center">
-          Si eres usuario Uninorte, puedes:
-        </a>
-      </div>
-      <Button className="w-full" onClick={handleMicrosoftLogin} type="button">
-        <img
-          src="/microsoft.webp"
-          alt="Microsoft Logo"
-          className="inline-block w-7 h-7"
-        />
-        Iniciar sesión con Outlook
-      </Button>
+      {isAccountSetup && (
+        <>
+          <div className="w-full flex items-center justify-center mb-2 mt-2">
+            <a className="text-sm font-medium text-gray-400 text-center">
+              {texts.microsoftText}
+            </a>
+          </div>
+          <Button
+            className="w-full"
+            onClick={handleMicrosoftLogin}
+            type="button"
+          >
+            <img
+              src="/microsoft.webp"
+              alt="Microsoft Logo"
+              className="inline-block w-7 h-7"
+            />
+            Iniciar sesión con Outlook
+          </Button>
+        </>
+      )}
+
+      {isPasswordReset && (
+        <div className="w-full flex items-center justify-center mb-2 mt-2">
+          <Button
+            className="w-full"
+            variant="bordered"
+            onClick={() => router.push("/auth/login")}
+            type="button"
+          >
+            Volver al inicio de sesión
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

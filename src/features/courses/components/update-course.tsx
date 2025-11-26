@@ -108,17 +108,17 @@ export const UpdateCourse = ({ courseId }: UpdateCourseProps) => {
                 const rawData = Object.fromEntries(formData);
 
                 const data = {
-                  ...rawData,
-                  eventId: Number(rawData.eventId),
+                  id: course.id,
+                  code: rawData.code,
+                  description: rawData.description,
                   active: rawData.active === "true",
                 };
 
                 const values = await updateCourseInputSchema.parseAsync(data);
-
                 await updateCourseMutation.mutateAsync({
                   data: values,
-                  courseId,
                 });
+                // Notificación y cierre ahora se manejan en onSuccess
               }}
             >
               <ModalHeader className="flex flex-col gap-1">
