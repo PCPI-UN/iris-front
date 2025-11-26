@@ -8,20 +8,18 @@ import { Course } from "@/types/api";
 import { getCourseQueryOptions } from "./get-course";
 
 export const updateCourseInputSchema = z.object({
-  code: z.string().min(1, "Required").optional(),
-  description: z.string().min(1, "Required").optional(),
-  eventIds: z.array(z.string()).optional(),
-  status: z.enum(["active", "inactive"]).optional(),
+  id: z.number().min(1, "ID is required"),
+  code: z.string().min(1, "Required"),
+  description: z.string().min(1, "Required"),
+  active: z.boolean(),
 });
 
 export type UpdateCourseInput = z.infer<typeof updateCourseInputSchema>;
 
 export const updateCourse = ({
-  data,
-  courseId,
+  data
 }: {
   data: UpdateCourseInput;
-  courseId: number;
 }): Promise<{ data: Course }> => {
   return api.patch(`/events/courses/update`, data);
 };

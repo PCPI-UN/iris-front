@@ -108,8 +108,9 @@ export const UpdateCourse = ({ courseId }: UpdateCourseProps) => {
                 const rawData = Object.fromEntries(formData);
 
                 const data = {
-                  ...rawData,
-                  eventId: Number(rawData.eventId),
+                  id: course.id,
+                  code: rawData.code,
+                  description: rawData.description,
                   active: rawData.active === "true",
                 };
 
@@ -117,7 +118,6 @@ export const UpdateCourse = ({ courseId }: UpdateCourseProps) => {
 
                 await updateCourseMutation.mutateAsync({
                   data: values,
-                  courseId,
                 });
               }}
             >
