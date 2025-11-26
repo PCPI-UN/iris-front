@@ -55,9 +55,11 @@ export default function Page() {
         </div>{" "}
         <div className="w-full max-w-md px-4 sm:px-6 lg:px-8">
           <div className="glass-card p-6 sm:p-8 w-full">
-            <p className="text-base text-muted-foreground text-center mb-6">
-              {pageTexts.subtitle}
-            </p>
+            {tokenType && (
+              <p className="text-base text-muted-foreground text-center mb-6">
+                {pageTexts.subtitle}
+              </p>
+            )}
             <ChangePasswordForm onTokenValidated={setTokenType} />
           </div>{" "}
           <div className="mt-6 text-center text-sm text-muted-foreground">

@@ -103,8 +103,10 @@ export const ChangePasswordForm = ({
 
   if (!isValidToken) {
     return (
-      <div className="space-y-4 text-center">
-        <p className="text-destructive">El token ha expirado o no es válido.</p>
+      <div className="space-y-4">
+        <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-4 text-center">
+          <p className="text-red-500 font-medium">El token ha expirado o no es válido.</p>
+        </div>
         <Button onClick={() => router.push("/auth/login")} className="w-full">
           Ir al inicio de sesión
         </Button>
