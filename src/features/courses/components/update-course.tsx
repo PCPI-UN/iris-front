@@ -36,7 +36,17 @@ export const UpdateCourse = ({ courseId }: UpdateCourseProps) => {
   const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
 
   const courseQuery = useCourse({ courseId });
-  const updateCourseMutation = useUpdateCourse();
+  const updateCourseMutation = useUpdateCourse({
+    mutationConfig: {
+      onSuccess: () => {
+        addNotification({
+          type: "success",
+          title: "Course Updated",
+        });
+        onClose();
+      },
+    },
+  });
 
   const eventsQuery = useEvents({ page: 1 });
 
@@ -108,11 +118,7 @@ export const UpdateCourse = ({ courseId }: UpdateCourseProps) => {
                 await updateCourseMutation.mutateAsync({
                   data: values,
                 });
-                addNotification({
-                  type: "success",
-                  title: "Course Updated",
-                });
-                onClose();
+                // Notificación y cierre ahora se manejan en onSuccess
               }}
             >
               <ModalHeader className="flex flex-col gap-1">
