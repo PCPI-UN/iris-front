@@ -23,7 +23,7 @@ export const updateCourse = ({
   data: UpdateCourseInput;
   courseId: number;
 }): Promise<{ data: Course }> => {
-  return api.patch(`events/courses/update`, data);
+  return api.patch(`/events/courses/update`, data);
 };
 
 type UseUpdateCourseOptions = {
