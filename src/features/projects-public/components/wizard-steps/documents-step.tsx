@@ -56,7 +56,10 @@ export function DocumentsStep({ documents, onUpdate }: DocumentsStepProps) {
       {/* Poster Upload */}
       <div className="space-y-3">
         <label className="text-sm font-medium">Póster del Proyecto *</label>
-        <p className="text-sm text-default-500">Suba el póster de su proyecto en formato PDF, PNG o JPG (máx. 25MB)</p>
+        <p className="text-sm text-default-500">
+          Suba el póster de su proyecto en formato PDF, PNG o JPG.<br />
+          <span className="font-semibold text-danger">Máximo 4MB por archivo y 25MB en total entre todos los archivos.</span>
+        </p>
         {!documents.poster ? (
           <div
             onClick={() => posterInputRef.current?.click()}
@@ -97,7 +100,8 @@ export function DocumentsStep({ documents, onUpdate }: DocumentsStepProps) {
       <div className="space-y-3">
         <label className="text-sm font-medium">Documentos Adicionales (Opcional)</label>
         <p className="text-sm text-default-500">
-          Puede subir documentos adicionales como PDFs, Word, imágenes o archivos de texto
+          Puede subir documentos adicionales como PDF, Word, imágenes o archivos de texto.<br />
+          <span className="font-semibold text-danger">Máximo 4MB por archivo y 25MB en total entre todos los archivos.</span>
         </p>
         <Button
           variant="bordered"

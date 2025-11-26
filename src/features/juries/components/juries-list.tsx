@@ -37,7 +37,7 @@ export const JuriesList = () => {
     const n = Number(raw);
     return Number.isFinite(n) && n > 0 ? n : 1;
   }, [searchParams]);
-
+  
   const setPageInUrl = useCallback(
     (n: number) => {
       const sp = new URLSearchParams(searchParams?.toString());
