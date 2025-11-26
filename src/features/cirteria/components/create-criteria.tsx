@@ -13,11 +13,11 @@ import {
   ModalBody,
   ModalFooter,
 } from "@/components/ui/modal";
-import { useDisclosure } from '@/hooks/use-disclosure';
+import { useDisclosure } from "@/hooks/use-disclosure";
 import { useNotifications } from "@/components/ui/notifications";
 import { useUser } from "@/lib/auth";
 import { Select, SelectItem } from "@/components/ui/select";
-import { useEvents } from "@/features/events/api/get-events";
+import { useEventsDropdown } from "@/features/events/api/get-events-dropdown";
 import { useCourses } from "@/features/courses/api/get-courses";
 
 import {
@@ -29,8 +29,10 @@ import { Input } from "@/components/ui/input";
 export const CreateCriteria = () => {
   const { addNotification } = useNotifications();
   const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
-  const [selectedEvent, setSelectedEvent] = useState<number | undefined>(undefined);
-  const [selectedCourses, setSelectedCourses] = useState<Set<number>>(new Set());
+  const [selectedEventKey, setSelectedEventKey] = useState<string>("");
+  const [selectedCourseKeys, setSelectedCourseKeys] = useState<Set<string>>(
+    new Set()
+  );
   const user = useUser();
 
   const createCriteriaMutation = useCreateCriteria({
@@ -38,33 +40,37 @@ export const CreateCriteria = () => {
       onSuccess: () => {
         addNotification({
           type: "success",
-          title: "Criteria Created",
-          message: "The evaluation criteria has been created successfully.",
+          title: "Criterio Creado",
+          message: "El criterio de evaluación ha sido creado exitosamente.",
         });
-        setSelectedEvent(undefined);
-        setSelectedCourses(new Set());
+        setSelectedEventKey("");
+        setSelectedCourseKeys(new Set());
         onClose();
       },
       onError: (error: any) => {
         addNotification({
           type: "error",
           title: "Error",
-          message: error?.message || "Failed to create criteria",
+          message: error?.message || "Error al crear el criterio",
         });
       },
     },
   });
 
-  const eventsQuery = useEvents({ page: 1 });
+  const eventsQuery = useEventsDropdown();
   const events = eventsQuery.data?.data ?? [];
-  const coursesQuery = useCourses({ eventId: selectedEvent, queryConfig: { enabled: !!selectedEvent } });
+  const coursesQuery = useCourses({
+    page: 1,
+    eventId: selectedEventKey ? Number(selectedEventKey) : undefined,
+    queryConfig: { enabled: !!selectedEventKey },
+  });
   const courses = coursesQuery.data?.data ?? [];
 
   return (
     <>
       <Button size="sm" onPress={() => onOpen()}>
         <Plus size={16} />
-        Create Criteria
+        Crear Criterio
       </Button>
       <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="2xl">
         <ModalContent>
@@ -77,121 +83,141 @@ export const CreateCriteria = () => {
                 const formData = new FormData(form);
 
                 const rawData = Object.fromEntries(formData);
-                
-                const data = {
-                  eventId: selectedEvent,
-                  name: rawData.name as string,
-                  description: rawData.description as string,
-                  weight: Number(rawData.weight),
-                  courseIds: Array.from(selectedCourses),
-                };
 
-                if (selectedCourses.size === 0) {
+                if (!selectedEventKey) {
                   addNotification({
                     type: "error",
-                    title: "Validation Error",
-                    message: "Please select at least one course",
+                    title: "Error de validación",
+                    message: "Por favor selecciona un evento",
                   });
                   return;
                 }
 
+                if (selectedCourseKeys.size === 0) {
+                  addNotification({
+                    type: "error",
+                    title: "Error de validación",
+                    message: "Por favor selecciona al menos un curso",
+                  });
+                  return;
+                }
+
+                const data = {
+                  eventId: Number(selectedEventKey),
+                  name: rawData.name as string,
+                  description: rawData.description as string,
+                  weight: Number(rawData.weight),
+                  courseIds: Array.from(selectedCourseKeys).map(Number),
+                };
+
                 try {
-                  const values = await createCriteriaInputSchema.parseAsync(data);
+                  const values =
+                    await createCriteriaInputSchema.parseAsync(data);
                   await createCriteriaMutation.mutateAsync({ data: values });
-                } catch (error) {
-                  // Validation errors are handled by the schema
+                } catch (error: any) {
+                  addNotification({
+                    type: "error",
+                    title: "Error de validación",
+                    message: error?.message || "Datos inválidos",
+                  });
                 }
               }}
             >
               <ModalHeader className="flex flex-col gap-1">
-                Create new criteria
+                Crear nuevo criterio
                 <p className="text-sm font-normal text-gray-500">
-                  Add a new evaluation criteria
+                  Agrega un nuevo criterio de evaluación
                 </p>
               </ModalHeader>
               <ModalBody className="space-y-4 w-full">
                 <Select
-                  label="Event"
-                  placeholder="Select an event"
-                  selectedKeys={selectedEvent ? [String(selectedEvent)] : []}
+                  label="Evento"
+                  placeholder="Selecciona un evento"
+                  selectedKeys={selectedEventKey ? [selectedEventKey] : []}
                   onSelectionChange={(keys) => {
-                    const id = Array.from(keys)[0] as string;
-                    setSelectedEvent(id ? Number(id) : undefined);
-                    setSelectedCourses(new Set());
+                    const selected = Array.from(keys)[0];
+                    setSelectedEventKey(selected ? String(selected) : "");
+                    setSelectedCourseKeys(new Set());
                   }}
                   isRequired
                   isLoading={eventsQuery.isLoading}
                 >
                   {events.map((event) => (
-                    <SelectItem key={event.id}>{event.name}</SelectItem>
+                    <SelectItem key={String(event.id)}>{event.name}</SelectItem>
                   ))}
                 </Select>
 
                 <Select
-                  label="Courses"
-                  placeholder={selectedEvent ? "Select one or more courses" : "Select an event first"}
+                  label="Cursos"
+                  placeholder={
+                    selectedEventKey
+                      ? "Selecciona uno o más cursos"
+                      : "Selecciona un evento primero"
+                  }
                   selectionMode="multiple"
-                  selectedKeys={selectedCourses.size > 0 ? Array.from(selectedCourses).map(String) : []}
+                  selectedKeys={selectedCourseKeys}
                   onSelectionChange={(keys) => {
-                    const numberSet = new Set(
-                      Array.from(keys).map((key) => Number(key))
-                    );
-                    setSelectedCourses(numberSet);
+                    const stringSet = new Set(Array.from(keys).map(String));
+                    setSelectedCourseKeys(stringSet);
                   }}
-                  isDisabled={!selectedEvent}
-                  isLoading={!!selectedEvent && coursesQuery.isLoading}
+                  isDisabled={!selectedEventKey}
+                  isLoading={!!selectedEventKey && coursesQuery.isLoading}
                 >
                   {courses.length > 0 ? (
                     courses.map((course) => (
-                      <SelectItem key={String(course.id)}>{course.code}</SelectItem>
+                      <SelectItem key={String(course.id)}>
+                        {course.code}
+                      </SelectItem>
                     ))
                   ) : (
                     <SelectItem key="no-courses" isDisabled>
-                      {selectedEvent ? "No courses" : "Select an event first"}
+                      {selectedEventKey
+                        ? "No hay cursos"
+                        : "Selecciona un evento primero"}
                     </SelectItem>
                   )}
                 </Select>
-                <Input 
-                  label="Name" 
-                  name="name" 
-                  placeholder="e.g., Technical Quality"
-                  isRequired 
+                <Input
+                  label="Nombre"
+                  name="name"
+                  placeholder="ej: Calidad Técnica"
+                  isRequired
                 />
-                
-                <Textarea 
-                  label="Description" 
-                  name="description" 
-                  placeholder="Brief description of the criteria"
-                  isRequired 
+
+                <Textarea
+                  label="Descripción"
+                  name="description"
+                  placeholder="Breve descripción del criterio"
+                  isRequired
                 />
 
                 <Input
                   type="number"
-                  label="Weight"
+                  label="Peso"
                   name="weight"
                   placeholder="0.0"
                   min="0"
                   max="1"
                   step="0.01"
                   isRequired
-                  description="Weight of this criteria in the evaluation (e.g., 0.25 for 25%)"
+                  description="Peso de este criterio en la evaluación (ej: 0.25 para 25%)"
                 />
               </ModalBody>
               <ModalFooter>
-                <Button
-                  color="danger"
-                  variant="flat"
-                  onPress={onClose}
-                >
-                  Cancel
+                <Button color="danger" variant="flat" onPress={onClose}>
+                  Cancelar
                 </Button>
                 <Button
                   type="submit"
                   color="primary"
                   isLoading={createCriteriaMutation.isPending}
-                  disabled={createCriteriaMutation.isPending || !selectedEvent || selectedCourses.size === 0}
+                  disabled={
+                    createCriteriaMutation.isPending ||
+                    !selectedEventKey ||
+                    selectedCourseKeys.size === 0
+                  }
                 >
-                  Create Criteria
+                  Crear Criterio
                 </Button>
               </ModalFooter>
             </Form>
@@ -201,4 +227,3 @@ export const CreateCriteria = () => {
     </>
   );
 };
-

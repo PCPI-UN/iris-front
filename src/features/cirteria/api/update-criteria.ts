@@ -33,7 +33,7 @@ export const updateCriteria = ({
   data: UpdateCriteriaInput;
   criterionId: number;
 }): Promise<{ data: Criterion }> => {
-  return api.patch(`/criterion/${criterionId}`, data);
+  return api.put(`/criterions/${criterionId}`, data);
 };
 
 type UseUpdateCriteriaOptions = {
@@ -50,7 +50,7 @@ export const useUpdateCriteria = ({
   return useMutation({
     onSuccess: (data, variables, ...args) => {
       queryClient.invalidateQueries({
-        queryKey: ["criterion"],
+        queryKey: ["criterions"],
       });
       queryClient.refetchQueries({
         queryKey: getCriterionQueryOptions(data.data.id).queryKey,

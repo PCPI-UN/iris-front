@@ -9,9 +9,9 @@ import { getCriteriaQueryOptions } from "./get-criteria";
 export const deleteCriteria = ({
   criterionId,
 }: {
-  criterionId: string;
+  criterionId: number;
 }): Promise<{ data: Criterion }> => {
-  return api.delete(`/criterion/${criterionId}`);
+  return api.delete(`/criterions/${criterionId}`);
 };
 
 type UseDeleteCriteriaOptions = {
@@ -28,7 +28,7 @@ export const useDeleteCriteria = ({
   return useMutation({
     onSuccess: (data, variables, ...args) => {
       queryClient.invalidateQueries({
-        queryKey: ["criterion"],
+        queryKey: ["criterions"],
       });
       onSuccess?.(data, variables, ...args);
     },
