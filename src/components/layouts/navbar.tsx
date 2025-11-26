@@ -7,7 +7,6 @@ import { landingContent } from '@/features/landing/content';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Menu, X } from 'lucide-react';
-import { useUser } from '@/lib/auth';
 
 interface NavbarProps {
   showNavLinks?: boolean;
@@ -19,8 +18,7 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
   const isLandingPage = pathname === '/';
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { data: user } = useUser();
-  const shortName = user?.firstName + " " + user?.lastName.charAt(0) + ".";
+
   const handleSmoothScroll = (e: React.MouseEvent<HTMLAnchorElement>, targetId: string) => {
     e.preventDefault();
     setIsMobileMenuOpen(false); // Close mobile menu on navigation
@@ -73,24 +71,16 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
           )}
 
           <div className="flex items-center gap-3">
-            {/* Mostrar botón de login solo si NO hay usuario autenticado */}
-
             {showLoginButton && (
               <Button
                 size="sm"
-                onClick={() => {
-                  if (!user) {
-                    router.push('/auth/login');
-                  } else {
-                    router.push('/app');
-                  }
-                }}
+                onClick={() => router.push('/auth/login')}
                 style={{ 
                   background: 'oklch(0.75 0.15 195)',
                   color: 'oklch(0.12 0.01 264)'
                 }}
               >
-                {!user ? landingContent.navbar.cta : shortName}
+                {landingContent.navbar.cta}
               </Button>
             )}
 
