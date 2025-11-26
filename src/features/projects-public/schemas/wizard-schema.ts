@@ -37,7 +37,11 @@ export const wizardSchema = z.object({
   documents: documentsSchema,
 }).refine(
   (data) => {
-    const totalSize = (data.poster?.size || 0) + (Array.isArray(data.additionalDocuments) ? data.additionalDocuments.reduce((acc, file) => acc + (file?.size || 0), 0) : 0);
+    const posterSize = data.documents?.poster?.size || 0;
+    const additionalSize = Array.isArray(data.documents?.additionalDocuments)
+      ? data.documents.additionalDocuments.reduce((acc, file) => acc + (file?.size || 0), 0)
+      : 0;
+    const totalSize = posterSize + additionalSize;
     return totalSize <= 25 * 1024 * 1024;
   },
   {
