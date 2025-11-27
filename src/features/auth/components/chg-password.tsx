@@ -41,7 +41,6 @@ export const ChangePasswordForm = ({
   const [isValidToken, setIsValidToken] = useState(false);
   const router = useRouter();
 
-  // Estados independientes para la visibilidad de cada campo
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -105,7 +104,9 @@ export const ChangePasswordForm = ({
     return (
       <div className="space-y-4">
         <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-4 text-center">
-          <p className="text-red-500 font-medium">El token ha expirado o no es válido.</p>
+          <p className="text-red-500 font-medium">
+            El token ha expirado o no es válido.
+          </p>
         </div>
         <Button onClick={() => router.push("/auth/login")} className="w-full">
           Ir al inicio de sesión
@@ -149,14 +150,19 @@ export const ChangePasswordForm = ({
             const formData = new FormData(form);
             const raw = Object.fromEntries(formData) as Record<string, any>;
 
-            // Aquí Zod validará si las contraseñas coinciden
             const values = await changePasswordSchema.parseAsync(raw);
 
-            // Llamada al endpoint de reset password
             await api.post("/auth/reset-password", {
               token,
               password: values.password,
             });
+
+            if (isAccountSetup) {
+              await api.post("/invitations/accept", {
+                token,
+                password: values.password,
+              });
+            }
 
             addNotification({
               type: "success",
@@ -164,16 +170,13 @@ export const ChangePasswordForm = ({
               message: texts.successMessage,
             });
 
-            // Redirigir al login después de 2 segundos
             setTimeout(() => {
               router.push("/auth/login");
             }, 2000);
           } catch (error: any) {
-            // Manejo de errores específico para Zod y API
             let errorMessage = texts.errorTitle;
 
             if (error instanceof z.ZodError) {
-              // Tomamos el primer mensaje de error de Zod (ej: "Las contraseñas no coinciden")
               errorMessage = error.issues[0].message;
             } else if (error?.message) {
               errorMessage = error.message;

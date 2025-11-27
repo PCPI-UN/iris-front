@@ -42,10 +42,6 @@ export const paths = {
       getHref: (id: string) => `/app/discussions/${id}`,
       roles: ["Admin"],
     },
-    users: {
-      getHref: () => "/app/users",
-      roles: ["Admin"],
-    },
     profile: {
       getHref: () => "/app/profile",
       roles: ["Admin", "User"],

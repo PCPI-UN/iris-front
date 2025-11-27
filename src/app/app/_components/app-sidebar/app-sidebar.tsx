@@ -66,7 +66,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             url: paths.app.administrators.getHref(),
             icon: ShieldCheck,
           },
-          { title: "Users", url: paths.app.users.getHref(), icon: UsersIcon },
         ];
       case "USER":
         return [

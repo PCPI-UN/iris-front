@@ -14,10 +14,6 @@ export const canUpdateDiscussion = (user: User | null | undefined) => {
   return hasRole(user, "Admin");
 };
 
-export const canViewUsers = (user: User | null | undefined) => {
-  return hasRole(user, "Admin");
-};
-
 export const canCreateEvent = (user: User | null | undefined) => {
   return hasRole(user, "Admin");
 };

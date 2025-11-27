@@ -1,7 +1,7 @@
 'use client';
 
 import { useUser } from '@/lib/auth';
-import { Calendar, Folder, Users, FileCheck } from 'lucide-react';
+import { Calendar, Folder, FileCheck } from 'lucide-react';
 import { Card, CardHeader, CardBody } from '@/components/ui/card';
 import { useDashboardStats } from '@/features/dashboard/api/get-dashboard-stats';
 import { Spinner } from '@/components/ui/spinner';
@@ -23,7 +23,6 @@ export const AdminDashboard = () => {
   const defaultStats = {
     activeEvents: 0,
     totalProjects: 0,
-    juryMembers: 0,
     evaluations: 0,
   };
 
@@ -45,13 +44,6 @@ export const AdminDashboard = () => {
       iconColor: 'text-green-500',
     },
     {
-      title: 'Jury members',
-      value: displayStats.juryMembers,
-      description: 'Active evaluators',
-      icon: Users,
-      iconColor: 'text-purple-500',
-    },
-    {
       title: 'Evaluations',
       value: displayStats.evaluations,
       description: 'Completed',
@@ -71,7 +63,7 @@ export const AdminDashboard = () => {
         </p>
       </div>
 
-      <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         {statsCards.map((stat) => (
           <Card key={stat.title} className="glass-card shadow-sm">
             <CardHeader className="pb-2 md:pb-3">
