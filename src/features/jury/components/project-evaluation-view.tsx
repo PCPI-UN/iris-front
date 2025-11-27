@@ -9,25 +9,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@/components/ui/modal"
 import { FileText, Users, Send, ArrowLeft, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react"
 import { useProject } from "@/features/projects/api/get-project"
-
-const MOCK_PROJECT = {
-  id: "1",
-  name: "Sistema de Monitoreo Ambiental con IoT",
-  description:
-    "Desarrollo de un sistema integral de monitoreo ambiental utilizando dispositivos IoT para la recolección de datos en tiempo real sobre calidad del aire, temperatura, humedad y niveles de contaminación acústica en áreas urbanas.",
-  courseId: "course-1",
-  eventId: 2,
-  participants: [
-    { firstName: "María", lastName: "González" },
-    { firstName: "Carlos", lastName: "Rodríguez" },
-    { firstName: "Ana", lastName: "Martínez" },
-  ],
-  documents: [
-    { id: "1", type: "POSTER", url: "#", name: "Póster del Proyecto" },
-    { id: "2", type: "ASSOCIATED_DOCUMENT", url: "#", name: "Documento Técnico" },
-    { id: "3", type: "ASSOCIATED_DOCUMENT", url: "#", name: "Manual de Usuario" },
-  ],
-}
+import { AvatarGroup } from "@/features/projects/components/avatar-icon"
 
 const MOCK_CRITERIA = [
   {
@@ -99,11 +81,19 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const project = MOCK_PROJECT
   const allSections = MOCK_CRITERIA
   const currentSection = allSections[currentPage]
 
-  const { data: projectData, isLoading: isProjectLoading } = useProject({ projectId });
+const { data: projectData, isLoading: isProjectLoading } = useProject({ projectId });
+
+if (isProjectLoading) {
+  return <div>Cargando proyecto...</div>; // o tu spinner
+}
+
+const project = (projectData as any)?.data ??
+  projectData ??
+  null;
+
 
   const calculateSectionScore = (section: (typeof MOCK_CRITERIA)[0]) => {
     if (!section.subcriteria) return 0
@@ -188,29 +178,37 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
               </div>
 
               <div className="space-y-3 md:space-y-4">
-                <div className="flex items-center gap-2 text-xs md:text-sm">
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-medium">Integrantes del equipo</span>
-                </div>
-
-                <div className="flex flex-wrap gap-2">
-                  {project.participants.map((participant, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-center gap-2 bg-muted/10 rounded-full pr-3 py-1"
-                      title={`${participant.firstName} ${participant.lastName}`}
-                    >
-                      <div className="h-8 w-8 md:h-10 md:w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium text-xs md:text-sm flex-shrink-0">
-                        {participant.firstName[0]}
-                        {participant.lastName[0]}
-                      </div>
-                      <span className="text-xs md:text-sm font-medium">
-                        {participant.firstName} {participant.lastName}
-                      </span>
+                  <div className="hidden sm:block">
+                      <AvatarGroup
+                        participants={
+                          project.pendingParticipants.length > 0
+                            ? project.pendingParticipants.map((p: any) => ({
+                                name: `${p.firstName} ${p.lastName}`.trim()
+                              }))
+                            : project.participants.map((p: any) => ({
+                                name: `${p.firstName} ${p.lastName}`.trim()
+                              }))
+                        }
+                        size={35}
+                      />
                     </div>
-                  ))}
-                </div>
-              </div>
+
+                    {/* Mobile: Lista de nombres */}
+                    <div className="sm:hidden space-y-2">
+                      {(project.pendingParticipants.length > 0
+                        ? project.pendingParticipants
+                        : project.participants
+                      ).map((participant: any, idx: number) => (
+                        <div key={idx} className="flex items-center gap-2 text-sm">
+                          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
+                            {participant.firstName[0]}
+                            {participant.lastName[0]}
+                          </div>
+                          <span>{participant.firstName} {participant.lastName}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
 
               {project.documents && project.documents.length > 0 && (
                 <div className="space-y-2 pt-2 md:pt-4 border-t border-border">
@@ -220,7 +218,7 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
                   </div>
 
                   <div className="space-y-2 md:space-y-3">
-                    {project.documents.map((doc) => {
+                    {project.documents.map((doc: any) => {
                       const readableType =
                         doc.type === "POSTER"
                           ? "Póster"
