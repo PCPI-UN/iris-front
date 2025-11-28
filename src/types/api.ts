@@ -14,6 +14,16 @@ export type Entity<T> = {
   [K in keyof T]: T[K];
 } & BaseEntity;
 
+export type CourseCategory = {
+  category: string;
+  weight: number;
+  criterions: {
+    id: number;
+    name: string;
+  }[];
+};
+
+
 export type Meta = {
   page: number;
   total: number;
@@ -100,6 +110,7 @@ export type Project = Entity<{
   documents: ProjectDocument[];
   jurorAssignments: ProjectAssignment[];
   pendingParticipants: ProjectParticipant[];
+  evaluated: boolean;
   createdAt: number;
   updatedAt: number;
 }>;

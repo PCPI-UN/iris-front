@@ -4,13 +4,28 @@ import { api } from "@/lib/api-client";
 import { QueryConfig } from "@/lib/react-query";
 import { Meta, Project } from "@/types/api";
 
-export const getJuryProjects = (
-  { page, eventId }: { page?: number; eventId?: string } = { page: 1 }
+export const getJuryProjects = async (
+  { page, eventId}: { page?: number; eventId?: number } = { page: 1 }
 ): Promise<{ data: Project[]; meta: Meta }> => {
-  return api.get(`/events/${eventId}/projects`, { params: { page } });
+  const response = await api.get<{
+      items: Project[];
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    }>(`/projects/assigned-projects`, { params: { page, eventId } });
+
+  return {
+    data: response.items || [],
+    meta: {
+      page: response.page,
+      total: response.total,
+      totalPages: response.totalPages,
+    },
+  };
 };
 
-export const getJuryProjectsQueryOptions = ({ page = 1, eventId }: { page?: number; eventId?: string } = {}) => {
+export const getJuryProjectsQueryOptions = ({ page = 1 , eventId }: { page?: number; eventId?: number } = {}) => {
   return queryOptions({
     queryKey: ["projects", { page, eventId }],
     queryFn: () => getJuryProjects({ page, eventId }),
@@ -19,7 +34,7 @@ export const getJuryProjectsQueryOptions = ({ page = 1, eventId }: { page?: numb
 
 type UseProjectsOptions = {
   page?: number;
-  eventId?: string;
+  eventId?: number;
   queryConfig?: QueryConfig<typeof getJuryProjectsQueryOptions>;
 };
 

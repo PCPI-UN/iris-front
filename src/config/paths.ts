@@ -79,9 +79,6 @@ export const paths = {
     criteria: {
       getHref: () => "/app/criteria",
     },
-    test : {
-      getHref: () => "/app/test",
-    },
   },
   public: {
     discussion: {
