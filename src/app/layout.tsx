@@ -10,7 +10,6 @@ import clsx from "clsx";
 import { Providers } from '@/app/provider';
 import { getUserQueryOptions } from '@/lib/auth';
 import { fontSans } from "@/config/fonts";
-import { SupportButton } from '@/components/support-button';
 
 import '@/styles/globals.css';
 
@@ -55,7 +54,6 @@ const RootLayout = async ({ children }: { children: ReactNode }) => {
             <div className="relative flex flex-col min-h-screen">
               {children}
             </div>
-            <SupportButton />
           </HydrationBoundary>
         </Providers>
       </body>

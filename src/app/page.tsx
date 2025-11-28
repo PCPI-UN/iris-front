@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { LandingPage } from '@/features/landing';
+import { SupportButton } from '@/components/support-button';
 import '@/features/landing/index.css';
 
 const HomePage = () => {
@@ -34,7 +35,12 @@ const HomePage = () => {
     };
   }, []);
 
-  return <LandingPage />;
+  return (
+    <>
+      <LandingPage />
+      <SupportButton />
+    </>
+  );
 };
 
 export default HomePage;
