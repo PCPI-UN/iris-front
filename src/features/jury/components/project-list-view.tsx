@@ -1,9 +1,11 @@
 "use client"
 
-import { ProjectCard } from "./project-cart"
+import { ProjectCard } from "./project-card"
 import { useJuryProjects } from "@/features/projects-public/api/get-jury-project"
 import { Spinner } from "@/components/ui/spinner"
 import { useRouter } from "next/navigation"
+import { Button } from "@heroui/button"
+import { ArrowLeft } from "lucide-react"
 
 type ProjectListViewProps = {
   eventId: string;
@@ -13,9 +15,9 @@ export function ProjectListView({ eventId }: ProjectListViewProps) {
   const router = useRouter();
 
   const eventsQuery = useJuryProjects({
-      page: 1,
-      eventId: Number(eventId),
-    });
+    page: 1,
+    eventId: Number(eventId),
+  });
 
   const projects = eventsQuery.data?.data || [];
   const isLoading = eventsQuery.isLoading;
@@ -40,28 +42,38 @@ export function ProjectListView({ eventId }: ProjectListViewProps) {
   }
 
   return (
-<div className="space-y-8">
-  {notEvaluatedProjects.length > 0 && (
-    <div className="space-y-4">
-      <h2 className="text-lg font-semibold text-foreground">Proyectos por Evaluar</h2>
-      <div className="grid gap-6 p-4 sm:grid-cols-1 lg:grid-cols-2">
-        {notEvaluatedProjects.map(project => (
-          <ProjectCard key={project.id} project={project} />
-        ))}
+    <div className="space-y-8">
+      <div>
+        <Button
+          variant="light"
+          className="gap-2"
+          onClick={() => router.push('/app')}
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back
+        </Button>
       </div>
-    </div>
-  )}
+      {notEvaluatedProjects.length > 0 && (
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold text-foreground">Proyectos por Evaluar</h2>
+          <div className="grid gap-6 p-4 sm:grid-cols-1 lg:grid-cols-2">
+            {notEvaluatedProjects.map(project => (
+              <ProjectCard key={project.id} project={project} />
+            ))}
+          </div>
+        </div>
+      )}
 
-  {evaluatedProjects.length > 0 && (
-    <div className="space-y-4">
-      <h2 className="text-lg font-semibold text-foreground">Proyectos Evaluados</h2>
-      <div className="grid gap-6 p-4 sm:grid-cols-1 lg:grid-cols-2">
-        {evaluatedProjects.map(project => (
-          <ProjectCard key={project.id} project={project} />
-        ))}
-      </div>
+      {evaluatedProjects.length > 0 && (
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold text-foreground">Proyectos Evaluados</h2>
+          <div className="grid gap-6 p-4 sm:grid-cols-1 lg:grid-cols-2">
+            {evaluatedProjects.map(project => (
+              <ProjectCard key={project.id} project={project} />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
-  )}
-</div>
   );
 }

@@ -43,7 +43,7 @@ export const useCreateEvaluation = ({
     mutationFn: createEvaluation,
     onSuccess: (...args) => {
       queryClient.invalidateQueries({
-        queryKey: ["evaluations"],
+        queryKey: ["projects"],
       });
 
       onSuccess?.(...args);

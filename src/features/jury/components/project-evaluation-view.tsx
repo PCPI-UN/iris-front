@@ -12,6 +12,8 @@ import { useProject } from "@/features/projects/api/get-project"
 import { AvatarGroup } from "@/features/projects/components/avatar-icon"
 import { useCourseCriteria } from "@/features/cirteria/api/get-course-criterion"
 import { useCreateEvaluation } from "@/features/evaluations/api/create-evaluation"
+import { useNotifications } from "@/components/ui/notifications"
+import { Spinner } from "@heroui/spinner"
 
 const SCORE_SCALE = [
   { value: 1, label: "Insuficiente" },
@@ -29,11 +31,16 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
   const [currentPage, setCurrentPage] = useState(0)
   const [scores, setScores] = useState<Record<string, number>>({})
   const [comments, setComments] = useState("")
-  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)  
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const { addNotification } = useNotifications();
   const { mutate, isPending } = useCreateEvaluation({
     mutationConfig: {
       onSuccess: () => {
+        addNotification({
+          type: "success",
+          title: "Evaluación enviada exitosamente",
+        });
         setIsSubmitting(false);
         router.push(`/app/events/${project.eventId}`);
       },
@@ -51,14 +58,18 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
     data: courseCriteriaData,
     isLoading: isCourseCriteriaLoading,
   } = useCourseCriteria({
-    courseId: project?.courseId ?? "", // siempre se pasa un string
+    courseId: project?.courseId ?? "",
     queryConfig: {
-      enabled: !!project?.courseId,   // solo se ejecuta si existe
+      enabled: !!project?.courseId,
     },
   });
 
   if (isProjectLoading || isCourseCriteriaLoading) {
-    return <div>Cargando proyecto...</div>;
+    return (     
+      <div className="flex justify-center items-center min-h-[400px]">
+        <Spinner size="lg" />
+      </div>
+    )
   }
 
   const backendSections =
