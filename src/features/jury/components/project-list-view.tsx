@@ -16,10 +16,8 @@ type ProjectListViewProps = {
 
 export function ProjectListView({ eventId }: ProjectListViewProps) {
   const router = useRouter();
-  const user = useUser();
 
   const eventsQuery = useJuryProjects({
-      jurorId: user?.data?.id,
       page: 1,
       eventId: Number(eventId),
     });

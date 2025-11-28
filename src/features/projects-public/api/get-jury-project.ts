@@ -5,7 +5,7 @@ import { QueryConfig } from "@/lib/react-query";
 import { Meta, Project } from "@/types/api";
 
 export const getJuryProjects = async (
-  { page, jurorId, eventId}: { page?: number; jurorId?: string; eventId?: number } = { page: 1 }
+  { page, eventId}: { page?: number; eventId?: number } = { page: 1 }
 ): Promise<{ data: Project[]; meta: Meta }> => {
   const response = await api.get<{
       items: Project[];
@@ -13,7 +13,7 @@ export const getJuryProjects = async (
       limit: number;
       total: number;
       totalPages: number;
-    }>(`/projects/assigned-projects`, { params: { page, jurorId, eventId } });
+    }>(`/projects/assigned-projects`, { params: { page, eventId } });
 
   return {
     data: response.items || [],
@@ -25,23 +25,22 @@ export const getJuryProjects = async (
   };
 };
 
-export const getJuryProjectsQueryOptions = ({ page = 1, jurorId , eventId }: { page?: number; jurorId?: string; eventId?: number } = {}) => {
+export const getJuryProjectsQueryOptions = ({ page = 1 , eventId }: { page?: number; eventId?: number } = {}) => {
   return queryOptions({
-    queryKey: ["projects", { page, jurorId, eventId }],
-    queryFn: () => getJuryProjects({ page, jurorId, eventId }),
+    queryKey: ["projects", { page, eventId }],
+    queryFn: () => getJuryProjects({ page, eventId }),
   });
 };
 
 type UseProjectsOptions = {
   page?: number;
-  jurorId?: string;
   eventId?: number;
   queryConfig?: QueryConfig<typeof getJuryProjectsQueryOptions>;
 };
 
-export const useJuryProjects = ({ queryConfig, page, jurorId, eventId }: UseProjectsOptions) => {
+export const useJuryProjects = ({ queryConfig, page, eventId }: UseProjectsOptions) => {
   return useQuery({
-    ...getJuryProjectsQueryOptions({ page, jurorId, eventId }),
+    ...getJuryProjectsQueryOptions({ page, eventId }),
     ...queryConfig,
   });
 };

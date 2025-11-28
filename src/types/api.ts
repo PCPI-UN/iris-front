@@ -14,6 +14,16 @@ export type Entity<T> = {
   [K in keyof T]: T[K];
 } & BaseEntity;
 
+export type CourseCategory = {
+  category: string;
+  weight: number;
+  criterions: {
+    id: number;
+    name: string;
+  }[];
+};
+
+
 export type Meta = {
   page: number;
   total: number;

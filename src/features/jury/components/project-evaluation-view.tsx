@@ -10,57 +10,8 @@ import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@/comp
 import { FileText, Users, Send, ArrowLeft, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react"
 import { useProject } from "@/features/projects/api/get-project"
 import { AvatarGroup } from "@/features/projects/components/avatar-icon"
-
-const MOCK_CRITERIA = [
-  {
-    id: "section-1",
-    name: "1. (1.5) Comunicación Escrita",
-    isSection: true,
-    subcriteria: [
-      { id: "1a", name: "a. Adecuada escritura, gramática y ortografía", weight: 0.3 },
-      { id: "1b", name: "b. Gráficos pertinentes y con buena resolución", weight: 0.3 },
-      { id: "1c", name: "c. Adecuados tamaño de letra (legible a 1 m) y contraste de colores", weight: 0.3 },
-      { id: "1d", name: "d. Adecuado balance de gráficos y texto", weight: 0.3 },
-      { id: "1e", name: "e. Uso de Referencias Bibliográficas", weight: 0.3 },
-    ],
-  },
-  {
-    id: "section-2",
-    name: "2. (2.0) Descripción del Diseño: el póster presenta...",
-    isSection: true,
-    subcriteria: [
-      { id: "2a", name: "a. El problema de manera clara", weight: 0.25 },
-      {
-        id: "2b",
-        name: "b. Diferentes alternativas de solución con su respectiva evaluación (criterios de selección)",
-        weight: 0.25,
-      },
-      {
-        id: "2c",
-        name: "c. Fotos, capturas de pantalla o modelos físicos que representen el sistema propuesto",
-        weight: 0.25,
-      },
-      { id: "2d", name: "e. Consideraciones sociales, ambientales o económicas para el diseño", weight: 0.25 },
-      { id: "2e", name: "f. Pruebas realizadas", weight: 0.25 },
-      { id: "2f", name: "g. Tablas o gráficas de resultados", weight: 0.25 },
-      { id: "2g", name: "h. Conclusiones", weight: 0.25 },
-    ],
-  },
-  {
-    id: "section-3",
-    name: "3. (1.5) Comunicación Oral",
-    isSection: true,
-    subcriteria: [
-      {
-        id: "3a",
-        name: "a. Todos los estudiantes hablan con claridad, pronuncian adecuadamente y usan un vocabulario apropiado",
-        weight: 0.5,
-      },
-      { id: "3b", name: "b. Todos los estudiantes responden correctamente a las preguntas", weight: 0.5 },
-      { id: "3c", name: "c. Todos los estudiantes responden de manera equilibrada", weight: 0.5 },
-    ],
-  },
-]
+import { useCourseCriteria } from "@/features/cirteria/api/get-course-criterion"
+import { useCreateEvaluation } from "@/features/evaluations/api/create-evaluation"
 
 const SCORE_SCALE = [
   { value: 1, label: "Insuficiente" },
@@ -80,37 +31,53 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
   const [comments, setComments] = useState("")
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
-
-  const allSections = MOCK_CRITERIA
-  const currentSection = allSections[currentPage]
+  const { mutate, isPending } = useCreateEvaluation({
+  mutationConfig: {
+    onSuccess: () => {
+      setIsSubmitting(false);
+      router.push(`/app/events/${project.eventId}`);
+    },
+    onError: () => {
+      setIsSubmitting(false);
+    },
+  },
+});
 
 const { data: projectData, isLoading: isProjectLoading } = useProject({ projectId });
 
-if (isProjectLoading) {
-  return <div>Cargando proyecto...</div>; // o tu spinner
+const project = (projectData as any)?.data ?? projectData ?? null;
+
+const {
+  data: courseCriteriaData,
+  isLoading: isCourseCriteriaLoading,
+} = useCourseCriteria({
+  courseId: project?.courseId ?? "", // siempre se pasa un string
+  queryConfig: {
+    enabled: !!project?.courseId,   // solo se ejecuta si existe
+  },
+});
+
+if (isProjectLoading || isCourseCriteriaLoading) {
+  return <div>Cargando proyecto...</div>;
 }
 
-const project = (projectData as any)?.data ??
-  projectData ??
-  null;
+console.log("Criterios del curso:", courseCriteriaData);
 
+  const backendSections =
+  courseCriteriaData?.map((cat, index) => ({
+    id: `section-${index + 1}`,
+    name: `${index + 1}. (${cat.weight}) ${cat.category}`,
+    isSection: true,
+    subcriteria: cat.criterions.map((c) => ({
+      id: `c${c.id}`,
+      realId: c.id,
+      name: c.name,
+      weight: cat.weight,
+    })),  
+  })) ?? [];
 
-  const calculateSectionScore = (section: (typeof MOCK_CRITERIA)[0]) => {
-    if (!section.subcriteria) return 0
-    return section.subcriteria.reduce((sum, criterion) => {
-      const rating = scores[criterion.id] ?? 0
-      return sum + (rating / 5) * criterion.weight
-    }, 0)
-  }
-
-  const totalScore = allSections.reduce((sum, section) => {
-    return sum + calculateSectionScore(section)
-  }, 0)
-
-  const maxTotalScore = allSections.reduce((sum, section) => {
-    if (!section.subcriteria) return sum
-    return sum + section.subcriteria.reduce((s, c) => s + c.weight, 0)
-  }, 0)
+const allSections = backendSections
+  const currentSection = allSections[currentPage]
 
   const handleScoreChange = (criterionId: string, value: number) => {
     setScores((prev) => ({
@@ -118,6 +85,27 @@ const project = (projectData as any)?.data ??
       [criterionId]: value,
     }))
   }
+
+  const CRITERION_MAP: Record<string, number> = {
+  "1a": 1,
+  "1b": 2,
+  "1c": 3,
+  "1d": 4,
+  "1e": 5,
+
+  "2a": 6,
+  "2b": 7,
+  "2c": 8,
+  "2d": 9,
+  "2e": 10,
+  "2f": 11,
+  "2g": 12,
+
+  "3a": 13,
+  "3b": 14,
+  "3c": 15,
+};
+
 
   const handleSubmit = () => {
     if (isSubmitting) return
@@ -131,16 +119,26 @@ const project = (projectData as any)?.data ??
     setIsConfirmModalOpen(true)
   }
 
-  const handleConfirmSubmit = () => {
-    setIsConfirmModalOpen(false)
-    setIsSubmitting(true)
+const handleConfirmSubmit = () => {
+  setIsConfirmModalOpen(false);
+  setIsSubmitting(true);
 
-    setTimeout(() => {
-      alert("Evaluación enviada exitosamente")
-      setIsSubmitting(false)
-      router.push(`/app/events/${project.eventId}`)
-    }, 1000)
-  }
+  const payload = {
+    projectId: Number(projectId),
+    comments: comments || "",
+    scores: Object.entries(scores).map(([localId, value]) => ({
+      criterionId: CRITERION_MAP[localId],
+      score: value,
+    })),
+  };
+
+  console.log("Payload enviado:", payload);
+
+  mutate(
+    { data: payload },
+  );
+};
+
 
   const handleGoBack = () => {
     if (project?.eventId) {
@@ -178,6 +176,10 @@ const project = (projectData as any)?.data ??
               </div>
 
               <div className="space-y-3 md:space-y-4">
+                <div className="flex items-center gap-2 text-xs md:text-sm">
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-medium">Integrantes del equipo</span>
+                </div>                
                   <div className="hidden sm:block">
                       <AvatarGroup
                         participants={
