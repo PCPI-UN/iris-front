@@ -17,13 +17,6 @@ export const StudentDashboard = ({ eventId }: StudentDashboardProps = {}) => {
     const user = useUser();
     const router = useRouter();
     
-    const { data: projectsData, isLoading } = useUserProjects({
-        userId: user.data?.id ?? '',
-        eventId,
-    });
-
-    const userProject = projectsData?.data?.[0];
-
     return (
         <div className='dashboard-page space-y-4 md:space-y-6'>
             <div className="space-y-1 md:space-y-2">
@@ -47,17 +40,9 @@ export const StudentDashboard = ({ eventId }: StudentDashboardProps = {}) => {
                 </div>
             )}
             <div className="w-full overflow-x-auto">
-                {isLoading ? (
-                    <div className="flex justify-center items-center min-h-[200px]">
-                        <Spinner size="lg" />
-                    </div>
-                ) : userProject ? (
-                    <EvaluationProject projectId={userProject.id} />
-                ) : (
                     <div className="text-center py-12 text-muted-foreground">
-                        No projects found for this event
+                        Pronto se liberarán los resultados
                     </div>
-                )}
             </div>
         </div>
     );
