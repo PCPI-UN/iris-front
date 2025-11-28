@@ -32,51 +32,49 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { mutate, isPending } = useCreateEvaluation({
-  mutationConfig: {
-    onSuccess: () => {
-      setIsSubmitting(false);
-      router.push(`/app/events/${project.eventId}`);
+    mutationConfig: {
+      onSuccess: () => {
+        setIsSubmitting(false);
+        router.push(`/app/events/${project.eventId}`);
+      },
+      onError: () => {
+        setIsSubmitting(false);
+      },
     },
-    onError: () => {
-      setIsSubmitting(false);
+  });
+
+  const { data: projectData, isLoading: isProjectLoading } = useProject({ projectId });
+
+  const project = (projectData as any)?.data ?? projectData ?? null;
+
+  const {
+    data: courseCriteriaData,
+    isLoading: isCourseCriteriaLoading,
+  } = useCourseCriteria({
+    courseId: project?.courseId ?? "", // siempre se pasa un string
+    queryConfig: {
+      enabled: !!project?.courseId,   // solo se ejecuta si existe
     },
-  },
-});
+  });
 
-const { data: projectData, isLoading: isProjectLoading } = useProject({ projectId });
-
-const project = (projectData as any)?.data ?? projectData ?? null;
-
-const {
-  data: courseCriteriaData,
-  isLoading: isCourseCriteriaLoading,
-} = useCourseCriteria({
-  courseId: project?.courseId ?? "", // siempre se pasa un string
-  queryConfig: {
-    enabled: !!project?.courseId,   // solo se ejecuta si existe
-  },
-});
-
-if (isProjectLoading || isCourseCriteriaLoading) {
-  return <div>Cargando proyecto...</div>;
-}
-
-console.log("Criterios del curso:", courseCriteriaData);
+  if (isProjectLoading || isCourseCriteriaLoading) {
+    return <div>Cargando proyecto...</div>;
+  }
 
   const backendSections =
-  courseCriteriaData?.map((cat, index) => ({
-    id: `section-${index + 1}`,
-    name: `${index + 1}. (${cat.weight}) ${cat.category}`,
-    isSection: true,
-    subcriteria: cat.criterions.map((c) => ({
-      id: `c${c.id}`,
-      realId: c.id,
-      name: c.name,
-      weight: cat.weight,
-    })),  
-  })) ?? [];
+    courseCriteriaData?.map((cat, index) => ({
+      id: `section-${index + 1}`,
+      name: `${index + 1}. (${cat.weight}) ${cat.category}`,
+      isSection: true,
+      subcriteria: cat.criterions.map((c) => ({
+        id: c.id.toString(),
+        name: c.name,
+        weight: cat.weight,
+      })),
+    })) ?? [];
 
-const allSections = backendSections
+
+  const allSections = backendSections
   const currentSection = allSections[currentPage]
 
   const handleScoreChange = (criterionId: string, value: number) => {
@@ -85,27 +83,6 @@ const allSections = backendSections
       [criterionId]: value,
     }))
   }
-
-  const CRITERION_MAP: Record<string, number> = {
-  "1a": 1,
-  "1b": 2,
-  "1c": 3,
-  "1d": 4,
-  "1e": 5,
-
-  "2a": 6,
-  "2b": 7,
-  "2c": 8,
-  "2d": 9,
-  "2e": 10,
-  "2f": 11,
-  "2g": 12,
-
-  "3a": 13,
-  "3b": 14,
-  "3c": 15,
-};
-
 
   const handleSubmit = () => {
     if (isSubmitting) return
@@ -119,25 +96,25 @@ const allSections = backendSections
     setIsConfirmModalOpen(true)
   }
 
-const handleConfirmSubmit = () => {
-  setIsConfirmModalOpen(false);
-  setIsSubmitting(true);
+  const handleConfirmSubmit = () => {
+    setIsConfirmModalOpen(false);
+    setIsSubmitting(true);
 
-  const payload = {
-    projectId: Number(projectId),
-    comments: comments || "",
-    scores: Object.entries(scores).map(([localId, value]) => ({
-      criterionId: CRITERION_MAP[localId],
-      score: value,
-    })),
+    const payload: any = {
+      projectId: Number(projectId),
+      scores: Object.entries(scores).map(([localId, value]) => ({
+        criterionId: Number(localId),
+        score: value,
+      })),
+    };
+
+    if (comments.trim()) {
+      payload.comments = comments.trim();
+    }
+
+    mutate({ data: payload });
   };
 
-  console.log("Payload enviado:", payload);
-
-  mutate(
-    { data: payload },
-  );
-};
 
 
   const handleGoBack = () => {
@@ -179,38 +156,38 @@ const handleConfirmSubmit = () => {
                 <div className="flex items-center gap-2 text-xs md:text-sm">
                   <Users className="h-4 w-4 text-muted-foreground" />
                   <span className="font-medium">Integrantes del equipo</span>
-                </div>                
-                  <div className="hidden sm:block">
-                      <AvatarGroup
-                        participants={
-                          project.pendingParticipants.length > 0
-                            ? project.pendingParticipants.map((p: any) => ({
-                                name: `${p.firstName} ${p.lastName}`.trim()
-                              }))
-                            : project.participants.map((p: any) => ({
-                                name: `${p.firstName} ${p.lastName}`.trim()
-                              }))
-                        }
-                        size={35}
-                      />
-                    </div>
+                </div>
+                <div className="hidden sm:block">
+                  <AvatarGroup
+                    participants={
+                      project.pendingParticipants.length > 0
+                        ? project.pendingParticipants.map((p: any) => ({
+                          name: `${p.firstName} ${p.lastName}`.trim()
+                        }))
+                        : project.participants.map((p: any) => ({
+                          name: `${p.firstName} ${p.lastName}`.trim()
+                        }))
+                    }
+                    size={35}
+                  />
+                </div>
 
-                    {/* Mobile: Lista de nombres */}
-                    <div className="sm:hidden space-y-2">
-                      {(project.pendingParticipants.length > 0
-                        ? project.pendingParticipants
-                        : project.participants
-                      ).map((participant: any, idx: number) => (
-                        <div key={idx} className="flex items-center gap-2 text-sm">
-                          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
-                            {participant.firstName[0]}
-                            {participant.lastName[0]}
-                          </div>
-                          <span>{participant.firstName} {participant.lastName}</span>
-                        </div>
-                      ))}
+                {/* Mobile: Lista de nombres */}
+                <div className="sm:hidden space-y-2">
+                  {(project.pendingParticipants.length > 0
+                    ? project.pendingParticipants
+                    : project.participants
+                  ).map((participant: any, idx: number) => (
+                    <div key={idx} className="flex items-center gap-2 text-sm">
+                      <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
+                        {participant.firstName[0]}
+                        {participant.lastName[0]}
+                      </div>
+                      <span>{participant.firstName} {participant.lastName}</span>
                     </div>
-                  </div>
+                  ))}
+                </div>
+              </div>
 
               {project.documents && project.documents.length > 0 && (
                 <div className="space-y-2 pt-2 md:pt-4 border-t border-border">
@@ -312,8 +289,8 @@ const handleConfirmSubmit = () => {
                           >
                             <div
                               className={`h-6 w-6 md:h-7 md:w-7 rounded-full border-2 flex items-center justify-center transition-all ${scores[criterion.id] === scale.value
-                                  ? "border-primary bg-primary shadow-md scale-110"
-                                  : "border-muted-foreground/30 group-hover:border-muted-foreground/50"
+                                ? "border-primary bg-primary shadow-md scale-110"
+                                : "border-muted-foreground/30 group-hover:border-muted-foreground/50"
                                 }`}
                             >
                               {scores[criterion.id] === scale.value && (

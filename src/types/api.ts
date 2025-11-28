@@ -110,6 +110,7 @@ export type Project = Entity<{
   documents: ProjectDocument[];
   jurorAssignments: ProjectAssignment[];
   pendingParticipants: ProjectParticipant[];
+  evaluated: boolean;
   createdAt: number;
   updatedAt: number;
 }>;
