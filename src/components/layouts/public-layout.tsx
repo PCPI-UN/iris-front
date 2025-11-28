@@ -1,6 +1,7 @@
 'use client';
 
 import { Navbar } from '@/components/layouts/navbar';
+import { SupportButton } from '@/components/support-button';
 import { ReactNode } from 'react';
 
 interface PublicLayoutProps {
@@ -16,6 +17,7 @@ export function PublicLayout({ children, showNavLinks = true, showLoginButton = 
       <main className="pt-24">
         {children}
       </main>
+      <SupportButton />
     </div>
   );
 }

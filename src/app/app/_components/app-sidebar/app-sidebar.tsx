@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   ArrowDownAZ,
   SquareChartGantt,
+  Mail,
 } from "lucide-react";
 
 import { NavUser } from "./nav-user";
@@ -67,9 +68,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             icon: ShieldCheck,
           },
         ];
-      case "USER":
+      case "User":
         return [
           { title: "Dashboard", url: paths.app.root.getHref(), icon: Home },
+          {
+            title: "Mis invitaciones",
+            url: paths.app.invitations.getHref(),
+            icon: Mail,
+          },
         ];
       default:
         return [

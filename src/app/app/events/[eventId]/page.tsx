@@ -13,7 +13,7 @@ const ProjectJuryPage = async ({ params }: { params: Promise<{ eventId: string }
     
     const queryClient = new QueryClient();
 
-    await queryClient.prefetchQuery(getJuryProjectsQueryOptions({ eventId }));
+    await queryClient.prefetchQuery(getJuryProjectsQueryOptions({ eventId: Number(eventId) }));
 
     const dehydratedState = dehydrate(queryClient);
 

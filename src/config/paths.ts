@@ -21,7 +21,8 @@ export const paths = {
         `/auth/fg-password${redirectTo ? `?redirectTo=${encodeURIComponent(redirectTo)}` : ""}`,
     },
     change_password: {
-      getHref: (token: string) => `/auth/chg-password?token=${encodeURIComponent(token)}`,
+      getHref: (token: string) =>
+        `/auth/chg-password?token=${encodeURIComponent(token)}`,
     },
   },
 
@@ -45,6 +46,10 @@ export const paths = {
     profile: {
       getHref: () => "/app/profile",
       roles: ["Admin", "User"],
+    },
+    invitations: {
+      getHref: () => "/app/invitations",
+      roles: ["User"],
     },
     events: {
       getHref: () => "/app/events",
@@ -79,9 +84,6 @@ export const paths = {
     criteria: {
       getHref: () => "/app/criteria",
     },
-    test : {
-      getHref: () => "/app/test",
-    },
   },
   public: {
     discussion: {
@@ -91,7 +93,7 @@ export const paths = {
       getHref: (accessCode: string) => `/public/projects/${accessCode}`,
     },
     event: {
-      getHref: () => '/public/events',
-    }
+      getHref: () => "/public/events",
+    },
   },
 } as const;

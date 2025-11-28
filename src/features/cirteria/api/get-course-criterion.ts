@@ -2,18 +2,19 @@ import { queryOptions, useQuery } from "@tanstack/react-query";
 
 import { api } from "@/lib/api-client";
 import { QueryConfig } from "@/lib/react-query";
-import { Criterion } from "@/types/api";
+import { CourseCategory } from "@/types/api";
 
 export const getCourseCriteria = async ({
   courseId,
 }: {
   courseId: string;
-}): Promise<Criterion[]> => {
-  const response = await api.get<{ criterions: Criterion[] }>(
+}): Promise<CourseCategory[]> => {
+  const response = await api.get<{ categories: CourseCategory[] }>(
     `/criterions/course/${courseId}`
   );
-  return response.criterions || [];
+  return response.categories || [];
 };
+
 
 export const getCourseCriterionQueryOptions = ({
   courseId,
