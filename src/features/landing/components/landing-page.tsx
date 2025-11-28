@@ -6,6 +6,7 @@ import { EventsSection } from './events-section';
 import { StorySections } from './story-sections';
 import { HorizontalScrollSection } from './horizontal-scroll-section';
 import { EngineeringSection } from './engineering-section';
+import { WinnersSection } from './winners-section';
 import { DevelopersCarousel } from './developers-carousel';
 import { Footer } from './cta-footer';
 import { Navbar } from '@/components/layouts/navbar';
@@ -31,6 +32,7 @@ export function LandingPage() {
   const revealSectionRef = useRef<HTMLElement>(null);
   const eventsSectionRef = useRef<HTMLElement>(null);
   const developersRef = useRef<HTMLElement>(null);
+  const winnersSectionRef = useRef<HTMLElement>(null);
 
   const [activeEngineering, setActiveEngineering] = useState(0);
 
@@ -116,6 +118,10 @@ export function LandingPage() {
       {/* Events Section */}
       <EventsSection
         eventsSectionRef={eventsSectionRef}
+      />
+      {/* Winners Section */}
+      <WinnersSection
+        winnersSectionRef={winnersSectionRef}
       />
 
       {/* Developers Carousel */}
