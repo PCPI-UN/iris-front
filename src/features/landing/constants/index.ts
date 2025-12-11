@@ -52,7 +52,7 @@ export const events: Event[] = [
 export const engineeringFields: EngineeringField[] = [
   {
     id: 1,
-    name: 'Ingeniería de Sistemas y Computación',
+    name: 'Ingeniería de Sistemas',
     icon: Code,
     color: 'oklch(0.75 0.15 195)',
     description: 'Innovación en software, IA y sistemas computacionales',

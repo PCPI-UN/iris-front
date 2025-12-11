@@ -11,6 +11,7 @@ export const landingContent = {
       engineering: 'Ingenierías',
       events: 'Eventos',
       information: 'Información',
+      winners: 'Ganadores',
     },
     cta: 'Iniciar sesión',
   },

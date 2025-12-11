@@ -67,6 +67,14 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
               >
                 {landingContent.navbar.links.events}
               </a>
+
+              <a
+                href="#ganadores"
+                onClick={(e) => handleSmoothScroll(e, 'ganadores')}
+                className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+              >
+                {landingContent.navbar.links.winners}
+              </a>
             </div>
           )}
 
@@ -129,6 +137,14 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
                 className="px-6 py-4 text-muted-foreground hover:text-foreground transition-all cursor-pointer"
               >
                 {landingContent.navbar.links.events}
+              </a>
+
+              <a
+                href="#ganadores"
+                onClick={(e) => handleSmoothScroll(e, 'ganadores')}
+                className="px-6 py-4 text-muted-foreground hover:text-foreground transition-all cursor-pointer"
+              >
+                {landingContent.navbar.links.winners}
               </a>
             </div>
           </div>
