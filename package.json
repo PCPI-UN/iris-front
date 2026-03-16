@@ -98,6 +98,8 @@
     "zustand": "^5.0.8"
   },
   "devDependencies": {
+    "@commitlint/cli": "^20.5.0",
+    "@commitlint/types": "^20.5.0",
     "@mswjs/data": "^0.16.2",
     "@mswjs/http-middleware": "^0.10.3",
     "@next/eslint-plugin-next": "15.3.4",
