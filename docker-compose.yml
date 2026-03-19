@@ -16,9 +16,6 @@ services:
     environment:
       NODE_ENV: 'production'
       PORT: ${PORT}
-      API_URL: ${API_URL}
-      NEXT_PUBLIC_ENABLE_API_MOCKING: ${NEXT_PUBLIC_ENABLE_API_MOCKING}
-      NEXT_PUBLIC_URL: ${NEXT_PUBLIC_URL}
     
     restart: unless-stopped
     
