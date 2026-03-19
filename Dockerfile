@@ -11,7 +11,6 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 # Stage 2: Dependencies
 # ========================
 FROM base AS deps
-ENV NODE_ENV=development
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 
