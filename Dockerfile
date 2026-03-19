@@ -34,8 +34,7 @@ ENV NEXT_PUBLIC_MOCK_API_PORT=${NEXT_PUBLIC_MOCK_API_PORT}
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 
-RUN pnpm build
-
+RUN pnpm build 2>&1 || (echo "BUILD FAILED" && exit 1)
 # ========================
 # Stage 4: Production
 # ========================
