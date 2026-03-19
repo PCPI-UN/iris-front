@@ -51,7 +51,15 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
               >
                 {landingContent.navbar.links.information}
               </a>
-              
+
+               <a
+                href="#eventos"
+                onClick={(e) => handleSmoothScroll(e, 'eventos')}
+                className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+              >
+                {landingContent.navbar.links.events}
+              </a>
+  {/*              
               <a
                 href="#ingenierias"
                 onClick={(e) => handleSmoothScroll(e, 'ingenierias')}
@@ -60,13 +68,7 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
                 {landingContent.navbar.links.engineering}
               </a>
               
-              <a
-                href="#eventos"
-                onClick={(e) => handleSmoothScroll(e, 'eventos')}
-                className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-              >
-                {landingContent.navbar.links.events}
-              </a>
+
 
               <a
                 href="#ganadores"
@@ -75,6 +77,7 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
               >
                 {landingContent.navbar.links.winners}
               </a>
+                */}
             </div>
           )}
 
@@ -122,8 +125,17 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
               >
                 {landingContent.navbar.links.information}
               </a>
-              
-              <a
+
+
+               <a
+                href="#eventos"
+                onClick={(e) => handleSmoothScroll(e, 'eventos')}
+                className="px-6 py-4 text-muted-foreground hover:text-foreground transition-all cursor-pointer"
+              >
+                {landingContent.navbar.links.events}
+              </a>
+
+ {/*            <a
                 href="#ingenierias"
                 onClick={(e) => handleSmoothScroll(e, 'ingenierias')}
                 className="px-6 py-4 text-muted-foreground hover:text-foreground transition-all cursor-pointer border-b border-border/20"
@@ -131,13 +143,7 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
                 {landingContent.navbar.links.engineering}
               </a>
               
-              <a
-                href="#eventos"
-                onClick={(e) => handleSmoothScroll(e, 'eventos')}
-                className="px-6 py-4 text-muted-foreground hover:text-foreground transition-all cursor-pointer"
-              >
-                {landingContent.navbar.links.events}
-              </a>
+
 
               <a
                 href="#ganadores"
@@ -146,6 +152,7 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
               >
                 {landingContent.navbar.links.winners}
               </a>
+              */}
             </div>
           </div>
         </div>

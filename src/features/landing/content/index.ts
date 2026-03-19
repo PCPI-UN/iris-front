@@ -8,24 +8,26 @@ export const landingContent = {
   navbar: {
     brand: 'iris',
     links: {
-      engineering: 'Ingenierías',
+     // engineering: 'Ingenierías',
       events: 'Eventos',
       information: 'Información',
-      winners: 'Ganadores',
+     // winners: 'Ganadores',
     },
     cta: 'Iniciar sesión',
   },
 
   // Hero Section
   hero: {
-    badge: 'Universidad del Norte • 2025',
+    badge: 'Universidad del Norte • 2026',
     title: 'IRIS',
-    subtitle: 'La plataforma que ilumina la excelencia en proyectos de ingeniería',
+    subtitle: 'Plataforma para gestionar eventos y proyectos académicos',
+  
     stats: [
       { value: '300+', label: 'Proyectos' },
       { value: '7', label: 'Ingenierías' },
       { value: '500+', label: 'Estudiantes' },
     ],
+  
     scrollIndicator: 'Scroll para descubrir',
   },
 
@@ -34,23 +36,23 @@ export const landingContent = {
     section1: {
       layers: [
         {
-          title: 'En cada proyecto',
-          subtitle: 'hay una historia por contar',
+          title: 'En cada evento',
+          subtitle: 'surgen historias por contar',
         },
         {
           title: 'En cada idea',
           subtitle: 'hay innovación esperando brillar',
         },
         {
-          title: 'Iris ilumina el camino',
-          subtitle: 'para que tu trabajo destaque',
+          title: 'Iris conecta todo',
+          subtitle: 'para que participantes, jurados y visitantes vivan cada proceso con claridad y emoción',
           highlighted: true,
         },
       ],
     },
     section3: {
-      words: ['Siete', 'ingenierías.', 'Un', 'solo', 'propósito:', 'Innovar.'],
-      highlightedIndices: [0, 4, 5], // Índices de palabras con colores especiales
+      words: ['Múltiples', 'eventos.', 'Distintas', 'miradas.', 'Un', 'mismo', 'espacio', 'para', 'innovar.'],
+      highlightedIndices: [0, 3, 8], // Índices de palabras con colores especiales
     },
   },
 
@@ -62,20 +64,20 @@ export const landingContent = {
         title: 'Ver más allá',
         titleLine2: 'de lo',
         titleHighlight: 'evidente',
-        description: 'es atreverse a imaginar, cuestionar y crear. En Uninorte formamos ingenieros que no se conforman con lo que existe.',
+        description: 'es atreverse a imaginar, cuestionar y crear. En Iris conectamos innovación, evaluación y talento en una sola plataforma.',
       },
       {
         badge: '02 • FORMACIÓN',
-        title: 'Formamos profesionales con',
+        title: 'Impulsamos procesos con',
         titleHighlight: 'excelencia',
-        description: 'estudiantes con formación práctica, visión global y excelencia en cada paso del camino.',
+        description: 'facilitando la gestión de eventos, la participación de estudiantes y la evaluación por jurados en cada etapa del proceso.',
       },
       {
         badge: '03 • RECORRIDO',
-        title: 'Ediciones que van dejando',
+        title: 'Eventos que van dejando',
         titleHighlight: ' huella',
-        description: 'cada edición de nuestra feria ha mostrado visión global, liderazgo y excelencia. Conoce cómo hemos impulsado generaciones que transforman la sociedad desde la innovación.',
-        cta: 'Conoce ediciones anteriores',
+        description: 'cada evento reúne ideas, esfuerzo y talento. Explora ediciones anteriores y descubre cómo estos proyectos continúan generando impacto.',
+        cta: 'Ver eventos anteriores',
       },
     ],
   },
@@ -91,10 +93,10 @@ export const landingContent = {
 
   // Events Section
   events: {
-    badge: 'Eventos Disponibles',
+    badge: 'Eventos',
     title: 'Próximos',
     titleHighlight: 'Eventos',
-    subtitle: 'Regístrate en los eventos y participa en las ferias de proyectos finales',
+    subtitle: 'Regístrate, participa o explora los eventos activos en la plataforma',
     cta: {
       open: 'Inscribirse',
       default: 'Más información',
@@ -129,7 +131,7 @@ export const landingContent = {
   // Footer
   footer: {
     brand: 'iris',
-    description: 'Plataforma de evaluación de proyectos finales de ingeniería. Universidad del Norte, Barranquilla.',
+    description: 'Plataforma para la gestión de eventos académicos, evaluación de proyectos y administración de resultados en la Universidad del Norte.',
     navigation: {
       title: 'Navegación',
       links: [

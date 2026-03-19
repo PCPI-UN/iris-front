@@ -91,6 +91,10 @@ export function LandingPage() {
         scrollIndicatorRef={scrollIndicatorRef}
       />
 
+      {/* Events Section */}
+      <EventsSection
+        eventsSectionRef={eventsSectionRef}
+      />
 
       {/* Story Sections */}
       <StorySections
@@ -108,21 +112,18 @@ export function LandingPage() {
       />
 
       {/* Engineering Section */}
-      <EngineeringSection
+ {/*     <EngineeringSection
         engineeringSectionRef={engineeringSectionRef}
         maskTextRef={maskTextRef}
         engineeringFields={engineeringFields}
         activeEngineering={activeEngineering}
-      />
+      />*/}
 
-      {/* Events Section */}
-      <EventsSection
-        eventsSectionRef={eventsSectionRef}
-      />
+
       {/* Winners Section */}
-      <WinnersSection
+  {/*      <WinnersSection
         winnersSectionRef={winnersSectionRef}
-      />
+      />*/}
 
       {/* Developers Carousel */}
       <DevelopersCarousel
