@@ -144,7 +144,7 @@ export const landingContent = {
   // Footer
   footer: {
     brand: 'iris',
-    description: 'Plataforma para la gestión y exploración de eventos de la Universidad del Norte.',
+    description: 'Plataforma para la Gestión y Exploración de Eventos de la Universidad del Norte.',
     navigation: {
       title: 'Navegación',
       links: [
