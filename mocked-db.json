@@ -84,7 +84,68 @@
       "isPublic": true,
       "evaluationsStatus": "open",
       "createdAt": 1700200000000
+    },
+        {
+      "id": "event-004",
+      "title": "Hackathon Innovación 2025",
+      "description": "Evento de innovación tecnológica",
+      "startDate": "2025-01-15",
+      "endDate": "2025-01-17",
+      "inscriptionDeadline": "2025-01-10",
+      "accessCode": "EVT001",
+      "isPublic": true,
+      "evaluationsStatus": "open",
+      "createdAt": 1700000000000
+    },
+        {
+      "id": "event-005",
+      "title": "Hackathon Innovación 2025",
+      "description": "Evento de innovación tecnológica",
+      "startDate": "2025-01-15",
+      "endDate": "2025-01-17",
+      "inscriptionDeadline": "2025-01-10",
+      "accessCode": "EVT001",
+      "isPublic": true,
+      "evaluationsStatus": "open",
+      "createdAt": 1700000000000
+    },
+    {
+      "id": "event-006",
+      "title": "Feria de Ciencias 2025",
+      "description": "Presentación de proyectos científicos",
+      "startDate": "2025-02-20",
+      "endDate": "2025-02-22",
+      "inscriptionDeadline": "2025-02-15",
+      "accessCode": "EVT002",
+      "isPublic": true,
+      "evaluationsStatus": "open",
+      "createdAt": 1700100000000
+    },
+    {
+      "id": "event-007",
+      "title": "Competencia de Desarrollo Web",
+      "description": "Desarrollo de aplicaciones web innovadoras",
+      "startDate": "2025-03-10",
+      "endDate": "2025-03-12",
+      "inscriptionDeadline": "2025-03-05",
+      "accessCode": "EVT003",
+      "isPublic": true,
+      "evaluationsStatus": "open",
+      "createdAt": 1700200000000
+    },
+        {
+      "id": "event-008",
+      "title": "Hackathon Innovación 2025",
+      "description": "Evento de innovación tecnológica",
+      "startDate": "2025-01-15",
+      "endDate": "2025-01-17",
+      "inscriptionDeadline": "2025-01-10",
+      "accessCode": "EVT001",
+      "isPublic": true,
+      "evaluationsStatus": "open",
+      "createdAt": 1700000000000
     }
+
   ],
   "eventMembership": [
     {

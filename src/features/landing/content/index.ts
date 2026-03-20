@@ -20,13 +20,13 @@ export const landingContent = {
   hero: {
     badge: 'Universidad del Norte • 2026',
     title: 'IRIS',
-    subtitle: 'Plataforma para gestionar eventos y proyectos académicos',
+    subtitle: 'Plataforma para gestionar convocatorias y eventos',
   
-    stats: [
-      { value: '300+', label: 'Proyectos' },
-      { value: '7', label: 'Ingenierías' },
-      { value: '500+', label: 'Estudiantes' },
-    ],
+  stats: [
+    { value: 'Explora', label: 'Proyectos y Eventos' },
+    { value: 'Participa', label: 'En Nuestras Convocatorias' },
+    { value: 'Descubre', label: 'Resultados y Ganadores' },
+  ],
   
     scrollIndicator: 'Scroll para descubrir',
   },

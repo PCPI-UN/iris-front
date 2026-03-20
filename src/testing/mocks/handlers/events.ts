@@ -33,6 +33,20 @@ type EventDTO = {
   userEventRole?: "Participant" | "JURY";
 };
 
+type PublicEventDTO = {
+  id: string;
+  name: string;
+  description: string;
+  startDate: string;
+  endDate: string;
+  inscriptionDeadline: string;
+  accessCode: string;
+  statusName: string;
+  isPubliclyJoinable: boolean;
+  evaluationsOpened: boolean;
+  active: boolean;
+};
+
 const mapEventToDTO = (event: any, membership?: any): EventDTO => {
   return {
     id: event.id,
@@ -46,6 +60,26 @@ const mapEventToDTO = (event: any, membership?: any): EventDTO => {
     evaluationsStatus: event.evaluationsStatus,
     createdAt: event.createdAt,
     ...(membership && { userEventRole: membership.eventRole }),
+  };
+};
+
+const mapEventToPublicDTO = (event: any): PublicEventDTO => {
+  const now = new Date();
+  const inscriptionDeadline = new Date(event.inscriptionDeadline);
+  const isOpen = inscriptionDeadline >= now;
+
+  return {
+    id: event.id,
+    name: event.title,
+    description: event.description,
+    startDate: event.startDate,
+    endDate: event.endDate,
+    inscriptionDeadline: event.inscriptionDeadline,
+    accessCode: event.accessCode,
+    statusName: isOpen ? "OPEN" : "CLOSED",
+    isPubliclyJoinable: Boolean(event.isPublic),
+    evaluationsOpened: event.evaluationsStatus === "open",
+    active: true,
   };
 };
 
@@ -63,6 +97,107 @@ const calculatePagination = (total: number, page: number) => {
 };
 
 export const eventsHandlers = [
+  http.get(`${env.API_URL}/events/public`, async ({ request }) => {
+    await networkDelay();
+
+    try {
+      const url = new URL(request.url);
+      const page = Number(url.searchParams.get("page") || 1);
+      const validPage = validatePage(page);
+
+      const publicEvents = db.event.findMany({
+        where: {
+          isPublic: {
+            equals: true,
+          },
+        },
+      });
+
+      const total = publicEvents.length;
+      const pagination = calculatePagination(total, validPage);
+      const startIndex = PAGE_SIZE * (pagination.page - 1);
+      const endIndex = startIndex + PAGE_SIZE;
+
+      const events = publicEvents
+        .slice(startIndex, endIndex)
+        .map((event) => mapEventToPublicDTO(event));
+
+      return HttpResponse.json({
+        events,
+        meta: {
+          total,
+          itemsOnCurrentPage: events.length,
+          itemsPerPage: PAGE_SIZE,
+          currentPage: pagination.page,
+          totalPages: pagination.totalPages,
+        },
+      });
+    } catch (error: any) {
+      return HttpResponse.json(
+        { message: error?.message || "Server Error" },
+        { status: 500 }
+      );
+    }
+  }),
+
+  http.get(`${env.API_URL}/events/public/:eventId`, async ({ params }) => {
+    await networkDelay();
+
+    try {
+      const eventId = params.eventId as string;
+
+      const event = db.event.findFirst({
+        where: {
+          id: {
+            equals: eventId,
+          },
+        },
+      });
+
+      if (!event) {
+        return HttpResponse.json(
+          { message: "Event not found" },
+          { status: 404 }
+        );
+      }
+
+      const eventProjects = db.project.findMany({
+        where: {
+          eventId: {
+            equals: event.id,
+          },
+        },
+      });
+
+      const participants = eventProjects
+        .flatMap((project) => project.participants ?? [])
+        .map((participant: any) => {
+          const firstName = participant?.firstName ?? "";
+          const lastName = participant?.lastName ?? "";
+          return `${firstName} ${lastName}`.trim() || participant?.email || "";
+        })
+        .filter(Boolean);
+
+      const uniqueParticipants = [...new Set(participants)];
+
+      return HttpResponse.json({
+        event: {
+          ...mapEventToPublicDTO(event),
+          organization: "Universidad del Norte",
+          company: "Universidad del Norte",
+          participants: uniqueParticipants,
+          awardsInfo:
+            "Premiacion institucional a los mejores proyectos de cada categoria.",
+        },
+      });
+    } catch (error: any) {
+      return HttpResponse.json(
+        { message: error?.message || "Server Error" },
+        { status: 500 }
+      );
+    }
+  }),
+
   http.get(`${env.API_URL}/events`, async ({ cookies, request }) => {
     await networkDelay();
 
