@@ -339,14 +339,14 @@ export function HeroSection({
                 }, transparent 90%)`,
               }}
             >
-              <div className={`text-4xl font-black mb-2 ${
+              <div className={`text-3xl md:text-4xl font-black mb-2 ${
                 index === 0 ? 'prismatic-text' :
                 index === 1 ? 'text-secondary' :
                 'text-accent'
               }`}>
                 {stat.value}
               </div>
-              <div className="text-sm text-muted-foreground">{stat.label}</div>
+              <div className="text-base md:text-lg text-muted-foreground">{stat.label}</div>
             </div>
           ))}
         </div>

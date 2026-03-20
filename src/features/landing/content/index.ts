@@ -8,10 +8,10 @@ export const landingContent = {
   navbar: {
     brand: 'iris',
     links: {
-     // engineering: 'Ingenierías',
-      events: 'Eventos',
+      events: 'Eventos próximos',
       information: 'Información',
-     // winners: 'Ganadores',
+      pastEvents: 'Eventos pasados',
+      developers: 'Desarrolladores',
     },
     cta: 'Iniciar sesión',
   },
@@ -20,12 +20,12 @@ export const landingContent = {
   hero: {
     badge: 'Universidad del Norte • 2026',
     title: 'IRIS',
-    subtitle: 'Plataforma para gestionar convocatorias y eventos',
+    subtitle: 'Un espacio para descubrir, conectar y participar en eventos que hacen brillar tus ideas',
   
   stats: [
-    { value: 'Explora', label: 'Proyectos y Eventos' },
-    { value: 'Participa', label: 'En Nuestras Convocatorias' },
-    { value: 'Descubre', label: 'Resultados y Ganadores' },
+    { value: 'Explora', label: 'Ver Eventos y Convocatorias' },
+    { value: 'Participa', label: 'Postúlate Ahora' },
+    { value: 'Descubre', label: 'Ver Resultados y Logros' },
   ],
   
     scrollIndicator: 'Scroll para descubrir',
@@ -45,7 +45,7 @@ export const landingContent = {
         },
         {
           title: 'Iris conecta todo',
-          subtitle: 'para que participantes, jurados y visitantes vivan cada proceso con claridad y emoción',
+          subtitle: 'para que todos los involucrados puedan vivir cada proceso con claridad y emoción',
           highlighted: true,
         },
       ],
@@ -76,7 +76,7 @@ export const landingContent = {
         badge: '03 • RECORRIDO',
         title: 'Eventos que van dejando',
         titleHighlight: ' huella',
-        description: 'cada evento reúne ideas, esfuerzo y talento. Explora ediciones anteriores y descubre cómo estos proyectos continúan generando impacto.',
+        description: 'cada evento reúne ideas, esfuerzo y talento. Explora ediciones anteriores y descubre cómo continúan generando impacto.',
         cta: 'Ver eventos anteriores',
       },
     ],
@@ -114,24 +114,37 @@ export const landingContent = {
     title: 'Equipo de',
     titleHighlight: 'Desarrollo',
     team: [
-      { name: 'Juan Povea', role: 'Backend Leader' },
-      { name: 'Jorge Sánchez', role: 'Frontend Leader' },
-      { name: 'Alejandra Valencia', role: 'Backend Developer' },
-      { name: 'Carlos López', role: ' UI/UX Leader - Frontend Developer' },
-      { name: 'Yovany Zhu Ye', role: 'Full Stack Developer' },
-      { name: 'Jhonatan Romero', role: 'Frontend Developer' },
-      { name: 'Jesús Cantillo', role: 'Backend Developer' },
-      { name: 'Juan Carrasquilla', role: 'Backend Developer' },
-      { name: 'Samuel Robles', role: 'Backend Developer' },
-      { name: 'Gabriel Palencia', role: 'Backend Developer' },
-      { name: 'Daniel Romero', role: 'Software Architect' },
+      // v1.0
+      { name: 'Juan Povea', role: 'Backend Leader', version: 'v1.0' },
+      { name: 'Jorge Sánchez', role: 'Frontend Leader', version: 'v1.0' },
+      { name: 'Alejandra Valencia', role: 'Backend Developer', version: 'v1.0' },
+      { name: 'Carlos López', role: ' UI/UX Leader - Frontend Developer', version: 'v1.0' },
+      { name: 'Yovany Zhu Ye', role: 'Full Stack Developer', version: 'v1.0' },
+      { name: 'Jhonatan Romero', role: 'Frontend Developer', version: 'v1.0' },
+      { name: 'Jesús Cantillo', role: 'Backend Developer', version: 'v1.0' },
+      { name: 'Juan Carrasquilla', role: 'Backend Developer', version: 'v1.0' },
+      { name: 'Samuel Robles', role: 'Backend Developer', version: 'v1.0' },
+      { name: 'Gabriel Palencia', role: 'Backend Developer', version: 'v1.0' },
+      { name: 'Daniel Romero', role: 'Software Architect', version: 'v1.0' },
+      // v2.0
+      { name: 'NAME1', role: 'Backend Leader', version: 'v2.0' },
+      { name: 'NAME2', role: 'Frontend Leader', version: 'v2.0' },
+      { name: 'NAME3', role: 'Backend Developer', version: 'v2.0' },
+      { name: 'NAME4', role: 'Frontend Developer', version: 'v2.0' },
+      { name: 'NAME5', role: 'Full Stack Developer', version: 'v2.0' },
+      { name: 'NAME6', role: 'Frontend Developer', version: 'v2.0' },
+      { name: 'NAME7', role: 'Backend Developer', version: 'v2.0' },
+      { name: 'NAME8', role: 'Backend Developer', version: 'v2.0' },
+      { name: 'NAME9', role: 'Backend Developer', version: 'v2.0' },
+      { name: 'NAME10', role: 'Backend Developer', version: 'v2.0' },
+      { name: 'NAME11', role: 'Software Architect', version: 'v2.0' },
     ],
   },
 
   // Footer
   footer: {
     brand: 'iris',
-    description: 'Plataforma para la gestión de eventos académicos, evaluación de proyectos y administración de resultados en la Universidad del Norte.',
+    description: 'Plataforma para la gestión y exploración de eventos de la Universidad del Norte.',
     navigation: {
       title: 'Navegación',
       links: [

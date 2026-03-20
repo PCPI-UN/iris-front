@@ -290,7 +290,7 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
                                   className="w-full"
                                   variant="bordered"
                                 >
-                                  Ver mas
+                                  Ver más
                                 </Button>
 
                                 <Button

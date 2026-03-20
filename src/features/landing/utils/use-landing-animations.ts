@@ -241,6 +241,11 @@ export function useLandingAnimations(
       if (refs.horizontalSectionRef.current && refs.horizontalContentRef.current) {
         const panels = gsap.utils.toArray<HTMLElement>('.horizontal-panel');
 
+        gsap.set(panels, {
+          force3D: true,
+          willChange: 'transform',
+        });
+
         gsap.to(panels, {
           xPercent: -100 * (panels.length - 1),
           ease: 'none',
@@ -248,10 +253,11 @@ export function useLandingAnimations(
             trigger: refs.horizontalSectionRef.current,
             start: 'top top',
             pin: true,
-            scrub: 1,
-            snap: 1 / (panels.length - 1),
+            scrub: 0.35,
             end: () => '+=' + refs.horizontalContentRef.current!.offsetWidth,
             anticipatePin: 1,
+            invalidateOnRefresh: true,
+            fastScrollEnd: true,
             // Cuando el scroll horizontal termina, libera el pin para permitir scroll vertical normal
             onLeave: () => {
               if (refs.horizontalSectionRef.current) {

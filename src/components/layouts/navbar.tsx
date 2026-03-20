@@ -22,13 +22,59 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
   const handleSmoothScroll = (e: React.MouseEvent<HTMLAnchorElement>, targetId: string) => {
     e.preventDefault();
     setIsMobileMenuOpen(false); // Close mobile menu on navigation
+
+    // Disable smooth scrolling temporarily
+    const html = document.documentElement;
+    const originalBehavior = html.style.scrollBehavior;
+    html.style.scrollBehavior = 'auto';
+
+    const horizontalTargetPanelIndex =
+      targetId === 'informacion' ? 0 : targetId === 'recorrido' ? 2 : null;
+
+    if (horizontalTargetPanelIndex !== null) {
+      const horizontalSection = document.getElementById('informacion');
+
+      if (horizontalSection) {
+        const pinSpacer = horizontalSection.parentElement?.classList.contains('pin-spacer')
+          ? horizontalSection.parentElement
+          : null;
+        const sectionTop = pinSpacer ? pinSpacer.offsetTop : horizontalSection.offsetTop;
+        
+        const panels = horizontalSection.querySelectorAll('.horizontal-panel');
+        const panelsCount = panels.length;
+        const maxIndex = Math.max(panelsCount - 1, 0);
+        const targetPanelIndex = Math.min(horizontalTargetPanelIndex, maxIndex);
+        const progress = maxIndex > 0 ? targetPanelIndex / maxIndex : 0;
+        
+        // Each panel is min-w-full (100vw), so we need (panelsCount - 1) * viewport height worth of scroll
+        const horizontalContent = horizontalSection.querySelector('.flex') as HTMLElement;
+        const totalScrollDistance = (panelsCount - 1) * window.innerHeight;
+        const targetY = sectionTop + totalScrollDistance * progress;
+        
+        // Add offset only for 'informacion' button
+        const scrollOffset = targetId === 'informacion' ? -280 : 0;
+        const finalTargetY = Math.max(0, targetY + scrollOffset);
+
+        window.scrollY = finalTargetY as any;
+        document.documentElement.scrollTop = finalTargetY;
+        document.body.scrollTop = finalTargetY;
+
+        // Restore original scroll behavior
+        html.style.scrollBehavior = originalBehavior;
+        return;
+      }
+    }
+
     const targetElement = document.getElementById(targetId);
     if (targetElement) {
-      targetElement.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start',
-      });
+      // Jump directly to the element without animation
+      window.scrollY = targetElement.offsetTop as any;
+      document.documentElement.scrollTop = targetElement.offsetTop;
+      document.body.scrollTop = targetElement.offsetTop;
     }
+
+    // Restore original scroll behavior
+    html.style.scrollBehavior = originalBehavior;
   };
 
   return (
@@ -58,6 +104,22 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
                 className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
               >
                 {landingContent.navbar.links.events}
+              </a>
+
+              <a
+                href="#recorrido"
+                onClick={(e) => handleSmoothScroll(e, 'recorrido')}
+                className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+              >
+                {landingContent.navbar.links.pastEvents}
+              </a>
+
+              <a
+                href="#developers"
+                onClick={(e) => handleSmoothScroll(e, 'developers')}
+                className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+              >
+                {landingContent.navbar.links.developers}
               </a>
   {/*              
               <a
@@ -133,6 +195,22 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
                 className="px-6 py-4 text-muted-foreground hover:text-foreground transition-all cursor-pointer"
               >
                 {landingContent.navbar.links.events}
+              </a>
+
+              <a
+                href="#recorrido"
+                onClick={(e) => handleSmoothScroll(e, 'recorrido')}
+                className="px-6 py-4 text-muted-foreground hover:text-foreground transition-all cursor-pointer border-t border-border/20"
+              >
+                {landingContent.navbar.links.pastEvents}
+              </a>
+
+              <a
+                href="#developers"
+                onClick={(e) => handleSmoothScroll(e, 'developers')}
+                className="px-6 py-4 text-muted-foreground hover:text-foreground transition-all cursor-pointer border-t border-border/20"
+              >
+                {landingContent.navbar.links.developers}
               </a>
 
  {/*            <a
