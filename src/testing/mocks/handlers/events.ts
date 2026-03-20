@@ -62,6 +62,16 @@ const calculatePagination = (total: number, page: number) => {
   };
 };
 
+const toDualResponse = (events: EventDTO[], pagination: { page: number; total: number; totalPages: number }) => ({
+  data: events,
+  meta: pagination,
+  events,
+  page: pagination.page,
+  limit: PAGE_SIZE,
+  total: pagination.total,
+  totalPages: pagination.totalPages,
+});
+
 export const eventsHandlers = [
   http.get(`${env.API_URL}/events`, async ({ cookies, request }) => {
     await networkDelay();
@@ -88,10 +98,7 @@ export const eventsHandlers = [
           })
           .map((event) => mapEventToDTO(event));
 
-        return HttpResponse.json({
-          data: events,
-          meta: pagination,
-        });
+        return HttpResponse.json(toDualResponse(events, pagination));
       }
 
       // Para usuarios USER, solo mostrar eventos donde tienen membresía
@@ -103,10 +110,8 @@ export const eventsHandlers = [
 
       // Si no tiene membresías, retornar lista vacía
       if (userMemberships.length === 0) {
-        return HttpResponse.json({
-          data: [],
-          meta: calculatePagination(0, validPage),
-        });
+        const pagination = calculatePagination(0, validPage);
+        return HttpResponse.json(toDualResponse([], pagination));
       }
 
       const eventIds = userMemberships.map((m) => m.eventId);
@@ -130,10 +135,95 @@ export const eventsHandlers = [
       const endIndex = startIndex + PAGE_SIZE;
       const paginatedEvents = userEvents.slice(startIndex, endIndex);
 
-      return HttpResponse.json({
-        data: paginatedEvents,
-        meta: pagination,
-      });
+      return HttpResponse.json(toDualResponse(paginatedEvents, pagination));
+    } catch (error: any) {
+      return HttpResponse.json(
+        { message: error?.message || "Server Error" },
+        { status: 500 }
+      );
+    }
+  }),
+
+  http.get(`${env.API_URL}/events/public`, async ({ request }) => {
+    await networkDelay();
+
+    try {
+      const url = new URL(request.url);
+      const page = Number(url.searchParams.get("page") || 1);
+      const validPage = validatePage(page);
+
+      const publicEvents = db.event
+        .findMany({
+          where: {
+            isPublic: {
+              equals: true,
+            },
+          },
+        })
+        .map((event) => mapEventToDTO(event));
+
+      const total = publicEvents.length;
+      const pagination = calculatePagination(total, validPage);
+      const startIndex = PAGE_SIZE * (pagination.page - 1);
+      const endIndex = startIndex + PAGE_SIZE;
+      const paginatedEvents = publicEvents.slice(startIndex, endIndex);
+
+      return HttpResponse.json(toDualResponse(paginatedEvents, pagination));
+    } catch (error: any) {
+      return HttpResponse.json(
+        { message: error?.message || "Server Error" },
+        { status: 500 }
+      );
+    }
+  }),
+
+  http.get(`${env.API_URL}/events/my-events`, async ({ cookies, request }) => {
+    await networkDelay();
+
+    try {
+      const { user, error } = requireAuth(cookies);
+      if (error || !user) {
+        return HttpResponse.json({ message: error || "Unauthorized" }, { status: 401 });
+      }
+
+      const url = new URL(request.url);
+      const page = Number(url.searchParams.get("page") || 1);
+      const validPage = validatePage(page);
+
+      const memberships = db.eventMembership?.findMany({
+        where: {
+          userId: {
+            equals: user.id,
+          },
+        },
+      }) || [];
+
+      if (memberships.length === 0) {
+        const pagination = calculatePagination(0, validPage);
+        return HttpResponse.json(toDualResponse([], pagination));
+      }
+
+      const eventIds = memberships.map((m) => m.eventId);
+      const myEvents = db.event
+        .findMany({
+          where: {
+            id: {
+              in: eventIds,
+            },
+          },
+        })
+        .map((event) => {
+          const membership = memberships.find((m) => m.eventId === event.id);
+          return mapEventToDTO(event, membership);
+        });
+
+      const total = myEvents.length;
+      const pagination = calculatePagination(total, validPage);
+      const startIndex = PAGE_SIZE * (pagination.page - 1);
+      const endIndex = startIndex + PAGE_SIZE;
+      const paginatedEvents = myEvents.slice(startIndex, endIndex);
+
+      return HttpResponse.json(toDualResponse(paginatedEvents, pagination));
     } catch (error: any) {
       return HttpResponse.json(
         { message: error?.message || "Server Error" },
