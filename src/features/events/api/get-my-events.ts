@@ -8,20 +8,24 @@ export const getMyEvents = async (
   { page }: { page?: number } = { page: 1 }
 ): Promise<{ data: Event[]; meta: Meta }> => {
   const response = await api.get<{
-    events: Event[];
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  }>(`/events/my-events`, { params: { page } });
+    data?: Event[];
+    events?: Event[];
+    meta?: Meta;
+    page?: number;
+    total?: number;
+    totalPages?: number;
+  }>(`/events`, { params: { page } });
+
+  const events = response.data ?? response.events ?? [];
+  const meta = response.meta ?? {
+    page: response.page ?? page ?? 1,
+    total: response.total ?? events.length,
+    totalPages: response.totalPages ?? 1,
+  };
   
   return {
-    data: response.events || [],
-    meta: {
-      page: response.page,
-      total: response.total,
-      totalPages: response.totalPages,
-    },
+    data: events,
+    meta,
   };
 };
 

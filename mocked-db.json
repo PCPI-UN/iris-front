@@ -11,6 +11,12 @@
       "name": "Equipo Beta",
       "description": "Equipo de innovación",
       "createdAt": 1700100000000
+    },
+    {
+      "id": "team-003",
+      "name": "Equipo Test",
+      "description": "Equipo de prueba para usuario sin inscripción",
+      "createdAt": 1700300000000
     }
   ],
   "user": [
@@ -46,9 +52,76 @@
       "role": "USER",
       "bio": "Participante en 2 proyectos, jurado en 1 evento",
       "createdAt": 1700200000000
+    },
+    {
+      "id": "user-004",
+      "firstName": "Usuario",
+      "lastName": "Test",
+      "email": "test@iris.com",
+      "password": "3670747394",
+      "teamId": "team-003",
+      "role": "USER",
+      "bio": "Usuario de prueba para testing de flujo de inscripción",
+      "createdAt": 1700300000000
     }
   ],
   "event": [
+    {
+      "id": "event-bloc-2026",
+      "title": "BLOC 2026 - GRIP SHIPPING BUSINESS LOGISTICS OPTIMIZATION CHALLENGE",
+      "description": "Un desafío estilo hackatón de 48 horas continuas enfocado en la optimización de decisiones logísticas empresariales, mediante pronóstico de demanda, diseño de políticas de inventario y evaluación de impacto económico. Los equipos desarrollarán una solución técnica robusta y una propuesta ejecutiva aplicable a un caso real de distribución en Estados Unidos propuesto por GRIP Shipping.",
+      "startDate": "2026-04-24T16:00:00",
+      "endDate": "2026-04-26T16:00:00",
+      "inscriptionDeadline": "2026-03-30",
+      "accessCode": "BLOC2026",
+      "isPublic": true,
+      "evaluationsStatus": "open",
+      "createdAt": 1740000000000,
+      "location": {
+        "venue": "Salas de usuarios – Piso 5, Bloque K (Edificio de Ingenierías)",
+        "institution": "Universidad del Norte",
+        "city": "Km. 5 vía Puerto Colombia"
+      },
+      "organization": "Universidad del Norte",
+      "company": "GRIP Shipping",
+      "eventType": "hackathon",
+      "cost": "free",
+      "spotsAvailable": true,
+      "sponsors": [
+        {
+          "name": "GRIP Shipping",
+          "logoSrc": "/Grip-Logo-final-blanco.gif",
+          "url": "https://gripshipping.com"
+        },
+        {
+          "name": "Uninorte 60",
+          "logoSrc": "/Logo60-Uninorte.png",
+          "url": "https://www.uninorte.edu.co"
+        }
+      ],
+      "prizeConfig": {
+        "currency": "COP",
+        "items": [
+          {
+            "position": 1,
+            "amount": 2000000
+          },
+          {
+            "position": 2,
+            "amount": 1000000
+          }
+        ]
+      },
+      "requirements": {
+        "teamSize": "3 a 5 estudiantes",
+        "minDisciplines": 2,
+        "disciplines": ["Ingenierías", "Ciencia de Datos"],
+        "minAttendance": 36,
+        "description": "Grupos de 3 a 5 estudiantes Uninorte con mínimo 2 programas diferentes. Permanencia mínima de 36 horas y registro obligatorio de entradas y salidas. El incumplimiento implica descalificación."
+      },
+      "awardsInfo": "Premiación: Primer puesto $2.000.000 COP, Segundo puesto $1.000.000 COP. Inscripción sin costo y cupos limitados.",
+      "sponsorInfo": "GRIP Shipping es una empresa enfocada en soluciones logísticas internacionales, especializada en la optimización de procesos de distribución, gestión de inventarios y toma de decisiones basada en datos. A través de tecnología y análisis avanzado, la compañía busca mejorar la eficiencia operativa de las empresas, conectando oferta y demanda de manera inteligente. En el marco de BLOC 2026, GRIP Shipping presenta un caso real de distribución en Estados Unidos, retando a los participantes a desarrollar soluciones innovadoras con impacto empresarial."
+    },
     {
       "id": "event-001",
       "title": "Hackathon Innovación 2025",

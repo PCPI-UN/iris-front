@@ -33,6 +33,49 @@ type EventDTO = {
   userEventRole?: "Participant" | "JURY";
 };
 
+type PublicEventDTO = {
+  id: string;
+  name: string;
+  description: string;
+  startDate: string;
+  endDate: string;
+  inscriptionDeadline: string;
+  accessCode: string;
+  statusName: string;
+  isPubliclyJoinable: boolean;
+  evaluationsOpened: boolean;
+  active: boolean;
+  organization?: string;
+  company?: string;
+  location?: {
+    name: string;
+    institution: string;
+    address?: string;
+  };
+  eventType?: string;
+  cost?: string;
+  sponsors?: Array<{
+    name: string;
+    logoSrc: string;
+    url?: string;
+  }>;
+  prizes?: Array<{
+    position: number;
+    title: string;
+    amount: number;
+    currency: string;
+  }>;
+  requirements?: {
+    teamSize: string;
+    minDisciplines?: number;
+    disciplines?: string[];
+    minAttendance?: number;
+    description: string;
+  };
+  awardsInfo?: string;
+  sponsorInfo?: string;
+};
+
 const mapEventToDTO = (event: any, membership?: any): EventDTO => {
   return {
     id: event.id,
@@ -46,6 +89,61 @@ const mapEventToDTO = (event: any, membership?: any): EventDTO => {
     evaluationsStatus: event.evaluationsStatus,
     createdAt: event.createdAt,
     ...(membership && { userEventRole: membership.eventRole }),
+  };
+};
+
+const mapEventToPublicDTO = (event: any): PublicEventDTO => {
+  const now = new Date();
+  const inscriptionDeadline = new Date(event.inscriptionDeadline);
+  const isOpen = inscriptionDeadline >= now;
+
+  const location = event.location
+    ? {
+        name: event.location.name ?? event.location.venue ?? "",
+        institution: event.location.institution ?? "",
+        address: event.location.address ?? event.location.city,
+      }
+    : undefined;
+
+  const standardizedPrizes = Array.isArray(event.prizeConfig?.items)
+    ? event.prizeConfig.items
+        .map((item: any) => ({
+          position: Number(item?.position ?? 0),
+          title:
+            item?.title ??
+            (Number(item?.position) === 1
+              ? "Primer puesto"
+              : Number(item?.position) === 2
+                ? "Segundo puesto"
+                : `Puesto ${item?.position}`),
+          amount: Number(item?.amount ?? 0),
+          currency: String(event.prizeConfig?.currency ?? "COP"),
+        }))
+        .filter((item: any) => item.position > 0 && item.amount > 0)
+    : undefined;
+
+  return {
+    id: event.id,
+    name: event.title,
+    description: event.description,
+    startDate: event.startDate,
+    endDate: event.endDate,
+    inscriptionDeadline: event.inscriptionDeadline,
+    accessCode: event.accessCode,
+    statusName: isOpen ? "OPEN" : "CLOSED",
+    isPubliclyJoinable: Boolean(event.isPublic),
+    evaluationsOpened: event.evaluationsStatus === "open",
+    active: true,
+    organization: event.organization,
+    company: event.company,
+    location,
+    eventType: event.eventType,
+    cost: event.cost,
+    sponsors: event.sponsors,
+    prizes: (Array.isArray(event.prizes) && event.prizes.length > 0) ? event.prizes : standardizedPrizes,
+    requirements: event.requirements,
+    awardsInfo: event.awardsInfo,
+    sponsorInfo: event.sponsorInfo,
   };
 };
 
@@ -63,6 +161,103 @@ const calculatePagination = (total: number, page: number) => {
 };
 
 export const eventsHandlers = [
+  http.get(`${env.API_URL}/events/public`, async ({ request }) => {
+    await networkDelay();
+
+    try {
+      const url = new URL(request.url);
+      const page = Number(url.searchParams.get("page") || 1);
+      const validPage = validatePage(page);
+
+      const publicEvents = db.event.findMany({
+        where: {
+          isPublic: {
+            equals: true,
+          },
+        },
+      });
+
+      const total = publicEvents.length;
+      const pagination = calculatePagination(total, validPage);
+      const startIndex = PAGE_SIZE * (pagination.page - 1);
+      const endIndex = startIndex + PAGE_SIZE;
+
+      const events = publicEvents
+        .slice(startIndex, endIndex)
+        .map((event) => mapEventToPublicDTO(event));
+
+      return HttpResponse.json({
+        events,
+        meta: {
+          total,
+          itemsOnCurrentPage: events.length,
+          itemsPerPage: PAGE_SIZE,
+          currentPage: pagination.page,
+          totalPages: pagination.totalPages,
+        },
+      });
+    } catch (error: any) {
+      return HttpResponse.json(
+        { message: error?.message || "Server Error" },
+        { status: 500 }
+      );
+    }
+  }),
+
+  http.get(`${env.API_URL}/events/public/:eventId`, async ({ params }) => {
+    await networkDelay();
+
+    try {
+      const eventId = params.eventId as string;
+
+      const event = db.event.findFirst({
+        where: {
+          id: {
+            equals: eventId,
+          },
+        },
+      });
+
+      if (!event) {
+        return HttpResponse.json(
+          { message: "Event not found" },
+          { status: 404 }
+        );
+      }
+
+      const eventProjects = db.project.findMany({
+        where: {
+          eventId: {
+            equals: event.id,
+          },
+        },
+      });
+
+      const participants = eventProjects
+        .flatMap((project) => project.participants ?? [])
+        .map((participant: any) => {
+          const firstName = participant?.firstName ?? "";
+          const lastName = participant?.lastName ?? "";
+          return `${firstName} ${lastName}`.trim() || participant?.email || "";
+        })
+        .filter(Boolean);
+
+      const uniqueParticipants = [...new Set(participants)];
+
+      return HttpResponse.json({
+        data: {
+          ...mapEventToPublicDTO(event),
+          participants: uniqueParticipants,
+        },
+      });
+    } catch (error: any) {
+      return HttpResponse.json(
+        { message: error?.message || "Server Error" },
+        { status: 500 }
+      );
+    }
+  }),
+
   http.get(`${env.API_URL}/events`, async ({ cookies, request }) => {
     await networkDelay();
 
