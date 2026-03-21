@@ -2,11 +2,26 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import {
+  Dropdown,
+  DropdownTrigger,
+  DropdownMenu,
+  DropdownItem,
+} from '@/components/ui/dropdown';
 import { IrisLogo } from '@/features/landing/components/iris-logo';
 import { landingContent } from '@/features/landing/content';
+import { paths } from '@/config/paths';
+import { useLogout, useUser } from '@/lib/auth';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Menu, X } from 'lucide-react';
+import {
+  ArrowLeft,
+  Menu,
+  X,
+  UserCircle2,
+  LogOut,
+  ChevronDown,
+} from 'lucide-react';
 
 interface NavbarProps {
   showNavLinks?: boolean;
@@ -16,8 +31,20 @@ interface NavbarProps {
 export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarProps) {
   const pathname = usePathname();
   const isLandingPage = pathname === '/';
+  const isPublicEventDetail = /^\/public\/events\/[^/]+$/.test(pathname);
   const router = useRouter();
+  const { data: user, isLoading: isUserLoading } = useUser();
+  const { mutate: logout, isPending: isLoggingOut } = useLogout({
+    onSuccess: () => {
+      setIsMobileMenuOpen(false);
+      router.push(paths.home.getHref());
+    },
+  });
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const profileLabel = user
+    ? `${user.firstName} ${user.lastName}`.trim() || user.email
+    : '';
 
   const handleSmoothScroll = (e: React.MouseEvent<HTMLAnchorElement>, targetId: string) => {
     e.preventDefault();
@@ -31,16 +58,49 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
     }
   };
 
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      router.back();
+      return;
+    }
+
+    router.push(paths.public.event.getHref());
+  };
+
+  const handleProfile = () => {
+    setIsMobileMenuOpen(false);
+    router.push(paths.app.profile.getHref());
+  };
+
+  const handleLogout = () => {
+    logout();
+  };
+
   return (
     <>
       <nav className="fixed top-0 left-0 right-0 z-40 px-6 py-4 md:px-12 glass-effect border-b border-border/30">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="relative">
-              <IrisLogo size={40} />
-              <div className="absolute inset-0 blur-xl bg-primary/30 animate-pulse" />
-            </div>
-          </Link>
+          <div className="relative flex items-center">
+            <Link href="/" className="flex items-center gap-2">
+              <div className="relative">
+                <IrisLogo size={40} />
+                <div className="absolute inset-0 blur-xl bg-primary/30 animate-pulse" />
+              </div>
+            </Link>
+
+            {isPublicEventDetail && (
+              <Button
+                isIconOnly
+                size="sm"
+                variant="flat"
+                onClick={handleBack}
+                aria-label="Volver"
+                className="absolute right-full mr-4 md:mr-6 glass-effect border border-primary/40 text-primary hover:text-foreground hover:border-primary/60 shadow-[0_0_18px_oklch(0.75_0.15_195/0.45)]"
+              >
+                <ArrowLeft size={16} className="drop-shadow-[0_0_6px_oklch(0.75_0.15_195/0.7)]" />
+              </Button>
+            )}
+          </div>
 
           {showNavLinks && isLandingPage && (
             <div className="hidden md:flex items-center gap-8 text-sm">
@@ -79,18 +139,65 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
           )}
 
           <div className="flex items-center gap-3">
-            {showLoginButton && (
-              <Button
-                size="sm"
-                onClick={() => router.push('/auth/login')}
-                style={{ 
-                  background: 'oklch(0.75 0.15 195)',
-                  color: 'oklch(0.12 0.01 264)'
-                }}
-              >
-                {landingContent.navbar.cta}
-              </Button>
-            )}
+            {showLoginButton && !isUserLoading &&
+              (user?.id ? (
+                <Dropdown placement="bottom-end">
+                  <DropdownTrigger>
+                    <Button
+                      size="sm"
+                      className="max-w-[260px] truncate transition-opacity hover:opacity-90"
+                      style={{
+                        background: 'oklch(0.75 0.15 195)',
+                        color: 'oklch(0.12 0.01 264)',
+                      }}
+                      title={profileLabel}
+                      endContent={<ChevronDown size={14} />}
+                    >
+                      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-black/15 text-xs font-black uppercase">
+                        {user.firstName?.[0] ?? user.email?.[0] ?? 'U'}
+                      </span>
+                      <span className="truncate">{profileLabel}</span>
+                    </Button>
+                  </DropdownTrigger>
+                  <DropdownMenu
+                    aria-label="Menú de cuenta"
+                    onAction={(key) => {
+                      if (key === 'profile') {
+                        handleProfile();
+                      }
+                      if (key === 'logout') {
+                        handleLogout();
+                      }
+                    }}
+                  >
+                    <DropdownItem
+                      key="profile"
+                      startContent={<UserCircle2 size={16} />}
+                    >
+                      Ver cuenta
+                    </DropdownItem>
+                    <DropdownItem
+                      key="logout"
+                      startContent={<LogOut size={16} />}
+                      color="danger"
+                    >
+                      {isLoggingOut ? 'Cerrando sesión...' : 'Cerrar sesión'}
+                    </DropdownItem>
+                  </DropdownMenu>
+                </Dropdown>
+              ) : (
+                <Button
+                  size="sm"
+                  onClick={() => router.push('/auth/login')}
+                  className="transition-opacity hover:opacity-90"
+                  style={{
+                    background: 'oklch(0.75 0.15 195)',
+                    color: 'oklch(0.12 0.01 264)',
+                  }}
+                >
+                  {landingContent.navbar.cta}
+                </Button>
+              ))}
 
             {/* Mobile Menu Button */}
             {showNavLinks && isLandingPage && (
@@ -147,6 +254,27 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
                 {landingContent.navbar.links.winners}
               </a>
             </div>
+
+            {showLoginButton && !isUserLoading && user?.id && (
+              <div className="border-t border-border/20">
+                <button
+                  type="button"
+                  onClick={handleProfile}
+                  className="w-full px-6 py-4 text-left text-muted-foreground hover:text-foreground transition-all cursor-pointer border-b border-border/20 inline-flex items-center gap-2"
+                >
+                  <UserCircle2 size={16} /> Ver cuenta
+                </button>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  disabled={isLoggingOut}
+                  className="w-full px-6 py-4 text-left text-danger hover:opacity-80 transition-all cursor-pointer inline-flex items-center gap-2 disabled:opacity-60"
+                >
+                  <LogOut size={16} />
+                  {isLoggingOut ? 'Cerrando sesión...' : 'Cerrar sesión'}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
