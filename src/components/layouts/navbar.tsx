@@ -32,6 +32,7 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
   const pathname = usePathname();
   const isLandingPage = pathname === '/';
   const isPublicEventDetail = /^\/public\/events\/[^/]+$/.test(pathname);
+  const isLoginPage = pathname === '/auth/login';
   const router = useRouter();
   const { data: user, isLoading: isUserLoading } = useUser();
   const { mutate: logout, isPending: isLoggingOut } = useLogout({
@@ -59,6 +60,16 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
   };
 
   const handleBack = () => {
+    if (isLoginPage) {
+      if (window.history.length > 1) {
+        router.back();
+        return;
+      }
+
+      router.push(paths.home.getHref());
+      return;
+    }
+
     if (window.history.length > 1) {
       router.back();
       return;
@@ -81,14 +92,14 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
       <nav className="fixed top-0 left-0 right-0 z-40 px-6 py-4 md:px-12 glass-effect border-b border-border/30">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="relative flex items-center">
-            <Link href="/" className="flex items-center gap-2">
+            <Link href={paths.home.getHref()} className="flex items-center gap-2">
               <div className="relative">
                 <IrisLogo size={40} />
                 <div className="absolute inset-0 blur-xl bg-primary/30 animate-pulse" />
               </div>
             </Link>
 
-            {isPublicEventDetail && (
+            {(isPublicEventDetail || isLoginPage) && (
               <Button
                 isIconOnly
                 size="sm"
