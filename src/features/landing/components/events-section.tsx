@@ -14,6 +14,8 @@ interface EventsSectionProps {
   eventsSectionRef: RefObject<HTMLElement>;
 }
 
+type ThemeKey = 'cyan' | 'pink' | 'yellow';
+
 // Paleta de colores para los eventos (rotación de 3 colores)
 const EVENT_COLORS = [
   {
@@ -37,10 +39,68 @@ const getEventColor = (eventId: number, index: number) => {
   return EVENT_COLORS[colorIndex];
 };
 
+const getThemeKey = (index: number): ThemeKey => {
+  const themes: ThemeKey[] = ['cyan', 'pink', 'yellow'];
+  return themes[index % themes.length];
+};
+
+const summarizeDescription = (text?: string) => {
+  const normalized = String(text ?? '').replace(/\s+/g, ' ').trim();
+
+  if (!normalized) {
+    return 'Sin descripcion disponible.';
+  }
+
+  const firstSentence = normalized.match(/^[^.]*\./)?.[0]?.trim();
+  return firstSentence || normalized;
+};
+
+const resolveEventLocation = (
+  location: unknown,
+  fallback: string,
+) => {
+  if (typeof location === 'string' && location.trim()) {
+    return location.trim();
+  }
+
+  if (location && typeof location === 'object') {
+    const value = location as {
+      name?: unknown;
+      institution?: unknown;
+      address?: unknown;
+      city?: unknown;
+      venue?: unknown;
+    };
+
+    const label =
+      String(value.name ?? value.venue ?? '').trim() ||
+      [value.institution, value.address ?? value.city]
+        .map((part) => String(part ?? '').trim())
+        .filter(Boolean)
+        .join(' · ');
+
+    if (label) {
+      return label;
+    }
+  }
+
+  return fallback;
+};
+
+const parseLocalDate = (value: string) => {
+  const [year, month, day] = value.split('-').map(Number);
+
+  if (!year || !month || !day) {
+    return new Date(value);
+  }
+
+  return new Date(year, month - 1, day);
+};
+
 // Función para formatear fechas
 const formatDateRange = (startDate: string, endDate: string) => {
-  const start = new Date(startDate);
-  const end = new Date(endDate);
+  const start = parseLocalDate(startDate);
+  const end = parseLocalDate(endDate);
 
   const startDay = start.getDate();
   const endDay = end.getDate();
@@ -110,6 +170,12 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
           <div className="flex flex-wrap justify-center gap-8">
             {events.map((event, index) => {
               const eventTheme = getEventColor(event.id, index);
+              const themeKey = getThemeKey(index);
+              const shortDescription = summarizeDescription(event.description);
+              const eventLocation = resolveEventLocation(
+                (event as { location?: unknown }).location,
+                landingContent.events.location,
+              );
               const dateRange = formatDateRange(event.startDate, event.endDate);
               const status = getStatusText(event.statusName);
 
@@ -159,7 +225,7 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
 
                     {/* Event description */}
                     <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
-                      {event.description}
+                      {shortDescription}
                     </p>
 
                     {/* Event details */}
@@ -196,9 +262,7 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
                           />
                         </div>
                         <span className="text-muted-foreground">
-                          {new Date(
-                            event.inscriptionDeadline
-                          ).toLocaleDateString("es", {
+                          {parseLocalDate(event.inscriptionDeadline).toLocaleDateString("es", {
                             day: "numeric",
                             month: "long",
                           })}{" "}
@@ -220,30 +284,43 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
                           />
                         </div>
                         <span className="text-muted-foreground">
-                          {landingContent.events.location}
+                          {eventLocation}
                         </span>
                       </div>
                     </div>
 
                     {/* CTA Button */}
-                    <Button
-                      onClick={() =>
-                        router.push(paths.public.project.getHref(String(event.id)))
-                      }
-                      className="w-full group-hover:scale-102 transition-transform event-button"
-                      style={
-                        {
-                          "--button-bg": eventTheme.color,
-                          "--button-border": eventTheme.color,
-                          "--button-color": "black",
-                        } as React.CSSProperties
-                      }
-                    >
-                      {status === landingContent.events.status.upcoming
-                        ? landingContent.events.cta.open
-                        : landingContent.events.cta.default}
-                      <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                    </Button>
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                      <Button
+                        onClick={() => {
+                          sessionStorage.setItem('eventTheme', themeKey);
+                          router.push(paths.public.event.getHref(String(event.id)));
+                        }}
+                        className="w-full"
+                        variant="bordered"
+                      >
+                        Ver mas
+                      </Button>
+
+                      <Button
+                        onClick={() =>
+                          router.push(paths.public.project.getHref(String(event.id)))
+                        }
+                        className="w-full group-hover:scale-102 transition-transform event-button"
+                        style={
+                          {
+                            "--button-bg": eventTheme.color,
+                            "--button-border": eventTheme.color,
+                            "--button-color": "black",
+                          } as React.CSSProperties
+                        }
+                      >
+                        {status === landingContent.events.status.upcoming
+                          ? landingContent.events.cta.open
+                          : landingContent.events.cta.default}
+                        <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                      </Button>
+                    </div>
                   </div>
                 </GlassCard>
               );

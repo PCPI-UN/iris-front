@@ -12,9 +12,9 @@ interface PublicLayoutProps {
 
 export function PublicLayout({ children, showNavLinks = true, showLoginButton = true }: PublicLayoutProps) {
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-transparent">
       <Navbar showNavLinks={showNavLinks} showLoginButton={showLoginButton} />
-      <main className="pt-24">
+      <main className="relative z-10" style={{ paddingTop: '73px' }}>
         {children}
       </main>
       <SupportButton />
