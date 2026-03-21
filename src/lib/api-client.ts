@@ -94,13 +94,13 @@ async function fetchApi<T>(
   });
 
   // Interceptor para 401: Refrescar token y reintentar
-  // Solo intentar refresh si:
-  // 1. No es un endpoint de auth
-  // 2. No estamos en una página de auth (evita loops)
+  // Solo intentar refresh/redirect automático si estamos en una ruta protegida.
+  // En rutas públicas un 401 puede ser esperado (ej: /auth/me sin sesión).
   const isAuthEndpoint = url.includes('/auth/refresh') || url.includes('/auth/login') || url.includes('/auth/logout') || url.includes('/auth/register');
   const isAuthPage = typeof window !== 'undefined' && window.location.pathname.startsWith('/auth');
+  const isProtectedPage = typeof window !== 'undefined' && window.location.pathname.startsWith('/app');
 
-  if (response.status === 401 && !isAuthEndpoint && !isAuthPage) {
+  if (response.status === 401 && !isAuthEndpoint && !isAuthPage && isProtectedPage) {
     try {
       // Importación dinámica para evitar dependencia circular
       const { refreshToken } = await import('./auth');
@@ -133,7 +133,11 @@ async function fetchApi<T>(
       return retryResponse.json();
     } catch (refreshError) {
       // Si el refresh falla, redirigir al login solo si no estamos ya ahí
-      if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/auth')) {
+      if (
+        typeof window !== 'undefined' &&
+        window.location.pathname.startsWith('/app') &&
+        !window.location.pathname.startsWith('/auth')
+      ) {
         window.location.href = '/auth/login';
       }
       throw refreshError;
