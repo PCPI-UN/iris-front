@@ -7,6 +7,8 @@ import { GlassCard } from "./glass-card";
 import { Button } from "@/components/ui/button";
 import { useEventsPublic } from "@/features/events/api/get-event-public";
 import { Spinner } from "@/components/ui/spinner";
+import { useUser } from "@/lib/auth";
+import { resolveJoinTarget } from '@/features/events/utils/resolve-join-target';
 import { paths } from "@/config/paths";
 import { landingContent } from "../content";
 
@@ -120,6 +122,23 @@ const getStatusText = (statusName: string) => {
 export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
   const router = useRouter();
   const eventsQuery = useEventsPublic({ page: 1 });
+  const {
+    data: user,
+    isLoading: isUserLoading,
+    isFetching: isUserFetching,
+  } = useUser();
+  const isUserStatusResolving = isUserLoading || isUserFetching;
+
+  const handleJoin = async (eventId: number) => {
+    if (isUserStatusResolving) {
+      return;
+    }
+    const targetHref = await resolveJoinTarget({
+      eventId,
+      user,
+    });
+    router.push(targetHref);
+  };
 
   if (eventsQuery.isLoading) {
     return (
@@ -303,9 +322,10 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
                       </Button>
 
                       <Button
-                        onClick={() =>
-                          router.push(paths.public.project.getHref(String(event.id)))
-                        }
+                        onPress={() => {
+                          void handleJoin(event.id);
+                        }}
+                        isDisabled={isUserStatusResolving}
                         className="w-full group-hover:scale-102 transition-transform event-button"
                         style={
                           {
@@ -315,9 +335,7 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
                           } as React.CSSProperties
                         }
                       >
-                        {status === landingContent.events.status.upcoming
-                          ? landingContent.events.cta.open
-                          : landingContent.events.cta.default}
+                        Inscribirse
                         <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                       </Button>
                     </div>

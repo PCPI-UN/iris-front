@@ -1,11 +1,52 @@
 "use client";
 
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 
 import { paths } from "@/config/paths";
 import { LoginForm } from "@/features/auth/components/login-form";
 import { PublicLayout } from "@/components/layouts/public-layout";
+import { api } from '@/lib/api-client';
+import { resolveJoinTarget } from '@/features/events/utils/resolve-join-target';
 import "@/features/landing/index.css";
+
+const resolvePostLoginTarget = async (redirectTo?: string | null) => {
+  const defaultTarget = paths.app.dashboard.getHref();
+  const decodedRedirect = redirectTo ? decodeURIComponent(redirectTo) : defaultTarget;
+
+  const projectMatch = decodedRedirect.match(/^\/public\/projects\/([^/?#]+)/);
+
+  if (!projectMatch) {
+    return decodedRedirect;
+  }
+
+  const eventId = projectMatch[1];
+
+  try {
+    const userResponse = await api.get<unknown>('/auth/me');
+    const userCandidate =
+      userResponse && typeof userResponse === 'object' && 'data' in userResponse
+        ? (userResponse as { data?: unknown }).data
+        : userResponse;
+
+    const user = userCandidate as {
+      id?: string | null;
+      firstName?: string | null;
+      lastName?: string | null;
+      email?: string | null;
+    } | null;
+
+    if (!user?.id) {
+      return decodedRedirect;
+    }
+
+    return resolveJoinTarget({
+      eventId,
+      user,
+    });
+  } catch {
+    return decodedRedirect;
+  }
+};
 
 const LoginPage = () => {
   const searchParams = useSearchParams();
@@ -40,13 +81,11 @@ const LoginPage = () => {
         <div className="w-full max-w-md px-4 sm:px-6 lg:px-8">
           <div className="glass-card p-6 sm:p-8 w-full">
             <LoginForm
-              onSuccess={() => {
+              onSuccess={async () => {
                 // Usar window.location.href en lugar de router.replace
                 // para forzar una recarga completa y asegurar que las cookies
                 // se envíen correctamente en producción
-                const targetUrl = redirectTo
-                  ? decodeURIComponent(redirectTo)
-                  : paths.app.dashboard.getHref();
+                const targetUrl = await resolvePostLoginTarget(redirectTo);
                 window.location.href = targetUrl;
               }}
             />

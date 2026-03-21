@@ -22,6 +22,7 @@ import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { paths } from '@/config/paths';
 import { usePublicEventDetail } from '@/features/events/api/get-public-event-detail';
+import { resolveJoinTarget } from '@/features/events/utils/resolve-join-target';
 import { useUser } from '@/lib/auth';
 import { Footer } from '@/features/landing/components/cta-footer';
 
@@ -147,23 +148,15 @@ export const EventDetail = ({ eventId }: EventDetailProps) => {
     return items;
   }, [event?.endDate, event?.inscriptionDeadline, event?.startDate]);
 
-  const handleJoin = () => {
+  const handleJoin = async () => {
     if (!event?.id) return;
     if (isUserStatusResolving) return;
 
-    const joinHref = paths.public.project.getHref(event.id);
-
-    if (!user?.id) {
-      router.push(paths.auth.login.getHref(joinHref));
-      return;
-    }
-
-    if (isAlreadyRegistered) {
-      router.push(paths.app.dashboard.getHref());
-      return;
-    }
-
-    router.push(joinHref);
+    const targetHref = await resolveJoinTarget({
+      eventId: event.id,
+      user,
+    });
+    router.push(targetHref);
   };
 
   if (eventQuery.isLoading || isUserStatusResolving) {
@@ -600,7 +593,7 @@ export const EventDetail = ({ eventId }: EventDetailProps) => {
           </div>
           <Button
             onPress={handleJoin}
-                    isDisabled={isUserStatusResolving}
+            isDisabled={isUserStatusResolving}
             size="lg"
             className="event-button event-glow font-black tracking-wider uppercase shrink-0 min-w-44"
             startContent={<Rocket className="h-5 w-5" />}
