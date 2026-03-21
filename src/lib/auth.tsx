@@ -28,38 +28,42 @@ const isUser = (value: unknown): value is User => {
 };
 
 export const getUser = async (): Promise<User | null> => {
-  const response = await api.get<User | { data?: User }>('/auth/me');
-  const userCandidate: unknown =
-    response && typeof response === 'object' && 'data' in response
-      ? response.data
-      : response;
+  try {
+    const response = await api.get<User | { data?: User }>('/auth/me');
+    const userCandidate: unknown =
+      response && typeof response === 'object' && 'data' in response
+        ? response.data
+        : response;
 
-  if (!isUser(userCandidate)) {
+    if (!isUser(userCandidate)) {
+      return null;
+    }
+
+    const user = userCandidate;
+
+    const userWithLegacyRole = user as
+      | (User & { role?: string })
+      | undefined;
+
+    if (
+      userWithLegacyRole &&
+      (!userWithLegacyRole.platformRoles ||
+        userWithLegacyRole.platformRoles.length === 0) &&
+      userWithLegacyRole.role
+    ) {
+      userWithLegacyRole.platformRoles = [
+        {
+          id: 0,
+          name: userWithLegacyRole.role === 'ADMIN' ? 'Admin' : 'User',
+          scope: 'platform',
+        },
+      ];
+    }
+
+    return user;
+  } catch {
     return null;
   }
-
-  const user = userCandidate;
-
-  const userWithLegacyRole = user as
-    | (User & { role?: string })
-    | undefined;
-
-  if (
-    userWithLegacyRole &&
-    (!userWithLegacyRole.platformRoles ||
-      userWithLegacyRole.platformRoles.length === 0) &&
-    userWithLegacyRole.role
-  ) {
-    userWithLegacyRole.platformRoles = [
-      {
-        id: 0,
-        name: userWithLegacyRole.role === 'ADMIN' ? 'Admin' : 'User',
-        scope: 'platform',
-      },
-    ];
-  }
-
-  return user;
 };
 
 const userQueryKey = ['user'];
