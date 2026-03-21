@@ -6,9 +6,14 @@ import { GetEventsUser } from '@/features/events/components/get-events-user';
 
 export const DashboardInfo = () => {
   const user = useUser();
+  const primaryRoleName =
+    user.data?.platformRoles?.[0]?.name ??
+    ((user.data as { role?: string } | undefined)?.role === 'ADMIN'
+      ? 'Admin'
+      : 'User');
 
   // Si es ADMIN, mostrar el AdminDashboard
-  if (user.data?.platformRoles[0].name === 'Admin') {
+  if (primaryRoleName === 'Admin') {
     return <AdminDashboard />;
   }
 
