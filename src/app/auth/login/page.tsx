@@ -9,8 +9,7 @@ import "@/features/landing/index.css";
 
 const LoginPage = () => {
   const searchParams = useSearchParams();
-  // Comentamos redirectTo para siempre ir a /app después del login
-  // const redirectTo = searchParams?.get('redirectTo');
+  const redirectTo = searchParams?.get('redirectTo');
 
   return (
     <PublicLayout showNavLinks={false} showLoginButton={false}>
@@ -45,7 +44,10 @@ const LoginPage = () => {
                 // Usar window.location.href en lugar de router.replace
                 // para forzar una recarga completa y asegurar que las cookies
                 // se envíen correctamente en producción
-                window.location.href = paths.app.dashboard.getHref();
+                const targetUrl = redirectTo
+                  ? decodeURIComponent(redirectTo)
+                  : paths.app.dashboard.getHref();
+                window.location.href = targetUrl;
               }}
             />
           </div>

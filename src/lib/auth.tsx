@@ -13,11 +13,50 @@ import { api } from './api-client';
 // api call definitions for auth (types, schemas, requests):
 // these are not part of features as this is a module shared across features
 
-export const getUser = async (): Promise<User> => {
-  const user = await api.get<User>('/auth/me');
+const isUser = (value: unknown): value is User => {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
 
-  if (!user || !user.id) {
-    throw new Error('Invalid user data received from server');
+  const candidate = value as Partial<User>;
+  return (
+    typeof candidate.id === 'string' &&
+    typeof candidate.firstName === 'string' &&
+    typeof candidate.lastName === 'string' &&
+    typeof candidate.email === 'string'
+  );
+};
+
+export const getUser = async (): Promise<User | null> => {
+  const response = await api.get<User | { data?: User }>('/auth/me');
+  const userCandidate: unknown =
+    response && typeof response === 'object' && 'data' in response
+      ? response.data
+      : response;
+
+  if (!isUser(userCandidate)) {
+    return null;
+  }
+
+  const user = userCandidate;
+
+  const userWithLegacyRole = user as
+    | (User & { role?: string })
+    | undefined;
+
+  if (
+    userWithLegacyRole &&
+    (!userWithLegacyRole.platformRoles ||
+      userWithLegacyRole.platformRoles.length === 0) &&
+    userWithLegacyRole.role
+  ) {
+    userWithLegacyRole.platformRoles = [
+      {
+        id: 0,
+        name: userWithLegacyRole.role === 'ADMIN' ? 'Admin' : 'User',
+        scope: 'platform',
+      },
+    ];
   }
 
   return user;
@@ -91,6 +130,10 @@ const loginWithEmailAndPassword = async (data: LoginInput): Promise<User> => {
   // 2. Obtener el usuario autenticado con la cookie
   const user = await getUser();
 
+  if (!user) {
+    throw new Error('No se pudo obtener el usuario autenticado');
+  }
+
   return user;
 };
 
@@ -125,6 +168,10 @@ const registerWithEmailAndPassword = async (
 
   // 2. Obtener el usuario autenticado con la cookie
   const user = await getUser();
+
+  if (!user) {
+    throw new Error('No se pudo obtener el usuario autenticado');
+  }
 
   return user;
 };

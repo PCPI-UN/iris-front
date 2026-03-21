@@ -79,7 +79,7 @@ export const AUTH_COOKIE = `bulletproof_react_app_token`;
 
 export function requireAuth(cookies: Record<string, string>) {
   try {
-    const encodedToken = cookies[AUTH_COOKIE] || Cookies.get(AUTH_COOKIE);
+    const encodedToken = cookies[AUTH_COOKIE];
     if (!encodedToken) {
       return { error: 'Unauthorized', user: null };
     }
