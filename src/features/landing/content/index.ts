@@ -50,7 +50,7 @@ export const landingContent = {
         },
       ],
     },
-    section3: {
+    section2: {
       words: ['Múltiples', 'eventos.', 'Distintas', 'miradas.', 'Un', 'mismo', 'espacio', 'para', 'innovar.'],
       highlightedIndices: [0, 3, 8], // Índices de palabras con colores especiales
     },
@@ -127,17 +127,17 @@ export const landingContent = {
       { name: 'Gabriel Palencia', role: 'Backend Developer', version: 'v1.0' },
       { name: 'Daniel Romero', role: 'Software Architect', version: 'v1.0' },
       // v2.0
-      { name: 'NAME1', role: 'Backend Leader', version: 'v2.0' },
-      { name: 'NAME2', role: 'Frontend Leader', version: 'v2.0' },
-      { name: 'NAME3', role: 'Backend Developer', version: 'v2.0' },
-      { name: 'NAME4', role: 'Frontend Developer', version: 'v2.0' },
-      { name: 'NAME5', role: 'Full Stack Developer', version: 'v2.0' },
-      { name: 'NAME6', role: 'Frontend Developer', version: 'v2.0' },
-      { name: 'NAME7', role: 'Backend Developer', version: 'v2.0' },
-      { name: 'NAME8', role: 'Backend Developer', version: 'v2.0' },
-      { name: 'NAME9', role: 'Backend Developer', version: 'v2.0' },
-      { name: 'NAME10', role: 'Backend Developer', version: 'v2.0' },
-      { name: 'NAME11', role: 'Software Architect', version: 'v2.0' },
+      { name: 'Kevin Torregrosa', role: 'Backend Leader', version: 'v2.0' },
+      { name: 'Paula Núñez', role: 'Frontend Leader', version: 'v2.0' },
+      { name: 'Andrés Monserrat', role: 'Frontend Developer', version: 'v2.0' },
+      { name: 'Isabella Arrieta', role: 'Full Stack Developer', version: 'v2.0' },
+      { name: 'Judith Pérez', role: 'Full Stack Developer', version: 'v2.0' },
+      { name: 'Esteban Arnedo', role: 'Full Stack Developer', version: 'v2.0' },
+      { name: 'Carlos Arango', role: 'Full Stack Developer', version: 'v2.0' },
+      { name: 'Wilmer Santiago', role: 'Full Stack Developer', version: 'v2.0' },
+      { name: 'Camilo de la Rosa', role: 'DevOps Engineer', version: 'v2.0' },
+      { name: 'Natalia Carpintero', role: 'Scrum Master', version: 'v2.0' },
+      { name: 'Daniel Romero', role: 'Software Architect', version: 'v2.0' },
     ],
   },
 

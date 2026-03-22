@@ -52,7 +52,7 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
         const targetY = sectionTop + totalScrollDistance * progress;
         
         // Add offset only for 'informacion' button
-        const scrollOffset = targetId === 'informacion' ? -280 : 0;
+        const scrollOffset = targetId === 'informacion' ? -200 : 0;
         const finalTargetY = Math.max(0, targetY + scrollOffset);
 
         window.scrollY = finalTargetY as any;

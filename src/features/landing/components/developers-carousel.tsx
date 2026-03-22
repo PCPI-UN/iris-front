@@ -10,14 +10,38 @@ interface DevelopersCarouselProps {
 
 type Developer = (typeof landingContent.developers.team)[number];
 
+const normalizeVersion = (version: string) => version.trim().toLowerCase();
+
+const getVersionParts = (version: string) => {
+  const matches = normalizeVersion(version).match(/\d+/g);
+  return matches ? matches.map(Number) : [0];
+};
+
+const compareVersions = (a: string, b: string) => {
+  const aParts = getVersionParts(a);
+  const bParts = getVersionParts(b);
+  const length = Math.max(aParts.length, bParts.length);
+
+  for (let i = 0; i < length; i += 1) {
+    const aValue = aParts[i] ?? 0;
+    const bValue = bParts[i] ?? 0;
+
+    if (aValue > bValue) return 1;
+    if (aValue < bValue) return -1;
+  }
+
+  return 0;
+};
+
 interface VersionCarouselProps {
   developers: Developer[];
-  version: 'v1.0' | 'v2.0';
+  version: string;
 }
 
 function VersionCarousel({ developers, version }: VersionCarouselProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const isV2 = version === 'v2.0';
+  const normalizedVersion = normalizeVersion(version);
+  const isLatestStyle = normalizedVersion !== 'v1.0';
 
   useEffect(() => {
     const scrollContainer = scrollRef.current;
@@ -25,7 +49,7 @@ function VersionCarousel({ developers, version }: VersionCarouselProps) {
 
     let animationFrameId: number;
     let scrollPosition = 0;
-    const scrollSpeed = isV2 ? 0.55 : 0.5;
+    const scrollSpeed = isLatestStyle ? 0.55 : 0.5;
 
     const animate = () => {
       scrollPosition += scrollSpeed;
@@ -43,7 +67,7 @@ function VersionCarousel({ developers, version }: VersionCarouselProps) {
     return () => {
       cancelAnimationFrame(animationFrameId);
     };
-  }, [developers.length, isV2]);
+  }, [developers.length, isLatestStyle]);
 
   if (developers.length === 0) {
     return (
@@ -76,7 +100,7 @@ function VersionCarousel({ developers, version }: VersionCarouselProps) {
               </p>
               <span
                 className={`mt-2 inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] md:text-xs font-mono ${
-                  isV2
+                  isLatestStyle
                     ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-400'
                     : 'border-blue-500/40 bg-blue-500/15 text-blue-400'
                 }`}
@@ -93,11 +117,12 @@ function VersionCarousel({ developers, version }: VersionCarouselProps) {
 
 interface VersionColumnProps {
   developers: Developer[];
-  version: 'v1.0' | 'v2.0';
+  version: string;
 }
 
 function VersionColumn({ developers, version }: VersionColumnProps) {
-  const isV2 = version === 'v2.0';
+  const normalizedVersion = normalizeVersion(version);
+  const isLatestStyle = normalizedVersion !== 'v1.0';
 
   if (developers.length === 0) {
     return (
@@ -113,7 +138,7 @@ function VersionColumn({ developers, version }: VersionColumnProps) {
         <div
           key={`${version}-${dev.name}`}
           className={`rounded-lg border px-4 py-3 backdrop-blur-sm transition-all ${
-            isV2
+            isLatestStyle
               ? 'border-emerald-500/35 bg-emerald-500/10'
               : 'border-blue-500/35 bg-blue-500/10'
           }`}
@@ -122,7 +147,7 @@ function VersionColumn({ developers, version }: VersionColumnProps) {
             <h3 className="text-sm md:text-base font-semibold text-foreground/95">{dev.name}</h3>
             <span
               className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] md:text-xs font-mono ${
-                isV2
+                isLatestStyle
                   ? 'border-emerald-500/45 bg-emerald-500/20 text-emerald-300'
                   : 'border-blue-500/45 bg-blue-500/20 text-blue-300'
               }`}
@@ -142,8 +167,14 @@ function VersionColumn({ developers, version }: VersionColumnProps) {
 export function DevelopersCarousel({ developersRef }: DevelopersCarouselProps) {
   const [viewMode, setViewMode] = useState<'carousel' | 'list'>('carousel');
   const developers = landingContent.developers.team;
-  const v1Developers = developers.filter((dev) => dev.version.toLowerCase().trim() === 'v1.0');
-  const v2Developers = developers.filter((dev) => dev.version.toLowerCase().trim() === 'v2.0');
+
+  const versions = Array.from(new Set(developers.map((dev) => dev.version)));
+  const latestVersion =
+    versions.reduce((latest, current) => (compareVersions(current, latest) > 0 ? current : latest), versions[0]) ??
+    'v1.0';
+  const latestDevelopers = developers.filter(
+    (dev) => normalizeVersion(dev.version) === normalizeVersion(latestVersion)
+  );
 
   return (
     <section
@@ -181,36 +212,18 @@ export function DevelopersCarousel({ developersRef }: DevelopersCarouselProps) {
 
       <div className="max-w-7xl mx-auto px-6 md:px-12">
         {viewMode === 'carousel' ? (
-          <div className="space-y-6">
-            <div>
-              <div className="mb-3 text-xs md:text-sm font-mono text-blue-400/90 uppercase tracking-[0.2em]">
-                Versión v1.0
-              </div>
-              <VersionCarousel developers={v1Developers} version="v1.0" />
+          <div>
+            <div className="mb-3 text-xs md:text-sm font-mono text-emerald-400/90 uppercase tracking-[0.2em]">
+              Versión {latestVersion}
             </div>
-
-            <div>
-              <div className="mb-3 text-xs md:text-sm font-mono text-emerald-400/90 uppercase tracking-[0.2em]">
-                Versión v2.0
-              </div>
-              <VersionCarousel developers={v2Developers} version="v2.0" />
-            </div>
+            <VersionCarousel developers={latestDevelopers} version={latestVersion} />
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 items-start">
-            <div>
-              <div className="mb-3 text-xs md:text-sm font-mono text-blue-400/90 uppercase tracking-[0.2em]">
-                Versión v1.0
-              </div>
-              <VersionColumn developers={v1Developers} version="v1.0" />
+          <div>
+            <div className="mb-3 text-xs md:text-sm font-mono text-emerald-400/90 uppercase tracking-[0.2em]">
+              Versión {latestVersion}
             </div>
-
-            <div>
-              <div className="mb-3 text-xs md:text-sm font-mono text-emerald-400/90 uppercase tracking-[0.2em]">
-                Versión v2.0
-              </div>
-              <VersionColumn developers={v2Developers} version="v2.0" />
-            </div>
+            <VersionColumn developers={latestDevelopers} version={latestVersion} />
           </div>
         )}
       </div>

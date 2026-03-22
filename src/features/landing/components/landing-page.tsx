@@ -66,7 +66,7 @@ export function LandingPage() {
   }, []);
 
   return (
-    <main className="landing-page min-h-screen bg-background relative overflow-hidden">
+    <main className="landing-page min-h-screen bg-background relative overflow-x-hidden">
       {/* Animated Background Gradient */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
         <div
@@ -91,24 +91,37 @@ export function LandingPage() {
         scrollIndicatorRef={scrollIndicatorRef}
       />
 
-      {/* Events Section */}
-      <EventsSection
-        eventsSectionRef={eventsSectionRef}
-      />
-
-      {/* Story Sections */}
+      {/* Story Section 1 */}
       <StorySections
         storySection1Ref={storySection1Ref}
         storySection2Ref={storySection2Ref}
         storySection3Ref={storySection3Ref}
         zoomTextRef={zoomTextRef}
         layeredTextRef={layeredTextRef}
+        blocks={['section1']}
       />
+
+      {/* Events Section */}
+      <EventsSection
+        eventsSectionRef={eventsSectionRef}
+      />
+
+
 
       {/* Horizontal Scroll Section */}
       <HorizontalScrollSection
         horizontalSectionRef={horizontalSectionRef}
         horizontalContentRef={horizontalContentRef}
+      />
+
+      {/* Story Section 3 */}
+      <StorySections
+        storySection1Ref={storySection1Ref}
+        storySection2Ref={storySection2Ref}
+        storySection3Ref={storySection3Ref}
+        zoomTextRef={zoomTextRef}
+        layeredTextRef={layeredTextRef}
+        blocks={['section3']}
       />
 
       {/* Engineering Section */}
