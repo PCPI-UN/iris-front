@@ -237,37 +237,47 @@ export function useLandingAnimations(
         );
       }
 
-      // Horizontal scroll section inspired by Tech Redux
+     // Horizontal scroll section inspired by Tech Redux
       if (refs.horizontalSectionRef.current && refs.horizontalContentRef.current) {
-        const panels = gsap.utils.toArray<HTMLElement>('.horizontal-panel');
+        const horizontalSection = refs.horizontalSectionRef.current;
+        const horizontalContent = refs.horizontalContentRef.current;
+        const panels = Array.from(
+          horizontalContent.querySelectorAll<HTMLElement>('.horizontal-panel')
+        );
 
-        gsap.set(panels, {
-          force3D: true,
+        const getHorizontalDistance = () =>
+          Math.max((horizontalContent.scrollWidth - horizontalSection.clientWidth), 0);
+
+        gsap.set(horizontalContent, {
+          x: 0,
+          force3D: false,
           willChange: 'transform',
         });
 
-        gsap.to(panels, {
-          xPercent: -100 * (panels.length - 1),
+        gsap.set(panels, {
+          backfaceVisibility: 'hidden',
+        });
+
+        gsap.to(horizontalContent, {
+          x: () => -getHorizontalDistance(),
           ease: 'none',
+          autoRound: true,
           scrollTrigger: {
-            trigger: refs.horizontalSectionRef.current,
+            trigger: horizontalSection,
             start: 'top top',
-            pin: true,
-            scrub: 0.35,
-            end: () => '+=' + refs.horizontalContentRef.current!.offsetWidth,
-            anticipatePin: 1,
-            invalidateOnRefresh: true,
-            fastScrollEnd: true,
-            // Cuando el scroll horizontal termina, libera el pin para permitir scroll vertical normal
-            onLeave: () => {
-              if (refs.horizontalSectionRef.current) {
-                refs.horizontalSectionRef.current.style.overflow = 'visible';
-              }
-            },
-            onEnterBack: () => {
-              if (refs.horizontalSectionRef.current) {
-                refs.horizontalSectionRef.current.style.overflow = 'hidden';
-              }
+            pin: true, 
+            pinSpacing: true,
+            pinType: 'fixed',
+            pinReparent: false,
+            scrub: true,
+            end: () => '+=' + getHorizontalDistance() * 0.6,
+            anticipatePin: 0,
+            invalidateOnRefresh: false,
+            fastScrollEnd: false,
+            refreshPriority: 1,
+            onRefresh: (self) => {
+              const distance = getHorizontalDistance();
+              gsap.set(horizontalContent, { x: -distance * self.progress });
             },
           },
         });

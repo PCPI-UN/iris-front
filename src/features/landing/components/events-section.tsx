@@ -126,7 +126,7 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
     <section
       id="eventos"
       ref={eventsSectionRef}
-      className="relative z-10 px-6 py-20 md:px-12"
+      className="relative z-10 min-h-screen px-6 py-20 md:px-12"
     >
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-16">
