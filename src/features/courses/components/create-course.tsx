@@ -81,6 +81,15 @@ export const CreateCourse = () => {
                   eventId: Number(selectedEvent),
                   status: "active" as const,
                 };
+
+                if (Number.isNaN(data.eventId)) {
+                  addNotification({
+                    type: "error",
+                    title: "Invalid Event",
+                    message: "Selected event ID is not numeric. Restart mock server to load updated handlers.",
+                  });
+                  return;
+                }
                 
                 const values = await createCourseInputSchema.parseAsync(data);
                 await createCourseMutation.mutateAsync({ data: values });

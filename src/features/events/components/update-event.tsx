@@ -110,14 +110,15 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                 const rawData = Object.fromEntries(formData);
                 const data = {
                   id: Number(eventId),
-                  name: rawData.name as string,
+                  title: rawData.title as string,
                   description: rawData.description as string,
                   accessCode: rawData.accessCode as string,
-                  isPubliclyJoinable: rawData.isPubliclyJoinable === "true",
+                  isPublic: rawData.isPublic === "true",
                   startDate: rawData.startDate as string,
                   endDate: rawData.endDate as string,
                   inscriptionDeadline: rawData.inscriptionDeadline as string,
-                  evaluationsOpened: rawData.evaluationsOpened === "true",
+                  evaluationsStatus:
+                    rawData.evaluationsStatus === "open" ? "open" : "closed",
                   active: rawData.active === "true",
                   location: rawData.location as string,
                 };
@@ -133,26 +134,31 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
               </ModalHeader>
               <ModalBody className="space-y-4 w-full">
                 <Input
+                  id="update-event-name"
                   label="Name"
-                  name="name"
+                  name="title"
                   defaultValue={event?.name ?? ""}
                 />
                 <Textarea
+                  id="update-event-description"
                   label="Description"
                   name="description"
                   defaultValue={event?.description ?? ""}
                 />
                 <Input
+                  id="update-event-location"
                   label="Location"
                   name="location"
                   defaultValue={event?.location ?? ""}
                 />
                 <Input
+                  id="update-event-access-code"
                   label="Access Code"
                   name="accessCode"
                   defaultValue={event?.accessCode ?? ""}
                 />
                 <DatePicker
+                  id="update-event-start-date"
                   label="Start Date"
                   name="startDate"
                   defaultValue={
@@ -161,6 +167,7 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                   isRequired
                 />
                 <DatePicker
+                  id="update-event-end-date"
                   label="End Date"
                   name="endDate"
                   defaultValue={
@@ -169,6 +176,7 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                   isRequired
                 />
                 <DatePicker
+                  id="update-event-inscription-deadline"
                   label="Inscription Deadline"
                   name="inscriptionDeadline"
                   defaultValue={
@@ -180,8 +188,9 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                 />
                 <div className="flex flex-row gap-50">
                 <Switch
-                  name="evaluationsOpened"
-                  value="true"
+                  id="update-event-evaluations-opened"
+                  name="evaluationsStatus"
+                  value="open"
                   defaultSelected={event?.evaluationsOpened}
                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2`}
                 >
@@ -191,7 +200,8 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                 </Switch>
 
                 <Switch
-                  name="isPubliclyJoinable"
+                  id="update-event-is-publicly-joinable"
+                  name="isPublic"
                   value="true"
                   defaultSelected={event?.isPubliclyJoinable}
                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2`}
@@ -202,6 +212,7 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                 </Switch>
 
                 <Switch
+                  id="update-event-active"
                   name="active"
                   value="true"
                   defaultSelected={event?.active}

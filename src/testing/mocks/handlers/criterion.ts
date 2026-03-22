@@ -70,6 +70,7 @@ export const criterionHandlers = [
       const url = new URL(request.url);
       const page = Number(url.searchParams.get("page") || 1);
       const eventId = url.searchParams.get("eventId");
+      const courseId = url.searchParams.get("courseId");
       const courseIdsRaw = url.searchParams.get("courseIds");
       const courseIds = courseIdsRaw
         ? courseIdsRaw
@@ -77,16 +78,20 @@ export const criterionHandlers = [
             .map((s) => s.trim())
             .filter(Boolean)
         : [];
+      const effectiveCourseIds =
+        courseIds.length > 0 ? courseIds : courseId ? [courseId] : [];
 
       let all = db.criterion.getAll();
       if (eventId) {
-        all = all.filter((c: any) => c.eventId === eventId);
+        all = all.filter((c: any) => String(c.eventId) === String(eventId));
       }
-      if (courseIds.length > 0) {
+      if (effectiveCourseIds.length > 0) {
         all = all.filter(
           (c: any) =>
             Array.isArray(c.courseIds) &&
-            c.courseIds.some((id: number) => courseIds.includes(String(id)))
+            c.courseIds.some((id: number | string) =>
+              effectiveCourseIds.includes(String(id))
+            )
         );
       }
       const total = all.length;

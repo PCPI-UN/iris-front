@@ -19,8 +19,30 @@ type EventBody = {
 
 const PAGE_SIZE = 10;
 
+const toPublicNumericId = (value: string, prefix: string): number => {
+  const match = value.match(new RegExp(`^${prefix}-(\\d+)$`));
+  if (match) return Number(match[1]);
+  const numeric = Number(value);
+  return Number.isNaN(numeric) ? 0 : numeric;
+};
+
+const toInternalPrefixedId = (value: string, prefix: string): string => {
+  if (value.startsWith(`${prefix}-`)) return value;
+  if (/^\d+$/.test(value)) return `${prefix}-${value.padStart(3, "0")}`;
+  return value;
+};
+
+const getNextEventId = (): string => {
+  const maxNumericId = db.event
+    .getAll()
+    .map((event) => toPublicNumericId(String(event.id), "event"))
+    .reduce((max, current) => (current > max ? current : max), 0);
+
+  return `event-${String(maxNumericId + 1).padStart(3, "0")}`;
+};
+
 type EventDTO = {
-  id: string;
+  id: number;
   title: string;
   description: string;
   startDate: string;
@@ -35,7 +57,7 @@ type EventDTO = {
 
 const mapEventToDTO = (event: any, membership?: any): EventDTO => {
   return {
-    id: event.id,
+    id: toPublicNumericId(String(event.id), "event"),
     title: event.title,
     description: event.description,
     startDate: event.startDate,
@@ -243,7 +265,7 @@ export const eventsHandlers = [
 
       const events = db.event.findMany({}).map((event) => {
         return {
-          id: event.id,
+          id: toPublicNumericId(String(event.id), "event"),
           title: event.title,
         };
       });
@@ -266,7 +288,7 @@ export const eventsHandlers = [
         return HttpResponse.json({ message: error }, { status: 401 });
       }
 
-      const eventId = params.eventId as string;
+      const eventId = toInternalPrefixedId(String(params.eventId), "event");
       const event = db.event.findFirst({
         where: {
           id: {
@@ -282,9 +304,7 @@ export const eventsHandlers = [
         );
       }
 
-      return HttpResponse.json({
-        data: event,
-      });
+      return HttpResponse.json({ data: mapEventToDTO(event) });
     } catch (error: any) {
       return HttpResponse.json(
         { message: error?.message || "Server Error" },
@@ -305,6 +325,7 @@ export const eventsHandlers = [
       // requireAdmin(user);
 
       const event = db.event.create({
+        id: getNextEventId(),
         title: data.title,
         description: data.description,
         startDate: data.startDate,
@@ -317,7 +338,7 @@ export const eventsHandlers = [
 
       await persistDb("event");
 
-      return HttpResponse.json({ data: event });
+  return HttpResponse.json({ data: mapEventToDTO(event) });
     } catch (error: any) {
       return HttpResponse.json(
         { message: error?.message || "Server Error" },
@@ -334,7 +355,7 @@ export const eventsHandlers = [
         if (error) {
           return HttpResponse.json({ message: error }, { status: 401 });
         }
-        const eventId = params.eventId as string;
+        const eventId = toInternalPrefixedId(String(params.eventId), "event");
         const data = (await request.json()) as Partial<EventBody>;
         // requireAdmin(user);
         const event = db.event.update({
@@ -367,7 +388,7 @@ export const eventsHandlers = [
 
         await persistDb("event");
 
-        return HttpResponse.json({ data: event });
+        return HttpResponse.json({ data: event ? mapEventToDTO(event) : event });
       } catch (error: any) {
         return HttpResponse.json(
           { message: error?.message || "Server Error" },
@@ -385,7 +406,7 @@ export const eventsHandlers = [
       if (error) {
         return HttpResponse.json({ message: error }, { status: 401 });
       }
-      const eventId = params.eventId as string;
+      const eventId = toInternalPrefixedId(String(params.eventId), "event");
       // requireAdmin(user);
       const event = db.event.delete({
         where: {
@@ -404,7 +425,7 @@ export const eventsHandlers = [
 
       await persistDb("event");
 
-      return HttpResponse.json({ data: event });
+      return HttpResponse.json({ data: event ? mapEventToDTO(event) : event });
     } catch (error: any) {
       return HttpResponse.json(
         { message: error?.message || "Server Error" },

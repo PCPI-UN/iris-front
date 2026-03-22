@@ -5,19 +5,20 @@ import { api } from "@/lib/api-client";
 import { MutationConfig } from "@/lib/react-query";
 import { Event } from "@/types/api";
 
+import { normalizeEvent } from "./event-adapter";
 import { getEventQueryOptions } from "./get-event";
 import { getEventsQueryOptions } from "./get-events";
 
 export const updateEventInputSchema = z.object({
   id: z.number().positive(),
-  name: z.string().min(2).max(255),
+  title: z.string().min(2).max(255),
   description: z.string().max(3000),
   accessCode: z.string().optional(),
-  isPubliclyJoinable: z.boolean().optional(),
+  isPublic: z.boolean().optional(),
   startDate: z.string().min(10).max(10), 
   endDate: z.string().min(10).max(10),
   inscriptionDeadline: z.string().min(10).max(10),
-  evaluationsOpened: z.boolean(),
+  evaluationsStatus: z.enum(["open", "closed"]),
   active: z.boolean().optional(),
   location: z.string().optional(),
 });
@@ -29,7 +30,9 @@ export const updateEvent = ({
 }: {
   data: UpdateEventInput;
 }): Promise<Event> => {
-  return api.patch(`/events/${data.id}`, data);
+  return api
+    .patch<Record<string, any>>(`/events/${data.id}`, data)
+    .then((response) => normalizeEvent(response?.data ?? response));
 };
 
 type UseUpdateEventOptions = {
