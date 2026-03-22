@@ -7,6 +7,7 @@ import { landingContent } from '@/features/landing/content';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Menu, X } from 'lucide-react';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 interface NavbarProps {
   showNavLinks?: boolean;
@@ -31,6 +32,18 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
     const horizontalTargetPanelIndex =
       targetId === 'informacion' ? 0 : targetId === 'recorrido' ? 2 : null;
 
+    const scrollToPosition = (position: number) => {
+      const targetTop = Math.max(0, Math.round(position));
+      window.scrollTo({ top: targetTop, behavior: 'auto' });
+      document.documentElement.scrollTop = targetTop;
+      document.body.scrollTop = targetTop;
+    };
+
+    const getNavbarHeight = () => {
+      const navbar = document.querySelector('nav');
+      return navbar?.getBoundingClientRect().height ?? 0;
+    };
+
     if (horizontalTargetPanelIndex !== null) {
       const horizontalSection = document.getElementById('informacion');
 
@@ -38,26 +51,38 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
         const pinSpacer = horizontalSection.parentElement?.classList.contains('pin-spacer')
           ? horizontalSection.parentElement
           : null;
-        const sectionTop = pinSpacer ? pinSpacer.offsetTop : horizontalSection.offsetTop;
-        
+
         const panels = horizontalSection.querySelectorAll('.horizontal-panel');
         const panelsCount = panels.length;
         const maxIndex = Math.max(panelsCount - 1, 0);
         const targetPanelIndex = Math.min(horizontalTargetPanelIndex, maxIndex);
         const progress = maxIndex > 0 ? targetPanelIndex / maxIndex : 0;
-        
-        // Each panel is min-w-full (100vw), so we need (panelsCount - 1) * viewport height worth of scroll
-        const horizontalContent = horizontalSection.querySelector('.flex') as HTMLElement;
-        const totalScrollDistance = (panelsCount - 1) * window.innerHeight;
-        const targetY = sectionTop + totalScrollDistance * progress;
-        
-        // Add offset only for 'informacion' button
-        const scrollOffset = targetId === 'informacion' ? -200 : 0;
-        const finalTargetY = Math.max(0, targetY + scrollOffset);
 
-        window.scrollY = finalTargetY as any;
-        document.documentElement.scrollTop = finalTargetY;
-        document.body.scrollTop = finalTargetY;
+        const navHeight = getNavbarHeight();
+        const visualCenterOffset = navHeight / 2;
+        const informationExtraOffset = targetId === 'informacion' ? -50 : 0;
+
+        const currentTriggers = ScrollTrigger.getAll();
+        const horizontalTrigger = currentTriggers.find(
+          (trigger) => trigger.trigger === horizontalSection
+        );
+
+        if (horizontalTrigger) {
+          const triggerDistance = Math.max(horizontalTrigger.end - horizontalTrigger.start, 0);
+          const triggerTarget = horizontalTrigger.start + triggerDistance * progress;
+          scrollToPosition(triggerTarget - visualCenterOffset - informationExtraOffset);
+        } else {
+          const sectionTop = pinSpacer
+            ? pinSpacer.getBoundingClientRect().top + window.scrollY
+            : horizontalSection.getBoundingClientRect().top + window.scrollY;
+          const horizontalContent = horizontalSection.querySelector('.flex') as HTMLElement | null;
+          const horizontalDistance = horizontalContent
+            ? Math.max(horizontalContent.scrollWidth - horizontalSection.clientWidth, 0)
+            : 0;
+          const fallbackTravel = horizontalDistance * 0.6;
+          const fallbackTarget = sectionTop + fallbackTravel * progress;
+          scrollToPosition(fallbackTarget - visualCenterOffset - informationExtraOffset);
+        }
 
         // Restore original scroll behavior
         html.style.scrollBehavior = originalBehavior;
@@ -67,10 +92,9 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
 
     const targetElement = document.getElementById(targetId);
     if (targetElement) {
-      // Jump directly to the element without animation
-      window.scrollY = targetElement.offsetTop as any;
-      document.documentElement.scrollTop = targetElement.offsetTop;
-      document.body.scrollTop = targetElement.offsetTop;
+      const targetTop = targetElement.getBoundingClientRect().top + window.scrollY;
+      const navHeight = getNavbarHeight();
+      scrollToPosition(targetTop - navHeight / 2);
     }
 
     // Restore original scroll behavior
