@@ -73,7 +73,7 @@ const resolveEventLocation = (
       city?: unknown;
       venue?: unknown;
     };
-
+    
     const label =
       String(value.name ?? value.venue ?? '').trim() ||
       [value.institution, value.address ?? value.city]
