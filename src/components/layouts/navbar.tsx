@@ -106,9 +106,9 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
                 variant="flat"
                 onClick={handleBack}
                 aria-label="Volver"
-                className="absolute right-full mr-4 md:mr-6 glass-effect border border-primary/40 text-primary hover:text-foreground hover:border-primary/60 shadow-[0_0_18px_oklch(0.75_0.15_195/0.45)]"
+                className="order-first mr-2 h-10 w-10 shrink-0 glass-effect border border-primary/40 text-primary hover:text-foreground hover:border-primary/60 shadow-[0_0_18px_oklch(0.75_0.15_195/0.45)] md:absolute md:right-full md:mr-6 md:h-8 md:w-8"
               >
-                <ArrowLeft size={16} className="drop-shadow-[0_0_6px_oklch(0.75_0.15_195/0.7)]" />
+                <ArrowLeft size={18} className="drop-shadow-[0_0_6px_oklch(0.75_0.15_195/0.7)] md:h-4 md:w-4" />
               </Button>
             )}
           </div>
