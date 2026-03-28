@@ -1,4 +1,5 @@
 import { delay } from 'msw';
+import Cookies from 'js-cookie';
 
 import { db } from './db';
 
@@ -78,7 +79,10 @@ export const AUTH_COOKIE = `bulletproof_react_app_token`;
 
 export function requireAuth(cookies: Record<string, string>) {
   try {
-    const encodedToken = cookies[AUTH_COOKIE];
+    const encodedToken =
+      cookies[AUTH_COOKIE] ??
+      (typeof window !== 'undefined' ? Cookies.get(AUTH_COOKIE) : undefined);
+
     if (!encodedToken) {
       return { error: 'Unauthorized', user: null };
     }

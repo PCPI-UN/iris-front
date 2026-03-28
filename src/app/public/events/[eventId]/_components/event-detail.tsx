@@ -602,10 +602,10 @@ return (
         <p className="text-lg sm:text-xl font-bold">¿Listo para unirte?</p>
         <p className="text-sm text-muted-foreground">
             {!user?.id
-            ? 'Inicia sesion y registra tu proyecto en este evento.'
+            ? 'Inicia sesión y registra tu proyecto en este evento.'
             : isAlreadyRegistered
-                ? 'Ya estas inscrito. Ve al dashboard para continuar.'
-                : 'Tu cuenta esta lista. Completa tu inscripción ahora.'}
+                ? 'Ya estás inscrito. Ve al dashboard para continuar.'
+                : 'Tu cuenta está lista. Completa tu inscripción ahora.'}
         </p>
         </div>
         <Button

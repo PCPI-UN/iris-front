@@ -113,7 +113,9 @@ const mapEventDetail = (rawEvent: any): PublicEventDetail => {
         currency: String(value.currency ?? 'COP'),
       };
     })
-    .filter((prize) => prize.position > 0 && Boolean(prize.title));
+    .filter(
+      (prize) => prize.position > 0 && Boolean(prize.title) && prize.amount > 0,
+    );
 
   const requirements = rawEvent?.requirements
     ? {
