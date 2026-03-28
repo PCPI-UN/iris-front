@@ -125,26 +125,110 @@
     {
       "id": "event-001",
       "title": "Hackathon Innovación 2025",
-      "description": "Evento de innovación tecnológica",
+      "description": "En este evento de 48 horas, los participantes formarán equipos interdisciplinarios para desarrollar soluciones tecnológicas innovadoras a retos propuestos por empresas líderes. El evento incluye mentorías, talleres y una fase de evaluación por jurados expertos, con premios para los mejores proyectos.",
       "startDate": "2025-01-15",
       "endDate": "2025-01-17",
       "inscriptionDeadline": "2025-01-10",
       "accessCode": "EVT001",
       "isPublic": true,
       "evaluationsStatus": "open",
-      "createdAt": 1700000000000
+      "createdAt": 1700000000000,
+      "location": {
+        "venue": "Coliseo los Fundadores",
+        "institution": "Universidad del Norte",
+        "city": "Km. 5 vía Puerto Colombia"
+      },
+      "organization": "Universidad del Norte",
+      "company": "Tecnoglass",
+      "eventType": "hackathon",
+      "cost": "free",
+      "spotsAvailable": true,
+      "sponsors": [
+        {
+          "name": "Tecnoglass",
+          "logoSrc": "https://www.tecnoglass.com/wp-content/uploads/2019/12/LogoTecnoglassBlanco.svg",
+          "url": "https://www.tecnoglass.com/es/"
+        },
+        {
+          "name": "Uninorte 60",
+          "logoSrc": "/Logo60-Uninorte.png",
+          "url": "https://www.uninorte.edu.co"
+        }
+      ],
+      "prizeConfig": {
+        "currency": "COP",
+        "items": [
+          {
+            "position": 1,
+            "amount": 1500000
+          },
+          {
+            "position": 2,
+            "amount": 800000
+          }
+        ]
+      },
+      "requirements": {
+        "teamSize": "3 a 4 estudiantes",
+        "minDisciplines": 2,
+        "disciplines": ["Ingeniería de Sistemas", "Diseño", "Negocios"],
+        "minAttendance": 24,
+        "description": "Equipos interdisciplinarios de 3 a 4 estudiantes con al menos 2 áreas de formación distintas. Se exige participación continua y entrega de prototipo funcional al cierre del evento."
+      },
+      "awardsInfo": "Premiación: Primer puesto $1.500.000 COP, Segundo puesto $800.000 COP. Incluye mentorías para los equipos finalistas.",
+      "sponsorInfo": "Tecnoglass es una empresa colombiana líder en la fabricación de vidrio arquitectónico y productos de aluminio, con sede en Barranquilla. Exporta cerca del 95% de su producción a Estados Unidos y cotiza en la Bolsa de Nueva York bajo el símbolo TGLS."
     },
     {
       "id": "event-002",
       "title": "Feria de Ciencias 2025",
-      "description": "Presentación de proyectos científicos",
+      "description": "En esta feria, los participantes exhibirán sus investigaciones y experimentos en diversas áreas científicas, compitiendo por reconocimientos y oportunidades de investigación. El evento incluye charlas magistrales, talleres de divulgación científica y una evaluación por parte de un jurado experto.",
       "startDate": "2025-02-20",
       "endDate": "2025-02-22",
       "inscriptionDeadline": "2025-02-15",
       "accessCode": "EVT002",
       "isPublic": true,
       "evaluationsStatus": "open",
-      "createdAt": 1700100000000
+      "createdAt": 1700100000000,
+      "location": {
+        "venue": "Plaza Central y Auditorio Principal",
+        "institution": "Universidad del Norte",
+        "city": "Barranquilla"
+      },
+      "organization": "Facultad de Ciencias Básicas",
+      "eventType": "science-fair",
+      "cost": "free",
+      "spotsAvailable": true,
+      "sponsors": [{
+          "name": "Uninorte 60",
+          "logoSrc": "/Logo60-Uninorte.png",
+          "url": "https://www.uninorte.edu.co"
+        }],
+      "prizeConfig": {
+        "currency": "COP",
+        "items": [
+          {
+            "position": 1,
+            "amount": 0
+          },
+          {
+            "position": 2,
+            "amount": 0
+          },
+          {
+            "position": 3,
+            "amount": 0
+          }
+        ]
+      },
+      "requirements": {
+        "teamSize": "2 a 4 estudiantes",
+        "minDisciplines": 1,
+        "disciplines": ["Biología", "Química", "Física", "Matemáticas"],
+        "minAttendance": 12,
+        "description": "Cada equipo debe presentar póster científico, demostración experimental y reporte de resultados. La participación mínima requerida es de 12 horas en actividades oficiales de la feria."
+      },
+      "awardsInfo": "Certificación de participación para todos los equipos, mención de honor para los tres mejores proyectos y acceso prioritario a semillero de investigación para finalistas.",
+      "sponsorInfo": ""
     },
     {
       "id": "event-003",
