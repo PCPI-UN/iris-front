@@ -1,17 +1,14 @@
 'use client';
 
-import { useRef, useEffect, useState } from 'react';
+import { useRef } from 'react';
 import { HeroSection } from './hero-section';
 import { EventsSection } from './events-section';
 import { StorySections } from './story-sections';
 import { HorizontalScrollSection } from './horizontal-scroll-section';
-import { EngineeringSection } from './engineering-section';
-import { WinnersSection } from './winners-section';
 import { DevelopersCarousel } from './developers-carousel';
 import { Footer } from './cta-footer';
 import { Navbar } from '@/components/layouts/navbar';
 import { useLandingAnimations } from '../utils/use-landing-animations';
-import { engineeringFields } from '../constants';
 import '../index.css';
 
 export function LandingPage() {
@@ -32,9 +29,6 @@ export function LandingPage() {
   const revealSectionRef = useRef<HTMLElement>(null);
   const eventsSectionRef = useRef<HTMLElement>(null);
   const developersRef = useRef<HTMLElement>(null);
-  const winnersSectionRef = useRef<HTMLElement>(null);
-
-  const [activeEngineering, setActiveEngineering] = useState(0);
 
   // Initialize animations
   useLandingAnimations({
@@ -53,17 +47,6 @@ export function LandingPage() {
     heroRef,
     scrollIndicatorRef,
   });
-
-  useEffect(() => {
-    // Cycle through engineering fields
-    const interval = setInterval(() => {
-      setActiveEngineering((prev) => (prev + 1) % engineeringFields.length);
-    }, 3000);
-
-    return () => {
-      clearInterval(interval);
-    };
-  }, []);
 
   return (
     <main className="landing-page min-h-screen bg-background relative overflow-x-hidden">
@@ -123,20 +106,6 @@ export function LandingPage() {
         layeredTextRef={layeredTextRef}
         blocks={['section3']}
       />
-
-      {/* Engineering Section */}
- {/*     <EngineeringSection
-        engineeringSectionRef={engineeringSectionRef}
-        maskTextRef={maskTextRef}
-        engineeringFields={engineeringFields}
-        activeEngineering={activeEngineering}
-      />*/}
-
-
-      {/* Winners Section */}
-  {/*      <WinnersSection
-        winnersSectionRef={winnersSectionRef}
-      />*/}
 
       {/* Developers Carousel */}
       <DevelopersCarousel

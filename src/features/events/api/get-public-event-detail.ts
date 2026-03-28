@@ -89,14 +89,17 @@ export const getPublicEventDetail = async ({
     return {
       data: mapEventDetail(response.data ?? response.event),
     };
-  } catch {
-    const fallbackResponse = await api.get<{ data?: any; event?: any }>(
-      `/events/${eventId}`,
-    );
-
-    return {
-      data: mapEventDetail(fallbackResponse.data ?? fallbackResponse.event),
-    };
+ } catch (error) {
+    try {
+      const fallbackResponse = await api.get<{ data?: any; event?: any }>(
+        `/events/${eventId}`,
+      );
+      return {
+        data: mapEventDetail(fallbackResponse.data ?? fallbackResponse.event),
+      };
+    } catch {
+      throw error;
+    }
   }
 };
 

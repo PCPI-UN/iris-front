@@ -65,9 +65,11 @@ const formatDateRange = (startDate: string, endDate: string) => {
 
 // Función para mapear status del backend a texto en español
 const getStatusText = (statusName: string) => {
-  return statusName
-    ? landingContent.events.status.upcoming
-    : landingContent.events.status.closed;
+  const normalizedStatus = statusName.trim().toUpperCase();
+  if (normalizedStatus === "CLOSED") {
+    return landingContent.events.status.closed;
+  }
+  return landingContent.events.status.upcoming;
 };
 
 export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
@@ -296,7 +298,7 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
                                 <Button
                                   onClick={() =>
                                     router.push(
-                                      paths.public.project.getHref(String(event.id))
+                                      paths.public.project.getHref(String(event.accessCode))
                                     )
                                   }
                                   className="w-full group-hover:scale-102 transition-transform event-button"
