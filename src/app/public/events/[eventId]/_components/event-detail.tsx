@@ -78,8 +78,14 @@ export const EventDetail = ({ eventId }: EventDetailProps) => {
   const isUserStatusResolving = isUserLoading || isUserFetching;
 
   const eventTheme = useMemo((): ThemeKey => {
-    // Primero intenta leer desde sessionStorage
-    const storedTheme = typeof window !== 'undefined' ? sessionStorage.getItem('eventTheme') : null;
+    const rawId = event?.id ?? eventId;
+    const themeStorageKey = `eventTheme:${String(rawId)}`;
+    // Primero intenta leer el tema asociado al evento actual.
+    // Fallback: mantiene compatibilidad con la clave legacy `eventTheme`.
+    const storedTheme =
+      typeof window !== 'undefined'
+        ? sessionStorage.getItem(themeStorageKey) ?? sessionStorage.getItem('eventTheme')
+        : null;
     if (
       storedTheme === 'cyan' ||
       storedTheme === 'pink' ||
@@ -89,7 +95,6 @@ export const EventDetail = ({ eventId }: EventDetailProps) => {
     }
 
     const themes: ThemeKey[] = ['cyan', 'pink', 'yellow'];
-    const rawId = event?.id ?? eventId;
     const numericId = Number(String(rawId).replace(/\D/g, ''));
     if (Number.isNaN(numericId)) return themes[0];
     return themes[numericId % themes.length];
@@ -155,6 +160,7 @@ export const EventDetail = ({ eventId }: EventDetailProps) => {
     const targetHref = await resolveJoinTarget({
       eventId: event.id,
       user,
+      participants,
     });
     router.push(targetHref);
   };
@@ -263,14 +269,14 @@ export const EventDetail = ({ eventId }: EventDetailProps) => {
                     startContent={<Rocket className="h-5 w-5" />}
                     endContent={<ChevronRight className="h-5 w-5" />}
                   >
-                    Inscribete YA!!
+                    Inscríbete ya
                   </Button>
                   <p className="text-xs text-muted-foreground text-center">
                     {!user?.id
-                      ? 'Necesitas iniciar sesion para inscribirte'
+                      ? 'Necesitas iniciar sesión para inscribirte'
                       : isAlreadyRegistered
-                        ? '✓ Ya estas inscrito en este evento'
-                        : '✓ Tu cuenta esta lista para inscribirse'}
+                        ? '✓ Ya estás inscrito en este evento'
+                        : '✓ Tu cuenta está lista para inscribirse'}
                   </p>
                   {event.inscriptionDeadline && (
                     <div className="event-deadline-box rounded-xl p-3 flex items-center gap-3">
@@ -598,7 +604,7 @@ export const EventDetail = ({ eventId }: EventDetailProps) => {
             className="event-button event-glow font-black tracking-wider uppercase shrink-0 min-w-44"
             startContent={<Rocket className="h-5 w-5" />}
           >
-            Inscribete
+            Inscríbete
           </Button>
         </div>
       </section>

@@ -81,9 +81,11 @@ const getEventParticipants = async (eventId: string): Promise<string[]> => {
 export const resolveJoinTarget = async ({
   eventId,
   user,
+  participants: providedParticipants,
 }: {
   eventId: string | number;
   user?: JoinUser | null;
+  participants?: unknown;
 }): Promise<string> => {
   const normalizedEventId = String(eventId);
   const joinHref = paths.public.project.getHref(normalizedEventId);
@@ -93,7 +95,10 @@ export const resolveJoinTarget = async ({
   }
 
   try {
-    const participants = await getEventParticipants(normalizedEventId);
+    const participants =
+      providedParticipants === undefined
+        ? await getEventParticipants(normalizedEventId)
+        : toParticipants(providedParticipants);
     const fullName = normalize(`${user.firstName} ${user.lastName}`);
     const email = normalize(user.email);
 

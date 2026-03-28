@@ -74,7 +74,7 @@ export const GetEventsLanding = () => {
                   variant="bordered"
                   onPress={() => router.push(paths.public.event.getHref(event.id))}
                 >
-                  Ver mas
+                  Ver más
                 </Button>
 
                 <Button

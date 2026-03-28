@@ -50,7 +50,7 @@ const summarizeDescription = (text?: string) => {
   const normalized = String(text ?? '').replace(/\s+/g, ' ').trim();
 
   if (!normalized) {
-    return 'Sin descripcion disponible.';
+    return 'Sin descripción disponible.';
   }
 
   const firstSentence = normalized.match(/^[^.]*\./)?.[0]?.trim();
@@ -312,13 +312,13 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
                     <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                       <Button
                         onClick={() => {
-                          sessionStorage.setItem('eventTheme', themeKey);
+                          sessionStorage.setItem(`eventTheme:${String(event.id)}`, themeKey);
                           router.push(paths.public.event.getHref(String(event.id)));
                         }}
                         className="w-full"
                         variant="bordered"
                       >
-                        Ver mas
+                        Ver más
                       </Button>
 
                       <Button

@@ -9,6 +9,7 @@ type RequestOptions = {
   params?: Record<string, string | number | boolean | undefined | null>;
   cache?: RequestCache;
   next?: NextFetchRequestConfig;
+  suppressErrorNotification?: boolean;
 };
 
 function buildUrlWithParams(
@@ -58,6 +59,7 @@ async function fetchApi<T>(
     params,
     cache = 'no-store',
     next,
+    suppressErrorNotification = false,
   } = options;
 
   // Get cookies from the request when running on server
@@ -96,7 +98,12 @@ async function fetchApi<T>(
   // Interceptor para 401: Refrescar token y reintentar
   // Solo intentar refresh/redirect automático si estamos en una ruta protegida.
   // En rutas públicas un 401 puede ser esperado (ej: /auth/me sin sesión).
-  const isAuthEndpoint = url.includes('/auth/refresh') || url.includes('/auth/login') || url.includes('/auth/logout') || url.includes('/auth/register');
+  const isAuthEndpoint =
+    url.includes('/auth/refresh') ||
+    url.includes('/auth/login') ||
+    url.includes('/auth/logout') ||
+    url.includes('/auth/register');
+  const isAuthMeEndpoint = url.includes('/auth/me');
   const isAuthPage = typeof window !== 'undefined' && window.location.pathname.startsWith('/auth');
   const isProtectedPage = typeof window !== 'undefined' && window.location.pathname.startsWith('/app');
 
@@ -146,7 +153,12 @@ async function fetchApi<T>(
 
   if (!response.ok) {
     const message = (await response.json()).message || response.statusText;
-    if (typeof window !== 'undefined') {
+    const shouldNotify =
+      typeof window !== 'undefined' &&
+      !suppressErrorNotification &&
+      !(response.status === 401 && isAuthMeEndpoint);
+
+    if (shouldNotify) {
       useNotifications.getState().addNotification({
         type: 'error',
         title: 'Error',
