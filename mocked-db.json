@@ -134,7 +134,7 @@
       "evaluationsStatus": "open",
       "createdAt": 1700000000000,
       "location": {
-        "venue": "Coliseo los Fundadores",
+        "venue": "Coliseo Uninorte",
         "institution": "Universidad del Norte",
         "city": "Km. 5 vía Puerto Colombia"
       },
@@ -190,7 +190,7 @@
       "evaluationsStatus": "open",
       "createdAt": 1700100000000,
       "location": {
-        "venue": "Plaza Central y Auditorio Principal",
+        "venue": "Coliseo Uninorte",
         "institution": "Universidad del Norte",
         "city": "Barranquilla"
       },
@@ -229,18 +229,6 @@
       },
       "awardsInfo": "Certificación de participación para todos los equipos, mención de honor para los tres mejores proyectos y acceso prioritario a semillero de investigación para finalistas.",
       "sponsorInfo": ""
-    },
-    {
-      "id": "event-003",
-      "title": "Competencia de Desarrollo Web",
-      "description": "Desarrollo de aplicaciones web innovadoras",
-      "startDate": "2025-03-10",
-      "endDate": "2025-03-12",
-      "inscriptionDeadline": "2025-03-05",
-      "accessCode": "EVT003",
-      "isPublic": true,
-      "evaluationsStatus": "open",
-      "createdAt": 1700200000000
     }
   ],
   "eventMembership": [

@@ -21,6 +21,7 @@ import {
   UserCircle2,
   LogOut,
   ChevronDown,
+  LayoutDashboard,
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -42,14 +43,16 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
     },
   });
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMobileUserMenuOpen, setIsMobileUserMenuOpen] = useState(false);
 
   const profileLabel = user
-    ? `${user.firstName} ${user.lastName}`.trim() || user.email
+    ? user.firstName?.trim().split(' ')[0] || user.email
     : '';
 
   const handleSmoothScroll = (e: React.MouseEvent<HTMLAnchorElement>, targetId: string) => {
     e.preventDefault();
     setIsMobileMenuOpen(false); // Close mobile menu on navigation
+    setIsMobileUserMenuOpen(false);
     const targetElement = document.getElementById(targetId);
     if (targetElement) {
       targetElement.scrollIntoView({
@@ -80,17 +83,34 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
 
   const handleProfile = () => {
     setIsMobileMenuOpen(false);
+    setIsMobileUserMenuOpen(false);
     router.push(paths.app.profile.getHref());
   };
 
+  const handleDashboard = () => {
+    setIsMobileMenuOpen(false);
+    setIsMobileUserMenuOpen(false);
+    router.push(paths.app.dashboard.getHref());
+  };
+
   const handleLogout = () => {
+    setIsMobileUserMenuOpen(false);
     logout();
+  };
+
+  const handleMobileMenuToggle = () => {
+    const nextIsOpen = !isMobileMenuOpen;
+    setIsMobileMenuOpen(nextIsOpen);
+
+    if (!nextIsOpen) {
+      setIsMobileUserMenuOpen(false);
+    }
   };
 
   return (
     <>
       <nav className="fixed top-0 left-0 right-0 z-40 px-6 py-4 md:px-12 glass-effect border-b border-border/30">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
+        <div className="max-w-7xl mx-auto relative flex items-center justify-between">
           <div className="relative flex items-center">
             <Link href={paths.home.getHref()} className="flex items-center gap-2">
               <div className="relative">
@@ -114,7 +134,7 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
           </div>
 
           {showNavLinks && isLandingPage && (
-            <div className="hidden md:flex items-center gap-8 text-sm">
+            <div className="hidden md:absolute md:left-1/2 md:flex md:-translate-x-1/2 md:items-center md:gap-8 text-sm">
               <a
                 href="#informacion"
                 onClick={(e) => handleSmoothScroll(e, 'informacion')}
@@ -152,59 +172,66 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
           <div className="flex items-center gap-3">
             {showLoginButton && !isUserLoading &&
               (user?.id ? (
-                <Dropdown placement="bottom-end">
-                  <DropdownTrigger>
-                    <Button
-                      size="sm"
-                      className="max-w-[260px] truncate transition-opacity hover:opacity-90"
-                      style={{
-                        background: 'oklch(0.75 0.15 195)',
-                        color: 'oklch(0.12 0.01 264)',
+                <div className="hidden md:block">
+                  <Dropdown placement="bottom-end" shouldBlockScroll={false}>
+                    <DropdownTrigger>
+                      <Button
+                        size="sm"
+                        className="glass-effect border border-primary/40 transition-all hover:border-primary/60 hover:shadow-[0_0_18px_oklch(0.75_0.15_195/0.45)]"
+                        title={profileLabel}
+                        endContent={<ChevronDown size={14} />}
+                      >
+                        <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-black/15 text-xs font-black uppercase">
+                          {user.firstName?.[0] ?? user.email?.[0] ?? 'U'}
+                        </span>
+                        <span className="truncate text-foreground">{profileLabel}</span>
+                      </Button>
+                    </DropdownTrigger>
+                    <DropdownMenu
+                      aria-label="Menú de cuenta"
+                      className="min-w-[180px] rounded-lg border-none bg-transparent p-1 shadow-none glass-effect backdrop-blur-md"
+                      onAction={(key) => {
+                        if (key === 'dashboard') {
+                          handleDashboard();
+                        }
+                        if (key === 'profile') {
+                          handleProfile();
+                        }
+                        if (key === 'logout') {
+                          handleLogout();
+                        }
                       }}
-                      title={profileLabel}
-                      endContent={<ChevronDown size={14} />}
                     >
-                      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-black/15 text-xs font-black uppercase">
-                        {user.firstName?.[0] ?? user.email?.[0] ?? 'U'}
-                      </span>
-                      <span className="truncate">{profileLabel}</span>
-                    </Button>
-                  </DropdownTrigger>
-                  <DropdownMenu
-                    aria-label="Menú de cuenta"
-                    onAction={(key) => {
-                      if (key === 'profile') {
-                        handleProfile();
-                      }
-                      if (key === 'logout') {
-                        handleLogout();
-                      }
-                    }}
-                  >
-                    <DropdownItem
-                      key="profile"
-                      startContent={<UserCircle2 size={16} />}
-                    >
-                      Ver cuenta
-                    </DropdownItem>
-                    <DropdownItem
-                      key="logout"
-                      startContent={<LogOut size={16} />}
-                      color="danger"
-                    >
-                      {isLoggingOut ? 'Cerrando sesión...' : 'Cerrar sesión'}
-                    </DropdownItem>
-                  </DropdownMenu>
-                </Dropdown>
+                      <DropdownItem
+                        key="dashboard"
+                        startContent={<LayoutDashboard size={14} />}
+                        className="rounded-md px-2.5 py-2 text-[11px] text-muted-foreground data-[hover=true]:bg-primary/10 data-[hover=true]:text-foreground"
+                      >
+                        Dashboard
+                      </DropdownItem>
+                      <DropdownItem
+                        key="profile"
+                        startContent={<UserCircle2 size={14} />}
+                        className="rounded-md px-2.5 py-2 text-[11px] text-muted-foreground data-[hover=true]:bg-primary/10 data-[hover=true]:text-foreground"
+                      >
+                        Ver cuenta
+                      </DropdownItem>
+                      <DropdownItem
+                        key="logout"
+                        startContent={<LogOut size={14} />}
+                        color="danger"
+                        className="rounded-md px-2.5 py-2 text-[11px] data-[hover=true]:bg-danger/10"
+                      >
+                        {isLoggingOut ? 'Cerrando sesión...' : 'Cerrar sesión'}
+                      </DropdownItem>
+                    </DropdownMenu>
+                  </Dropdown>
+                </div>
               ) : (
                 <Button
                   size="sm"
                   onClick={() => router.push('/auth/login')}
-                  className="transition-opacity hover:opacity-90"
-                  style={{
-                    background: 'oklch(0.75 0.15 195)',
-                    color: 'oklch(0.12 0.01 264)',
-                  }}
+                  className="glass-effect border border-primary/40 transition-all hover:border-primary/60 hover:shadow-[0_0_18px_oklch(0.75_0.15_195/0.45)]"
                 >
                   {landingContent.navbar.cta}
                 </Button>
@@ -213,7 +240,7 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
             {/* Mobile Menu Button */}
             {showNavLinks && isLandingPage && (
               <a
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                onClick={handleMobileMenuToggle}
                 className="md:hidden p-2 text-white hover:text-primary transition-colors"
                 aria-label="Toggle menu"
               >
@@ -232,11 +259,11 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
           }`}
         >
           <div className="mx-6 mt-2 glass-effect border border-border/30 rounded-lg overflow-hidden">
-            <div className="flex flex-col">
+            <div className="flex flex-col gap-0.5 p-1.5">
               <a
                 href="#informacion"
                 onClick={(e) => handleSmoothScroll(e, 'informacion')}
-                className="px-6 py-4 text-muted-foreground hover:text-foreground transition-all cursor-pointer border-b border-border/20"
+                className="rounded-md px-4 py-3 text-muted-foreground hover:bg-primary/10 hover:text-foreground transition-all cursor-pointer"
               >
                 {landingContent.navbar.links.information}
               </a>
@@ -244,7 +271,7 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
               <a
                 href="#ingenierias"
                 onClick={(e) => handleSmoothScroll(e, 'ingenierias')}
-                className="px-6 py-4 text-muted-foreground hover:text-foreground transition-all cursor-pointer border-b border-border/20"
+                className="rounded-md px-4 py-3 text-muted-foreground hover:bg-primary/10 hover:text-foreground transition-all cursor-pointer"
               >
                 {landingContent.navbar.links.engineering}
               </a>
@@ -252,7 +279,7 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
               <a
                 href="#eventos"
                 onClick={(e) => handleSmoothScroll(e, 'eventos')}
-                className="px-6 py-4 text-muted-foreground hover:text-foreground transition-all cursor-pointer"
+                className="rounded-md px-4 py-3 text-muted-foreground hover:bg-primary/10 hover:text-foreground transition-all cursor-pointer"
               >
                 {landingContent.navbar.links.events}
               </a>
@@ -260,30 +287,69 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
               <a
                 href="#ganadores"
                 onClick={(e) => handleSmoothScroll(e, 'ganadores')}
-                className="px-6 py-4 text-muted-foreground hover:text-foreground transition-all cursor-pointer"
+                className="rounded-md px-4 py-3 text-muted-foreground hover:bg-primary/10 hover:text-foreground transition-all cursor-pointer"
               >
                 {landingContent.navbar.links.winners}
               </a>
             </div>
 
             {showLoginButton && !isUserLoading && user?.id && (
-              <div className="border-t border-border/20">
+              <div className="mx-2 mb-2 mt-1">
                 <button
                   type="button"
-                  onClick={handleProfile}
-                  className="w-full px-6 py-4 text-left text-muted-foreground hover:text-foreground transition-all cursor-pointer border-b border-border/20 inline-flex items-center gap-2"
+                  onClick={() => setIsMobileUserMenuOpen((prev) => !prev)}
+                  className="inline-flex w-full cursor-pointer items-center justify-between rounded-md bg-transparent px-4 py-2.5 text-left text-sm font-medium text-foreground transition-all"
                 >
-                  <UserCircle2 size={16} /> Ver cuenta
+                  <span className="inline-flex min-w-0 items-center gap-2.5">
+                    <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-black/15 text-xs font-black uppercase text-foreground">
+                      {user.firstName?.[0] ?? user.email?.[0] ?? 'U'}
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-semibold text-foreground">
+                        {profileLabel}
+                      </span>
+                      <span className="block truncate text-xs text-muted-foreground">
+                        {user.email}
+                      </span>
+                    </span>
+                  </span>
+                  <ChevronDown
+                    size={16}
+                    className={`shrink-0 transition-transform ${isMobileUserMenuOpen ? 'rotate-180' : ''}`}
+                  />
                 </button>
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  disabled={isLoggingOut}
-                  className="w-full px-6 py-4 text-left text-danger hover:opacity-80 transition-all cursor-pointer inline-flex items-center gap-2 disabled:opacity-60"
-                >
-                  <LogOut size={16} />
-                  {isLoggingOut ? 'Cerrando sesión...' : 'Cerrar sesión'}
-                </button>
+
+                {isMobileUserMenuOpen && (
+                <div className="mt-1.5 rounded-lg p-1.5">
+                  
+                  <Link
+                    href={paths.app.dashboard.getHref()}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="block w-full rounded-md px-4 py-2.5 text-sm text-muted-foreground transition-all hover:text-foreground"
+                  >
+                    Dashboard
+                  </Link>
+
+                  <Link
+                    href={paths.app.profile.getHref()}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="block w-full rounded-md px-4 py-2.5 text-sm text-muted-foreground transition-all hover:text-foreground"
+                  >
+                    Ver cuenta
+                  </Link>
+
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    disabled={isLoggingOut}
+                    className="block w-full cursor-pointer rounded-md px-4 py-2.5 text-left text-sm 
+!text-white !bg-transparent 
+transition-all 
+hover:!text-white focus:!text-white active:!text-white">
+                    {isLoggingOut ? 'Cerrando sesión...' : 'Cerrar sesión'}
+                  </button>
+                </div>
+                              )}
               </div>
             )}
           </div>
@@ -292,3 +358,4 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
     </>
   );
 }
+
