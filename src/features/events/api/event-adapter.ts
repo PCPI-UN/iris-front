@@ -1,10 +1,26 @@
 import { Event } from "@/types/api";
 
+const normalizeRoleName = (
+  value?: string
+): "Juror" | "Participant" | undefined => {
+  if (!value) return undefined;
+  const normalized = value.toLowerCase();
+  if (normalized === "juror" || normalized === "jury") return "Juror";
+  if (normalized === "participant" || normalized === "student") {
+    return "Participant";
+  }
+  return undefined;
+};
+
 export const normalizeEvent = (raw: any): Event => {
   const evaluationsOpened =
     typeof raw?.evaluationsOpened === "boolean"
       ? raw.evaluationsOpened
       : raw?.evaluationsStatus === "open";
+
+  const roleName = normalizeRoleName(
+    raw?.role?.name ?? raw?.userEventRole ?? raw?.eventRole
+  );
 
   return {
     ...raw,
@@ -21,5 +37,11 @@ export const normalizeEvent = (raw: any): Event => {
     evaluationsOpened,
     evaluationsStatus:
       raw?.evaluationsStatus ?? (evaluationsOpened ? "open" : "closed"),
+    role: roleName
+      ? {
+          ...(raw?.role ?? {}),
+          name: roleName,
+        }
+      : raw?.role,
   } as Event;
 };

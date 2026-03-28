@@ -7,7 +7,7 @@ type ProjectBody = {
   eventId: string;
   courseId: string;
   name: string;
-  logo: string;
+  logo?: string;
   description?: string | undefined;
   eventNumber?: string | undefined;
   state?: string;
@@ -29,6 +29,35 @@ const toInternalPrefixedId = (value: string, prefix: string): string => {
   if (value.startsWith(`${prefix}-`)) return value;
   if (/^\d+$/.test(value)) return `${prefix}-${value.padStart(3, "0")}`;
   return value;
+};
+
+const parseJsonArray = <T>(value: FormDataEntryValue | null, fallback: T): T => {
+  if (typeof value !== "string") return fallback;
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return fallback;
+  }
+};
+
+const parseProjectBody = async (request: Request): Promise<ProjectBody> => {
+  const contentType = request.headers.get("content-type") || "";
+
+  if (contentType.includes("multipart/form-data")) {
+    const form = await request.formData();
+    return {
+      name: String(form.get("name") || ""),
+      description: String(form.get("description") || ""),
+      eventId: String(form.get("eventId") || ""),
+      courseId: String(form.get("courseId") || ""),
+      logo: String(form.get("logo") || ""),
+      state: String(form.get("state") || "UNDER_REVIEW"),
+      participants: parseJsonArray(form.get("participants"), []),
+      documents: parseJsonArray(form.get("documents"), []),
+    };
+  }
+
+  return (await request.json()) as ProjectBody;
 };
 
 type ProjectDTO = {
@@ -164,13 +193,34 @@ export const projectsHandlers = [
     await networkDelay();
 
     try {
-      const data = (await request.json()) as ProjectBody;
+      const data = await parseProjectBody(request);
+
+      if (!data.name?.trim()) {
+        return HttpResponse.json(
+          { message: "name is required" },
+          { status: 400 }
+        );
+      }
+
+      if (!data.eventId?.trim()) {
+        return HttpResponse.json(
+          { message: "eventId is required" },
+          { status: 400 }
+        );
+      }
+
+      if (!data.courseId?.trim()) {
+        return HttpResponse.json(
+          { message: "courseId is required" },
+          { status: 400 }
+        );
+      }
 
       const result = db.project.create({
-        eventId: data.eventId,
-        courseId: data.courseId,
+        eventId: toInternalPrefixedId(String(data.eventId), "event"),
+        courseId: toInternalPrefixedId(String(data.courseId), "course"),
         name: data.name,
-        logo: data.logo,
+        logo: data.logo || "",
         description: data.description || undefined,
         eventNumber: undefined,
         state: data.state || "UNDER_REVIEW",
