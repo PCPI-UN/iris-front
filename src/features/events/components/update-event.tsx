@@ -110,7 +110,7 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                 const rawData = Object.fromEntries(formData);
                 const data = {
                   id: Number(eventId),
-                  title: rawData.title as string,
+                  name: rawData.name as string,
                   description: rawData.description as string,
                   accessCode: rawData.accessCode as string,
                   isPublic: rawData.isPublic === "true",
@@ -136,7 +136,7 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                 <Input
                   id="update-event-name"
                   label="Name"
-                  name="title"
+                  name="name"
                   defaultValue={event?.name ?? ""}
                 />
                 <Textarea

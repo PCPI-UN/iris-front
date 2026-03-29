@@ -1,0 +1,64 @@
+generator client {
+  provider = "prisma-client-js"
+
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+}
+
+/**** EVENTS ****/
+model Event {
+  id                  Int       @id @default(autoincrement())
+  name                String    @db.VarChar(255)
+  description         String?   @db.Text
+  accessCode          String    @unique @map("access_code") @db.VarChar(100)
+  isPubliclyJoinable  Boolean   @map("is_publicly_joinable")
+  inscriptionDeadline DateTime  @map("inscription_deadline") @db.Timestamptz()
+  evaluationsOpened   Boolean   @map("evaluations_opened")
+  startDate           DateTime  @map("start_date") @db.Timestamptz()
+  endDate             DateTime  @map("end_date") @db.Timestamptz()
+  active              Boolean   @map("active") @default(true)
+  createdAt           DateTime  @map("created_at") @default(now()) @db.Timestamptz()
+  updatedAt           DateTime  @map("updated_at") @updatedAt @db.Timestamptz()
+  createdByUserId     Int?
+  location            String?   @db.VarChar(255)
+
+  participants        EventMember[]
+  courses             Course[]
+
+  @@map("events")
+}
+
+
+
+model EventMember {
+  userId  Int @map("user_id")
+  eventId Int @map("event_id")
+  roleId  Int @map("role_id")
+  active  Boolean
+  createdAt DateTime @map("created_at") @default(now()) @db.Timestamptz()
+  updatedAt DateTime @map("updated_at") @updatedAt @db.Timestamptz()
+
+  event   Event  @relation(fields: [eventId], references: [id])
+
+
+  @@id([userId, eventId])
+  @@map("event_members")
+}
+
+/**** COURSE ****/
+model Course {
+  id             Int               @id @default(autoincrement())
+  eventId        Int               @map("event_id")
+  code           String               @db.VarChar(100)
+  description    String?              @db.Text
+  active         Boolean              @map("active") @default(true)
+  createdAt      DateTime             @map("created_at") @default(now()) @db.Timestamptz()
+  updatedAt      DateTime             @map("updated_at") @updatedAt @db.Timestamptz()
+
+  event          Event                @relation(fields: [eventId], references: [id])
+
+  @@map("courses")
+}

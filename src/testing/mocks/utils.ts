@@ -57,15 +57,18 @@ export function authenticate({
   email: string;
   password: string;
 }) {
+  const normalizedEmail = email.trim().toLowerCase();
+  const normalizedPassword = password.trim();
+
   const user = db.user.findFirst({
     where: {
       email: {
-        equals: email,
+        equals: normalizedEmail,
       },
     },
   });
 
-  if (user?.password === hash(password)) {
+  if (user?.password === hash(normalizedPassword)) {
     const sanitizedUser = sanitizeUser(user);
     const encodedToken = encode(sanitizedUser);
     return { user: sanitizedUser, jwt: encodedToken };

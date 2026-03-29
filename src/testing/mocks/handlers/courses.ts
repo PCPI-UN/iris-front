@@ -49,7 +49,7 @@ const mapCourseToDTO = (course: any) => {
     event: event
       ? {
           id: toPublicNumericId(String(event.id), "event"),
-          title: event.title,
+          title: event.name,
         }
       : null,
     active: course.active,

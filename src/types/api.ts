@@ -91,6 +91,16 @@ export type Event = Entity<{
   evaluationsOpened: boolean;
   statusName: string;
   location?: string;
+  locationDetail?: string;
+  eventType: "Competition" | "Exhibition";
+  inscriptionRequirements?: string;
+  cost?: number;
+  minimumTeamSize?: number;
+  specificInscriptionDetails?: { title: string; description: string }[];
+  aboutOurAllies?: string;
+  organizations?: string[];
+  collaborators?: string[];
+  awards?: { top: number; category: string; description: string; prizeMoney?: number }[];
   status?: number;
   active: boolean;
   role: role;
