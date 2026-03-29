@@ -54,7 +54,7 @@ const mapEventDetail = (rawEvent: any): PublicEventDetail => {
   const name = rawEvent?.name ?? rawEvent?.title ?? 'Evento';
   const description =
     rawEvent?.description ??
-    'Conoce los detalles del evento, sus participantes y como unirte.';
+    'Conoce los detalles del evento, sus participantes y cómo unirte.';
 
   return {
     id: String(rawEvent?.id ?? ''),
@@ -70,7 +70,7 @@ const mapEventDetail = (rawEvent: any): PublicEventDetail => {
     awardsInfo:
       rawEvent?.awardsInfo ??
       rawEvent?.awards ??
-      'Reconocimiento institucional a los mejores proyectos de cada categoria.',
+      'Reconocimiento institucional a los mejores proyectos de cada categoría.',
     startDate: rawEvent?.startDate,
     endDate: rawEvent?.endDate,
   };

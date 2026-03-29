@@ -3,7 +3,7 @@
 import { RefObject } from 'react';
 import { landingContent } from '../content';
 
-type StoryBlock = 'section1' | 'section3';
+type StoryBlock = 'section1' | 'section2';
 
 interface StorySectionsProps {
   storySection1Ref: RefObject<HTMLElement>;
@@ -17,7 +17,7 @@ interface StorySectionsProps {
 export function StorySections({
   storySection1Ref,
   storySection3Ref,
-  blocks = ['section1', 'section3'],
+  blocks = ['section1', 'section2'],
 }: StorySectionsProps) {
   return (
     <>
@@ -43,7 +43,7 @@ export function StorySections({
         </section>
       )}
 
-      {blocks.includes('section3') && (
+      {blocks.includes('section2') && (
         <section
           ref={storySection3Ref}
           className="relative z-10 min-h-screen flex items-center justify-center px-6 py-32"

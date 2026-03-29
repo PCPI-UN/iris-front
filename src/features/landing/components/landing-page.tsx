@@ -104,7 +104,7 @@ export function LandingPage() {
         storySection3Ref={storySection3Ref}
         zoomTextRef={zoomTextRef}
         layeredTextRef={layeredTextRef}
-        blocks={['section3']}
+        blocks={['section2']}
       />
 
       {/* Developers Carousel */}
