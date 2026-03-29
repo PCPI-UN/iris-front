@@ -1,11 +1,16 @@
-// This file defines the shape of the data used to create or update an event. (POST/PATCH)
-// Optional fields allow partial updates and default handling in handlers.
-export type EventBody = {
+// This file defines shared and derived request shapes for event write operations.
+// BaseEvent avoids repeating the same properties across POST/PATCH DTOs.
+export type EventStatus = "open" | "closed";
+
+export interface BaseEvent {
   title: string;
   description: string;
   startDate: string;
   endDate: string;
   inscriptionDeadline?: string;
-  evaluationsStatus?: "open" | "closed"; // Default: closed
+  evaluationsStatus?: EventStatus; // Default: closed
   isPublic?: boolean; // Default: true
-};
+}
+
+export type CreateEventBody = BaseEvent;
+export type UpdateEventBody = Partial<BaseEvent>;

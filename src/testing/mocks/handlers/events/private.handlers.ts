@@ -9,7 +9,7 @@ import {
   // requireAdmin,
   networkDelay,
 } from "../../utils";
-import { type EventBody } from "./dto";
+import { type CreateEventBody, type UpdateEventBody } from "./dto";
 import { mapEventToDTO } from "./mapper";
 import {
   PAGE_SIZE,
@@ -159,7 +159,7 @@ export const eventsPrivateHandlers = [
       if (error) {
         return HttpResponse.json({ message: error }, { status: 401 });
       }
-      const data = (await request.json()) as EventBody;
+      const data = (await request.json()) as CreateEventBody;
 
       const event = db.event.create({
         title: data.title,
@@ -192,7 +192,7 @@ export const eventsPrivateHandlers = [
         return HttpResponse.json({ message: error }, { status: 401 });
       }
       const eventId = params.eventId as string;
-      const data = (await request.json()) as Partial<EventBody>;
+      const data = (await request.json()) as UpdateEventBody;
 
       const event = db.event.update({
         where: {

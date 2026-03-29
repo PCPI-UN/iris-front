@@ -1,6 +1,5 @@
 /**
  * Landing Page Content
- * Archivo centralizado para gestionar todo el contenido de texto de la landing page
  */
 
 export const landingContent = {
@@ -52,7 +51,7 @@ export const landingContent = {
     },
     section2: {
       words: ['Múltiples', 'eventos.', 'Distintas', 'miradas.', 'Un', 'mismo', 'espacio', 'para', 'innovar.'],
-      highlightedIndices: [0, 3, 8], // Índices de palabras con colores especiales
+      highlightedIndices: [0, 3, 8], // Highlighted words indexes.
     },
   },
 
@@ -160,7 +159,7 @@ export const landingContent = {
     //     { label: 'Documentación', href: '#' },
     //   ],
     // },
-    copyright: '© 2025 Iris. Proyecto Final de Ingeniería - Universidad del Norte.',
+    copyright: '© 2026 Iris. Proyecto Final de Ingeniería - Universidad del Norte.',
     // legal: [
     //   { label: 'Privacidad', href: '#' },
     //   { label: 'Términos', href: '#' },
@@ -168,5 +167,4 @@ export const landingContent = {
   },
 };
 
-// Tipo TypeScript para el contenido (opcional pero recomendado)
 export type LandingContent = typeof landingContent;
