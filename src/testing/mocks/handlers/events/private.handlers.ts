@@ -1,20 +1,21 @@
-import { HttpResponse, http } from "msw";
+// All private (authenticated) event endpoints
 
+import { HttpResponse, http } from "msw";
 import { env } from "@/config/env";
 
-import { db, persistDb } from "../db";
+import { db, persistDb } from "../../db";
 import {
   requireAuth,
   // requireAdmin,
   networkDelay,
-} from "../utils";
-import { type EventBody } from "./events.dto";
-import { mapEventToDTO } from "./events.mapper";
+} from "../../utils";
+import { type EventBody } from "./dto";
+import { mapEventToDTO } from "./mapper";
 import {
   PAGE_SIZE,
   calculatePagination,
   validatePage,
-} from "./events.pagination";
+} from "./pagination";
 
 export const eventsPrivateHandlers = [
   http.get(`${env.API_URL}/events`, async ({ cookies, request }) => {
@@ -154,12 +155,11 @@ export const eventsPrivateHandlers = [
     await networkDelay();
 
     try {
-      const { user, error } = requireAuth(cookies);
+      const { error } = requireAuth(cookies);
       if (error) {
         return HttpResponse.json({ message: error }, { status: 401 });
       }
       const data = (await request.json()) as EventBody;
-      void user;
 
       const event = db.event.create({
         title: data.title,

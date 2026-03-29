@@ -1,9 +1,49 @@
-import {
-  type EventDTO,
-  type EventMembershipRecord,
-  type EventRecord,
-  type PublicEventDTO,
-} from "./events.dto";
+// Transforming database data into the format expected
+
+type EventDTO = {
+  id: string;
+  title: string;
+  description: string;
+  startDate: string;
+  endDate: string;
+  inscriptionDeadline: string;
+  accessCode: string;
+  isPublic: boolean;
+  evaluationsStatus: "open" | "closed";
+  createdAt: number;
+  userEventRole?: "Participant" | "JURY";
+};
+
+type PublicEventDTO = {
+  id: string;
+  name: string;
+  description: string;
+  startDate: string;
+  endDate: string;
+  inscriptionDeadline: string;
+  accessCode: string;
+  statusName: "OPEN" | "CLOSED";
+  isPubliclyJoinable: boolean;
+  evaluationsOpened: boolean;
+  active: boolean;
+};
+
+type EventRecord = {
+  id: string;
+  title: string;
+  description: string;
+  startDate: string;
+  endDate: string;
+  inscriptionDeadline: string;
+  accessCode: string;
+  isPublic: boolean;
+  evaluationsStatus: string;
+  createdAt: number;
+};
+
+type EventMembershipRecord = {
+  eventRole: string;
+};
 
 const normalizeEvaluationsStatus = (
   evaluationsStatus: string,

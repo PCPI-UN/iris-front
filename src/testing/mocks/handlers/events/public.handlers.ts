@@ -1,15 +1,17 @@
+// All public event endpoints (no authentication required)
+
 import { HttpResponse, http } from "msw";
 
 import { env } from "@/config/env";
 
-import { db } from "../db";
-import { networkDelay } from "../utils";
-import { mapEventToPublicDTO } from "./events.mapper";
+import { db } from "../../db";
+import { networkDelay } from "../../utils";
+import { mapEventToPublicDTO } from "./mapper";
 import {
   PAGE_SIZE,
   calculatePagination,
   validatePage,
-} from "./events.pagination";
+} from "./pagination";
 
 export const eventsPublicHandlers = [
   http.get(`${env.API_URL}/events/public`, async ({ request }) => {
