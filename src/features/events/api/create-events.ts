@@ -16,7 +16,23 @@ export const createEventInputSchema = z.object({
   inscriptionDeadline: z.string().min(10).max(10),
   evaluationsOpened: z.boolean(),
   isPubliclyJoinable: z.boolean().optional(),
-  location: z.string().optional(),
+  location: z.string().min(1, 'Required'),
+  locationDetail: z.string().optional(),
+  eventType: z.enum(["Competition", "Exhibition"]),
+  inscriptionRequirements: z.string().optional(),
+  cost: z.coerce.number().optional(),
+  minimumTeamSize: z.coerce.number().optional(),
+  specificInscriptionDetails: z.array(z.object({
+    title: z.string().min(1, 'Required'),
+    description: z.string().min(1, 'Required'),
+  })).optional(),
+  aboutOurAllies: z.string().optional(),
+  organizations: z.array(z.string()).optional(),
+  collaborators: z.array(z.string()).optional(),
+  awards: z.array(z.object({
+    top: z.coerce.number(),
+    description: z.string().min(1, 'Required'),
+  })).optional(),
 });
 
 export type CreateEventInput = z.infer<typeof createEventInputSchema>;

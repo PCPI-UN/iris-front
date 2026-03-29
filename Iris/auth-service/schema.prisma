@@ -1,0 +1,106 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User account entity.
+// Stores identity, authentication data, account status, and related platform access.
+model User {
+  id        Int        @id @default(autoincrement())
+  firstName String     @map("first_name") @db.VarChar(100)
+  lastName  String?    @map("last_name") @db.VarChar(100)
+  email     String     @unique @db.VarChar(255)
+  password  String?    @db.VarChar(255)
+  oid       String?    @unique @db.VarChar(255)
+  phone     String?    @db.VarChar(10)
+  active    Boolean    @default(true)
+  status    UserStatus @default(PENDING)
+  createdAt DateTime   @default(now()) @map("created_at") @db.Timestamp()
+  updatedAt DateTime   @updatedAt @map("updated_at") @db.Timestamp()
+
+  platformRoles PlatformStaff[]
+  tokens        UserToken[]
+
+  @@map("users")
+}
+
+// Junction model between a user and a platform-level role.
+// Specific detail:
+// - The composite primary key prevents assigning the same role twice to the same user.
+model PlatformStaff {
+  userId    Int      @map("user_id")
+  roleId    Int      @map("role_id")
+  active    Boolean
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp()
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamp()
+  user      User     @relation(fields: [userId], references: [id])
+  role      Role     @relation(fields: [roleId], references: [id])
+
+  @@id([userId, roleId])
+  @@map("platform_staff")
+}
+
+// Token issued to a user for authentication or account lifecycle flows.
+// Used for password reset, account setup, and refresh token management.
+model UserToken {
+  id        String        @id @default(uuid()) @db.Uuid
+  token     String        @unique @db.Text
+  userId    Int           @map("user_id")
+  type      UserTokenType
+  expiresAt DateTime      @map("expires_at") @db.Timestamp()
+  usedAt    DateTime?     @map("used_at") @db.Timestamp()
+  createdAt DateTime      @default(now()) @map("created_at") @db.Timestamp()
+  updatedAt DateTime      @updatedAt @map("updated_at") @db.Timestamp()
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("user_tokens")
+}
+
+// Platform role definition.
+// Roles group permissions and can be assigned to users through `PlatformStaff`.
+model Role {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique @db.VarChar(50)
+  description String   @db.Text
+  scope       String   @db.VarChar(20)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamp()
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamp()
+
+  permissions   Permission[]    @relation("role_permissions")
+  platformStaff PlatformStaff[]
+
+  @@map("roles")
+}
+
+// Permission definition identified by the combination of action and resource.
+// Connected to roles through an implicit many-to-many relation.
+model Permission {
+  id          Int      @id @default(autoincrement())
+  action      String   @db.VarChar(255)
+  resource    String   @db.VarChar(100)
+  description String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamp()
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamp()
+  roles       Role[]   @relation("role_permissions")
+
+  @@unique([action, resource], name: "action_resource")
+  @@map("permissions")
+}
+
+// Allowed user account states.
+enum UserStatus {
+  PENDING
+  CONFIRMED
+}
+
+// Supported token purposes handled by the auth service.
+enum UserTokenType {
+  RESET_PASSWORD
+  ACCOUNT_SETUP
+  REFRESH_TOKEN
+}

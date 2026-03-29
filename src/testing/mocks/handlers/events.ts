@@ -8,13 +8,24 @@ import {
 } from "../utils";
 
 type EventBody = {
-  title: string;
+  name: string;
   description: string;
   startDate: string;
   endDate: string;
   inscriptionDeadline?: string;
   evaluationsStatus?: "open" | "closed";
   isPublic?: boolean;
+  location: string;
+  locationDetail?: string;
+  eventType: "Competition" | "Exhibition";
+  inscriptionRequirements?: string;
+  cost?: number;
+  minimumTeamSize?: number;
+  specificInscriptionDetails?: { title: string; description: string }[];
+  aboutOurAllies?: string;
+  organizations?: string[];
+  collaborators?: string[];
+  awards?: { top: number; category: string; description: string; prizeMoney?: number }[];
 };
 
 const PAGE_SIZE = 10;
@@ -43,7 +54,7 @@ const getNextEventId = (): string => {
 
 type EventDTO = {
   id: number;
-  title: string;
+  name: string;
   description: string;
   startDate: string;
   endDate: string;
@@ -51,6 +62,17 @@ type EventDTO = {
   accessCode: string;
   isPublic: boolean;
   evaluationsStatus: "open" | "closed";
+  location: string;
+  locationDetail?: string;
+  eventType: "Competition" | "Exhibition";
+  inscriptionRequirements?: string;
+  cost?: number;
+  minimumTeamSize?: number;
+  specificInscriptionDetails?: { title: string; description: string }[];
+  aboutOurAllies?: string;
+  organizations?: string[];
+  collaborators?: string[];
+  awards?: { top: number; category: string; description: string; prizeMoney?: number }[];
   createdAt: string;
   userEventRole?: "Participant" | "JURY";
 };
@@ -58,7 +80,7 @@ type EventDTO = {
 const mapEventToDTO = (event: any, membership?: any): EventDTO => {
   return {
     id: toPublicNumericId(String(event.id), "event"),
-    title: event.title,
+    name: event.name as string,
     description: event.description,
     startDate: event.startDate,
     endDate: event.endDate,
@@ -66,6 +88,17 @@ const mapEventToDTO = (event: any, membership?: any): EventDTO => {
     accessCode: event.accessCode,
     isPublic: event.isPublic,
     evaluationsStatus: event.evaluationsStatus,
+    location: event.location,
+    locationDetail: event.locationDetail,
+    eventType: event.eventType,
+    inscriptionRequirements: event.inscriptionRequirements,
+    cost: event.cost,
+    minimumTeamSize: event.minimumTeamSize,
+    specificInscriptionDetails: event.specificInscriptionDetails,
+    aboutOurAllies: event.aboutOurAllies,
+    organizations: event.organizations,
+    collaborators: event.collaborators,
+    awards: event.awards,
     createdAt: event.createdAt,
     ...(membership && { userEventRole: membership.eventRole }),
   };
@@ -266,7 +299,7 @@ export const eventsHandlers = [
       const events = db.event.findMany({}).map((event) => {
         return {
           id: toPublicNumericId(String(event.id), "event"),
-          title: event.title,
+          name: event.name,
         };
       });
 
@@ -326,7 +359,7 @@ export const eventsHandlers = [
 
       const event = db.event.create({
         id: getNextEventId(),
-        title: data.title,
+        name: data.name,
         description: data.description,
         startDate: data.startDate,
         endDate: data.endDate,
@@ -334,11 +367,22 @@ export const eventsHandlers = [
         accessCode: `EVT${Date.now().toString().slice(-6)}`,
         isPublic: data.isPublic ?? true,
         evaluationsStatus: data.evaluationsStatus ?? "closed",
+        location: data.location,
+        locationDetail: data.locationDetail,
+        eventType: data.eventType,
+        inscriptionRequirements: data.inscriptionRequirements,
+        cost: data.cost,
+        minimumTeamSize: data.minimumTeamSize,
+        specificInscriptionDetails: data.specificInscriptionDetails || [],
+        aboutOurAllies: data.aboutOurAllies,
+        organizations: data.organizations || [],
+        collaborators: data.collaborators || [],
+        awards: data.awards || [],
       });
 
       await persistDb("event");
 
-  return HttpResponse.json({ data: mapEventToDTO(event) });
+      return HttpResponse.json({ data: mapEventToDTO(event) });
     } catch (error: any) {
       return HttpResponse.json(
         { message: error?.message || "Server Error" },
@@ -348,54 +392,54 @@ export const eventsHandlers = [
   }),
 
   http.patch(`${env.API_URL}/events/:eventId`, async ({ params, request, cookies }) => {
-      await networkDelay();
+    await networkDelay();
 
-      try {
-        const { /*user,*/ error } = requireAuth(cookies);
-        if (error) {
-          return HttpResponse.json({ message: error }, { status: 401 });
-        }
-        const eventId = toInternalPrefixedId(String(params.eventId), "event");
-        const data = (await request.json()) as Partial<EventBody>;
-        // requireAdmin(user);
-        const event = db.event.update({
-          where: {
-            id: {
-              equals: eventId,
-            },
+    try {
+      const { /*user,*/ error } = requireAuth(cookies);
+      if (error) {
+        return HttpResponse.json({ message: error }, { status: 401 });
+      }
+      const eventId = toInternalPrefixedId(String(params.eventId), "event");
+      const data = (await request.json()) as Partial<EventBody>;
+      // requireAdmin(user);
+      const event = db.event.update({
+        where: {
+          id: {
+            equals: eventId,
           },
-          data: {
-            ...(data.title && { title: data.title }),
-            ...(data.description && { description: data.description }),
-            ...(data.startDate && { startDate: data.startDate }),
-            ...(data.endDate && { endDate: data.endDate }),
-            ...(data.inscriptionDeadline && {
-              inscriptionDeadline: data.inscriptionDeadline,
-            }),
-            ...(data.isPublic !== undefined && { isPublic: data.isPublic }),
-            ...(data.evaluationsStatus && {
-              evaluationsStatus: data.evaluationsStatus,
-            }),
-          },
-        });
+        },
+        data: {
+          ...(data.name && { name: data.name }),
+          ...(data.description && { description: data.description }),
+          ...(data.startDate && { startDate: data.startDate }),
+          ...(data.endDate && { endDate: data.endDate }),
+          ...(data.inscriptionDeadline && {
+            inscriptionDeadline: data.inscriptionDeadline,
+          }),
+          ...(data.isPublic !== undefined && { isPublic: data.isPublic }),
+          ...(data.evaluationsStatus && {
+            evaluationsStatus: data.evaluationsStatus,
+          }),
+        },
+      });
 
-        if (!event) {
-          return HttpResponse.json(
-            { message: "Event not found" },
-            { status: 404 }
-          );
-        }
-
-        await persistDb("event");
-
-        return HttpResponse.json({ data: event ? mapEventToDTO(event) : event });
-      } catch (error: any) {
+      if (!event) {
         return HttpResponse.json(
-          { message: error?.message || "Server Error" },
-          { status: 500 }
+          { message: "Event not found" },
+          { status: 404 }
         );
       }
+
+      await persistDb("event");
+
+      return HttpResponse.json({ data: event ? mapEventToDTO(event) : event });
+    } catch (error: any) {
+      return HttpResponse.json(
+        { message: error?.message || "Server Error" },
+        { status: 500 }
+      );
     }
+  }
   ),
 
   http.delete(`${env.API_URL}/events/:eventId`, async ({ params, cookies }) => {

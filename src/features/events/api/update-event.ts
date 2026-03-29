@@ -11,7 +11,7 @@ import { getEventsQueryOptions } from "./get-events";
 
 export const updateEventInputSchema = z.object({
   id: z.number().positive(),
-  title: z.string().min(2).max(255),
+  name: z.string().min(2).max(255),
   description: z.string().max(3000),
   accessCode: z.string().optional(),
   isPublic: z.boolean().optional(),
