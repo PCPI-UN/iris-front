@@ -16,61 +16,17 @@ import { useEventsPublic } from "@/features/events/api/get-event-public";
 import { Spinner } from "@/components/ui/spinner";
 import { paths } from "@/config/paths";
 import { landingContent } from "../content";
+import {
+  formatDateRange,
+  getEventColor,
+  getStatusText,
+  PRISMATIC_GRADIENT,
+  PRISMATIC_GRADIENT_DIM,
+} from "./events-section.utils";
 
 interface EventsSectionProps {
   eventsSectionRef: RefObject<HTMLElement>;
 }
-
-// Paleta de colores para los eventos (rotación de 3 colores)
-const EVENT_COLORS = [
-  {
-    color: "oklch(0.75 0.15 195)", // cyan
-    gradient: "from-cyan-500/20 via-blue-500/20 to-cyan-500/20",
-  },
-  {
-    color: "oklch(0.82 0.18 330)", // pink
-    gradient: "from-pink-500/20 via-rose-500/20 to-pink-500/20",
-  },
-  {
-    color: "oklch(0.88 0.16 85)", // yellow
-    gradient: "from-yellow-500/20 via-orange-500/20 to-yellow-500/20",
-  },
-];
-
-const PRISMATIC_GRADIENT =
-  "linear-gradient(115deg, oklch(0.75 0.15 195), oklch(0.82 0.18 330), oklch(0.88 0.16 85), oklch(0.75 0.15 195))";
-
-const PRISMATIC_GRADIENT_DIM =
-  "linear-gradient(115deg, oklch(0.75 0.15 195 / 0.3), oklch(0.82 0.18 330 / 0.3), oklch(0.88 0.16 85 / 0.3), oklch(0.75 0.15 195 / 0.3))";
-
-// Función para obtener color basado en el ID del evento
-const getEventColor = (eventId: number, index: number) => {
-  // Usar el índice como fallback si no hay ID
-  const colorIndex = index % EVENT_COLORS.length;
-  return EVENT_COLORS[colorIndex];
-};
-
-// Función para formatear fechas
-const formatDateRange = (startDate: string, endDate: string) => {
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-
-  const startDay = start.getDate();
-  const endDay = end.getDate();
-  const month = start.toLocaleDateString("es", { month: "long" });
-  const year = start.getFullYear();
-
-  return `${endDay} de ${month} ${year}`;
-};
-
-// Función para mapear status del backend a texto en español
-const getStatusText = (statusName: string) => {
-  const normalizedStatus = statusName.trim().toUpperCase();
-  if (normalizedStatus === "CLOSED") {
-    return landingContent.events.status.closed;
-  }
-  return landingContent.events.status.upcoming;
-};
 
 export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
   const router = useRouter();
