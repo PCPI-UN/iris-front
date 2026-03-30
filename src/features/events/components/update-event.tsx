@@ -41,7 +41,7 @@ type Award = {
   categoryName?: string;
 };
 const isWholeNumberInput = (value: string) =>value === "" || /^(0|[1-9]\d*)$/.test(value);
-const isDecimalNumberInput = (value: string) => /^\d*\.?\d*$/.test(value);
+const isDecimalNumberInput = (value: string) =>value === "" || /^(0|[1-9]\d*)(\.\d{0,2})?$/.test(value);
 type InscriptionDetail = {
   title: string;
   description: string;
@@ -498,11 +498,11 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                         <Input
                           label="Inscription Cost"
                           name="inscriptionCost"
-                          type="number"
+                          type="text"
                           value={formData.inscriptionCost}
                           min={0}
                           step={1}
-                          inputMode="numeric"
+                          inputMode="decimal"
                           pattern="[0-9]*"
                           onChange={(e) =>
                             isDecimalNumberInput(e.target.value) &&
@@ -786,11 +786,11 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
 
                                     <Input
                                       label="$"
-                                      type="number"
+                                      type="text"
                                       value={award.value}
                                       min={0}
                                       step={1}
-                                      inputMode="numeric"
+                                      inputMode="decimal"
                                       pattern="[0-9]*"
                                       onChange={(e) => {
                                         if (isDecimalNumberInput(e.target.value)) {
