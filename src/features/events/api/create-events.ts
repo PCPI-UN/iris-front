@@ -31,9 +31,6 @@ export const createEventInputSchema = z.object({
     title: z.string().min(1, 'Required'),
     description: z.string().min(1, 'Required'),
   })).optional(),
-  categories: z.array(z.object({
-    name: z.string().min(1, 'Required'),
-  })).optional(),
   awards: z.array(z.object({
     top: z.coerce.number(),
     position: z.coerce.number().optional(),

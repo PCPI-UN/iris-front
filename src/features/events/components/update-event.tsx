@@ -37,6 +37,7 @@ type Award = {
   description: string;
   categoryId: string;
   categoryName?: string;
+
 };
 
 type InscriptionDetail = {
@@ -226,7 +227,6 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
         awards: awards
           .filter((award) => award.description.trim() !== "")
           .map((award) => ({
-            top: Number(award.top) || 1,
             position: Number(award.top) || 1,
             categoryId: award.categoryId ? Number(award.categoryId) : undefined,
             category: award.categoryName,
@@ -730,7 +730,6 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                                     {award.top}
                                   </span>
                                 </div>
-
                                 <Textarea
                                   label="Award Description"
                                   value={award.description}
@@ -743,29 +742,6 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                                   }}
                                   className="flex-1"
                                 />
-                                <Select
-                                  label="Course (Category)"
-                                  selectedKeys={award.categoryId ? [award.categoryId] : []}
-                                  onChange={(e) => {
-                                    setAwards((prev) => {
-                                      const next = [...prev];
-                                      next[index].categoryId = e.target.value;
-                                      const selectedCourse = eventCourses.find(
-                                        (course) => String(course.id) === e.target.value
-                                      );
-                                      next[index].categoryName = selectedCourse?.code;
-                                      return next;
-                                    });
-                                  }}
-                                  className="max-w-[220px]"
-                                  isDisabled={eventCourses.length === 0}
-                                >
-                                  {eventCourses.map((course) => (
-                                    <SelectItem key={String(course.id)}>
-                                      {course.code}
-                                    </SelectItem>
-                                  ))}
-                                </Select>
                               </div>
                             </div>
                           ))}
