@@ -26,16 +26,25 @@ export const normalizeEvent = (raw: any): Event => {
     ...raw,
     name: raw?.name ?? raw?.title ?? "",
     title: raw?.title ?? raw?.name ?? "",
-    evaluationType:
-      raw?.evaluationType === "0-5" || raw?.evaluationType === "0-100"
-        ? raw.evaluationType
-        : raw?.evaluationSystem === "0-5" || raw?.evaluationSystem === "0-100"
-          ? raw.evaluationSystem
-          : undefined,
+    eventType:
+      raw?.eventType === "Expo" || raw?.eventType === "Competencia"
+        ? raw.eventType
+        : raw?.eventType === "Exhibition"
+          ? "Expo"
+          : raw?.eventType === "Competition"
+            ? "Competencia"
+            : raw?.eventType,
     isPubliclyJoinable:
       typeof raw?.isPubliclyJoinable === "boolean"
         ? raw.isPubliclyJoinable
         : Boolean(raw?.isPublic),
+    locationDetails: raw?.locationDetails ?? raw?.locationDetail,
+    locationDetail: raw?.locationDetail ?? raw?.locationDetails,
+    inscriptionCost:
+      typeof raw?.inscriptionCost === "number" ? raw.inscriptionCost : raw?.cost,
+    cost: typeof raw?.cost === "number" ? raw.cost : raw?.inscriptionCost,
+    organizers: raw?.organizers ?? raw?.organizations ?? [],
+    organizations: raw?.organizations ?? raw?.organizers ?? [],
     isPublic:
       typeof raw?.isPublic === "boolean"
         ? raw.isPublic

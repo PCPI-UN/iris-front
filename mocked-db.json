@@ -1,1 +1,697 @@
-{"team":[{"id":"team-001","name":"Equipo Alpha","description":"Equipo de desarrollo principal","createdAt":1700000000000},{"id":"team-002","name":"Equipo Beta","description":"Equipo de innovación","createdAt":1700100000000}],"user":[{"id":"user-admin-001","firstName":"Admin","lastName":"Principal","email":"admin@iris.com","password":"3670747394","teamId":"","role":"ADMIN","active":true,"status":"ACTIVE","platformRoles":[{"id":1,"name":"Admin","scope":"platform"}],"platformPermissions":["*"],"bio":"Administrador del sistema","createdAt":1700000000000},{"id":"user-002","firstName":"María","lastName":"García","email":"maria@iris.com","password":"3670747394","teamId":"team-001","role":"USER","active":true,"status":"ACTIVE","platformRoles":[{"id":2,"name":"User","scope":"platform"}],"platformPermissions":[],"bio":"Jurado en 2 eventos, estudiante en 1 evento","createdAt":1700100000000},{"id":"user-003","firstName":"Carlos","lastName":"López","email":"carlos@iris.com","password":"3670747394","teamId":"team-002","role":"USER","active":true,"status":"ACTIVE","platformRoles":[{"id":2,"name":"User","scope":"platform"}],"platformPermissions":[],"bio":"Participante en 2 proyectos, jurado en 1 evento","createdAt":1700200000000},{"id":"VFFEd8oZ7bB1B3fjJYp7q","firstName":"natalia","lastName":"Carpintero","email":"correo@gmail.com","password":"1282156528","teamId":"K_8y7SS-P5h-cu_cRqt66","role":"ADMIN","active":true,"status":"ACTIVE","platformRoles":[{"id":1,"name":"Admin","scope":"platform"}],"platformPermissions":["*"],"bio":"","createdAt":1773973882210}],"event":[{"id":"event-001","name":"Hackathon Innovación 2025","description":"Evento de innovación tecnológica","startDate":"2025-01-15","endDate":"2025-01-17","inscriptionDeadline":"2025-01-10","accessCode":"EVT001","isPublic":true,"evaluationsStatus":"open","location":"","locationDetail":"","eventType":"","evaluationType":"","inscriptionRequirements":"","cost":0,"minimumTeamSize":0,"specificInscriptionDetails":[],"aboutOurAllies":"","organizations":[],"collaborators":[],"awards":[],"createdAt":1700000000000},{"id":"event-002","name":"Feria de Ciencias 2025","description":"Presentación de proyectos científicos","startDate":"2025-02-20","endDate":"2025-02-22","inscriptionDeadline":"2025-02-15","accessCode":"EVT002","isPublic":true,"evaluationsStatus":"open","location":"","locationDetail":"","eventType":"","evaluationType":"","inscriptionRequirements":"","cost":0,"minimumTeamSize":0,"specificInscriptionDetails":[],"aboutOurAllies":"","organizations":[],"collaborators":[],"awards":[],"createdAt":1700100000000},{"id":"event-003","name":"Competencia de Desarrollo Web","description":"Desarrollo de aplicaciones web innovadoras","startDate":"2025-03-10","endDate":"2025-03-12","inscriptionDeadline":"2025-03-05","accessCode":"EVT003","isPublic":true,"evaluationsStatus":"open","location":"","locationDetail":"","eventType":"","evaluationType":"","inscriptionRequirements":"","cost":0,"minimumTeamSize":0,"specificInscriptionDetails":[],"aboutOurAllies":"","organizations":[],"collaborators":[],"awards":[],"createdAt":1700200000000},{"id":"event-004","name":"Hackathon Innovación 2026","description":"Evento de innovación tecnológica","startDate":"2026-04-10","endDate":"2026-04-12","inscriptionDeadline":"2026-04-03","accessCode":"EVT004","isPublic":true,"evaluationsStatus":"open","location":"UHEHB","locationDetail":"","eventType":"","evaluationType":"0-100","inscriptionRequirements":"nsjkandkjankjdnaskjdnaskjdnakjsndkjasndkjasndkjanskjd AJJJJJJJJJJJJJ","cost":0,"minimumTeamSize":0,"specificInscriptionDetails":[],"aboutOurAllies":"","organizations":[],"collaborators":[],"awards":[],"createdAt":1773976992399}],"eventMembership":[{"id":"membership-001","eventId":"event-001","userId":"user-002","eventRole":"JURY","createdAt":1700000100000},{"id":"membership-002","eventId":"event-002","userId":"user-002","eventRole":"JURY","createdAt":1700000200000},{"id":"membership-003","eventId":"event-003","userId":"user-002","eventRole":"STUDENT","createdAt":1700000300000},{"id":"membership-004","eventId":"event-001","userId":"user-003","eventRole":"JURY","createdAt":1700000400000},{"id":"membership-005","eventId":"event-002","userId":"user-003","eventRole":"STUDENT","createdAt":1700000500000},{"id":"membership-006","eventId":"event-003","userId":"user-003","eventRole":"STUDENT","createdAt":1700000600000}],"discussion":[{"id":"disc-001","title":"Discusión sobre innovación","body":"¿Cuáles son las mejores prácticas para innovar?","authorId":"user-002","teamId":"team-001","createdAt":1700000000000,"public":true}],"comment":[{"id":"comment-001","body":"Excelente pregunta, considero que la colaboración es clave","authorId":"user-003","discussionId":"disc-001","createdAt":1700100000000}],"project":[{"id":"project-001","eventId":"event-001","courseId":"course-001","name":"Sistema de Gestión Inteligente","logo":"https://example.com/logo1.png","description":"Sistema innovador de gestión usando IA","eventNumber":"001","state":"APPROVED","documents":[{"type":"POSTER","url":"https://example.com/poster1.pdf"}],"participants":[{"firstName":"Carlos","lastName":"López","email":"carlos@iris.com"}],"jurorAssignments":[{"memberUserId":"user-002"}],"createdAt":1700000000000},{"id":"project-002","eventId":"event-002","courseId":"course-002","name":"Aplicación de Realidad Aumentada","logo":"https://example.com/logo2.png","description":"App educativa con AR","eventNumber":"002","state":"APPROVED","documents":[{"type":"POSTER","url":"https://example.com/poster2.pdf"}],"participants":[{"firstName":"Carlos","lastName":"López","email":"carlos@iris.com"}],"jurorAssignments":[{"memberUserId":"user-002"}],"createdAt":1700100000000},{"id":"project-003","eventId":"event-003","courseId":"course-003","name":"Plataforma E-learning","logo":"https://example.com/logo3.png","description":"Plataforma de aprendizaje en línea","eventNumber":"003","state":"APPROVED","documents":[{"type":"POSTER","url":"https://example.com/poster3.pdf"}],"participants":[{"firstName":"María","lastName":"García","email":"maria@iris.com"}],"jurorAssignments":[{"memberUserId":"user-003"}],"createdAt":1700200000000},{"id":"vQNfHeTJ6iZ709MyGAlDh","eventId":"event-003","courseId":"course-004","name":"stella","logo":"","description":"hvhjbvj","eventNumber":"","state":"UNDER_REVIEW","documents":[{"type":"POSTER","url":""}],"participants":[{"firstName":"natalia","lastName":"leal","email":"correo@gmail.com","studentCode":"200066772"}],"jurorAssignments":[],"createdAt":1774155150522}],"course":[{"id":"course-001","eventId":"event-001","code":"IA101","description":"Inteligencia Artificial Aplicada","active":true},{"id":"course-002","eventId":"event-002","code":"CS201","description":"Ciencias de la Computación Avanzada","active":true},{"id":"course-003","eventId":"event-003","code":"WEB301","description":"Desarrollo Web Full Stack","active":true},{"id":"course-004","eventId":"event-003","code":"1234","description":"Sistemas","active":true}],"criterion":[{"id":"crit-001","eventId":"event-001","name":"Innovación y Creatividad","description":"Evaluación de la originalidad y propuesta innovadora del proyecto","weight":1.5,"criterionCourse":[{"courseId":"course-001"}]},{"id":"crit-002","eventId":"event-001","name":"Calidad Técnica","description":"Evaluación de la implementación técnica y arquitectura del proyecto","weight":2,"criterionCourse":[{"courseId":"course-001"}]},{"id":"crit-003","eventId":"event-002","name":"Presentación","description":"Calidad de la presentación oral","weight":1,"criterionCourse":[{"courseId":"course-002"}]},{"id":"crit-004","eventId":"event-003","name":"Funcionalidad","description":"Evaluación de funcionalidades implementadas","weight":1.5,"criterionCourse":[{"courseId":"course-003"}]},{"id":"aBjZkXKR59fyCySYt9tjE","eventId":"3","name":"Escalamiento","description":"bhjbhjbhjbjhbjhbjbhj  jnkj njnk","weight":0.2,"criterionCourse":[]},{"id":"YmqQ50v_kBxqawt_2i5L4","eventId":"3","name":"Calidad","description":"vghvh bhbjh bjhbjh bj","weight":0.2,"criterionCourse":[]},{"id":"r_IhicWZHS4yA2kGMV0OK","eventId":2,"name":"Calidad","description":"CALIDAD DESCROB","weight":0.2,"criterionCourse":[]}],"jury":[{"id":"jury-001","email":"maria@iris.com","invitationStatus":"accepted","eventIds":["event-001","event-002"],"projectIds":["project-001","project-002"],"createdAt":1700000000000},{"id":"jury-002","email":"carlos@iris.com","invitationStatus":"accepted","eventIds":["event-001"],"projectIds":["project-003"],"createdAt":1700100000000}],"administrator":[{"id":"admin-001","email":"admin@iris.com","invitationStatus":"accepted","createdAt":1700000000000}],"evaluation":[{"id":"eval-001","projectId":"project-001","memberUserId":"user-002","grade":18.5,"comments":"Excelente trabajo, muy innovador","scores":[{"criterion":"crit-001","score":4.5},{"criterion":"crit-002","score":4.8}],"createdAt":1700000000000},{"id":"eval-002","projectId":"project-002","memberUserId":"user-002","grade":17,"comments":"Buen proyecto con potencial","scores":[{"criterion":"crit-001","score":4},{"criterion":"crit-002","score":4.5}],"createdAt":1700100000000},{"id":"eval-003","projectId":"project-003","memberUserId":"user-003","grade":19,"comments":"Proyecto sobresaliente","scores":[{"criterion":"crit-004","score":5}],"createdAt":1700200000000},{"id":"sU2U7hztX7WE5yQiaCoxY","projectId":"project-001","memberUserId":"user-002","grade":0,"comments":"","scores":[{"criterion":"crit-001","score":0},{"criterion":"crit-002","score":0}],"createdAt":1763091144413}],"evaluationDetail":[{"id":"detail-001","evaluationId":"eval-001","criterion":"crit-001","score":4.5},{"id":"detail-002","evaluationId":"eval-001","criterion":"crit-002","score":4.8},{"id":"detail-003","evaluationId":"eval-002","criterion":"crit-001","score":4},{"id":"detail-004","evaluationId":"eval-002","criterion":"crit-002","score":4.5},{"id":"detail-005","evaluationId":"eval-003","criterion":"crit-004","score":5},{"id":"SzwOR1BQIB6Rv9p6wMmGO","evaluationId":"sU2U7hztX7WE5yQiaCoxY","criterion":"","score":0},{"id":"OagEfFh-ozqqmMzcwP23v","evaluationId":"sU2U7hztX7WE5yQiaCoxY","criterion":"","score":0}]}
+{
+    "team": [
+        {
+            "id": "team-001",
+            "name": "Equipo Alpha",
+            "description": "Equipo de desarrollo principal",
+            "createdAt": 1700000000000
+        },
+        {
+            "id": "team-002",
+            "name": "Equipo Beta",
+            "description": "Equipo de innovación",
+            "createdAt": 1700100000000
+        }
+    ],
+    "user": [
+        {
+            "id": "user-admin-001",
+            "firstName": "Admin",
+            "lastName": "Principal",
+            "email": "admin@iris.com",
+            "password": "3670747394",
+            "teamId": "",
+            "role": "ADMIN",
+            "active": true,
+            "status": "ACTIVE",
+            "platformRoles": [
+                {
+                    "id": 1,
+                    "name": "Admin",
+                    "scope": "platform"
+                }
+            ],
+            "platformPermissions": [
+                "*"
+            ],
+            "bio": "Administrador del sistema",
+            "createdAt": 1700000000000
+        },
+        {
+            "id": "user-002",
+            "firstName": "María",
+            "lastName": "García",
+            "email": "maria@iris.com",
+            "password": "3670747394",
+            "teamId": "team-001",
+            "role": "USER",
+            "active": true,
+            "status": "ACTIVE",
+            "platformRoles": [
+                {
+                    "id": 2,
+                    "name": "User",
+                    "scope": "platform"
+                }
+            ],
+            "platformPermissions": [],
+            "bio": "Jurado en 2 eventos, estudiante en 1 evento",
+            "createdAt": 1700100000000
+        },
+        {
+            "id": "user-003",
+            "firstName": "Carlos",
+            "lastName": "López",
+            "email": "carlos@iris.com",
+            "password": "3670747394",
+            "teamId": "team-002",
+            "role": "USER",
+            "active": true,
+            "status": "ACTIVE",
+            "platformRoles": [
+                {
+                    "id": 2,
+                    "name": "User",
+                    "scope": "platform"
+                }
+            ],
+            "platformPermissions": [],
+            "bio": "Participante en 2 proyectos, jurado en 1 evento",
+            "createdAt": 1700200000000
+        },
+        {
+            "id": "VFFEd8oZ7bB1B3fjJYp7q",
+            "firstName": "natalia",
+            "lastName": "Carpintero",
+            "email": "correo@gmail.com",
+            "password": "1282156528",
+            "teamId": "K_8y7SS-P5h-cu_cRqt66",
+            "role": "ADMIN",
+            "active": true,
+            "status": "ACTIVE",
+            "platformRoles": [
+                {
+                    "id": 1,
+                    "name": "Admin",
+                    "scope": "platform"
+                }
+            ],
+            "platformPermissions": [
+                "*"
+            ],
+            "bio": "",
+            "createdAt": 1773973882210
+        }
+    ],
+    "event": [
+        {
+            "id": "event-001",
+            "name": "Hackathon Innovación 2025",
+            "description": "Evento de innovación tecnológica",
+            "startDate": "2025-01-15",
+            "endDate": "2025-01-17",
+            "inscriptionDeadline": "2025-01-10",
+            "accessCode": "EVT001",
+            "isPublic": true,
+            "evaluationsStatus": "open",
+            "location": "",
+            "locationDetail": "",
+            "eventType": "",
+            "evaluationType": "",
+            "inscriptionRequirements": "",
+            "cost": 0,
+            "minimumTeamSize": 0,
+            "specificInscriptionDetails": [],
+            "aboutOurAllies": "",
+            "organizations": [],
+            "collaborators": [],
+            "awards": [],
+            "createdAt": 1700000000000
+        },
+        {
+            "id": "event-002",
+            "name": "Feria de Ciencias 2025",
+            "description": "Presentación de proyectos científicos",
+            "startDate": "2025-02-20",
+            "endDate": "2025-02-22",
+            "inscriptionDeadline": "2025-02-15",
+            "accessCode": "EVT002",
+            "isPublic": true,
+            "evaluationsStatus": "open",
+            "location": "uninorte",
+            "locationDetail": "",
+            "eventType": "",
+            "evaluationType": "0-100",
+            "inscriptionRequirements": "",
+            "cost": 0,
+            "minimumTeamSize": 0,
+            "specificInscriptionDetails": [],
+            "aboutOurAllies": "",
+            "organizations": [],
+            "collaborators": [],
+            "awards": [],
+            "createdAt": 1700100000000
+        },
+        {
+            "id": "event-003",
+            "name": "Competencia de Desarrollo Web",
+            "description": "Desarrollo de aplicaciones web innovadoras",
+            "startDate": "2025-03-10",
+            "endDate": "2025-03-12",
+            "inscriptionDeadline": "2025-03-05",
+            "accessCode": "EVT003",
+            "isPublic": true,
+            "evaluationsStatus": "open",
+            "location": "",
+            "locationDetail": "",
+            "eventType": "",
+            "evaluationType": "",
+            "inscriptionRequirements": "",
+            "cost": 0,
+            "minimumTeamSize": 0,
+            "specificInscriptionDetails": [],
+            "aboutOurAllies": "",
+            "organizations": [],
+            "collaborators": [],
+            "awards": [],
+            "createdAt": 1700200000000
+        },
+        {
+            "id": "event-004",
+            "name": "Hackathon Innovación 2026",
+            "description": "Evento de innovación tecnológica",
+            "startDate": "2026-04-10",
+            "endDate": "2026-04-12",
+            "inscriptionDeadline": "2026-04-03",
+            "accessCode": "EVT004",
+            "isPublic": true,
+            "evaluationsStatus": "open",
+            "location": "UHEHB",
+            "locationDetail": "",
+            "eventType": "",
+            "evaluationType": "0-100",
+            "inscriptionRequirements": "nsjkandkjankjdnaskjdnaskjdnakjsndkjasndkjasndkjanskjd AJJJJJJJJJJJJJ",
+            "cost": 0,
+            "minimumTeamSize": 0,
+            "specificInscriptionDetails": [],
+            "aboutOurAllies": "",
+            "organizations": [],
+            "collaborators": [],
+            "awards": [],
+            "createdAt": 1773976992399
+        },
+        {
+            "id": "event-005",
+            "name": "Teen Wolf",
+            "description": "JDNASJDNKJEANFKJA\n\nESMFKEKFNA\nFEWKJFEW\n",
+            "startDate": "2026-03-31",
+            "endDate": "2026-03-31",
+            "inscriptionDeadline": "2026-03-30",
+            "accessCode": "EVT816118",
+            "isPublic": true,
+            "evaluationsStatus": "closed",
+            "location": "dnejkdnjek",
+            "locationDetail": "",
+            "eventType": "Expo",
+            "evaluationType": "0-5",
+            "inscriptionRequirements": "BHBJHBHJBHJBHJBHJBHJ",
+            "cost": 0,
+            "minimumTeamSize": 0,
+            "specificInscriptionDetails": [
+                {
+                    "title": "Tamaño del equipo",
+                    "description": "3 a 5 estudiantes"
+                },
+                {
+                    "title": "Disciplinas requeridas",
+                    "description": "Ingenieridas Civil"
+                },
+                {
+                    "title": "Numero de horas requerido",
+                    "description": "36 horas"
+                }
+            ],
+            "aboutOurAllies": "vdsjnjfkdsnvjkdsn",
+            "organizations": [],
+            "collaborators": [
+                "gripshiping"
+            ],
+            "awards": [
+                {
+                    "top": 1,
+                    "position": 1,
+                    "title": "Top 1",
+                    "description": "certificado para todo el mundo njfnfkje "
+                }
+            ],
+            "createdAt": 1774899816129
+        }
+    ],
+    "eventMembership": [
+        {
+            "id": "membership-001",
+            "eventId": "event-001",
+            "userId": "user-002",
+            "eventRole": "JURY",
+            "createdAt": 1700000100000
+        },
+        {
+            "id": "membership-002",
+            "eventId": "event-002",
+            "userId": "user-002",
+            "eventRole": "JURY",
+            "createdAt": 1700000200000
+        },
+        {
+            "id": "membership-003",
+            "eventId": "event-003",
+            "userId": "user-002",
+            "eventRole": "STUDENT",
+            "createdAt": 1700000300000
+        },
+        {
+            "id": "membership-004",
+            "eventId": "event-001",
+            "userId": "user-003",
+            "eventRole": "JURY",
+            "createdAt": 1700000400000
+        },
+        {
+            "id": "membership-005",
+            "eventId": "event-002",
+            "userId": "user-003",
+            "eventRole": "STUDENT",
+            "createdAt": 1700000500000
+        },
+        {
+            "id": "membership-006",
+            "eventId": "event-003",
+            "userId": "user-003",
+            "eventRole": "STUDENT",
+            "createdAt": 1700000600000
+        }
+    ],
+    "discussion": [
+        {
+            "id": "disc-001",
+            "title": "Discusión sobre innovación",
+            "body": "¿Cuáles son las mejores prácticas para innovar?",
+            "authorId": "user-002",
+            "teamId": "team-001",
+            "createdAt": 1700000000000,
+            "public": true
+        }
+    ],
+    "comment": [
+        {
+            "id": "comment-001",
+            "body": "Excelente pregunta, considero que la colaboración es clave",
+            "authorId": "user-003",
+            "discussionId": "disc-001",
+            "createdAt": 1700100000000
+        }
+    ],
+    "project": [
+        {
+            "id": "project-001",
+            "eventId": "event-001",
+            "courseId": "course-001",
+            "name": "Sistema de Gestión Inteligente",
+            "logo": "https://example.com/logo1.png",
+            "description": "Sistema innovador de gestión usando IA",
+            "eventNumber": "001",
+            "state": "APPROVED",
+            "documents": [
+                {
+                    "type": "POSTER",
+                    "url": "https://example.com/poster1.pdf"
+                }
+            ],
+            "participants": [
+                {
+                    "firstName": "Carlos",
+                    "lastName": "López",
+                    "email": "carlos@iris.com"
+                }
+            ],
+            "jurorAssignments": [
+                {
+                    "memberUserId": "user-002"
+                }
+            ],
+            "createdAt": 1700000000000
+        },
+        {
+            "id": "project-002",
+            "eventId": "event-002",
+            "courseId": "course-002",
+            "name": "Aplicación de Realidad Aumentada",
+            "logo": "https://example.com/logo2.png",
+            "description": "App educativa con AR",
+            "eventNumber": "002",
+            "state": "APPROVED",
+            "documents": [
+                {
+                    "type": "POSTER",
+                    "url": "https://example.com/poster2.pdf"
+                }
+            ],
+            "participants": [
+                {
+                    "firstName": "Carlos",
+                    "lastName": "López",
+                    "email": "carlos@iris.com"
+                }
+            ],
+            "jurorAssignments": [
+                {
+                    "memberUserId": "user-002"
+                }
+            ],
+            "createdAt": 1700100000000
+        },
+        {
+            "id": "project-003",
+            "eventId": "event-003",
+            "courseId": "course-003",
+            "name": "Plataforma E-learning",
+            "logo": "https://example.com/logo3.png",
+            "description": "Plataforma de aprendizaje en línea",
+            "eventNumber": "003",
+            "state": "APPROVED",
+            "documents": [
+                {
+                    "type": "POSTER",
+                    "url": "https://example.com/poster3.pdf"
+                }
+            ],
+            "participants": [
+                {
+                    "firstName": "María",
+                    "lastName": "García",
+                    "email": "maria@iris.com"
+                }
+            ],
+            "jurorAssignments": [
+                {
+                    "memberUserId": "user-003"
+                }
+            ],
+            "createdAt": 1700200000000
+        },
+        {
+            "id": "vQNfHeTJ6iZ709MyGAlDh",
+            "eventId": "event-003",
+            "courseId": "course-004",
+            "name": "stella",
+            "logo": "",
+            "description": "hvhjbvj",
+            "eventNumber": "",
+            "state": "UNDER_REVIEW",
+            "documents": [
+                {
+                    "type": "POSTER",
+                    "url": ""
+                }
+            ],
+            "participants": [
+                {
+                    "firstName": "natalia",
+                    "lastName": "leal",
+                    "email": "correo@gmail.com",
+                    "studentCode": "200066772"
+                }
+            ],
+            "jurorAssignments": [],
+            "createdAt": 1774155150522
+        }
+    ],
+    "course": [
+        {
+            "id": "course-001",
+            "eventId": "event-001",
+            "code": "IA101",
+            "description": "Inteligencia Artificial Aplicada",
+            "active": true
+        },
+        {
+            "id": "course-002",
+            "eventId": "event-002",
+            "code": "CS201",
+            "description": "Ciencias de la Computación Avanzada",
+            "active": true
+        },
+        {
+            "id": "course-003",
+            "eventId": "event-003",
+            "code": "WEB301",
+            "description": "Desarrollo Web Full Stack",
+            "active": true
+        },
+        {
+            "id": "course-004",
+            "eventId": "event-003",
+            "code": "1234",
+            "description": "Sistemas",
+            "active": true
+        },
+        {
+            "id": "course-005",
+            "eventId": "event-006",
+            "code": "1234",
+            "description": "PRUEBA 1",
+            "active": true
+        },
+        {
+            "id": "course-006",
+            "eventId": "event-005",
+            "code": "1234",
+            "description": "unica cosa uq me incebto",
+            "active": true
+        }
+    ],
+    "criterion": [
+        {
+            "id": "crit-001",
+            "eventId": "event-001",
+            "name": "Innovación y Creatividad",
+            "description": "Evaluación de la originalidad y propuesta innovadora del proyecto",
+            "weight": 1.5,
+            "criterionCourse": [
+                {
+                    "courseId": "course-001"
+                }
+            ]
+        },
+        {
+            "id": "crit-002",
+            "eventId": "event-001",
+            "name": "Calidad Técnica",
+            "description": "Evaluación de la implementación técnica y arquitectura del proyecto",
+            "weight": 2,
+            "criterionCourse": [
+                {
+                    "courseId": "course-001"
+                }
+            ]
+        },
+        {
+            "id": "crit-003",
+            "eventId": "event-002",
+            "name": "Presentación",
+            "description": "Calidad de la presentación oral",
+            "weight": 1,
+            "criterionCourse": [
+                {
+                    "courseId": "course-002"
+                }
+            ]
+        },
+        {
+            "id": "crit-004",
+            "eventId": "event-003",
+            "name": "Funcionalidad",
+            "description": "Evaluación de funcionalidades implementadas",
+            "weight": 1.5,
+            "criterionCourse": [
+                {
+                    "courseId": "course-003"
+                }
+            ]
+        },
+        {
+            "id": "aBjZkXKR59fyCySYt9tjE",
+            "eventId": "3",
+            "name": "Escalamiento",
+            "description": "bhjbhjbhjbjhbjhbjbhj  jnkj njnk",
+            "weight": 0.2,
+            "criterionCourse": []
+        },
+        {
+            "id": "YmqQ50v_kBxqawt_2i5L4",
+            "eventId": "3",
+            "name": "Calidad",
+            "description": "vghvh bhbjh bjhbjh bj",
+            "weight": 0.2,
+            "criterionCourse": []
+        },
+        {
+            "id": "r_IhicWZHS4yA2kGMV0OK",
+            "eventId": 2,
+            "name": "Calidad",
+            "description": "CALIDAD DESCROB",
+            "weight": 0.2,
+            "criterionCourse": []
+        }
+    ],
+    "jury": [
+        {
+            "id": "jury-001",
+            "email": "maria@iris.com",
+            "invitationStatus": "accepted",
+            "eventIds": [
+                "event-001",
+                "event-002"
+            ],
+            "projectIds": [
+                "project-001",
+                "project-002"
+            ],
+            "createdAt": 1700000000000
+        },
+        {
+            "id": "jury-002",
+            "email": "carlos@iris.com",
+            "invitationStatus": "accepted",
+            "eventIds": [
+                "event-001"
+            ],
+            "projectIds": [
+                "project-003"
+            ],
+            "createdAt": 1700100000000
+        }
+    ],
+    "administrator": [
+        {
+            "id": "admin-001",
+            "email": "admin@iris.com",
+            "invitationStatus": "accepted",
+            "createdAt": 1700000000000
+        }
+    ],
+    "evaluation": [
+        {
+            "id": "eval-001",
+            "projectId": "project-001",
+            "memberUserId": "user-002",
+            "grade": 18.5,
+            "comments": "Excelente trabajo, muy innovador",
+            "scores": [
+                {
+                    "criterion": "crit-001",
+                    "score": 4.5
+                },
+                {
+                    "criterion": "crit-002",
+                    "score": 4.8
+                }
+            ],
+            "createdAt": 1700000000000
+        },
+        {
+            "id": "eval-002",
+            "projectId": "project-002",
+            "memberUserId": "user-002",
+            "grade": 17,
+            "comments": "Buen proyecto con potencial",
+            "scores": [
+                {
+                    "criterion": "crit-001",
+                    "score": 4
+                },
+                {
+                    "criterion": "crit-002",
+                    "score": 4.5
+                }
+            ],
+            "createdAt": 1700100000000
+        },
+        {
+            "id": "eval-003",
+            "projectId": "project-003",
+            "memberUserId": "user-003",
+            "grade": 19,
+            "comments": "Proyecto sobresaliente",
+            "scores": [
+                {
+                    "criterion": "crit-004",
+                    "score": 5
+                }
+            ],
+            "createdAt": 1700200000000
+        },
+        {
+            "id": "sU2U7hztX7WE5yQiaCoxY",
+            "projectId": "project-001",
+            "memberUserId": "user-002",
+            "grade": 0,
+            "comments": "",
+            "scores": [
+                {
+                    "criterion": "crit-001",
+                    "score": 0
+                },
+                {
+                    "criterion": "crit-002",
+                    "score": 0
+                }
+            ],
+            "createdAt": 1763091144413
+        }
+    ],
+    "evaluationDetail": [
+        {
+            "id": "detail-001",
+            "evaluationId": "eval-001",
+            "criterion": "crit-001",
+            "score": 4.5
+        },
+        {
+            "id": "detail-002",
+            "evaluationId": "eval-001",
+            "criterion": "crit-002",
+            "score": 4.8
+        },
+        {
+            "id": "detail-003",
+            "evaluationId": "eval-002",
+            "criterion": "crit-001",
+            "score": 4
+        },
+        {
+            "id": "detail-004",
+            "evaluationId": "eval-002",
+            "criterion": "crit-002",
+            "score": 4.5
+        },
+        {
+            "id": "detail-005",
+            "evaluationId": "eval-003",
+            "criterion": "crit-004",
+            "score": 5
+        },
+        {
+            "id": "SzwOR1BQIB6Rv9p6wMmGO",
+            "evaluationId": "sU2U7hztX7WE5yQiaCoxY",
+            "criterion": "",
+            "score": 0
+        },
+        {
+            "id": "OagEfFh-ozqqmMzcwP23v",
+            "evaluationId": "sU2U7hztX7WE5yQiaCoxY",
+            "criterion": "",
+            "score": 0
+        }
+    ]
+}

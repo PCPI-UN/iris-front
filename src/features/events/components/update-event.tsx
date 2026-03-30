@@ -23,6 +23,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useDisclosure } from "@/hooks/use-disclosure";
 import { useUser } from "@/lib/auth";
 import { canUpdateEvent } from "@/lib/authorization";
+import { useCoursesDropdown } from "@/features/courses/api/get-courses-dropdown";
 
 import { useEvent } from "../api/get-event";
 import { updateEventInputSchema, useUpdateEvent } from "../api/update-event";
@@ -34,6 +35,8 @@ type UpdateEventProps = {
 type Award = {
   top: number;
   description: string;
+  categoryId: string;
+  categoryName?: string;
 };
 
 type InscriptionDetail = {
@@ -49,12 +52,12 @@ type UpdateEventFormState = {
   endDate: string;
   inscriptionDeadline: string;
   location: string;
-  locationDetail: string;
+  locationDetails: string;
   evaluationsOpened: boolean;
   isPubliclyJoinable: boolean;
   active: boolean;
   inscriptionRequirements: string;
-  cost: string;
+  inscriptionCost: string;
   minimumTeamSize: string;
   aboutOurAllies: string;
   evaluationType: "0-5" | "0-100";
@@ -68,15 +71,15 @@ const INITIAL_FORM_STATE: UpdateEventFormState = {
   endDate: "",
   inscriptionDeadline: "",
   location: "",
-  locationDetail: "",
+  locationDetails: "",
   evaluationsOpened: false,
   isPubliclyJoinable: false,
   active: false,
+  inscriptionCost: "",
   inscriptionRequirements: "",
-  cost: "",
   minimumTeamSize: "",
   aboutOurAllies: "",
-  evaluationType: "0-100",
+  evaluationType: "0-5",
 };
 
 export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
@@ -88,11 +91,12 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
   const [specificDetails, setSpecificDetails] = useState<InscriptionDetail[]>([
     { title: "", description: "" },
   ]);
-  const [organizations, setOrganizations] = useState<string[]>([""]);
+  const [organizers, setOrganizers] = useState<string[]>([""]);
   const [collaborators, setCollaborators] = useState<string[]>([""]);
-  const [awards, setAwards] = useState<Award[]>([{ top: 1, description: "" }]);
+  const [awards, setAwards] = useState<Award[]>([{ top: 1, description: "", categoryId: "" }]);
 
   const eventQuery = useEvent({ eventId });
+  const coursesDropdownQuery = useCoursesDropdown({ eventId });
   const updateEventMutation = useUpdateEvent({
     mutationConfig: {
       onSuccess: () => {
@@ -128,12 +132,12 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
         ? event.inscriptionDeadline.split("T")[0]
         : "",
       location: event.location ?? "",
-      locationDetail: event.locationDetail ?? "",
+      locationDetails: event.locationDetails ?? "",
       evaluationsOpened: Boolean(event.evaluationsOpened),
       isPubliclyJoinable: Boolean(event.isPubliclyJoinable),
       active: Boolean(event.active),
+      inscriptionCost: event.inscriptionCost !== undefined && event.inscriptionCost !== null ? String(event.inscriptionCost) : "",
       inscriptionRequirements: event.inscriptionRequirements ?? "",
-      cost: event.cost !== undefined && event.cost !== null ? String(event.cost) : "",
       minimumTeamSize:
         event.minimumTeamSize !== undefined && event.minimumTeamSize !== null
           ? String(event.minimumTeamSize)
@@ -142,7 +146,7 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
       evaluationType:
         event.evaluationType === "0-5" || event.evaluationType === "0-100"
           ? event.evaluationType
-          : "0-100",
+          : "0-5",
     });
 
     setSpecificDetails(
@@ -154,8 +158,8 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
         : [{ title: "", description: "" }]
     );
 
-    setOrganizations(
-      event.organizations && event.organizations.length > 0 ? event.organizations : [""]
+    setOrganizers(
+      event.organizers && event.organizers.length > 0 ? event.organizers : [""]
     );
 
     setCollaborators(
@@ -169,8 +173,13 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
         ? event.awards.map((award) => ({
             top: Number(award.top) || 1,
             description: award.description ?? "",
+            categoryId:
+              (award as { categoryId?: number }).categoryId !== undefined
+                ? String((award as { categoryId?: number }).categoryId)
+                : "",
+                categoryName: (award as { category?: string }).category,
           }))
-        : [{ top: 1, description: "" }]
+        : [{ top: 1, description: "", categoryId: "" }]
     );
   }, [isOpen, eventQuery.data]);
 
@@ -179,6 +188,7 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
   }
 
   const event = eventQuery.data?.data;
+  const eventCourses = coursesDropdownQuery.data?.data ?? [];
 
   const handleNextStep = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -194,31 +204,35 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
         name: formData.name,
         description: formData.description,
         accessCode: formData.accessCode || undefined,
-        isPublic: formData.isPubliclyJoinable,
+        isPubliclyJoinable: formData.isPubliclyJoinable,
         startDate: formData.startDate,
         endDate: formData.endDate,
         inscriptionDeadline: formData.inscriptionDeadline,
-        evaluationsStatus: formData.evaluationsOpened ? "open" : "closed",
+        evaluationsOpened: formData.evaluationsOpened,
         active: formData.active,
         location: formData.location || undefined,
-        locationDetail: formData.locationDetail || undefined,
+        locationDetails: formData.locationDetails || undefined,
+        inscriptionCost: formData.inscriptionCost === "" ? undefined : Number(formData.inscriptionCost),
         inscriptionRequirements: formData.inscriptionRequirements || undefined,
-        cost: formData.cost === "" ? undefined : Number(formData.cost),
         minimumTeamSize:
           formData.minimumTeamSize === "" ? undefined : Number(formData.minimumTeamSize),
+        aboutOurAllies: formData.aboutOurAllies || undefined,
+        evaluationType: formData.evaluationType,
+        organizers: organizers.filter((value) => value.trim() !== ""),
+        collaborators: collaborators.filter((value) => value.trim() !== ""),
         specificInscriptionDetails: specificDetails.filter(
           (detail) => detail.title.trim() !== "" && detail.description.trim() !== ""
         ),
-        aboutOurAllies: formData.aboutOurAllies || undefined,
-        organizations: organizations.filter((value) => value.trim() !== ""),
-        collaborators: collaborators.filter((value) => value.trim() !== ""),
         awards: awards
           .filter((award) => award.description.trim() !== "")
           .map((award) => ({
             top: Number(award.top) || 1,
+            position: Number(award.top) || 1,
+            categoryId: award.categoryId ? Number(award.categoryId) : undefined,
+            category: award.categoryName,
+            title: `Top ${Number(award.top) || 1}`,
             description: award.description,
           })),
-        evaluationType: formData.evaluationType,
       };
 
       const values = await updateEventInputSchema.parseAsync(dataToSubmit);
@@ -314,10 +328,10 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                         />
                         <Input
                           label="Location detail (Optional)"
-                          name="locationDetail"
-                          value={formData.locationDetail}
+                          name="locationDetails"
+                          value={formData.locationDetails}
                           onChange={(e) =>
-                            setFormData((prev) => ({ ...prev, locationDetail: e.target.value }))
+                            setFormData((prev) => ({ ...prev, locationDetails: e.target.value }))
                           }
                           className="flex-1"
                         />
@@ -469,12 +483,12 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                           className="flex-1"
                         />
                         <Input
-                          label="Cost"
-                          name="cost"
+                          label="Inscription Cost"
+                          name="inscriptionCost"
                           type="number"
-                          value={formData.cost}
+                          value={formData.inscriptionCost}
                           onChange={(e) =>
-                            setFormData((prev) => ({ ...prev, cost: e.target.value }))
+                            setFormData((prev) => ({ ...prev, inscriptionCost: e.target.value }))
                           }
                           className="flex-1"
                         />
@@ -484,10 +498,7 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                           type="number"
                           value={formData.minimumTeamSize}
                           onChange={(e) =>
-                            setFormData((prev) => ({
-                              ...prev,
-                              minimumTeamSize: e.target.value,
-                            }))
+                            setFormData((prev) => ({ ...prev, minimumTeamSize: e.target.value }))
                           }
                           className="flex-1"
                         />
@@ -580,24 +591,24 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                           <div className="flex justify-between items-center mb-2">
-                            <p className="text-sm font-semibold">Organizations</p>
+                            <p className="text-sm font-semibold">Organizers</p>
                             <Button
                               isIconOnly
                               size="sm"
                               variant="faded"
-                              onPress={() => setOrganizations((prev) => [...prev, ""]) }
+                              onPress={() => setOrganizers((prev) => [...prev, ""]) }
                             >
                               <Plus size={16} />
                             </Button>
                           </div>
                           <div className="space-y-2">
-                            {organizations.map((organization, index) => (
+                            {organizers.map((organizer, index) => (
                               <div key={index} className="flex gap-2">
                                 <Input
-                                  value={organization}
-                                  placeholder={`Organization ${index + 1}`}
+                                  value={organizer}
+                                  placeholder={`Organizer ${index + 1}`}
                                   onChange={(e) => {
-                                    setOrganizations((prev) => {
+                                    setOrganizers((prev) => {
                                       const next = [...prev];
                                       next[index] = e.target.value;
                                       return next;
@@ -609,7 +620,7 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                                   variant="light"
                                   color="danger"
                                   onPress={() =>
-                                    setOrganizations((prev) =>
+                                    setOrganizers((prev) =>
                                       prev.filter((_, itemIndex) => itemIndex !== index)
                                     )
                                   }
@@ -679,7 +690,7 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                                 }
                                 return [
                                   ...prev,
-                                  { top: prev.length + 1, description: "" },
+                                  { top: prev.length + 1, description: "", categoryId: "" },
                                 ];
                               })
                             }
@@ -732,6 +743,29 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                                   }}
                                   className="flex-1"
                                 />
+                                <Select
+                                  label="Course (Category)"
+                                  selectedKeys={award.categoryId ? [award.categoryId] : []}
+                                  onChange={(e) => {
+                                    setAwards((prev) => {
+                                      const next = [...prev];
+                                      next[index].categoryId = e.target.value;
+                                      const selectedCourse = eventCourses.find(
+                                        (course) => String(course.id) === e.target.value
+                                      );
+                                      next[index].categoryName = selectedCourse?.code;
+                                      return next;
+                                    });
+                                  }}
+                                  className="max-w-[220px]"
+                                  isDisabled={eventCourses.length === 0}
+                                >
+                                  {eventCourses.map((course) => (
+                                    <SelectItem key={String(course.id)}>
+                                      {course.code}
+                                    </SelectItem>
+                                  ))}
+                                </Select>
                               </div>
                             </div>
                           ))}

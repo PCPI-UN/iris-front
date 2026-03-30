@@ -14,17 +14,21 @@ export const updateEventInputSchema = z.object({
   name: z.string().min(2).max(255),
   description: z.string().max(3000),
   accessCode: z.string().optional(),
-  isPublic: z.boolean().optional(),
+  isPubliclyJoinable: z.boolean().optional(),
   startDate: z.string().min(10).max(10),
   endDate: z.string().min(10).max(10),
   inscriptionDeadline: z.string().min(10).max(10),
-  evaluationsStatus: z.enum(["open", "closed"]),
+  evaluationsOpened: z.boolean(),
   active: z.boolean().optional(),
   location: z.string().optional(),
-  locationDetail: z.string().optional(),
+  locationDetails: z.string().optional(),
+  inscriptionCost: z.coerce.number().optional(),
   inscriptionRequirements: z.string().optional(),
-  cost: z.coerce.number().optional(),
   minimumTeamSize: z.coerce.number().optional(),
+  aboutOurAllies: z.string().optional(),
+  organizers: z.array(z.string()).optional(),
+  collaborators: z.array(z.string()).optional(),
+  // Estos campos se manejan en tablas relacionadas
   specificInscriptionDetails: z
     .array(
       z.object({
@@ -33,13 +37,12 @@ export const updateEventInputSchema = z.object({
       })
     )
     .optional(),
-  aboutOurAllies: z.string().optional(),
-  organizations: z.array(z.string()).optional(),
-  collaborators: z.array(z.string()).optional(),
   awards: z
     .array(
       z.object({
         top: z.coerce.number(),
+        position: z.coerce.number().optional(),
+        title: z.string().optional(),
         description: z.string().min(1, "Required"),
       })
     )

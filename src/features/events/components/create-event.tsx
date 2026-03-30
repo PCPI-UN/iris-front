@@ -36,11 +36,11 @@ export const CreateEvent = () => {
   const [formData, setFormData] = useState<any>({
     isPubliclyJoinable: true,
     evaluationsOpened: false,
-    eventType: "Exhibition"
+    eventType: "Expo"
   });
 
   const [specificDetails, setSpecificDetails] = useState([{ title: "", description: "" }]);
-  const [organizations, setOrganizations] = useState([""]);
+  const [organizers, setOrganizers] = useState([""]);
   const [collaborators, setCollaborators] = useState([""]);
   const [awards, setAwards] = useState<Award[]>([{ top: 1, description: "" }]);
 
@@ -72,9 +72,9 @@ export const CreateEvent = () => {
 
   const resetForm = () => {
     setStep(1);
-    setFormData({ isPubliclyJoinable: true, evaluationsOpened: false, eventType: "Exhibition" });
+    setFormData({ isPubliclyJoinable: true, evaluationsOpened: false, eventType: "Expo" });
     setSpecificDetails([{ title: "", description: "" }]);
-    setOrganizations([""]);
+    setOrganizers([""]);
     setCollaborators([""]);
     setAwards([{ top: 1, description: "" }]);
   };
@@ -99,17 +99,29 @@ export const CreateEvent = () => {
     try {
       const dataToSubmit = {
         ...formData,
-        evaluationsOpened: false,
+        evaluationsOpened: Boolean(formData.evaluationsOpened),
+        locationDetails: formData.locationDetails || undefined,
+        inscriptionCost:
+          formData.inscriptionCost === "" || formData.inscriptionCost === undefined
+            ? undefined
+            : Number(formData.inscriptionCost),
         specificInscriptionDetails: specificDetails.filter(d => d.title && d.description),
-        organizations: organizations.filter(o => o.trim() !== ""),
+        organizers: organizers.filter(o => o.trim() !== ""),
         collaborators: collaborators.filter(c => c.trim() !== ""),
-        awards: awards.filter(a => a.description).map(a => ({
-          ...a,
-          top: Number(a.top) || 1
+        awards: awards
+          .filter(a => a.description)
+          .map(a => ({
+          top: Number(a.top) || 1,
+          position: Number(a.top) || 1,
+          title: `Top ${Number(a.top) || 1}`,
+          description: a.description,
         }))
       };
 
       if (!dataToSubmit.accessCode) delete dataToSubmit.accessCode;
+      delete dataToSubmit.locationDetail;
+      delete dataToSubmit.cost;
+      delete dataToSubmit.organizations;
 
       const values = await createEventInputSchema.parseAsync(dataToSubmit);
       await createEventMutation.mutateAsync({ data: values });
@@ -162,10 +174,10 @@ export const CreateEvent = () => {
                       />
                       <Input
                         label="Location detail (Optional)"
-                        name="locationDetail"
+                        name="locationDetails"
                         placeholder="Enter Event Location detail"
-                        value={formData.locationDetail || ""}
-                        onChange={(e) => setFormData({ ...formData, locationDetail: e.target.value })}
+                        value={formData.locationDetails || ""}
+                        onChange={(e) => setFormData({ ...formData, locationDetails: e.target.value })}
                         className="flex-1"
                       />
                     </div>
@@ -193,8 +205,8 @@ export const CreateEvent = () => {
                         isRequired
                         className="flex-1"
                       >
-                        <SelectItem key="Exhibition">Exhibition</SelectItem>
-                        <SelectItem key="Competition">Competition</SelectItem>
+                        <SelectItem key="Expo">Expo</SelectItem>
+                        <SelectItem key="Competencia">Competencia</SelectItem>
                       </Select>
                     </div>
 
@@ -249,12 +261,12 @@ export const CreateEvent = () => {
                         minValue={today(getLocalTimeZone())}
                       />
                       <Input
-                        label="Cost"
-                        name="cost"
+                        label="Inscription Cost"
+                        name="inscriptionCost"
                         type="number"
                         placeholder="No cost"
-                        value={formData.cost || ""}
-                        onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
+                        value={formData.inscriptionCost || ""}
+                        onChange={(e) => setFormData({ ...formData, inscriptionCost: e.target.value })}
                         className="flex-1"
                       />
                       <Input
@@ -342,23 +354,23 @@ export const CreateEvent = () => {
                       <div>
                         <div className="flex justify-between items-center mb-2">
                           <p className="text-sm font-semibold">Organizations</p>
-                          <Button isIconOnly size="sm" variant="faded" onPress={() => setOrganizations([...organizations, ""])}>
+                          <Button isIconOnly size="sm" variant="faded" onPress={() => setOrganizers([...organizers, ""])}>
                             <Plus size={16} />
                           </Button>
                         </div>
                         <div className="space-y-2">
-                          {organizations.map((org, index) => (
+                          {organizers.map((org, index) => (
                             <div key={index} className="flex gap-2">
                               <Input
                                 placeholder={`Organization ${index + 1}`}
                                 value={org}
                                 onChange={(e) => {
-                                  const newArr = [...organizations];
+                                  const newArr = [...organizers];
                                   newArr[index] = e.target.value;
-                                  setOrganizations(newArr);
+                                  setOrganizers(newArr);
                                 }}
                               />
-                              <Button isIconOnly variant="light" color="danger" onPress={() => setOrganizations(organizations.filter((_, i) => i !== index))}>
+                              <Button isIconOnly variant="light" color="danger" onPress={() => setOrganizers(organizers.filter((_, i) => i !== index))}>
                                 <Minus size={16} />
                               </Button>
                             </div>
