@@ -7,6 +7,7 @@ import { landingContent } from '@/features/landing/content';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Menu, X } from 'lucide-react';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 interface NavbarProps {
   showNavLinks?: boolean;
@@ -22,13 +23,82 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
   const handleSmoothScroll = (e: React.MouseEvent<HTMLAnchorElement>, targetId: string) => {
     e.preventDefault();
     setIsMobileMenuOpen(false); // Close mobile menu on navigation
+
+    // Disable smooth scrolling temporarily
+    const html = document.documentElement;
+    const originalBehavior = html.style.scrollBehavior;
+    html.style.scrollBehavior = 'auto';
+
+    const horizontalTargetPanelIndex =
+      targetId === 'informacion' ? 0 : targetId === 'recorrido' ? 2 : null;
+
+    const scrollToPosition = (position: number) => {
+      const targetTop = Math.max(0, Math.round(position));
+      window.scrollTo({ top: targetTop, behavior: 'auto' });
+      document.documentElement.scrollTop = targetTop;
+      document.body.scrollTop = targetTop;
+    };
+
+    const getNavbarHeight = () => {
+      const navbar = document.querySelector('nav');
+      return navbar?.getBoundingClientRect().height ?? 0;
+    };
+
+    if (horizontalTargetPanelIndex !== null) {
+      const horizontalSection = document.getElementById('informacion');
+
+      if (horizontalSection) {
+        const pinSpacer = horizontalSection.parentElement?.classList.contains('pin-spacer')
+          ? horizontalSection.parentElement
+          : null;
+
+        const panels = horizontalSection.querySelectorAll('.horizontal-panel');
+        const panelsCount = panels.length;
+        const maxIndex = Math.max(panelsCount - 1, 0);
+        const targetPanelIndex = Math.min(horizontalTargetPanelIndex, maxIndex);
+        const progress = maxIndex > 0 ? targetPanelIndex / maxIndex : 0;
+
+        const navHeight = getNavbarHeight();
+        const visualCenterOffset = navHeight / 2;
+        const informationExtraOffset = targetId === 'informacion' ? -50 : 0;
+
+        const currentTriggers = ScrollTrigger.getAll();
+        const horizontalTrigger = currentTriggers.find(
+          (trigger) => trigger.trigger === horizontalSection
+        );
+
+        if (horizontalTrigger) {
+          const triggerDistance = Math.max(horizontalTrigger.end - horizontalTrigger.start, 0);
+          const triggerTarget = horizontalTrigger.start + triggerDistance * progress;
+          scrollToPosition(triggerTarget - visualCenterOffset - informationExtraOffset);
+        } else {
+          const sectionTop = pinSpacer
+            ? pinSpacer.getBoundingClientRect().top + window.scrollY
+            : horizontalSection.getBoundingClientRect().top + window.scrollY;
+          const horizontalContent = horizontalSection.querySelector('.flex') as HTMLElement | null;
+          const horizontalDistance = horizontalContent
+            ? Math.max(horizontalContent.scrollWidth - horizontalSection.clientWidth, 0)
+            : 0;
+          const fallbackTravel = horizontalDistance * 0.6;
+          const fallbackTarget = sectionTop + fallbackTravel * progress;
+          scrollToPosition(fallbackTarget - visualCenterOffset - informationExtraOffset);
+        }
+
+        // Restore original scroll behavior
+        html.style.scrollBehavior = originalBehavior;
+        return;
+      }
+    }
+
     const targetElement = document.getElementById(targetId);
     if (targetElement) {
-      targetElement.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start',
-      });
+      const targetTop = targetElement.getBoundingClientRect().top + window.scrollY;
+      const navHeight = getNavbarHeight();
+      scrollToPosition(targetTop - navHeight / 2);
     }
+
+    // Restore original scroll behavior
+    html.style.scrollBehavior = originalBehavior;
   };
 
   return (
@@ -51,16 +121,8 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
               >
                 {landingContent.navbar.links.information}
               </a>
-              
-              <a
-                href="#ingenierias"
-                onClick={(e) => handleSmoothScroll(e, 'ingenierias')}
-                className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-              >
-                {landingContent.navbar.links.engineering}
-              </a>
-              
-              <a
+
+               <a
                 href="#eventos"
                 onClick={(e) => handleSmoothScroll(e, 'eventos')}
                 className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
@@ -69,11 +131,19 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
               </a>
 
               <a
-                href="#ganadores"
-                onClick={(e) => handleSmoothScroll(e, 'ganadores')}
+                href="#recorrido"
+                onClick={(e) => handleSmoothScroll(e, 'recorrido')}
                 className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
               >
-                {landingContent.navbar.links.winners}
+                {landingContent.navbar.links.pastEvents}
+              </a>
+
+              <a
+                href="#developers"
+                onClick={(e) => handleSmoothScroll(e, 'developers')}
+                className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+              >
+                {landingContent.navbar.links.developers}
               </a>
             </div>
           )}
@@ -122,16 +192,9 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
               >
                 {landingContent.navbar.links.information}
               </a>
-              
-              <a
-                href="#ingenierias"
-                onClick={(e) => handleSmoothScroll(e, 'ingenierias')}
-                className="px-6 py-4 text-muted-foreground hover:text-foreground transition-all cursor-pointer border-b border-border/20"
-              >
-                {landingContent.navbar.links.engineering}
-              </a>
-              
-              <a
+
+
+               <a
                 href="#eventos"
                 onClick={(e) => handleSmoothScroll(e, 'eventos')}
                 className="px-6 py-4 text-muted-foreground hover:text-foreground transition-all cursor-pointer"
@@ -140,11 +203,19 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
               </a>
 
               <a
-                href="#ganadores"
-                onClick={(e) => handleSmoothScroll(e, 'ganadores')}
-                className="px-6 py-4 text-muted-foreground hover:text-foreground transition-all cursor-pointer"
+                href="#recorrido"
+                onClick={(e) => handleSmoothScroll(e, 'recorrido')}
+                className="px-6 py-4 text-muted-foreground hover:text-foreground transition-all cursor-pointer border-t border-border/20"
               >
-                {landingContent.navbar.links.winners}
+                {landingContent.navbar.links.pastEvents}
+              </a>
+
+              <a
+                href="#developers"
+                onClick={(e) => handleSmoothScroll(e, 'developers')}
+                className="px-6 py-4 text-muted-foreground hover:text-foreground transition-all cursor-pointer border-t border-border/20"
+              >
+                {landingContent.navbar.links.developers}
               </a>
             </div>
           </div>

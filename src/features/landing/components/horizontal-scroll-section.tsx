@@ -18,7 +18,11 @@ export function HorizontalScrollSection({
   const { panels } = landingContent.horizontalScroll;
 
   return (
-    <section id="informacion" ref={horizontalSectionRef} className="relative z-10 h-screen overflow-hidden">
+    <section
+      id="informacion"
+      ref={horizontalSectionRef}
+      className="relative z-10 mt-10 h-screen overflow-hidden md:mt-8"
+    >
       <div ref={horizontalContentRef} className="flex h-full">
         {/* Panel 1 - Vision */}
         <div className="horizontal-panel min-w-full h-full flex items-center justify-center px-12">
