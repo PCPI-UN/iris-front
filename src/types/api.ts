@@ -98,7 +98,6 @@ export type Event = Entity<{
   inscriptionRequirements?: string;
   aboutOurAllies?: string;
   evaluationType?: "0-5" | "0-100";
-  cost?: number;
   minimumTeamSize?: number;
   specificInscriptionDetails?: { title: string; description: string }[];
   categories?: { id: number; name: string; active?: boolean }[];

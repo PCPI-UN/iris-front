@@ -33,13 +33,15 @@ type UpdateEventProps = {
 };
 
 type Award = {
-  top: number;
+  title: string;
   description: string;
+  value: string;
+  position: number;
   categoryId: string;
   categoryName?: string;
-
 };
-
+const isWholeNumberInput = (value: string) =>value === "" || /^(0|[1-9]\d*)$/.test(value);
+const isDecimalNumberInput = (value: string) => /^\d*\.?\d*$/.test(value);
 type InscriptionDetail = {
   title: string;
   description: string;
@@ -61,7 +63,7 @@ type UpdateEventFormState = {
   inscriptionCost: string;
   minimumTeamSize: string;
   aboutOurAllies: string;
-  evaluationType: "0-5" | "0-100";
+  evaluationType: "ZERO_TO_FIVE" | "ZERO_TO_HUNDRED";
 };
 
 const INITIAL_FORM_STATE: UpdateEventFormState = {
@@ -80,7 +82,7 @@ const INITIAL_FORM_STATE: UpdateEventFormState = {
   inscriptionRequirements: "",
   minimumTeamSize: "",
   aboutOurAllies: "",
-  evaluationType: "0-5",
+  evaluationType: "ZERO_TO_FIVE",
 };
 
 export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
@@ -94,7 +96,9 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
   ]);
   const [organizers, setOrganizers] = useState<string[]>([""]);
   const [collaborators, setCollaborators] = useState<string[]>([""]);
-  const [awards, setAwards] = useState<Award[]>([{ top: 1, description: "", categoryId: "" }]);
+  const [awards, setAwards] = useState<Award[]>([
+    { title: "", description: "", value: "", position: 1, categoryId: "" },
+  ]);
 
   const eventQuery = useEvent({ eventId });
   const coursesDropdownQuery = useCoursesDropdown({ eventId });
@@ -122,6 +126,7 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
     if (!event) {
       return;
     }
+    const rawEvaluationType = String(event.evaluationType ?? "");
 
     setFormData({
       name: event.name ?? "",
@@ -145,17 +150,19 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
           : "",
       aboutOurAllies: event.aboutOurAllies ?? "",
       evaluationType:
-        event.evaluationType === "0-5" || event.evaluationType === "0-100"
-          ? event.evaluationType
-          : "0-5",
+        rawEvaluationType === "ZERO_TO_FIVE" || rawEvaluationType === "0-5"
+          ? "ZERO_TO_FIVE"
+          : rawEvaluationType === "ZERO_TO_HUNDRED" || rawEvaluationType === "0-100"
+            ? "ZERO_TO_HUNDRED"
+            : "ZERO_TO_FIVE",
     });
 
     setSpecificDetails(
       event.specificInscriptionDetails && event.specificInscriptionDetails.length > 0
         ? event.specificInscriptionDetails.map((detail) => ({
-            title: detail.title,
-            description: detail.description,
-          }))
+          title: detail.title,
+          description: detail.description,
+        }))
         : [{ title: "", description: "" }]
     );
 
@@ -172,15 +179,21 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
     setAwards(
       event.awards && event.awards.length > 0
         ? event.awards.map((award) => ({
-            top: Number(award.top) || 1,
-            description: award.description ?? "",
-            categoryId:
-              (award as { categoryId?: number }).categoryId !== undefined
-                ? String((award as { categoryId?: number }).categoryId)
-                : "",
-                categoryName: (award as { category?: string }).category,
-          }))
-        : [{ top: 1, description: "", categoryId: "" }]
+          title: award.title ?? "",
+          description: award.description ?? "",
+          value:
+            (award as { value?: number }).value !== undefined &&
+              (award as { value?: number }).value !== null
+              ? String((award as { value?: number }).value)
+              : "",
+          position: Number(award.position) || 1,
+          categoryId:
+            (award as { categoryId?: number }).categoryId !== undefined
+              ? String((award as { categoryId?: number }).categoryId)
+              : "",
+          categoryName: (award as { category?: string }).category,
+        }))
+        : [{ title: "", description: "", value: "", position: 1, categoryId: "" }]
     );
   }, [isOpen, eventQuery.data]);
 
@@ -225,13 +238,13 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
           (detail) => detail.title.trim() !== "" && detail.description.trim() !== ""
         ),
         awards: awards
-          .filter((award) => award.description.trim() !== "")
+          .filter((award) => award.title.trim() !== "")
           .map((award) => ({
-            position: Number(award.top) || 1,
+            title: award.title,
+            description: award.description || undefined,
+            value: award.value === "" ? undefined : Number(award.value),
+            position: award.position,
             categoryId: award.categoryId ? Number(award.categoryId) : undefined,
-            category: award.categoryName,
-            title: `Top ${Number(award.top) || 1}`,
-            description: award.description,
           })),
       };
 
@@ -382,13 +395,13 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                           onChange={(e) =>
                             setFormData((prev) => ({
                               ...prev,
-                              evaluationType: e.target.value as "0-5" | "0-100",
+                              evaluationType: e.target.value as "ZERO_TO_FIVE" | "ZERO_TO_HUNDRED",
                             }))
                           }
                           className="flex-1"
                         >
-                          <SelectItem key="0-5">0 - 5</SelectItem>
-                          <SelectItem key="0-100">0 - 100</SelectItem>
+                          <SelectItem key="ZERO_TO_FIVE">0 - 5</SelectItem>
+                          <SelectItem key="ZERO_TO_HUNDRED">0 - 100</SelectItem>
                         </Select>
                       </div>
 
@@ -487,7 +500,12 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                           name="inscriptionCost"
                           type="number"
                           value={formData.inscriptionCost}
+                          min={0}
+                          step={1}
+                          inputMode="numeric"
+                          pattern="[0-9]*"
                           onChange={(e) =>
+                            isDecimalNumberInput(e.target.value) &&
                             setFormData((prev) => ({ ...prev, inscriptionCost: e.target.value }))
                           }
                           className="flex-1"
@@ -497,7 +515,12 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                           name="minimumTeamSize"
                           type="number"
                           value={formData.minimumTeamSize}
+                          min={0}
+                          step={1}
+                          inputMode="numeric"
+                          pattern="[0-9]*"
                           onChange={(e) =>
+                            isWholeNumberInput(e.target.value) &&
                             setFormData((prev) => ({ ...prev, minimumTeamSize: e.target.value }))
                           }
                           className="flex-1"
@@ -596,7 +619,7 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                               isIconOnly
                               size="sm"
                               variant="faded"
-                              onPress={() => setOrganizers((prev) => [...prev, ""]) }
+                              onPress={() => setOrganizers((prev) => [...prev, ""])}
                             >
                               <Plus size={16} />
                             </Button>
@@ -639,7 +662,7 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                               isIconOnly
                               size="sm"
                               variant="faded"
-                              onPress={() => setCollaborators((prev) => [...prev, ""]) }
+                              onPress={() => setCollaborators((prev) => [...prev, ""])}
                             >
                               <Plus size={16} />
                             </Button>
@@ -690,7 +713,13 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                                 }
                                 return [
                                   ...prev,
-                                  { top: prev.length + 1, description: "", categoryId: "" },
+                                  {
+                                    title: "",
+                                    description: "",
+                                    value: "",
+                                    position: prev.length + 1,
+                                    categoryId: "",
+                                  },
                                 ];
                               })
                             }
@@ -713,7 +742,12 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                                   variant="light"
                                   onPress={() =>
                                     setAwards((prev) =>
-                                      prev.filter((_, itemIndex) => itemIndex !== index)
+                                      prev
+                                        .filter((_, itemIndex) => itemIndex !== index)
+                                        .map((item, itemIndex) => ({
+                                          ...item,
+                                          position: itemIndex + 1,
+                                        }))
                                     )
                                   }
                                 >
@@ -721,27 +755,70 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                                 </Button>
                               </div>
 
-                              <div className="flex flex-row gap-4 w-full pr-8">
+                              <div className="flex gap-4 w-full pr-8">
+                                {/* LEFT: Position */}
                                 <div className="flex flex-col items-center justify-center bg-default-100 rounded-md px-3 py-2 min-w-[80px]">
                                   <span className="text-sm text-default-500 font-semibold uppercase tracking-wider">
-                                    Top
+                                    Position
                                   </span>
                                   <span className="text-4xl font-extrabold text-primary">
-                                    {award.top}
+                                    {award.position}
                                   </span>
                                 </div>
-                                <Textarea
-                                  label="Award Description"
-                                  value={award.description}
-                                  onChange={(e) => {
-                                    setAwards((prev) => {
-                                      const next = [...prev];
-                                      next[index].description = e.target.value;
-                                      return next;
-                                    });
-                                  }}
-                                  className="flex-1"
-                                />
+
+                                {/* RIGHT: CONTENEDOR */}
+                                <div className="flex flex-col flex-1 gap-2">
+
+                                  {/* TOP ROW */}
+                                  <div className="flex gap-3">
+                                    <Input
+                                      label="Award Title"
+                                      value={award.title}
+                                      onChange={(e) => {
+                                        setAwards((prev) => {
+                                          const next = [...prev];
+                                          next[index].title = e.target.value;
+                                          return next;
+                                        });
+                                      }}
+                                      className="flex-1"
+                                    />
+
+                                    <Input
+                                      label="$"
+                                      type="number"
+                                      value={award.value}
+                                      min={0}
+                                      step={1}
+                                      inputMode="numeric"
+                                      pattern="[0-9]*"
+                                      onChange={(e) => {
+                                        if (isDecimalNumberInput(e.target.value)) {
+                                          setAwards((prev) => {
+                                            const next = [...prev];
+                                            next[index].value = e.target.value;
+                                            return next;
+                                          });
+                                        }
+                                      }}
+                                      className="w-[120px]"
+                                    />
+                                  </div>
+
+                                  {/* BOTTOM ROW */}
+                                  <Textarea
+                                    label="Award Description (Optional)"
+                                    value={award.description}
+                                    onChange={(e) => {
+                                      setAwards((prev) => {
+                                        const next = [...prev];
+                                        next[index].description = e.target.value;
+                                        return next;
+                                      });
+                                    }}
+                                    className="w-full"
+                                  />
+                                </div>
                               </div>
                             </div>
                           ))}

@@ -13,20 +13,31 @@ type EventBody = {
   startDate: string;
   endDate: string;
   inscriptionDeadline?: string;
-  evaluationsStatus?: "open" | "closed";
-  isPublic?: boolean;
+  evaluationsOpened?: boolean;
+  isPubliclyJoinable?: boolean;
   location: string;
-  locationDetail?: string;
-  eventType: "Competition" | "Exhibition";
-  evaluationType?: "0-5" | "0-100";
+  locationDetails?: string;
+  eventType: "Competition" | "Exposition";
+  evaluationType?: "ZERO_TO_FIVE" | "ZERO_TO_HUNDRED";
   inscriptionRequirements?: string;
-  cost?: number;
+  inscriptionCost?: number;
   minimumTeamSize?: number;
   specificInscriptionDetails?: { title: string; description: string }[];
   aboutOurAllies?: string;
-  organizations?: string[];
+  organizers?: string[];
   collaborators?: string[];
-  awards?: { top: number; category: string; description: string; prizeMoney?: number }[];
+  awards?: {
+    title: string;
+    description?: string;
+    value?: number;
+    position: number;
+    categoryId?: string;
+  }[];
+  evaluationsStatus?: "open" | "closed";
+  isPublic?: boolean;
+  locationDetail?: string;
+  cost?: number;
+  organizations?: string[];
 };
 
 const PAGE_SIZE = 10;
@@ -61,25 +72,52 @@ type EventDTO = {
   endDate: string;
   inscriptionDeadline: string;
   accessCode: string;
-  isPublic: boolean;
-  evaluationsStatus: "open" | "closed";
+  isPubliclyJoinable: boolean;
+  evaluationsOpened: boolean;
   location: string;
-  locationDetail?: string;
-  eventType: "Competition" | "Exhibition";
-  evaluationType?: "0-5" | "0-100";
+  locationDetails?: string;
+  eventType: "Competition" | "Exposition";
+  evaluationType?: "ZERO_TO_FIVE" | "ZERO_TO_HUNDRED";
   inscriptionRequirements?: string;
-  cost?: number;
+  inscriptionCost?: number;
   minimumTeamSize?: number;
   specificInscriptionDetails?: { title: string; description: string }[];
   aboutOurAllies?: string;
-  organizations?: string[];
+  organizers?: string[];
   collaborators?: string[];
-  awards?: { top: number; category: string; description: string; prizeMoney?: number }[];
+  awards?: {
+    title: string;
+    description?: string;
+    value?: number;
+    position: number;
+    categoryId?: string;
+  }[];
+  isPublic: boolean;
+  evaluationsStatus: "open" | "closed";
+  locationDetail?: string;
+  cost?: number;
+  organizations?: string[];
   createdAt: string;
   userEventRole?: "Participant" | "JURY";
 };
 
 const mapEventToDTO = (event: any, membership?: any): EventDTO => {
+  const evaluationsOpened =
+    typeof event.evaluationsOpened === "boolean"
+      ? event.evaluationsOpened
+      : event.evaluationsStatus === "open";
+  const isPubliclyJoinable =
+    typeof event.isPubliclyJoinable === "boolean"
+      ? event.isPubliclyJoinable
+      : Boolean(event.isPublic);
+  const locationDetails = event.locationDetails ?? event.locationDetail;
+  const inscriptionCost =
+    typeof event.inscriptionCost === "number"
+      ? event.inscriptionCost
+      : event.cost;
+  const organizers = event.organizers ?? event.organizations ?? [];
+  const eventType = event.eventType === "Exhibition" ? "Exposition" : event.eventType;
+
   return {
     id: toPublicNumericId(String(event.id), "event"),
     name: event.name as string,
@@ -88,20 +126,25 @@ const mapEventToDTO = (event: any, membership?: any): EventDTO => {
     endDate: event.endDate,
     inscriptionDeadline: event.inscriptionDeadline,
     accessCode: event.accessCode,
-    isPublic: event.isPublic,
-    evaluationsStatus: event.evaluationsStatus,
+    isPubliclyJoinable,
+    evaluationsOpened,
     location: event.location,
-    locationDetail: event.locationDetail,
-    eventType: event.eventType,
+    locationDetails,
+    eventType,
     evaluationType: event.evaluationType,
     inscriptionRequirements: event.inscriptionRequirements,
-    cost: event.cost,
+    inscriptionCost,
     minimumTeamSize: event.minimumTeamSize,
     specificInscriptionDetails: event.specificInscriptionDetails,
     aboutOurAllies: event.aboutOurAllies,
-    organizations: event.organizations,
+    organizers,
     collaborators: event.collaborators,
     awards: event.awards,
+    isPublic: isPubliclyJoinable,
+    evaluationsStatus: evaluationsOpened ? "open" : "closed",
+    locationDetail: locationDetails,
+    cost: inscriptionCost,
+    organizations: organizers,
     createdAt: event.createdAt,
     ...(membership && { userEventRole: membership.eventRole }),
   };
@@ -213,7 +256,7 @@ export const eventsHandlers = [
       const publicEvents = db.event
         .findMany({
           where: {
-            isPublic: {
+            isPubliclyJoinable: {
               equals: true,
             },
           },
@@ -368,18 +411,19 @@ export const eventsHandlers = [
         endDate: data.endDate,
         inscriptionDeadline: data.inscriptionDeadline ?? data.startDate,
         accessCode: `EVT${Date.now().toString().slice(-6)}`,
-        isPublic: data.isPublic ?? true,
-        evaluationsStatus: data.evaluationsStatus ?? "closed",
+        isPubliclyJoinable: data.isPubliclyJoinable ?? data.isPublic ?? true,
+        evaluationsOpened:
+          data.evaluationsOpened ?? (data.evaluationsStatus === "open"),
         location: data.location,
-        locationDetail: data.locationDetail,
+        locationDetails: data.locationDetails ?? data.locationDetail,
         eventType: data.eventType,
         evaluationType: data.evaluationType,
         inscriptionRequirements: data.inscriptionRequirements,
-        cost: data.cost,
+        inscriptionCost: data.inscriptionCost ?? data.cost,
         minimumTeamSize: data.minimumTeamSize,
         specificInscriptionDetails: data.specificInscriptionDetails || [],
         aboutOurAllies: data.aboutOurAllies,
-        organizations: data.organizations || [],
+        organizers: data.organizers ?? data.organizations ?? [],
         collaborators: data.collaborators || [],
         awards: data.awards || [],
       });
@@ -422,24 +466,39 @@ export const eventsHandlers = [
           ...(hasField("inscriptionDeadline") && {
             inscriptionDeadline: data.inscriptionDeadline,
           }),
-          ...(hasField("isPublic") && { isPublic: data.isPublic }),
+          ...(hasField("isPubliclyJoinable") && {
+            isPubliclyJoinable: data.isPubliclyJoinable,
+          }),
+          ...(hasField("isPublic") && { isPubliclyJoinable: data.isPublic }),
+          ...(hasField("evaluationsOpened") && {
+            evaluationsOpened: data.evaluationsOpened,
+          }),
           ...(hasField("evaluationsStatus") && {
-            evaluationsStatus: data.evaluationsStatus,
+            evaluationsOpened: data.evaluationsStatus === "open",
           }),
           ...(hasField("location") && { location: data.location }),
-          ...(hasField("locationDetail") && { locationDetail: data.locationDetail }),
+          ...(hasField("locationDetails") && {
+            locationDetails: data.locationDetails,
+          }),
+          ...(hasField("locationDetail") && {
+            locationDetails: data.locationDetail,
+          }),
           ...(hasField("eventType") && { eventType: data.eventType }),
           ...(hasField("evaluationType") && { evaluationType: data.evaluationType }),
           ...(hasField("inscriptionRequirements") && {
             inscriptionRequirements: data.inscriptionRequirements,
           }),
-          ...(hasField("cost") && { cost: data.cost }),
+          ...(hasField("inscriptionCost") && {
+            inscriptionCost: data.inscriptionCost,
+          }),
+          ...(hasField("cost") && { inscriptionCost: data.cost }),
           ...(hasField("minimumTeamSize") && { minimumTeamSize: data.minimumTeamSize }),
           ...(hasField("specificInscriptionDetails") && {
             specificInscriptionDetails: data.specificInscriptionDetails,
           }),
           ...(hasField("aboutOurAllies") && { aboutOurAllies: data.aboutOurAllies }),
-          ...(hasField("organizations") && { organizations: data.organizations }),
+          ...(hasField("organizers") && { organizers: data.organizers }),
+          ...(hasField("organizations") && { organizers: data.organizations }),
           ...(hasField("collaborators") && { collaborators: data.collaborators }),
           ...(hasField("awards") && { awards: data.awards }),
         },

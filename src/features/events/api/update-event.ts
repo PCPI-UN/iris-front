@@ -22,9 +22,9 @@ export const updateEventInputSchema = z.object({
   active: z.boolean().optional(),
   location: z.string().optional(),
   locationDetails: z.string().optional(),
-  inscriptionCost: z.coerce.number().optional(),
+  inscriptionCost: z.coerce.number().int('Must be an integer').min(0, 'Must be >= 0').optional(),
   inscriptionRequirements: z.string().optional(),
-  minimumTeamSize: z.coerce.number().optional(),
+  minimumTeamSize: z.coerce.number().int('Must be an integer').min(0, 'Must be >= 0').optional(),
   aboutOurAllies: z.string().optional(),
   organizers: z.array(z.string()).optional(),
   collaborators: z.array(z.string()).optional(),
@@ -40,14 +40,15 @@ export const updateEventInputSchema = z.object({
   awards: z
     .array(
       z.object({
-        top: z.coerce.number(),
-        position: z.coerce.number().optional(),
-        title: z.string().optional(),
-        description: z.string().min(1, "Required"),
+        title: z.string().min(1, "Required"),
+        description: z.string().optional(),
+        value: z.coerce.number().int('Must be an integer').min(0, 'Must be >= 0').optional(),
+        position: z.coerce.number().int('Must be an integer').min(1, 'Must be >= 1'),
+        categoryId: z.coerce.number().optional(),
       })
     )
     .optional(),
-  evaluationType: z.enum(["0-5", "0-100"]).optional(),
+  evaluationType: z.enum(["ZERO_TO_FIVE", "ZERO_TO_HUNDRED"]).optional(),
 });
 
 export type UpdateEventInput = z.infer<typeof updateEventInputSchema>;

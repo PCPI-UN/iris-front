@@ -18,12 +18,12 @@ export const createEventInputSchema = z.object({
   isPubliclyJoinable: z.boolean().optional(),
   location: z.string().min(1, 'Required'),
   locationDetails: z.string().optional(),
-  eventType: z.enum(["Expo", "Competencia"]),
+  eventType: z.enum(["Exposition", "Competition"]),
   inscriptionCost: z.coerce.number().optional(),
   inscriptionRequirements: z.string().optional(),
   minimumTeamSize: z.coerce.number().optional(),
   aboutOurAllies: z.string().optional(),
-  evaluationType: z.enum(["0-5", "0-100"]).optional(),
+  evaluationType: z.enum(["ZERO_TO_FIVE", "ZERO_TO_HUNDRED"]).optional(),
   organizers: z.array(z.string()).optional(),
   collaborators: z.array(z.string()).optional(),
   // Estos campos se manejan en tablas relacionadas (EventInscriptionDetail, Category, etc)
@@ -31,15 +31,17 @@ export const createEventInputSchema = z.object({
     title: z.string().min(1, 'Required'),
     description: z.string().min(1, 'Required'),
   })).optional(),
-  awards: z.array(z.object({
-    top: z.coerce.number(),
-    position: z.coerce.number().optional(),
-    categoryId: z.coerce.number().optional(),
-    category: z.string().optional(),
-    categoryName: z.string().optional(),
-    title: z.string().optional(),
-    description: z.string().min(1, 'Required'),
-  })).optional(),
+  awards: z
+    .array(
+      z.object({
+        title: z.string().min(1, "Required"),
+        description: z.string().optional(),
+        value: z.coerce.number().optional(),
+        position: z.coerce.number(),
+        categoryId: z.coerce.number().optional(),
+      })
+    )
+    .optional(),
 });
 
 export type CreateEventInput = z.infer<typeof createEventInputSchema>;

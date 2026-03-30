@@ -24,10 +24,14 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { Select, SelectItem } from "@/components/ui/select";
 
 type Award = {
-  top: number;
+  title: string;
   description: string;
+  value: string;
+  position: number;
 };
 
+const isWholeNumberInput = (value: string) => /^(0|[1-9])\d*$/.test(value);
+const isDecimalNumberInput = (value: string) => /^\d*\.?\d*$/.test(value);
 export const CreateEvent = () => {
   const { addNotification } = useNotifications();
   const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
@@ -36,13 +40,16 @@ export const CreateEvent = () => {
   const [formData, setFormData] = useState<any>({
     isPubliclyJoinable: true,
     evaluationsOpened: false,
-    eventType: "Expo"
+    eventType: "Exposition",
+    evaluationType: "ZERO_TO_FIVE",
   });
 
   const [specificDetails, setSpecificDetails] = useState([{ title: "", description: "" }]);
   const [organizers, setOrganizers] = useState([""]);
   const [collaborators, setCollaborators] = useState([""]);
-  const [awards, setAwards] = useState<Award[]>([{ top: 1, description: "" }]);
+  const [awards, setAwards] = useState<Award[]>([
+    { title: "", description: "", value: "", position: 1 },
+  ]);
 
   const createEventMutation = useCreateEvent({
     mutationConfig: {
@@ -72,11 +79,16 @@ export const CreateEvent = () => {
 
   const resetForm = () => {
     setStep(1);
-    setFormData({ isPubliclyJoinable: true, evaluationsOpened: false, eventType: "Expo" });
+    setFormData({
+      isPubliclyJoinable: true,
+      evaluationsOpened: false,
+      eventType: "Exposition",
+      evaluationType: "ZERO_TO_FIVE",
+    });
     setSpecificDetails([{ title: "", description: "" }]);
     setOrganizers([""]);
     setCollaborators([""]);
-    setAwards([{ top: 1, description: "" }]);
+    setAwards([{ title: "", description: "", value: "", position: 1 }]);
   };
 
   const handleNextStep = (e: React.FormEvent<HTMLFormElement>) => {
@@ -109,13 +121,13 @@ export const CreateEvent = () => {
         organizers: organizers.filter(o => o.trim() !== ""),
         collaborators: collaborators.filter(c => c.trim() !== ""),
         awards: awards
-          .filter(a => a.description)
+          .filter(a => a.title.trim() !== "")
           .map(a => ({
-          top: Number(a.top) || 1,
-          position: Number(a.top) || 1,
-          title: `Top ${Number(a.top) || 1}`,
-          description: a.description,
-        }))
+            title: a.title,
+            description: a.description || undefined,
+            value: a.value === "" ? undefined : Number(a.value),
+            position: a.position,
+          }))
       };
 
       if (!dataToSubmit.accessCode) delete dataToSubmit.accessCode;
@@ -205,10 +217,21 @@ export const CreateEvent = () => {
                         isRequired
                         className="flex-1"
                       >
-                        <SelectItem key="Expo">Expo</SelectItem>
-                        <SelectItem key="Competencia">Competencia</SelectItem>
+                        <SelectItem key="Exposition">Exposition</SelectItem>
+                        <SelectItem key="Competition">Competition</SelectItem>
                       </Select>
                     </div>
+
+                    <Select
+                      label="Evaluation Type"
+                      name="evaluationType"
+                      defaultSelectedKeys={[formData.evaluationType]}
+                      onChange={(e) => setFormData({ ...formData, evaluationType: e.target.value })}
+                      className="flex-1"
+                    >
+                      <SelectItem key="ZERO_TO_FIVE">0 - 5</SelectItem>
+                      <SelectItem key="ZERO_TO_HUNDRED">0 - 100</SelectItem>
+                    </Select>
 
                     <div className="pt-2 border-t border-default-200">
                       <p className="text-sm font-semibold mb-2">Event Details</p>
@@ -266,7 +289,15 @@ export const CreateEvent = () => {
                         type="number"
                         placeholder="No cost"
                         value={formData.inscriptionCost || ""}
-                        onChange={(e) => setFormData({ ...formData, inscriptionCost: e.target.value })}
+                        min={0}
+                        step={1}
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        onChange={(e) => {
+                          if (isDecimalNumberInput(e.target.value)) {
+                            setFormData({ ...formData, inscriptionCost: e.target.value });
+                          }
+                        }}
                         className="flex-1"
                       />
                       <Input
@@ -275,7 +306,15 @@ export const CreateEvent = () => {
                         type="number"
                         placeholder="Enter min size"
                         value={formData.minimumTeamSize || ""}
-                        onChange={(e) => setFormData({ ...formData, minimumTeamSize: e.target.value })}
+                        min={0}
+                        step={1}
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        onChange={(e) => {
+                          if (isWholeNumberInput(e.target.value)) {
+                            setFormData({ ...formData, minimumTeamSize: e.target.value });
+                          }
+                        }}
                         className="flex-1"
                       />
                     </div>
@@ -411,7 +450,23 @@ export const CreateEvent = () => {
                     <div className="pt-4 border-t border-default-200">
                       <div className="flex justify-between items-center mb-4">
                         <p className="text-sm font-semibold">Awards</p>
-                        <Button isIconOnly size="sm" variant="faded" onPress={() => awards.length < 4 && setAwards([...awards, { top: awards.length + 1, description: "" }])}>
+                        <Button
+                          isIconOnly
+                          size="sm"
+                          variant="faded"
+                          onPress={() =>
+                            awards.length < 4 &&
+                            setAwards([
+                              ...awards,
+                              {
+                                title: "",
+                                description: "",
+                                value: "",
+                                position: awards.length + 1,
+                              },
+                            ])
+                          }
+                        >
                           <Plus size={16} />
                         </Button>
                       </div>
@@ -420,18 +475,44 @@ export const CreateEvent = () => {
                         {awards.map((award, index) => (
                           <div key={index} className="flex flex-col gap-3 bg-default-50 p-4 rounded-md relative border border-default-200">
                             <div className="absolute top-2 right-2">
-                              <Button isIconOnly size="sm" color="danger" variant="light" onPress={() => setAwards(awards.filter((_, i) => i !== index))}>
+                              <Button
+                                isIconOnly
+                                size="sm"
+                                color="danger"
+                                variant="light"
+                                onPress={() =>
+                                  setAwards((prev) =>
+                                    prev
+                                      .filter((_, i) => i !== index)
+                                      .map((item, itemIndex) => ({
+                                        ...item,
+                                        position: itemIndex + 1,
+                                      }))
+                                  )
+                                }
+                              >
                                 <Minus size={14} />
                               </Button>
                             </div>
                             <div className="flex flex-row gap-4 w-full pr-8">
                               {/* TOP BADGE */}
                               <div className="flex flex-col items-center justify-center bg-default-100 rounded-md px-3 py-2 min-w-[80px]">
-                                <span className="text-sm text-default-500 font-semibold uppercase tracking-wider">Top</span>
-                                <span className="text-4xl font-extrabold text-primary">{award.top}</span>
+                                <span className="text-sm text-default-500 font-semibold uppercase tracking-wider">Position</span>
+                                <span className="text-4xl font-extrabold text-primary">{award.position}</span>
                               </div>
+                              <Input
+                                label="Award Title"
+                                placeholder="Top 1"
+                                value={award.title}
+                                onChange={(e) => {
+                                  const newArr = [...awards];
+                                  newArr[index].title = e.target.value;
+                                  setAwards(newArr);
+                                }}
+                                className="flex-1"
+                              />
                               <Textarea
-                                label="Description for TOP Award"
+                                label="Award Description (Optional)"
                                 placeholder="Description..."
                                 value={award.description}
                                 onChange={(e) => {
@@ -440,6 +521,24 @@ export const CreateEvent = () => {
                                   setAwards(newArr);
                                 }}
                                 className="flex-1"
+                              />
+                              <Input
+                                label="Value (Optional)"
+                                type="number"
+                                placeholder="0"
+                                value={award.value}
+                                min={0}
+                                step={1}
+                                inputMode="numeric"
+                                pattern="[0-9]*"
+                                onChange={(e) => {
+                                  if (isWholeNumberInput(e.target.value)) {
+                                    const newArr = [...awards];
+                                    newArr[index].value = e.target.value;
+                                    setAwards(newArr);
+                                  }
+                                }}
+                                className="max-w-[160px]"
                               />
                             </div>
                           </div>
