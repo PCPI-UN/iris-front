@@ -94,6 +94,7 @@ export type Event = Entity<{
   locationDetail?: string;
   eventType: "Competition" | "Exhibition";
   inscriptionRequirements?: string;
+  evaluationType?: "0-5" | "0-100";
   cost?: number;
   minimumTeamSize?: number;
   specificInscriptionDetails?: { title: string; description: string }[];

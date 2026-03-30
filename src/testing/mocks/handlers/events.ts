@@ -18,6 +18,7 @@ type EventBody = {
   location: string;
   locationDetail?: string;
   eventType: "Competition" | "Exhibition";
+  evaluationType?: "0-5" | "0-100";
   inscriptionRequirements?: string;
   cost?: number;
   minimumTeamSize?: number;
@@ -65,6 +66,7 @@ type EventDTO = {
   location: string;
   locationDetail?: string;
   eventType: "Competition" | "Exhibition";
+  evaluationType?: "0-5" | "0-100";
   inscriptionRequirements?: string;
   cost?: number;
   minimumTeamSize?: number;
@@ -91,6 +93,7 @@ const mapEventToDTO = (event: any, membership?: any): EventDTO => {
     location: event.location,
     locationDetail: event.locationDetail,
     eventType: event.eventType,
+    evaluationType: event.evaluationType,
     inscriptionRequirements: event.inscriptionRequirements,
     cost: event.cost,
     minimumTeamSize: event.minimumTeamSize,
@@ -370,6 +373,7 @@ export const eventsHandlers = [
         location: data.location,
         locationDetail: data.locationDetail,
         eventType: data.eventType,
+        evaluationType: data.evaluationType,
         inscriptionRequirements: data.inscriptionRequirements,
         cost: data.cost,
         minimumTeamSize: data.minimumTeamSize,
@@ -401,6 +405,8 @@ export const eventsHandlers = [
       }
       const eventId = toInternalPrefixedId(String(params.eventId), "event");
       const data = (await request.json()) as Partial<EventBody>;
+      const hasField = <K extends keyof EventBody>(key: K) =>
+        Object.prototype.hasOwnProperty.call(data, key);
       // requireAdmin(user);
       const event = db.event.update({
         where: {
@@ -409,17 +415,33 @@ export const eventsHandlers = [
           },
         },
         data: {
-          ...(data.name && { name: data.name }),
-          ...(data.description && { description: data.description }),
-          ...(data.startDate && { startDate: data.startDate }),
-          ...(data.endDate && { endDate: data.endDate }),
-          ...(data.inscriptionDeadline && {
+          ...(hasField("name") && { name: data.name }),
+          ...(hasField("description") && { description: data.description }),
+          ...(hasField("startDate") && { startDate: data.startDate }),
+          ...(hasField("endDate") && { endDate: data.endDate }),
+          ...(hasField("inscriptionDeadline") && {
             inscriptionDeadline: data.inscriptionDeadline,
           }),
-          ...(data.isPublic !== undefined && { isPublic: data.isPublic }),
-          ...(data.evaluationsStatus && {
+          ...(hasField("isPublic") && { isPublic: data.isPublic }),
+          ...(hasField("evaluationsStatus") && {
             evaluationsStatus: data.evaluationsStatus,
           }),
+          ...(hasField("location") && { location: data.location }),
+          ...(hasField("locationDetail") && { locationDetail: data.locationDetail }),
+          ...(hasField("eventType") && { eventType: data.eventType }),
+          ...(hasField("evaluationType") && { evaluationType: data.evaluationType }),
+          ...(hasField("inscriptionRequirements") && {
+            inscriptionRequirements: data.inscriptionRequirements,
+          }),
+          ...(hasField("cost") && { cost: data.cost }),
+          ...(hasField("minimumTeamSize") && { minimumTeamSize: data.minimumTeamSize }),
+          ...(hasField("specificInscriptionDetails") && {
+            specificInscriptionDetails: data.specificInscriptionDetails,
+          }),
+          ...(hasField("aboutOurAllies") && { aboutOurAllies: data.aboutOurAllies }),
+          ...(hasField("organizations") && { organizations: data.organizations }),
+          ...(hasField("collaborators") && { collaborators: data.collaborators }),
+          ...(hasField("awards") && { awards: data.awards }),
         },
       });
 

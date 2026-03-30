@@ -1,39 +1,97 @@
 "use client";
 
 import { parseDate } from "@internationalized/date";
-import { useEffect } from "react";
-import { SquarePen } from "lucide-react";
+import { Minus, Plus, SquarePen } from "lucide-react";
+import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Form } from "@/components/ui/form";
-import { Textarea } from "@/components/ui/textarea";
-import { Spinner } from "@/components/ui/spinner";
+import { Input } from "@/components/ui/input";
 import {
   Modal,
-  ModalContent,
-  ModalHeader,
   ModalBody,
+  ModalContent,
   ModalFooter,
+  ModalHeader,
 } from "@/components/ui/modal";
-import { useDisclosure } from '@/hooks/use-disclosure';
 import { useNotifications } from "@/components/ui/notifications";
+import { Select, SelectItem } from "@/components/ui/select";
+import { Spinner } from "@/components/ui/spinner";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
+import { useDisclosure } from "@/hooks/use-disclosure";
 import { useUser } from "@/lib/auth";
 import { canUpdateEvent } from "@/lib/authorization";
 
 import { useEvent } from "../api/get-event";
 import { updateEventInputSchema, useUpdateEvent } from "../api/update-event";
-import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
-import { DatePicker } from "@/components/ui/date-picker";
-import { cn } from "@/utils/cn";
 
 type UpdateEventProps = {
   eventId: number;
 };
 
+type Award = {
+  top: number;
+  description: string;
+};
+
+type InscriptionDetail = {
+  title: string;
+  description: string;
+};
+
+type UpdateEventFormState = {
+  name: string;
+  description: string;
+  accessCode: string;
+  startDate: string;
+  endDate: string;
+  inscriptionDeadline: string;
+  location: string;
+  locationDetail: string;
+  evaluationsOpened: boolean;
+  isPubliclyJoinable: boolean;
+  active: boolean;
+  inscriptionRequirements: string;
+  cost: string;
+  minimumTeamSize: string;
+  aboutOurAllies: string;
+  evaluationType: "0-5" | "0-100";
+};
+
+const INITIAL_FORM_STATE: UpdateEventFormState = {
+  name: "",
+  description: "",
+  accessCode: "",
+  startDate: "",
+  endDate: "",
+  inscriptionDeadline: "",
+  location: "",
+  locationDetail: "",
+  evaluationsOpened: false,
+  isPubliclyJoinable: false,
+  active: false,
+  inscriptionRequirements: "",
+  cost: "",
+  minimumTeamSize: "",
+  aboutOurAllies: "",
+  evaluationType: "0-100",
+};
+
 export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
   const { addNotification } = useNotifications();
-  const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();  
+  const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
+
+  const [step, setStep] = useState(1);
+  const [formData, setFormData] = useState<UpdateEventFormState>(INITIAL_FORM_STATE);
+  const [specificDetails, setSpecificDetails] = useState<InscriptionDetail[]>([
+    { title: "", description: "" },
+  ]);
+  const [organizations, setOrganizations] = useState<string[]>([""]);
+  const [collaborators, setCollaborators] = useState<string[]>([""]);
+  const [awards, setAwards] = useState<Award[]>([{ top: 1, description: "" }]);
+
   const eventQuery = useEvent({ eventId });
   const updateEventMutation = useUpdateEvent({
     mutationConfig: {
@@ -42,6 +100,7 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
           type: "success",
           title: "Event Updated",
         });
+        setStep(1);
         onClose();
       },
     },
@@ -49,12 +108,130 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
 
   const user = useUser();
 
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    const event = eventQuery.data?.data;
+    if (!event) {
+      return;
+    }
+
+    setFormData({
+      name: event.name ?? "",
+      description: event.description ?? "",
+      accessCode: event.accessCode ?? "",
+      startDate: event.startDate ? event.startDate.split("T")[0] : "",
+      endDate: event.endDate ? event.endDate.split("T")[0] : "",
+      inscriptionDeadline: event.inscriptionDeadline
+        ? event.inscriptionDeadline.split("T")[0]
+        : "",
+      location: event.location ?? "",
+      locationDetail: event.locationDetail ?? "",
+      evaluationsOpened: Boolean(event.evaluationsOpened),
+      isPubliclyJoinable: Boolean(event.isPubliclyJoinable),
+      active: Boolean(event.active),
+      inscriptionRequirements: event.inscriptionRequirements ?? "",
+      cost: event.cost !== undefined && event.cost !== null ? String(event.cost) : "",
+      minimumTeamSize:
+        event.minimumTeamSize !== undefined && event.minimumTeamSize !== null
+          ? String(event.minimumTeamSize)
+          : "",
+      aboutOurAllies: event.aboutOurAllies ?? "",
+      evaluationType:
+        event.evaluationType === "0-5" || event.evaluationType === "0-100"
+          ? event.evaluationType
+          : "0-100",
+    });
+
+    setSpecificDetails(
+      event.specificInscriptionDetails && event.specificInscriptionDetails.length > 0
+        ? event.specificInscriptionDetails.map((detail) => ({
+            title: detail.title,
+            description: detail.description,
+          }))
+        : [{ title: "", description: "" }]
+    );
+
+    setOrganizations(
+      event.organizations && event.organizations.length > 0 ? event.organizations : [""]
+    );
+
+    setCollaborators(
+      event.collaborators && event.collaborators.length > 0
+        ? event.collaborators
+        : [""]
+    );
+
+    setAwards(
+      event.awards && event.awards.length > 0
+        ? event.awards.map((award) => ({
+            top: Number(award.top) || 1,
+            description: award.description ?? "",
+          }))
+        : [{ top: 1, description: "" }]
+    );
+  }, [isOpen, eventQuery.data]);
+
   if (!canUpdateEvent(user?.data)) {
     return null;
   }
 
   const event = eventQuery.data?.data;
 
+  const handleNextStep = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setStep((prev) => Math.min(prev + 1, 3));
+  };
+
+  const handleUpdateSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    try {
+      const dataToSubmit = {
+        id: Number(eventId),
+        name: formData.name,
+        description: formData.description,
+        accessCode: formData.accessCode || undefined,
+        isPublic: formData.isPubliclyJoinable,
+        startDate: formData.startDate,
+        endDate: formData.endDate,
+        inscriptionDeadline: formData.inscriptionDeadline,
+        evaluationsStatus: formData.evaluationsOpened ? "open" : "closed",
+        active: formData.active,
+        location: formData.location || undefined,
+        locationDetail: formData.locationDetail || undefined,
+        inscriptionRequirements: formData.inscriptionRequirements || undefined,
+        cost: formData.cost === "" ? undefined : Number(formData.cost),
+        minimumTeamSize:
+          formData.minimumTeamSize === "" ? undefined : Number(formData.minimumTeamSize),
+        specificInscriptionDetails: specificDetails.filter(
+          (detail) => detail.title.trim() !== "" && detail.description.trim() !== ""
+        ),
+        aboutOurAllies: formData.aboutOurAllies || undefined,
+        organizations: organizations.filter((value) => value.trim() !== ""),
+        collaborators: collaborators.filter((value) => value.trim() !== ""),
+        awards: awards
+          .filter((award) => award.description.trim() !== "")
+          .map((award) => ({
+            top: Number(award.top) || 1,
+            description: award.description,
+          })),
+        evaluationType: formData.evaluationType,
+      };
+
+      const values = await updateEventInputSchema.parseAsync(dataToSubmit);
+      await updateEventMutation.mutateAsync({ data: values });
+    } catch (error) {
+      console.error(error);
+      addNotification({
+        type: "error",
+        title: "Form Validation Failed",
+        message: "Check required fields.",
+      });
+    }
+  };
 
   return (
     <>
@@ -63,6 +240,7 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
         className="w-full"
         size="sm"
         onPress={() => {
+          setStep(1);
           eventQuery.refetch();
           onOpen();
         }}
@@ -70,9 +248,10 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
         <SquarePen size={16} />
         Update Event
       </Button>
-      <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="2xl">
-        <ModalContent>
-          {(onClose) => {
+
+      <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="2xl" scrollBehavior="inside">
+        <ModalContent className="max-h-[80vh] flex flex-col">
+          {(onCloseModal) => {
             if (eventQuery.isLoading) {
               return (
                 <>
@@ -92,148 +271,500 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                     <p>Event not found</p>
                   </ModalBody>
                   <ModalFooter>
-                    <Button onPress={onClose}>Close</Button>
+                    <Button onPress={onCloseModal}>Close</Button>
                   </ModalFooter>
                 </>
               );
             }
 
             return (
-            <Form
-              key={`update-event-${eventId}-${event?.updatedAt}`}
-              id="update-event"
-              onSubmit={async (e) => {
-                e.preventDefault();
-                const form = e.target as HTMLFormElement;
-                const formData = new FormData(form);
+              <Form
+                key={`update-event-${eventId}-${event.updatedAt}`}
+                id="update-event"
+                className="w-full flex flex-col overflow-hidden flex-1 min-h-0"
+                onSubmit={step === 3 ? handleUpdateSubmit : handleNextStep}
+              >
+                <ModalHeader className="flex flex-col gap-1 text-2xl font-semibold shrink-0">
+                  Update Event {step > 1 ? `- Step ${step}` : ""}
+                </ModalHeader>
 
-                const rawData = Object.fromEntries(formData);
-                const data = {
-                  id: Number(eventId),
-                  name: rawData.name as string,
-                  description: rawData.description as string,
-                  accessCode: rawData.accessCode as string,
-                  isPublic: rawData.isPublic === "true",
-                  startDate: rawData.startDate as string,
-                  endDate: rawData.endDate as string,
-                  inscriptionDeadline: rawData.inscriptionDeadline as string,
-                  evaluationsStatus:
-                    rawData.evaluationsStatus === "open" ? "open" : "closed",
-                  active: rawData.active === "true",
-                  location: rawData.location as string,
-                };
+                <ModalBody className="w-full flex-1 min-h-0 overflow-y-auto pr-2">
+                  {step === 1 && (
+                    <div className="space-y-6 w-full fade-in">
+                      <Input
+                        label="Name"
+                        name="name"
+                        isRequired
+                        value={formData.name}
+                        onChange={(e) =>
+                          setFormData((prev) => ({ ...prev, name: e.target.value }))
+                        }
+                      />
 
-                const values = await updateEventInputSchema.parseAsync(data);
-                await updateEventMutation.mutateAsync({
-                  data: values,
-                });
-              }}
-            >
-              <ModalHeader className="flex flex-col gap-1">
-                Update Event
-              </ModalHeader>
-              <ModalBody className="space-y-4 w-full">
-                <Input
-                  id="update-event-name"
-                  label="Name"
-                  name="name"
-                  defaultValue={event?.name ?? ""}
-                />
-                <Textarea
-                  id="update-event-description"
-                  label="Description"
-                  name="description"
-                  defaultValue={event?.description ?? ""}
-                />
-                <Input
-                  id="update-event-location"
-                  label="Location"
-                  name="location"
-                  defaultValue={event?.location ?? ""}
-                />
-                <Input
-                  id="update-event-access-code"
-                  label="Access Code"
-                  name="accessCode"
-                  defaultValue={event?.accessCode ?? ""}
-                />
-                <DatePicker
-                  id="update-event-start-date"
-                  label="Start Date"
-                  name="startDate"
-                  defaultValue={
-                    event?.startDate ? parseDate(event.startDate.split('T')[0]) : undefined
-                  }
-                  isRequired
-                />
-                <DatePicker
-                  id="update-event-end-date"
-                  label="End Date"
-                  name="endDate"
-                  defaultValue={
-                    event?.endDate ? parseDate(event.endDate.split('T')[0]) : undefined
-                  }
-                  isRequired
-                />
-                <DatePicker
-                  id="update-event-inscription-deadline"
-                  label="Inscription Deadline"
-                  name="inscriptionDeadline"
-                  defaultValue={
-                    event?.inscriptionDeadline
-                      ? parseDate(event.inscriptionDeadline.split('T')[0])
-                      : undefined
-                  }
-                  isRequired
-                />
-                <div className="flex flex-row gap-50">
-                <Switch
-                  id="update-event-evaluations-opened"
-                  name="evaluationsStatus"
-                  value="open"
-                  defaultSelected={event?.evaluationsOpened}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2`}
-                >
-                  <div className="flex flex-col gap-1">
-                    <p className="text-medium">Evaluations Open</p>
-                  </div>
-                </Switch>
+                      <div className="flex flex-col sm:flex-row gap-4">
+                        <Input
+                          label="Location"
+                          name="location"
+                          isRequired
+                          value={formData.location}
+                          onChange={(e) =>
+                            setFormData((prev) => ({ ...prev, location: e.target.value }))
+                          }
+                          className="flex-1"
+                        />
+                        <Input
+                          label="Location detail (Optional)"
+                          name="locationDetail"
+                          value={formData.locationDetail}
+                          onChange={(e) =>
+                            setFormData((prev) => ({ ...prev, locationDetail: e.target.value }))
+                          }
+                          className="flex-1"
+                        />
+                      </div>
 
-                <Switch
-                  id="update-event-is-publicly-joinable"
-                  name="isPublic"
-                  value="true"
-                  defaultSelected={event?.isPubliclyJoinable}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2`}
-                >
-                    <div className="flex flex-col gap-1">
-                    <p className="text-medium">Publicly Joinable</p>
-                  </div>
-                </Switch>
+                      <div className="flex flex-col sm:flex-row gap-4">
+                        <DatePicker
+                          label="Start Date"
+                          name="startDate"
+                          isRequired
+                          value={formData.startDate ? parseDate(formData.startDate) : undefined}
+                          onChange={(date) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              startDate: date ? date.toString() : "",
+                            }))
+                          }
+                          className="flex-1"
+                        />
+                        <DatePicker
+                          label="End Date"
+                          name="endDate"
+                          isRequired
+                          value={formData.endDate ? parseDate(formData.endDate) : undefined}
+                          onChange={(date) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              endDate: date ? date.toString() : "",
+                            }))
+                          }
+                          className="flex-1"
+                        />
+                      </div>
 
-                <Switch
-                  id="update-event-active"
-                  name="active"
-                  value="true"
-                  defaultSelected={event?.active}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2`}
-                >
-                  <div className="flex flex-col gap-1">
-                    <p className="text-medium">Active</p>
-                  </div>
-                </Switch>
-                </div>
-              </ModalBody>
-              <ModalFooter>
-                <Button
-                  type="submit"
-                  isLoading={updateEventMutation.isPending}
-                  disabled={updateEventMutation.isPending}
-                >
-                  Save Changes
-                </Button>
-              </ModalFooter>
-            </Form>
+                      <div className="flex flex-col sm:flex-row gap-4 items-end">
+                        <Input
+                          label="Access Code"
+                          name="accessCode"
+                          value={formData.accessCode}
+                          onChange={(e) =>
+                            setFormData((prev) => ({ ...prev, accessCode: e.target.value }))
+                          }
+                          className="flex-1"
+                        />
+                        <Select
+                          label="Evaluation Type"
+                          selectedKeys={[formData.evaluationType]}
+                          onChange={(e) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              evaluationType: e.target.value as "0-5" | "0-100",
+                            }))
+                          }
+                          className="flex-1"
+                        >
+                          <SelectItem key="0-5">0 - 5</SelectItem>
+                          <SelectItem key="0-100">0 - 100</SelectItem>
+                        </Select>
+                      </div>
+
+                      <div className="pt-2 border-t border-default-200">
+                        <p className="text-sm font-semibold mb-2">Event Details</p>
+                        <Textarea
+                          label="Description"
+                          name="description"
+                          isRequired
+                          value={formData.description}
+                          onChange={(e) =>
+                            setFormData((prev) => ({ ...prev, description: e.target.value }))
+                          }
+                          maxLength={1000}
+                        />
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-6 py-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium">Evaluations Open</span>
+                          <Switch
+                            isSelected={formData.evaluationsOpened}
+                            onValueChange={(isSelected) =>
+                              setFormData((prev) => ({ ...prev, evaluationsOpened: isSelected }))
+                            }
+                            color="success"
+                          />
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium">Active Event</span>
+                          <Switch
+                            isSelected={formData.active}
+                            onValueChange={(isSelected) =>
+                              setFormData((prev) => ({ ...prev, active: isSelected }))
+                            }
+                            color="success"
+                          />
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium">Publicly Joinable</span>
+                          <Switch
+                            isSelected={formData.isPubliclyJoinable}
+                            onValueChange={(isSelected) =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                isPubliclyJoinable: isSelected,
+                              }))
+                            }
+                            color="success"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {step === 2 && (
+                    <div className="space-y-6 w-full fade-in">
+                      <p className="border-b border-default-200 pb-2 font-semibold">
+                        Inscription Details
+                      </p>
+
+                      <Textarea
+                        label="Inscription Requirements"
+                        name="inscriptionRequirements"
+                        value={formData.inscriptionRequirements}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            inscriptionRequirements: e.target.value,
+                          }))
+                        }
+                      />
+
+                      <div className="flex flex-col sm:flex-row gap-4">
+                        <DatePicker
+                          label="Inscription Deadline"
+                          name="inscriptionDeadline"
+                          isRequired
+                          value={
+                            formData.inscriptionDeadline
+                              ? parseDate(formData.inscriptionDeadline)
+                              : undefined
+                          }
+                          onChange={(date) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              inscriptionDeadline: date ? date.toString() : "",
+                            }))
+                          }
+                          className="flex-1"
+                        />
+                        <Input
+                          label="Cost"
+                          name="cost"
+                          type="number"
+                          value={formData.cost}
+                          onChange={(e) =>
+                            setFormData((prev) => ({ ...prev, cost: e.target.value }))
+                          }
+                          className="flex-1"
+                        />
+                        <Input
+                          label="Minimum Team Size"
+                          name="minimumTeamSize"
+                          type="number"
+                          value={formData.minimumTeamSize}
+                          onChange={(e) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              minimumTeamSize: e.target.value,
+                            }))
+                          }
+                          className="flex-1"
+                        />
+                      </div>
+
+                      <div className="pt-4 border-t border-default-200">
+                        <div className="flex justify-between items-center mb-4">
+                          <p className="text-sm font-semibold">Specific Inscription Details</p>
+                          <Button
+                            isIconOnly
+                            size="sm"
+                            variant="faded"
+                            onPress={() =>
+                              setSpecificDetails((prev) => [
+                                ...prev,
+                                { title: "", description: "" },
+                              ])
+                            }
+                          >
+                            <Plus size={16} />
+                          </Button>
+                        </div>
+
+                        <div className="space-y-4">
+                          {specificDetails.map((detail, index) => (
+                            <div
+                              key={index}
+                              className="flex gap-2 items-start bg-default-50 p-3 rounded-md relative"
+                            >
+                              <Input
+                                label="Title"
+                                value={detail.title}
+                                onChange={(e) => {
+                                  setSpecificDetails((prev) => {
+                                    const next = [...prev];
+                                    next[index].title = e.target.value;
+                                    return next;
+                                  });
+                                }}
+                                className="flex-1"
+                              />
+                              <Input
+                                label="Description"
+                                value={detail.description}
+                                onChange={(e) => {
+                                  setSpecificDetails((prev) => {
+                                    const next = [...prev];
+                                    next[index].description = e.target.value;
+                                    return next;
+                                  });
+                                }}
+                                className="flex-1"
+                              />
+                              <Button
+                                isIconOnly
+                                size="sm"
+                                className="mt-2"
+                                color="danger"
+                                variant="light"
+                                onPress={() =>
+                                  setSpecificDetails((prev) =>
+                                    prev.filter((_, itemIndex) => itemIndex !== index)
+                                  )
+                                }
+                              >
+                                <Minus size={16} />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {step === 3 && (
+                    <div className="space-y-6 w-full fade-in">
+                      <p className="border-b border-default-200 pb-2 font-semibold">
+                        Public Information
+                      </p>
+
+                      <Textarea
+                        label="About Our Allies"
+                        name="aboutOurAllies"
+                        value={formData.aboutOurAllies}
+                        onChange={(e) =>
+                          setFormData((prev) => ({ ...prev, aboutOurAllies: e.target.value }))
+                        }
+                      />
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <div className="flex justify-between items-center mb-2">
+                            <p className="text-sm font-semibold">Organizations</p>
+                            <Button
+                              isIconOnly
+                              size="sm"
+                              variant="faded"
+                              onPress={() => setOrganizations((prev) => [...prev, ""]) }
+                            >
+                              <Plus size={16} />
+                            </Button>
+                          </div>
+                          <div className="space-y-2">
+                            {organizations.map((organization, index) => (
+                              <div key={index} className="flex gap-2">
+                                <Input
+                                  value={organization}
+                                  placeholder={`Organization ${index + 1}`}
+                                  onChange={(e) => {
+                                    setOrganizations((prev) => {
+                                      const next = [...prev];
+                                      next[index] = e.target.value;
+                                      return next;
+                                    });
+                                  }}
+                                />
+                                <Button
+                                  isIconOnly
+                                  variant="light"
+                                  color="danger"
+                                  onPress={() =>
+                                    setOrganizations((prev) =>
+                                      prev.filter((_, itemIndex) => itemIndex !== index)
+                                    )
+                                  }
+                                >
+                                  <Minus size={16} />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div>
+                          <div className="flex justify-between items-center mb-2">
+                            <p className="text-sm font-semibold">Collaborators</p>
+                            <Button
+                              isIconOnly
+                              size="sm"
+                              variant="faded"
+                              onPress={() => setCollaborators((prev) => [...prev, ""]) }
+                            >
+                              <Plus size={16} />
+                            </Button>
+                          </div>
+                          <div className="space-y-2">
+                            {collaborators.map((collaborator, index) => (
+                              <div key={index} className="flex gap-2">
+                                <Input
+                                  value={collaborator}
+                                  placeholder={`Collaborator ${index + 1}`}
+                                  onChange={(e) => {
+                                    setCollaborators((prev) => {
+                                      const next = [...prev];
+                                      next[index] = e.target.value;
+                                      return next;
+                                    });
+                                  }}
+                                />
+                                <Button
+                                  isIconOnly
+                                  variant="light"
+                                  color="danger"
+                                  onPress={() =>
+                                    setCollaborators((prev) =>
+                                      prev.filter((_, itemIndex) => itemIndex !== index)
+                                    )
+                                  }
+                                >
+                                  <Minus size={16} />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="pt-4 border-t border-default-200">
+                        <div className="flex justify-between items-center mb-4">
+                          <p className="text-sm font-semibold">Awards</p>
+                          <Button
+                            isIconOnly
+                            size="sm"
+                            variant="faded"
+                            onPress={() =>
+                              setAwards((prev) => {
+                                if (prev.length >= 4) {
+                                  return prev;
+                                }
+                                return [
+                                  ...prev,
+                                  { top: prev.length + 1, description: "" },
+                                ];
+                              })
+                            }
+                          >
+                            <Plus size={16} />
+                          </Button>
+                        </div>
+
+                        <div className="space-y-4">
+                          {awards.map((award, index) => (
+                            <div
+                              key={index}
+                              className="flex flex-col gap-3 bg-default-50 p-4 rounded-md relative border border-default-200"
+                            >
+                              <div className="absolute top-2 right-2">
+                                <Button
+                                  isIconOnly
+                                  size="sm"
+                                  color="danger"
+                                  variant="light"
+                                  onPress={() =>
+                                    setAwards((prev) =>
+                                      prev.filter((_, itemIndex) => itemIndex !== index)
+                                    )
+                                  }
+                                >
+                                  <Minus size={14} />
+                                </Button>
+                              </div>
+
+                              <div className="flex flex-row gap-4 w-full pr-8">
+                                <div className="flex flex-col items-center justify-center bg-default-100 rounded-md px-3 py-2 min-w-[80px]">
+                                  <span className="text-sm text-default-500 font-semibold uppercase tracking-wider">
+                                    Top
+                                  </span>
+                                  <span className="text-4xl font-extrabold text-primary">
+                                    {award.top}
+                                  </span>
+                                </div>
+
+                                <Textarea
+                                  label="Award Description"
+                                  value={award.description}
+                                  onChange={(e) => {
+                                    setAwards((prev) => {
+                                      const next = [...prev];
+                                      next[index].description = e.target.value;
+                                      return next;
+                                    });
+                                  }}
+                                  className="flex-1"
+                                />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </ModalBody>
+
+                <ModalFooter>
+                  {step > 1 && (
+                    <Button
+                      type="button"
+                      variant="flat"
+                      onPress={() => setStep((prev) => Math.max(prev - 1, 1))}
+                    >
+                      Back
+                    </Button>
+                  )}
+
+                  {step < 3 ? (
+                    <Button type="submit">Next</Button>
+                  ) : (
+                    <Button
+                      type="submit"
+                      isLoading={updateEventMutation.isPending}
+                      disabled={updateEventMutation.isPending}
+                    >
+                      Save Changes
+                    </Button>
+                  )}
+                </ModalFooter>
+              </Form>
             );
           }}
         </ModalContent>

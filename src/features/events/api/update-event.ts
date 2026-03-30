@@ -15,12 +15,36 @@ export const updateEventInputSchema = z.object({
   description: z.string().max(3000),
   accessCode: z.string().optional(),
   isPublic: z.boolean().optional(),
-  startDate: z.string().min(10).max(10), 
+  startDate: z.string().min(10).max(10),
   endDate: z.string().min(10).max(10),
   inscriptionDeadline: z.string().min(10).max(10),
   evaluationsStatus: z.enum(["open", "closed"]),
   active: z.boolean().optional(),
   location: z.string().optional(),
+  locationDetail: z.string().optional(),
+  inscriptionRequirements: z.string().optional(),
+  cost: z.coerce.number().optional(),
+  minimumTeamSize: z.coerce.number().optional(),
+  specificInscriptionDetails: z
+    .array(
+      z.object({
+        title: z.string().min(1, "Required"),
+        description: z.string().min(1, "Required"),
+      })
+    )
+    .optional(),
+  aboutOurAllies: z.string().optional(),
+  organizations: z.array(z.string()).optional(),
+  collaborators: z.array(z.string()).optional(),
+  awards: z
+    .array(
+      z.object({
+        top: z.coerce.number(),
+        description: z.string().min(1, "Required"),
+      })
+    )
+    .optional(),
+  evaluationType: z.enum(["0-5", "0-100"]).optional(),
 });
 
 export type UpdateEventInput = z.infer<typeof updateEventInputSchema>;

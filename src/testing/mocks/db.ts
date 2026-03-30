@@ -53,6 +53,7 @@ const models = {
     location: String,
     locationDetail: String,
     eventType: String,
+    evaluationType: String,
     inscriptionRequirements: String,
     cost: Number,
     minimumTeamSize: Number,
