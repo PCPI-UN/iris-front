@@ -5,7 +5,7 @@ import { useNotifications } from "@/components/ui/notifications";
 import { useApproveProject } from "../api/approve-project";
 
 export const ApproveProjectModal = ({ projectId }: { projectId: number }) => {
-  const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
+  const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const { addNotification } = useNotifications();
   const approveMutation = useApproveProject();
 

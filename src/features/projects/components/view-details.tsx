@@ -7,7 +7,6 @@ import { useRejectProject } from "../api/reject-project";
 import { useRequestChangesProject } from "../api/request-changes-project";
 import { Project } from "@/types/api";
 import { AvatarGroup } from "./avatar-icon";
-import { stylesBadge, stylesGradient } from "@/components/ui/status-badge/status-style";
 import { FileText } from "lucide-react";
 import { RejectProjectModal } from "./reject-modal";
 import { RequestProjectModal } from "./request-change-modal";
@@ -144,6 +143,12 @@ export const ViewDetails = ({project} : {project: Project}) => {
                   {project.state === "REQUEST_CHANGES" && (
                     <div className="grid grid-cols-2 gap-2 mb-2">
                       <RejectProjectModal projectId={project.id}/>
+                      <ApproveProjectModal projectId={project.id}/>
+                    </div>
+                  )}
+                  {project.state === "REJECTED" && (
+                    <div className="grid grid-cols-2 gap-2 mb-2">
+                      <RequestProjectModal projectId={project.id}/>
                       <ApproveProjectModal projectId={project.id}/>
                     </div>
                   )}

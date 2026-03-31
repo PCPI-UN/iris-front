@@ -218,11 +218,11 @@ export const ProjectList = () => {
                       </div>
                     )}
 
-                    {(project.state === "APPROVED" || project.state === "UNDER_REVIEW" || project.state === "REQUEST_CHANGES") && (
+                    
                       <div className="flex justify-center items-center">
                         <ViewDetails project={project}/>
                       </div>
-                    )}
+                    
 
                     {project.state === "REJECTED" && (
                       <div className="text-muted-foreground text-sm">

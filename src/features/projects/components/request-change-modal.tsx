@@ -10,9 +10,9 @@ import { useRejectProject } from "../api/reject-project";
 import { useRequestChangesProject } from "../api/request-changes-project";
 
 export const RequestProjectModal = ({ projectId }: { projectId: number }) => {
-  const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
+  const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const { addNotification } = useNotifications();
-  const requestChangeMutatcion = useRequestChangesProject();
+  const requestChangeMutation = useRequestChangesProject();
 
   const [comment, setComment] = useState("");
 
@@ -51,14 +51,13 @@ export const RequestProjectModal = ({ projectId }: { projectId: number }) => {
                       });
                       return;
                     }
-                    requestChangeMutatcion.mutate(
+                    requestChangeMutation.mutate(
                       { projectId, comment },
                       {
                         onSuccess: (res) => {
                           addNotification({
                             type: "success",
                             title: "Cambios requeridos",
-                            message: `Comentario: ${res.comment}`,
                           });
                           setComment("");
                           onCloseModal();

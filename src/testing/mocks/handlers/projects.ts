@@ -67,6 +67,11 @@ const mapProjectToDTO = (project: any): ProjectDTO => {
   };
 };
 
+type UpdateProjectStatusBody = {
+  state: "APPROVED" | "REJECTED" | "REQUEST_CHANGES";
+  comment?: string;
+};
+
 const validatePage = (page: number): number => {
   return Math.max(1, Math.floor(page)) || 1;
 };
@@ -349,6 +354,64 @@ export const projectsHandlers = [
           data: projects,
           meta: pagination,
         });
+      } catch (error: any) {
+        return HttpResponse.json(
+          { message: error?.message || "Server Error" },
+          { status: 500 }
+        );
+      }
+    }
+  ),
+
+  http.patch(
+    `${env.API_URL}/projects/:projectId/status`,
+    async({ cookies, request, params }) => {
+      await networkDelay();
+      try {
+        const { error } = requireAuth(cookies);
+        if (error) {
+          return HttpResponse.json({ message: error }, { status: 401 });
+        }
+
+        const projectId = params.projectId as string;
+        const { state, comment } = await request.json() as UpdateProjectStatusBody;
+
+        const allowedStates = ["PENDING","REJECTED", "APPROVED", "REQUEST_CHANGES"];
+
+        if (!allowedStates.includes(state)) {
+          return HttpResponse.json(
+            {message: "Invalid state"},
+            {status: 400}
+          );
+        }
+
+        if ((state === "REJECTED" || state === "REQUEST_CHANGES") && (!comment || comment.trim() === "")){
+          return HttpResponse.json(
+            {message: "Comment is required for this state."},
+            {status: 400}
+          );
+        }
+
+        const project = db.project.update({
+          where: { id: { equals: projectId } },
+          data: {
+            state,
+            ... (comment !== undefined && { comment }),
+          },
+        });
+
+        if (!project) {
+          return HttpResponse.json(
+            {message: "Project not found"},
+            {status: 404}
+          );
+        }
+        await persistDb("project");
+        return HttpResponse.json({
+          success: true,
+          message: "Project status updated",
+        });
+
       } catch (error: any) {
         return HttpResponse.json(
           { message: error?.message || "Server Error" },
