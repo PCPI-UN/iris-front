@@ -94,6 +94,7 @@ export type Event = Entity<{
   status?: number;
   active: boolean;
   role: role;
+  eventType?: "Competition" | "Exhibition" | string;
   createdAt: number;
   updatedAt: number;
 }>;
