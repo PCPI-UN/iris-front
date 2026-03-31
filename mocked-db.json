@@ -1,4 +1,4 @@
-﻿{
+{
     "team": [
         {
             "id": "team-001",
@@ -197,7 +197,7 @@
         {
             "id": "event-004",
             "name": "Hackathon Innovación 2026",
-            "description": "Evento de innovaciÃ³n tecnolÃ³gica",
+            "description": "Evento de innovación de bla bla",
             "startDate": "2026-04-10",
             "endDate": "2026-04-12",
             "inscriptionDeadline": "2026-04-03",
