@@ -7,31 +7,32 @@ import { useDisclosure } from "@/hooks/use-disclosure";
 import { useNotifications } from "@/components/ui/notifications";
 import { useState } from "react";
 import { useRejectProject } from "../api/reject-project";
+import { useRequestChangesProject } from "../api/request-changes-project";
 
-export const RejectProjectModal = ({ projectId }: { projectId: number }) => {
+export const RequestProjectModal = ({ projectId }: { projectId: number }) => {
   const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
   const { addNotification } = useNotifications();
-  const rejectMutation = useRejectProject();
+  const requestChangeMutatcion = useRequestChangesProject();
 
-  const [reason, setReason] = useState("");
+  const [comment, setComment] = useState("");
 
   return (
     <>
-      <Button size="sm" color="warning" onPress={onOpen} className="bg-transparent border border-[#ffffff30] py-5 text-white hover:bg-red-500/40">
-        Rechazar
+      <Button size="sm" color="warning" onPress={onOpen} className="bg-transparent border border-[#ffffff30] py-5 text-white hover:bg-yellow-500/40">
+        Pedir cambios
       </Button>
 
       <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="md">
         <ModalContent>
           {(onCloseModal) => (
             <>
-              <ModalHeader>Rechazar Proyecto</ModalHeader>
+              <ModalHeader>Solicitar cambios</ModalHeader>
               <ModalBody className="space-y-2">
-                <p>Ingresa el motivo del rechazo:</p>
+                <p>Indica qué debe corregir el equipo:</p>
                 <Textarea
-                  value={reason}
-                  onChange={(e) => setReason(e.target.value)}
-                  placeholder="Escribe el motivo del rechazo aquí..."
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  placeholder="Describe los cambios requeridos..."
                   rows={4}
                 />
               </ModalBody>
@@ -40,40 +41,40 @@ export const RejectProjectModal = ({ projectId }: { projectId: number }) => {
                   Cancelar
                 </Button>
                 <Button
-                  color="danger"
+                  color="warning"
                   onPress={() => {
-                    if (!reason.trim()) {
+                    if (!comment.trim()) {
                       addNotification({
                         type: "error",
                         title: "Error",
-                        message: "Debes ingresar un motivo",
+                        message: "Debes ingresar un comentario",
                       });
                       return;
                     }
-                    rejectMutation.mutate(
-                      { projectId, reason },
+                    requestChangeMutatcion.mutate(
+                      { projectId, comment },
                       {
                         onSuccess: (res) => {
                           addNotification({
                             type: "success",
-                            title: "Proyecto rechazado",
-                            message: `Motivo: ${res.reason}`,
+                            title: "Cambios requeridos",
+                            message: `Comentario: ${res.comment}`,
                           });
-                          setReason("");
+                          setComment("");
                           onCloseModal();
                         },
                         onError: () => {
                           addNotification({
                             type: "error",
                             title: "Error",
-                            message: "No se pudo rechazar el proyecto",
+                            message: "Error al solicitar cambios",
                           });
                         },
                       }
                     );
                   }}
                 >
-                  Rechazar
+                  Requerir cambios
                 </Button>
               </ModalFooter>
             </>

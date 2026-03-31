@@ -12,6 +12,7 @@ type ProjectBody = {
   eventNumber?: string | undefined;
   state?: string;
   documents?: Array<{ type: string; url: string }>;
+  comment: string;
   participants?: Array<{
     firstName: string;
     lastName: string;
@@ -41,6 +42,7 @@ type ProjectDTO = {
   eventNumber?: string;
   createdAt: number;
   documents: Array<{ type: string; url: string }>;
+  comment: string;
   participants: Array<{
     firstName: string;
     lastName: string;
@@ -60,6 +62,7 @@ const mapProjectToDTO = (project: any): ProjectDTO => {
     eventNumber: project.eventNumber || "",
     createdAt: project.createdAt,
     documents: project.documents ?? [],
+    comment: project.comment,
     participants: project.participants ?? [],
   };
 };
@@ -176,6 +179,7 @@ export const projectsHandlers = [
         state: data.state || "UNDER_REVIEW",
         createdAt: Date.now(),
         documents: data.documents ?? [],
+        comment: data.comment,
         participants: data.participants ?? [],
         jurorAssignments: data.jurorAssignments ?? [],
       });
@@ -386,6 +390,7 @@ export const projectsHandlers = [
         if (data.participants) updateData.participants = data.participants;
         if (data.jurorAssignments)
           updateData.jurorAssignments = data.jurorAssignments;
+        if (data.comment !== undefined) updateData.comment = data.comment;
 
         const project = db.project.update({
           where: { id: { equals: projectId } },

@@ -11,7 +11,7 @@ export const ApproveProjectModal = ({ projectId }: { projectId: number }) => {
 
   return (
     <>
-      <Button size="sm" onPress={onOpen}>
+      <Button size="sm" color="warning" onPress={onOpen} className="bg-transparent border border-[#ffffff30] py-5 text-white hover:bg-emerald-500/40">
         Aprobar
       </Button>
 

@@ -10,6 +10,11 @@ import { RejectProjectModal } from "./reject-modal";
 import { Button } from "@/components/ui/button";
 import { AvatarGroup } from "./avatar-icon";
 import { FileText } from "lucide-react";
+import { GlassCard } from "@/features/landing/components/glass-card";
+import { StatusBadge } from "@/components/ui/status-badge/status-badge";
+import { stylesBadge, stylesGradient } from "@/components/ui/status-badge/status-style";
+import { RequestProjectModal } from "./request-change-modal";
+import { ViewDetails } from "./view-details";
 
 export const ProjectList = () => {
   const searchParams = useSearchParams();
@@ -39,11 +44,13 @@ export const ProjectList = () => {
     router.push(`?${params.toString()}`);
   };
 
+  console.log("Estos son los proyectos: ", projects)
+
   return (
     <div className="space-y-4 sm:space-y-6 md:space-y-8">
 
       {/* ======================== FILTROS ======================== */}
-      <div className="flex items-center gap-3">
+      <div className="grid md:grid-cols-4 items-center gap-3">
         <Button
           variant={state === "UNDER_REVIEW" ? "flat" : "bordered"}
           onClick={() => handleStatusFilter("UNDER_REVIEW")}
@@ -63,6 +70,13 @@ export const ProjectList = () => {
           onClick={() => handleStatusFilter("REJECTED")}
         >
           Rejected
+        </Button>
+
+        <Button
+          variant={state === "REQUEST_CHANGES" ? "flat" : "bordered"}
+          onClick={() => handleStatusFilter("REQUEST_CHANGES")}
+        >
+          Changes required
         </Button>
       </div>
 
@@ -91,21 +105,26 @@ export const ProjectList = () => {
       {projects && projects.length > 0 && (
         <div className="grid gap-4 sm:gap-6 md:gap-8 grid-cols-1 lg:grid-cols-2">
           {projects.map((project) => (
-            <Card
+            <GlassCard
               key={project.id}
-              className="glass-card w-full rounded-xl border border-default-200 hover:border-primary transition-colors duration-150"
+              className="group relative overflow-hidden w-full rounded-xl cursor-pointer hover:scale-105 transition-all duration-500"
             >
-              <CardBody className="p-4 sm:p-6">
+              <div className={`absolute inset-0 bg-gradient-to-br ${stylesGradient[project.state]} opacity-0 group-hover:opacity-100 transition-opacity duration-500`}/>
+              <div className="relative z-10 p-4 sm:p-6">
                 <div className="space-y-4">
 
                   {/* ---------- Nombre y descripción ---------- */}
-                  <div>
-                    <h3 className="text-base sm:text-lg font-semibold">{project.name}</h3>
-                    {project.description && (
+                  <div className="flex justify-between">
+                    <div>
+                      <h3 className="text-base sm:text-lg font-semibold">{project.name}</h3>
+                        {project.description && (
                       <p className="mt-1 text-xs sm:text-sm text-muted-foreground leading-relaxed line-clamp-2">
                         {project.description}
                       </p>
                     )}
+                    </div>
+                    
+                    <StatusBadge key={project.id} state={project.state}/>
                   </div>
 
                   {/* ---------- Team members ---------- */}
@@ -115,7 +134,7 @@ export const ProjectList = () => {
                     <div className="hidden sm:block">
                       <AvatarGroup
                         participants={
-                          project.pendingParticipants.length > 0
+                          (project.pendingParticipants?.length ?? 0) > 0
                             ? project.pendingParticipants.map(p => ({
                                 name: `${p.firstName} ${p.lastName}`.trim()
                               }))
@@ -129,7 +148,7 @@ export const ProjectList = () => {
 
                     {/* Mobile: Lista de nombres */}
                     <div className="sm:hidden space-y-2">
-                      {(project.pendingParticipants.length > 0
+                      {((project.pendingParticipants?.length ?? 0) > 0
                         ? project.pendingParticipants
                         : project.participants
                       ).map((participant, idx) => (
@@ -192,20 +211,16 @@ export const ProjectList = () => {
                   {/* ---------- Acciones por estado ---------- */}
                   <div className="pt-2">
                     {project.state === "UNDER_REVIEW" && (
-                      <div className="grid grid-cols-2 gap-2">
-                        <ApproveProjectModal projectId={project.id} />
+                      <div className="grid md:grid-cols-3 gap-2 mb-2">
                         <RejectProjectModal projectId={project.id} />
+                        <RequestProjectModal projectId={project.id}/>
+                        <ApproveProjectModal projectId={project.id} />
                       </div>
                     )}
 
-                    {project.state === "APPROVED" && (
-                      <div>
-                        <Button
-                          className="w-full"
-                          onClick={() => {}}
-                        >
-                          Editar
-                        </Button>
+                    {(project.state === "APPROVED" || project.state === "UNDER_REVIEW" || project.state === "REQUEST_CHANGES") && (
+                      <div className="flex justify-center items-center">
+                        <ViewDetails project={project}/>
                       </div>
                     )}
 
@@ -217,8 +232,8 @@ export const ProjectList = () => {
                   </div>
 
                 </div>
-              </CardBody>
-            </Card>
+              </div>
+            </GlassCard>
           ))}
         </div>
       )}
