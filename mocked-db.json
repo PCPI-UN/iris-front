@@ -84,7 +84,20 @@
       "isPublic": true,
       "evaluationsStatus": "open",
       "createdAt": 1700200000000
+    },
+        {
+      "id": "event-004",
+      "title": "Hackathon Innovación 2025",
+      "description": "Evento de innovación tecnológica",
+      "startDate": "2025-01-15",
+      "endDate": "2025-01-17",
+      "inscriptionDeadline": "2025-01-10",
+      "accessCode": "EVT001",
+      "isPublic": true,
+      "evaluationsStatus": "open",
+      "createdAt": 1700000000000
     }
+
   ],
   "eventMembership": [
     {

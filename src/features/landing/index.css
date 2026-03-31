@@ -77,6 +77,11 @@
   background-color: color-mix(in oklch, oklch(0.75 0.15 195), white 10%) !important;
 }
 
+.landing-page .events-nav-button:disabled,
+.landing-page .events-nav-button:disabled:hover {
+  background-color: transparent !important;
+}
+
 .landing-page .text-primary {
   color: oklch(0.75 0.15 195) !important;
 }

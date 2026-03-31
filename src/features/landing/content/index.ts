@@ -1,6 +1,5 @@
 /**
  * Landing Page Content
- * Archivo centralizado para gestionar todo el contenido de texto de la landing page
  */
 
 export const landingContent = {
@@ -8,24 +7,26 @@ export const landingContent = {
   navbar: {
     brand: 'iris',
     links: {
-      engineering: 'Ingenierías',
-      events: 'Eventos',
+      events: 'Eventos próximos',
       information: 'Información',
-      winners: 'Ganadores',
+      pastEvents: 'Eventos pasados',
+      developers: 'Desarrolladores',
     },
     cta: 'Iniciar sesión',
   },
 
   // Hero Section
   hero: {
-    badge: 'Universidad del Norte • 2025',
+    badge: 'Universidad del Norte • 2026',
     title: 'IRIS',
-    subtitle: 'La plataforma que ilumina la excelencia en proyectos de ingeniería',
-    stats: [
-      { value: '300+', label: 'Proyectos' },
-      { value: '7', label: 'Ingenierías' },
-      { value: '500+', label: 'Estudiantes' },
-    ],
+    subtitle: 'Un espacio para descubrir, conectar y participar en eventos que hacen brillar tus ideas',
+  
+  stats: [
+    { value: 'Explora', label: 'Ver Eventos y Convocatorias' },
+    { value: 'Participa', label: 'Postúlate Ahora' },
+    { value: 'Descubre', label: 'Ver Resultados y Logros' },
+  ],
+  
     scrollIndicator: 'Scroll para descubrir',
   },
 
@@ -34,23 +35,23 @@ export const landingContent = {
     section1: {
       layers: [
         {
-          title: 'En cada proyecto',
-          subtitle: 'hay una historia por contar',
+          title: 'En cada evento',
+          subtitle: 'surgen historias por contar',
         },
         {
           title: 'En cada idea',
           subtitle: 'hay innovación esperando brillar',
         },
         {
-          title: 'Iris ilumina el camino',
-          subtitle: 'para que tu trabajo destaque',
+          title: 'Iris conecta todo',
+          subtitle: 'para que todos los involucrados puedan vivir cada proceso con claridad y emoción',
           highlighted: true,
         },
       ],
     },
-    section3: {
-      words: ['Siete', 'ingenierías.', 'Un', 'solo', 'propósito:', 'Innovar.'],
-      highlightedIndices: [0, 4, 5], // Índices de palabras con colores especiales
+    section2: {
+      words: ['Múltiples', 'eventos.', 'Distintas', 'miradas.', 'Un', 'mismo', 'espacio', 'para', 'innovar.'],
+      highlightedIndices: [0, 3, 8], // Highlighted words indexes.
     },
   },
 
@@ -62,20 +63,20 @@ export const landingContent = {
         title: 'Ver más allá',
         titleLine2: 'de lo',
         titleHighlight: 'evidente',
-        description: 'es atreverse a imaginar, cuestionar y crear. En Uninorte formamos ingenieros que no se conforman con lo que existe.',
+        description: 'es atreverse a imaginar, cuestionar y crear. En Iris conectamos innovación, evaluación y talento en una sola plataforma.',
       },
       {
         badge: '02 • FORMACIÓN',
-        title: 'Formamos profesionales con',
+        title: 'Impulsamos procesos con',
         titleHighlight: 'excelencia',
-        description: 'estudiantes con formación práctica, visión global y excelencia en cada paso del camino.',
+        description: 'facilitando la gestión de eventos, la participación de estudiantes y la evaluación por jurados en cada etapa del proceso.',
       },
       {
         badge: '03 • RECORRIDO',
-        title: 'Ediciones que van dejando',
+        title: 'Eventos que van dejando',
         titleHighlight: ' huella',
-        description: 'cada edición de nuestra feria ha mostrado visión global, liderazgo y excelencia. Conoce cómo hemos impulsado generaciones que transforman la sociedad desde la innovación.',
-        cta: 'Conoce ediciones anteriores',
+        description: 'cada evento reúne ideas, esfuerzo y talento. Explora ediciones anteriores y descubre cómo continúan generando impacto.',
+        cta: 'Ver eventos anteriores',
       },
     ],
   },
@@ -91,10 +92,10 @@ export const landingContent = {
 
   // Events Section
   events: {
-    badge: 'Eventos Disponibles',
+    badge: 'Eventos',
     title: 'Próximos',
     titleHighlight: 'Eventos',
-    subtitle: 'Regístrate en los eventos y participa en las ferias de proyectos finales',
+    subtitle: 'Regístrate, participa o explora los eventos activos en la plataforma',
     cta: {
       open: 'Inscribirse',
       default: 'Más información',
@@ -112,24 +113,37 @@ export const landingContent = {
     title: 'Equipo de',
     titleHighlight: 'Desarrollo',
     team: [
-      { name: 'Juan Povea', role: 'Backend Leader' },
-      { name: 'Jorge Sánchez', role: 'Frontend Leader' },
-      { name: 'Alejandra Valencia', role: 'Backend Developer' },
-      { name: 'Carlos López', role: ' UI/UX Leader - Frontend Developer' },
-      { name: 'Yovany Zhu Ye', role: 'Full Stack Developer' },
-      { name: 'Jhonatan Romero', role: 'Frontend Developer' },
-      { name: 'Jesús Cantillo', role: 'Backend Developer' },
-      { name: 'Juan Carrasquilla', role: 'Backend Developer' },
-      { name: 'Samuel Robles', role: 'Backend Developer' },
-      { name: 'Gabriel Palencia', role: 'Backend Developer' },
-      { name: 'Daniel Romero', role: 'Software Architect' },
+      // v1.0
+      { name: 'Juan Povea', role: 'Backend Leader', version: 'v1.0' },
+      { name: 'Jorge Sánchez', role: 'Frontend Leader', version: 'v1.0' },
+      { name: 'Alejandra Valencia', role: 'Backend Developer', version: 'v1.0' },
+      { name: 'Carlos López', role: ' UI/UX Leader - Frontend Developer', version: 'v1.0' },
+      { name: 'Yovany Zhu Ye', role: 'Full Stack Developer', version: 'v1.0' },
+      { name: 'Jhonatan Romero', role: 'Frontend Developer', version: 'v1.0' },
+      { name: 'Jesús Cantillo', role: 'Backend Developer', version: 'v1.0' },
+      { name: 'Juan Carrasquilla', role: 'Backend Developer', version: 'v1.0' },
+      { name: 'Samuel Robles', role: 'Backend Developer', version: 'v1.0' },
+      { name: 'Gabriel Palencia', role: 'Backend Developer', version: 'v1.0' },
+      { name: 'Daniel Romero', role: 'Software Architect', version: 'v1.0' },
+      // v2.0
+      { name: 'Kevin Torregrosa', role: 'Backend Leader', version: 'v2.0' },
+      { name: 'Paula Núñez', role: 'Frontend Leader', version: 'v2.0' },
+      { name: 'Andrés Monserrat', role: 'Frontend Developer', version: 'v2.0' },
+      { name: 'Isabella Arrieta', role: 'Full Stack Developer', version: 'v2.0' },
+      { name: 'Judith Pérez', role: 'Full Stack Developer', version: 'v2.0' },
+      { name: 'Esteban Arnedo', role: 'Full Stack Developer', version: 'v2.0' },
+      { name: 'Carlos Arango', role: 'Full Stack Developer', version: 'v2.0' },
+      { name: 'Wilmer Santiago', role: 'Full Stack Developer', version: 'v2.0' },
+      { name: 'Camilo de la Rosa', role: 'DevOps Engineer', version: 'v2.0' },
+      { name: 'Natalia Carpintero', role: 'Scrum Master', version: 'v2.0' },
+      { name: 'Daniel Romero', role: 'Software Architect', version: 'v2.0' },
     ],
   },
 
   // Footer
   footer: {
     brand: 'iris',
-    description: 'Plataforma de evaluación de proyectos finales de ingeniería. Universidad del Norte, Barranquilla.',
+    description: 'Plataforma para la Gestión y Exploración de Eventos de la Universidad del Norte.',
     navigation: {
       title: 'Navegación',
       links: [
@@ -145,7 +159,7 @@ export const landingContent = {
     //     { label: 'Documentación', href: '#' },
     //   ],
     // },
-    copyright: '© 2025 Iris. Proyecto Final de Ingeniería - Universidad del Norte.',
+    copyright: '© 2026 Iris. Proyecto Final de Ingeniería - Universidad del Norte.',
     // legal: [
     //   { label: 'Privacidad', href: '#' },
     //   { label: 'Términos', href: '#' },
@@ -153,5 +167,4 @@ export const landingContent = {
   },
 };
 
-// Tipo TypeScript para el contenido (opcional pero recomendado)
 export type LandingContent = typeof landingContent;
