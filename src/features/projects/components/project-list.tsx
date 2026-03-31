@@ -184,7 +184,7 @@ export const ProjectList = () => {
 
                           return (
                             <div
-                              key={doc.id}
+                              key={doc.url}
                               className="w-full flex items-center justify-between p-3 rounded-lg border border-muted/20 bg-muted/5 hover:bg-muted/10 transition-colors cursor-pointer"
                               onClick={() => window.open(doc.url, "_blank")}
                             >
