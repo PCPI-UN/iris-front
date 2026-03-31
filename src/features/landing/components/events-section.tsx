@@ -18,7 +18,7 @@ interface EventsSectionProps {
 
 type ThemeKey = 'cyan' | 'pink' | 'yellow';
 
-// Paleta de colores para los eventos (rotación de 3 colores)
+// Color palette for events (3-color rotation)
 const EVENT_COLORS = [
   {
     color: "oklch(0.75 0.15 195)", // cyan
@@ -34,9 +34,9 @@ const EVENT_COLORS = [
   },
 ];
 
-// Función para obtener color basado en el ID del evento
-const getEventColor = (eventId: number, index: number) => {
-  // Usar el índice como fallback si no hay ID
+// Function to get color based on event ID
+const getEventColor = (_eventId: string | number, index: number) => {
+  // Use the index as fallback if there's no ID
   const colorIndex = index % EVENT_COLORS.length;
   return EVENT_COLORS[colorIndex];
 };
@@ -99,7 +99,7 @@ const parseLocalDate = (value: string) => {
   return new Date(year, month - 1, day);
 };
 
-// Función para formatear fechas
+// Function to format dates
 const formatDateRange = (startDate: string, endDate: string) => {
   const start = parseLocalDate(startDate);
   const end = parseLocalDate(endDate);
@@ -112,7 +112,7 @@ const formatDateRange = (startDate: string, endDate: string) => {
   return `${endDay} de ${month} ${year}`;
 };
 
-// Función para mapear status del backend a texto en español
+// Function to map backend status to Spanish text
 const getStatusText = (statusName: string) => {
   return statusName
     ? landingContent.events.status.upcoming
@@ -129,7 +129,7 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
   } = useUser();
   const isUserStatusResolving = isUserLoading || isUserFetching;
 
-  const handleJoin = async (eventId: number) => {
+  const handleJoin = async (eventId: string | number) => {
     if (isUserStatusResolving) {
       return;
     }

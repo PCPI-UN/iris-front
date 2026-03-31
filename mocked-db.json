@@ -68,167 +68,168 @@
   "event": [
     {
       "id": "event-bloc-2026",
-      "title": "BLOC 2026 - GRIP SHIPPING BUSINESS LOGISTICS OPTIMIZATION CHALLENGE",
+      "name": "BLOC 2026 - GRIP SHIPPING BUSINESS LOGISTICS OPTIMIZATION CHALLENGE",
       "description": "Un desafío estilo hackatón de 48 horas continuas enfocado en la optimización de decisiones logísticas empresariales, mediante pronóstico de demanda, diseño de políticas de inventario y evaluación de impacto económico. Los equipos desarrollarán una solución técnica robusta y una propuesta ejecutiva aplicable a un caso real de distribución en Estados Unidos propuesto por GRIP Shipping.",
       "startDate": "2026-04-24T16:00:00",
       "endDate": "2026-04-26T16:00:00",
       "inscriptionDeadline": "2026-03-30",
       "accessCode": "BLOC2026",
-      "isPublic": true,
-      "evaluationsStatus": "open",
-      "createdAt": 1740000000000,
-      "location": {
-        "venue": "Salas de usuarios – Piso 5, Bloque K (Edificio de Ingenierías)",
-        "institution": "Universidad del Norte",
-        "city": "Km. 5 vía Puerto Colombia"
-      },
-      "organization": "Universidad del Norte",
-      "company": "GRIP Shipping",
-      "eventType": "hackathon",
-      "cost": "free",
-      "spotsAvailable": true,
-      "sponsors": [
+      "isPubliclyJoinable": true,
+      "evaluationsOpened": true,
+      "statusName": "OPEN",
+      "location": "Salas de usuarios - Piso 5, Bloque K (Edificio de Ingenierías)",
+      "locationDetails": "Universidad del Norte · Km. 5 vía Puerto Colombia",
+      "eventType": "Competition",
+      "evaluationType": "ZERO_TO_FIVE",
+      "inscriptionRequirements": "Grupos de 3 a 5 estudiantes Uninorte con mínimo 2 programas diferentes. Permanencia mínima de 36 horas y registro obligatorio de entradas y salidas. El incumplimiento implica descalificación.",
+      "inscriptionCost": 0,
+      "minimumTeamSize": 3,
+      "specificInscriptionDetails": [
         {
-          "name": "GRIP Shipping",
-          "logoSrc": "/Grip-Logo-final-blanco.gif",
-          "url": "https://gripshipping.com"
+          "title": "Tamaño del equipo",
+          "description": "3 a 5 estudiantes"
         },
         {
-          "name": "Uninorte 60",
-          "logoSrc": "/Logo60-Uninorte.png",
-          "url": "https://www.uninorte.edu.co"
+          "title": "Disciplinas requeridas",
+          "description": "Ingenierías, Ciencia de Datos"
         }
       ],
-      "prizeConfig": {
-        "currency": "COP",
-        "items": [
-          {
-            "position": 1,
-            "amount": 2000000
-          },
-          {
-            "position": 2,
-            "amount": 1000000
-          }
-        ]
-      },
-      "requirements": {
-        "teamSize": "3 a 5 estudiantes",
-        "minDisciplines": 2,
-        "disciplines": ["Ingenierías", "Ciencia de Datos"],
-        "minAttendance": 36,
-        "description": "Grupos de 3 a 5 estudiantes Uninorte con mínimo 2 programas diferentes. Permanencia mínima de 36 horas y registro obligatorio de entradas y salidas. El incumplimiento implica descalificación."
-      },
-      "awardsInfo": "Premiación: Primer puesto $2.000.000 COP, Segundo puesto $1.000.000 COP. Inscripción sin costo y cupos limitados.",
-      "sponsorInfo": "GRIP Shipping es una empresa enfocada en soluciones logísticas internacionales, especializada en la optimización de procesos de distribución, gestión de inventarios y toma de decisiones basada en datos. A través de tecnología y análisis avanzado, la compañía busca mejorar la eficiencia operativa de las empresas, conectando oferta y demanda de manera inteligente. En el marco de BLOC 2026, GRIP Shipping presenta un caso real de distribución en Estados Unidos, retando a los participantes a desarrollar soluciones innovadoras con impacto empresarial."
+      "aboutOurAllies": "GRIP Shipping es una empresa enfocada en soluciones logísticas internacionales, especializada en la optimización de procesos de distribución, gestión de inventarios y toma de decisiones basada en datos. A través de tecnología y análisis avanzado, la compañía busca mejorar la eficiencia operativa de las empresas, conectando oferta y demanda de manera inteligente. En el marco de BLOC 2026, GRIP Shipping presenta un caso real de distribución en Estados Unidos, retando a los participantes a desarrollar soluciones innovadoras con impacto empresarial.",
+      "organizers": [
+        "Universidad del Norte"
+      ],
+      "collaborators": [
+        "GRIP Shipping"
+      ],
+      "awards": [
+        {
+          "top": 1,
+          "position": 1,
+          "categoryId": 1,
+          "category": "General",
+          "title": "Top 1",
+          "description": "Premio monetario de $2.000.000 COP"
+        },
+        {
+          "top": 2,
+          "position": 2,
+          "categoryId": 1,
+          "category": "General",
+          "title": "Top 2",
+          "description": "Premio monetario de $1.000.000 COP"
+        }
+      ],
+      "active": true,
+      "role": "USER",
+      "createdAt": 1740000000000,
+      "updatedAt": 1740000000000
     },
     {
       "id": "event-001",
-      "title": "Hackathon Innovación 2025",
+      "name": "Hackathon Innovación 2025",
       "description": "En este evento de 48 horas, los participantes formarán equipos interdisciplinarios para desarrollar soluciones tecnológicas innovadoras a retos propuestos por empresas líderes. El evento incluye mentorías, talleres y una fase de evaluación por jurados expertos, con premios para los mejores proyectos.",
       "startDate": "2025-01-15",
       "endDate": "2025-01-17",
       "inscriptionDeadline": "2025-01-10",
       "accessCode": "EVT001",
-      "isPublic": true,
-      "evaluationsStatus": "open",
-      "createdAt": 1700000000000,
-      "location": {
-        "venue": "Coliseo Uninorte",
-        "institution": "Universidad del Norte",
-        "city": "Km. 5 vía Puerto Colombia"
-      },
-      "organization": "Universidad del Norte",
-      "company": "Tecnoglass",
-      "eventType": "hackathon",
-      "cost": "free",
-      "spotsAvailable": true,
-      "sponsors": [
+      "isPubliclyJoinable": true,
+      "evaluationsOpened": true,
+      "statusName": "OPEN",
+      "location": "Coliseo Uninorte",
+      "locationDetails": "Universidad del Norte · Km. 5 vía Puerto Colombia",
+      "eventType": "Competition",
+      "evaluationType": "ZERO_TO_FIVE",
+      "inscriptionRequirements": "Equipos interdisciplinarios de 3 a 4 estudiantes con al menos 2 áreas de formación distintas. Se exige participación continua y entrega de prototipo funcional al cierre del evento.",
+      "inscriptionCost": 0,
+      "minimumTeamSize": 3,
+      "specificInscriptionDetails": [
         {
-          "name": "Tecnoglass",
-          "logoSrc": "",
-          "url": "https://www.tecnoglass.com/es/"
+          "title": "Tamaño del equipo",
+          "description": "3 a 4 estudiantes"
         },
         {
-          "name": "Uninorte 60",
-          "logoSrc": "/Logo60-Uninorte.png",
-          "url": "https://www.uninorte.edu.co"
+          "title": "Disciplinas requeridas",
+          "description": "Ingeniería de Sistemas, Diseño, Negocios"
         }
       ],
-      "prizeConfig": {
-        "currency": "COP",
-        "items": [
-          {
-            "position": 1,
-            "amount": 1500000
-          },
-          {
-            "position": 2,
-            "amount": 800000
-          }
-        ]
-      },
-      "requirements": {
-        "teamSize": "3 a 4 estudiantes",
-        "minDisciplines": 2,
-        "disciplines": ["Ingeniería de Sistemas", "Diseño", "Negocios"],
-        "minAttendance": 24,
-        "description": "Equipos interdisciplinarios de 3 a 4 estudiantes con al menos 2 áreas de formación distintas. Se exige participación continua y entrega de prototipo funcional al cierre del evento."
-      },
-      "awardsInfo": "Premiación: Primer puesto $1.500.000 COP, Segundo puesto $800.000 COP. Incluye mentorías para los equipos finalistas.",
-      "sponsorInfo": "Tecnoglass es una empresa colombiana líder en la fabricación de vidrio arquitectónico y productos de aluminio, con sede en Barranquilla. Exporta cerca del 95% de su producción a Estados Unidos y cotiza en la Bolsa de Nueva York bajo el símbolo TGLS."
+      "aboutOurAllies": "Tecnoglass es una empresa colombiana líder en la fabricación de vidrio arquitectónico y productos de aluminio, con sede en Barranquilla. Exporta cerca del 95% de su producción a Estados Unidos y cotiza en la Bolsa de Nueva York bajo el símbolo TGLS.",
+      "organizers": [
+        "Universidad del Norte"
+      ],
+      "collaborators": [
+        "Tecnoglass"
+      ],
+      "awards": [
+        {
+          "top": 1,
+          "position": 1,
+          "categoryId": 1,
+          "category": "General",
+          "title": "Top 1",
+          "description": "Premio monetario de $1.500.000 COP"
+        },
+        {
+          "top": 2,
+          "position": 2,
+          "categoryId": 1,
+          "category": "General",
+          "title": "Top 2",
+          "description": "Premio monetario de $800.000 COP"
+        }
+      ],
+      "active": true,
+      "role": "USER",
+      "createdAt": 1700000000000,
+      "updatedAt": 1700000000000
     },
     {
       "id": "event-002",
-      "title": "Feria de Ciencias 2025",
+      "name": "Feria de Ciencias 2025",
       "description": "En esta feria, los participantes exhibirán sus investigaciones y experimentos en diversas áreas científicas, compitiendo por reconocimientos y oportunidades de investigación. El evento incluye charlas magistrales, talleres de divulgación científica y una evaluación por parte de un jurado experto.",
       "startDate": "2025-02-20",
       "endDate": "2025-02-22",
       "inscriptionDeadline": "2025-02-15",
       "accessCode": "EVT002",
-      "isPublic": true,
-      "evaluationsStatus": "open",
+      "isPubliclyJoinable": true,
+      "evaluationsOpened": true,
+      "statusName": "OPEN",
+      "location": "Coliseo Uninorte",
+      "locationDetails": "Universidad del Norte · Barranquilla",
+      "eventType": "Exposition",
+      "evaluationType": "ZERO_TO_FIVE",
+      "inscriptionRequirements": "Cada equipo debe presentar póster científico, demostración experimental y reporte de resultados. La participación mínima requerida es de 12 horas en actividades oficiales de la feria.",
+      "inscriptionCost": 0,
+      "minimumTeamSize": 2,
+      "specificInscriptionDetails": [
+        {
+          "title": "Tamaño del equipo",
+          "description": "2 a 4 estudiantes"
+        },
+        {
+          "title": "Disciplinas requeridas",
+          "description": "Biología, Química, Física, Matemáticas"
+        }
+      ],
+      "aboutOurAllies": "",
+      "organizers": [
+        "Facultad de Ciencias Básicas"
+      ],
+      "collaborators": [],
+      "awards": [
+        {
+          "top": 1,
+          "position": 1,
+          "categoryId": 1,
+          "category": "General",
+          "title": "Mención de honor - Top 1",
+          "description": "Certificación y acceso prioritario a semillero de investigación"
+        }
+        
+      ],
+      "active": true,
+      "role": "USER",
       "createdAt": 1700100000000,
-      "location": {
-        "venue": "Coliseo Uninorte",
-        "institution": "Universidad del Norte",
-        "city": "Barranquilla"
-      },
-      "organization": "Facultad de Ciencias Básicas",
-      "eventType": "science-fair",
-      "cost": "free",
-      "spotsAvailable": true,
-      "sponsors": [{
-          "name": "Uninorte 60",
-          "logoSrc": "/Logo60-Uninorte.png",
-          "url": "https://www.uninorte.edu.co"
-        }],
-      "prizeConfig": {
-        "currency": "COP",
-        "items": [
-          {
-            "position": 1,
-            "amount": 0
-          },
-          {
-            "position": 2,
-            "amount": 0
-          },
-          {
-            "position": 3,
-            "amount": 0
-          }
-        ]
-      },
-      "requirements": {
-        "teamSize": "2 a 4 estudiantes",
-        "minDisciplines": 1,
-        "disciplines": ["Biología", "Química", "Física", "Matemáticas"],
-        "minAttendance": 12,
-        "description": "Cada equipo debe presentar póster científico, demostración experimental y reporte de resultados. La participación mínima requerida es de 12 horas en actividades oficiales de la feria."
-      },
-      "awardsInfo": "Certificación de participación para todos los equipos, mención de honor para los tres mejores proyectos y acceso prioritario a semillero de investigación para finalistas.",
-      "sponsorInfo": ""
+      "updatedAt": 1700100000000
     }
   ],
   "eventMembership": [

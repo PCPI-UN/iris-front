@@ -8,28 +8,30 @@ import {
 } from "../utils";
 
 type EventBody = {
-  title: string;
+  name: string;
   description: string;
   startDate: string;
   endDate: string;
   inscriptionDeadline?: string;
-  evaluationsStatus?: "open" | "closed";
-  isPublic?: boolean;
+  statusName?: "OPEN" | "CLOSED";
+  isPubliclyJoinable?: boolean;
 };
 
 const PAGE_SIZE = 10;
 
 type EventDTO = {
   id: string;
-  title: string;
+  name: string;
   description: string;
   startDate: string;
   endDate: string;
   inscriptionDeadline: string;
   accessCode: string;
-  isPublic: boolean;
-  evaluationsStatus: "open" | "closed";
-  createdAt: string;
+  isPubliclyJoinable: boolean;
+  evaluationsOpened: boolean;
+  statusName: string;
+  createdAt: number;
+  updatedAt: number;
   userEventRole?: "Participant" | "JURY";
 };
 
@@ -44,50 +46,55 @@ type PublicEventDTO = {
   statusName: string;
   isPubliclyJoinable: boolean;
   evaluationsOpened: boolean;
+  role: string;
   active: boolean;
-  organization?: string;
-  company?: string;
-  location?: {
-    name: string;
-    institution: string;
-    address?: string;
-  };
-  eventType?: string;
-  cost?: string;
-  sponsors?: Array<{
-    name: string;
-    logoSrc: string;
-    url?: string;
-  }>;
-  prizes?: Array<{
-    position: number;
+  location?: string;
+  locationDetails?: string;
+  eventType?: "Exposition" | "Competition";
+  inscriptionCost?: number;
+  inscriptionRequirements?: string;
+  aboutOurAllies?: string;
+  evaluationType?: "ZERO_TO_FIVE" | "ZERO_TO_HUNDRED";
+  minimumTeamSize?: number;
+  specificInscriptionDetails?: Array<{
     title: string;
-    amount: number;
-    currency: string;
-  }>;
-  requirements?: {
-    teamSize: string;
-    minDisciplines?: number;
-    disciplines?: string[];
-    minAttendance?: number;
     description: string;
-  };
-  awardsInfo?: string;
-  sponsorInfo?: string;
+  }>;
+  categories?: Array<{
+    id: number;
+    name: string;
+    active?: boolean;
+  }>;
+  organizers?: string[];
+  collaborators?: string[];
+  awards?: Array<{
+    title: string;
+    description?: string;
+    value?: number;
+    position: number;
+    categoryId?: number;
+  }>;
+  status?: number;
+  createdAt: number;
+  updatedAt: number;
 };
 
 const mapEventToDTO = (event: any, membership?: any): EventDTO => {
+  const statusName = String(event.statusName ?? (event.evaluationsStatus === "open" ? "OPEN" : "CLOSED"));
+
   return {
     id: event.id,
-    title: event.title,
+    name: event.name ?? event.title,
     description: event.description,
     startDate: event.startDate,
     endDate: event.endDate,
     inscriptionDeadline: event.inscriptionDeadline,
     accessCode: event.accessCode,
-    isPublic: event.isPublic,
-    evaluationsStatus: event.evaluationsStatus,
+    isPubliclyJoinable: Boolean(event.isPubliclyJoinable ?? event.isPublic),
+    evaluationsOpened: Boolean(event.evaluationsOpened ?? statusName === "OPEN"),
+    statusName,
     createdAt: event.createdAt,
+    updatedAt: event.updatedAt ?? event.createdAt,
     ...(membership && { userEventRole: membership.eventRole }),
   };
 };
@@ -97,53 +104,99 @@ const mapEventToPublicDTO = (event: any): PublicEventDTO => {
   const inscriptionDeadline = new Date(event.inscriptionDeadline);
   const isOpen = inscriptionDeadline >= now;
 
-  const location = event.location
-    ? {
-        name: event.location.name ?? event.location.venue ?? "",
-        institution: event.location.institution ?? "",
-        address: event.location.address ?? event.location.city,
-      }
-    : undefined;
+  const statusName = String(event.statusName ?? (isOpen ? "OPEN" : "CLOSED"));
+  const location =
+    typeof event.location === "string"
+      ? event.location
+      : event.location?.name ?? event.location?.venue;
+  const locationDetails = (
+    event.locationDetails ??
+    event.locationDetail ??
+    (
+      [event.location?.institution, event.location?.address ?? event.location?.city]
+        .filter(Boolean)
+        .join(" · ")
+    )
+  ) ||
+    undefined;
 
-  const standardizedPrizes = Array.isArray(event.prizeConfig?.items)
-    ? event.prizeConfig.items
-        .map((item: any) => ({
-          position: Number(item?.position ?? 0),
-          title:
-            item?.title ??
-            (Number(item?.position) === 1
-              ? "Primer puesto"
-              : Number(item?.position) === 2
-                ? "Segundo puesto"
-                : `Puesto ${item?.position}`),
-          amount: Number(item?.amount ?? 0),
-          currency: String(event.prizeConfig?.currency ?? "COP"),
-        }))
-        .filter((item: any) => item.position > 0 && item.amount > 0)
+  const standardizedAwards = Array.isArray(event.prizeConfig?.items)
+    ? event.prizeConfig.items.map((item: any) => ({
+        title:
+          item?.title ??
+          (Number(item?.position) === 1
+            ? "Top 1"
+            : Number(item?.position) === 2
+              ? "Top 2"
+              : `Top ${item?.position}`),
+        description: undefined,
+        value: Number(item?.amount ?? 0),
+        position: Number(item?.position ?? 0),
+        categoryId: undefined,
+      }))
     : undefined;
 
   return {
     id: event.id,
-    name: event.title,
+    name: event.name ?? event.title,
     description: event.description,
     startDate: event.startDate,
     endDate: event.endDate,
     inscriptionDeadline: event.inscriptionDeadline,
     accessCode: event.accessCode,
-    statusName: isOpen ? "OPEN" : "CLOSED",
-    isPubliclyJoinable: Boolean(event.isPublic),
-    evaluationsOpened: event.evaluationsStatus === "open",
-    active: true,
-    organization: event.organization,
-    company: event.company,
+    statusName,
+    isPubliclyJoinable: Boolean(event.isPubliclyJoinable ?? event.isPublic),
+    evaluationsOpened: Boolean(event.evaluationsOpened ?? statusName === "OPEN"),
+    role: String(event.role ?? "USER"),
+    active: Boolean(event.active ?? true),
     location,
+    locationDetails,
     eventType: event.eventType,
-    cost: event.cost,
-    sponsors: event.sponsors,
-    prizes: (Array.isArray(event.prizes) && event.prizes.length > 0) ? event.prizes : standardizedPrizes,
-    requirements: event.requirements,
-    awardsInfo: event.awardsInfo,
-    sponsorInfo: event.sponsorInfo,
+    inscriptionCost:
+      event.inscriptionCost != null
+        ? Number(event.inscriptionCost)
+        : event.cost != null
+          ? Number(event.cost)
+          : undefined,
+    inscriptionRequirements:
+      event.inscriptionRequirements ?? event.requirements?.description,
+    aboutOurAllies: event.aboutOurAllies ?? event.sponsorInfo,
+    evaluationType: event.evaluationType,
+    minimumTeamSize:
+      event.minimumTeamSize != null
+        ? Number(event.minimumTeamSize)
+        : event.requirements?.teamSize
+          ? Number(String(event.requirements.teamSize).split(" ")[0])
+          : undefined,
+    specificInscriptionDetails:
+      event.specificInscriptionDetails ??
+      (event.requirements
+        ? [
+            {
+              title: "Tamaño del equipo",
+              description: String(event.requirements.teamSize ?? ""),
+            },
+            {
+              title: "Disciplinas requeridas",
+              description: Array.isArray(event.requirements.disciplines)
+                ? event.requirements.disciplines.join(", ")
+                : "",
+            },
+          ].filter((item) => item.description)
+        : undefined),
+    categories: event.categories,
+    organizers:
+      event.organizers ??
+      (event.organization ? [event.organization] : undefined),
+    collaborators:
+      event.collaborators ??
+      (event.company ? [event.company] : undefined),
+    awards:
+      event.awards ??
+      standardizedAwards,
+    status: event.status,
+    createdAt: Number(event.createdAt ?? Date.now()),
+    updatedAt: Number(event.updatedAt ?? event.createdAt ?? Date.now()),
   };
 };
 
@@ -171,7 +224,7 @@ export const eventsHandlers = [
 
       const publicEvents = db.event.findMany({
         where: {
-          isPublic: {
+          isPubliclyJoinable: {
             equals: true,
           },
         },
@@ -349,7 +402,7 @@ export const eventsHandlers = [
       const events = db.event.findMany({}).map((event) => {
         return {
           id: event.id,
-          title: event.title,
+          title: event.name,
         };
       });
 
@@ -410,14 +463,19 @@ export const eventsHandlers = [
       // requireAdmin(user);
 
       const event = db.event.create({
-        title: data.title,
+        name: data.name,
         description: data.description,
         startDate: data.startDate,
         endDate: data.endDate,
         inscriptionDeadline: data.inscriptionDeadline ?? data.startDate,
         accessCode: `EVT${Date.now().toString().slice(-6)}`,
-        isPublic: data.isPublic ?? true,
-        evaluationsStatus: data.evaluationsStatus ?? "closed",
+        isPubliclyJoinable: data.isPubliclyJoinable ?? true,
+        evaluationsOpened: (data.statusName ?? "CLOSED") === "OPEN",
+        statusName: data.statusName ?? "CLOSED",
+        role: "USER",
+        active: true,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
       });
 
       await persistDb("event");
@@ -449,17 +507,21 @@ export const eventsHandlers = [
             },
           },
           data: {
-            ...(data.title && { title: data.title }),
+            ...(data.name && { name: data.name }),
             ...(data.description && { description: data.description }),
             ...(data.startDate && { startDate: data.startDate }),
             ...(data.endDate && { endDate: data.endDate }),
             ...(data.inscriptionDeadline && {
               inscriptionDeadline: data.inscriptionDeadline,
             }),
-            ...(data.isPublic !== undefined && { isPublic: data.isPublic }),
-            ...(data.evaluationsStatus && {
-              evaluationsStatus: data.evaluationsStatus,
+            ...(data.isPubliclyJoinable !== undefined && {
+              isPubliclyJoinable: data.isPubliclyJoinable,
             }),
+            ...(data.statusName && {
+              statusName: data.statusName,
+              evaluationsOpened: data.statusName === "OPEN",
+            }),
+            updatedAt: Date.now(),
           },
         });
 

@@ -10,7 +10,6 @@ Building2,
 Clock,
 ChevronRight,
 Star,
-DollarSign,
 } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -77,6 +76,7 @@ isFetching: isUserFetching,
 const eventQuery = usePublicEventDetail({ eventId });
 const event = eventQuery.data?.data;
 const isUserStatusResolving = isUserLoading || isUserFetching;
+const shouldBlockPageRender = eventQuery.isLoading;
 
 const eventTheme = useMemo((): ThemeKey => {
 const rawId = event?.id ?? eventId;
@@ -156,7 +156,7 @@ const targetHref = await resolveJoinTarget({
 router.push(targetHref);
 };
 
-if (eventQuery.isLoading || isUserStatusResolving) {
+if (shouldBlockPageRender) {
 return (
     <div className="flex h-screen w-full items-center justify-center">
     <Spinner size="lg" />
@@ -177,37 +177,48 @@ return (
 );
 }
 
-const requirements = event.requirements;
-const requirementDisciplines = Array.isArray(requirements?.disciplines)
-? requirements.disciplines.filter((discipline: string) => hasText(discipline))
+const organizers = Array.isArray(event.organizers)
+? event.organizers.filter((item) => hasText(item))
+: [];
+const collaborators = Array.isArray(event.collaborators)
+? event.collaborators.filter((item) => hasText(item))
+: [];
+const primaryOrganizer = organizers[0];
+const primaryCollaborator = collaborators[0];
+
+const specificInscriptionDetails = Array.isArray(event.specificInscriptionDetails)
+? event.specificInscriptionDetails.filter(
+    (item) => hasText(item?.title) && hasText(item?.description),
+  )
 : [];
 
 const hasRequirementsData = Boolean(
-requirements &&
-    (
-    hasText(requirements.teamSize) ||
-    requirementDisciplines.length > 0 ||
-    (requirements.minAttendance !== undefined && requirements.minAttendance !== null) ||
-    hasText(requirements.description)
-    ),
+event.minimumTeamSize != null ||
+    specificInscriptionDetails.length > 0 ||
+    hasText(event.inscriptionRequirements),
 );
 
 const hasHeroDescription = hasText(event.description);
 const hasProgramData = program.length > 0;
 const shouldShowInscriptionSection = hasRequirementsData || hasProgramData;
-const prizes = Array.isArray(event.prizes) ? event.prizes : [];
-const hasPrizesData = prizes.length > 0;
-const hasAwardsInfo = hasText(event.awardsInfo);
-const shouldShowAwardsSection = hasPrizesData || hasAwardsInfo;
+const awards = Array.isArray(event.awards) ? event.awards : [];
+const hasAwardsData = awards.length > 0;
+const shouldRenderTopOneAsBanner = awards.length === 1 && awards[0]?.position === 1;
+const isFreeEvent =
+event.inscriptionCost === 0;
 const hasGeneralDetailsSection = Boolean(
-hasText(event.organization) ||
-    (hasText(event.company) && event.company !== event.organization) ||
+hasText(primaryOrganizer) ||
+    hasText(primaryCollaborator) ||
     hasText(event.eventType) ||
-    event.cost === 'free' ||
-    hasText(event.location?.name),
+    isFreeEvent ||
+    hasText(event.location),
 );
 const shouldShowSponsorsInfo =
-Boolean(event.sponsors?.length) && hasText(event.sponsorInfo);
+hasText(event.aboutOurAllies);
+const isGripEvent =
+collaborators.some((collaborator) =>
+    collaborator.toLowerCase().includes('grip shipping'),
+) || event.name.toLowerCase().includes('grip shipping');
 
 return (
 <div className="event-detail-page min-h-screen w-full" data-theme={eventTheme}>
@@ -229,14 +240,14 @@ return (
         </h1>
 
         <div className="flex flex-wrap gap-2 mb-8 lg:mb-12">
-        {hasText(event.organization) && (
+        {hasText(primaryOrganizer) && (
             <Chip
             startContent={<Building2 className="h-3.5 w-3.5" />}
             variant="flat"
             size="sm"
             classNames={{ base: 'bg-background/30 border border-border/30', content: 'text-xs font-medium' }}
             >
-            {event.organization}
+            {primaryOrganizer}
             </Chip>
         )}
         {event.startDate && (
@@ -318,7 +329,7 @@ return (
     <Divider className="event-divider" />
     </div>
 
-    {shouldShowAwardsSection && (
+    {hasAwardsData && (
     <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-12 py-10 lg:py-16">
         <div className="flex items-center gap-4 mb-6 lg:mb-10">
         <div className="event-section-icon w-10 h-10 rounded-xl flex items-center justify-center shrink-0">
@@ -330,50 +341,56 @@ return (
         <Divider className="event-divider flex-1" />
         </div>
 
-        {hasPrizesData ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
-            {prizes.map((prize: any) => (
-            <div
-                key={prize.position}
-                className="event-awards-card rounded-2xl p-6 sm:p-8 relative overflow-hidden feature-card transition-transform duration-300 hover:scale-105"
-            >
-                <div className="event-awards-blob pointer-events-none absolute top-0 right-0 h-40 w-40 rounded-full blur-3xl opacity-20" />
-                <div className="relative z-10 space-y-4">
-                <div className="flex items-center justify-between">
-                    <h3 className="text-lg sm:text-xl font-black uppercase tracking-wide">
-                    {prize.position === 1
-                        ? 'Primer puesto'
-                        : prize.position === 2
-                        ? 'Segundo puesto'
-                        : prize.position === 3
-                            ? 'Tercer puesto'
-                            : `${prize.position}° puesto`}
-                    </h3>
-                    <div className="w-10 h-10 rounded-full bg-background/50 flex items-center justify-center">
-                    <span className="text-sm font-bold">#{prize.position}</span>
-                    </div>
-                </div>
-                <Divider className="event-divider" />
-                <div className="flex items-center gap-2">
-                    <DollarSign className="h-5 w-5 text-green-500" />
-                    <p className="text-2xl sm:text-3xl font-black text-green-500">
-                    {prize.amount.toLocaleString('es-CO')}
+        {shouldRenderTopOneAsBanner ? (
+            <div className="event-info-card rounded-2xl p-6 sm:p-8 feature-card">
+            <div className="space-y-2">
+                <div className="space-y-2">
+                <h3 className="text-xl sm:text-2xl font-black uppercase tracking-wide">{awards[0]?.title ?? 'Premio'}</h3>
+                {hasText(awards[0]?.description) && (
+                    <p className="text-xl sm:text-2xl font-black text-green-500 uppercase tracking-wide leading-snug">
+                    {awards[0].description}
                     </p>
-                    <span className="text-xs font-semibold text-muted-foreground ml-2">
-                    {prize.currency}
-                    </span>
-                </div>
+                )}
                 </div>
             </div>
-            ))}
-        </div>
+            </div>
         ) : (
-        <div className="event-awards-card rounded-2xl lg:rounded-3xl p-6 sm:p-8 lg:p-10 relative overflow-hidden feature-card">
-            <div className="event-awards-blob pointer-events-none absolute top-0 right-0 h-40 w-40 rounded-full blur-3xl opacity-20" />
-            <p className="relative z-10 text-base sm:text-lg lg:text-xl text-foreground/85 leading-relaxed max-w-4xl">
-            {event.awardsInfo}
-            </p>
-        </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
+            {awards.map((award) => (
+                <div
+                key={`${award.position}-${award.title}`}
+                className="event-awards-card rounded-2xl p-6 sm:p-8 relative overflow-hidden feature-card transition-transform duration-300 hover:scale-105"
+                >
+                <div className="event-awards-blob pointer-events-none absolute top-0 right-0 h-40 w-40 rounded-full blur-3xl opacity-20" />
+                <div className="relative z-10 space-y-4">
+                    <div className="flex items-center justify-between">
+                    <h3 className="text-lg sm:text-xl font-black uppercase tracking-wide">
+                        {award.position === 1
+                        ? 'Primer puesto'
+                        : award.position === 2
+                        ? 'Segundo puesto'
+                        : award.position === 3
+                            ? 'Tercer puesto'
+                            : award.position === 4
+                                ? 'Cuarto puesto'
+                            : `${award.position}° puesto`}
+                    </h3>
+                    <div className="w-10 h-10 rounded-full bg-background/50 flex items-center justify-center">
+                        <span className="text-sm font-bold">#{award.position}</span>
+                    </div>
+                    </div>
+                    <Divider className="event-divider" />
+                    <div className="space-y-1">
+                    {hasText(award.description) && (
+                        <p className="text-xl sm:text-2xl font-black text-green-500 uppercase tracking-wide leading-snug">
+                        {award.description}
+                        </p>
+                    )}
+                    </div>
+                </div>
+                </div>
+            ))}
+            </div>
         )}
     </section>
     )}
@@ -394,7 +411,7 @@ return (
             hasRequirementsData && hasProgramData ? 'lg:grid-cols-2' : 'lg:grid-cols-1'
             }`}
         >
-            {hasRequirementsData && requirements && (
+            {hasRequirementsData && (
             <div className="event-info-card rounded-2xl p-6 sm:p-8 space-y-5 feature-card">
                 <div className="flex items-center gap-3">
                 <Users className="event-section-title h-5 w-5" />
@@ -403,54 +420,27 @@ return (
                 <Divider className="event-divider" />
 
                 <div className="space-y-5">
-                {hasText(requirements.teamSize) && (
-                    <div>
+                {specificInscriptionDetails.map((detail, index) => (
+                    <div key={`${detail.title}-${index}`}>
                     <p className="text-xs uppercase tracking-widest font-bold text-muted-foreground mb-2">
-                        Tamaño del Equipo
+                        {detail.title}
                     </p>
-                    <p className="text-sm sm:text-base font-semibold text-foreground/85">
-                        {requirements.teamSize}
-                    </p>
-                    </div>
-                )}
-                {requirementDisciplines.length > 0 && (
-                    <div>
-                    <p className="text-xs uppercase tracking-widest font-bold text-muted-foreground mb-2">
-                        Disciplinas Requeridas
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                        {requirementDisciplines.map((discipline: string) => (
-                        <Chip
-                            key={discipline}
-                            variant="flat"
-                            size="sm"
-                            classNames={{ base: 'bg-background/30 border border-border/30', content: 'text-xs font-medium' }}
-                        >
-                            {discipline}
-                        </Chip>
-                        ))}
-                    </div>
-                    </div>
-                )}
-                {requirements.minAttendance !== undefined && requirements.minAttendance !== null && (
-                    <div>
-                    <p className="text-xs uppercase tracking-widest font-bold text-muted-foreground mb-2">
-                        Permanencia Mínima
-                    </p>
-                    <p className="text-sm sm:text-base font-semibold text-foreground/85">
-                        {requirements.minAttendance} horas
+                    <p className="text-xs sm:text-sm font-semibold text-foreground/85">
+                        {detail.description}
                     </p>
                     </div>
-                )}
-                {hasText(requirements.description) && (
+                ))}
+                {hasText(event.inscriptionRequirements) && (
                     <>
-                    <Divider className="event-divider" />
+                    {specificInscriptionDetails.length > 0 && (
+                        <Divider className="event-divider" />
+                    )}
                     <div>
                         <p className="text-xs uppercase tracking-widest font-bold text-muted-foreground mb-2">
                         Descripción Completa
                         </p>
                         <p className="text-sm text-foreground/75 leading-relaxed">
-                        {requirements.description}
+                        {event.inscriptionRequirements}
                         </p>
                     </div>
                     </>
@@ -507,23 +497,23 @@ return (
         </div>
         <Divider className="event-divider" />
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            {hasText(event.organization) && (
+            {hasText(primaryOrganizer) && (
             <div>
                 <p className="text-xs uppercase tracking-widest font-bold text-muted-foreground mb-1">
                 Organización
                 </p>
                 <p className="text-base font-semibold text-foreground/85">
-                {event.organization}
+                {primaryOrganizer}
                 </p>
             </div>
             )}
-            {hasText(event.company) && event.company !== event.organization && (
+            {hasText(primaryCollaborator) && primaryCollaborator !== primaryOrganizer && (
             <div>
                 <p className="text-xs uppercase tracking-widest font-bold text-muted-foreground mb-1">
                 Empresa Colaboradora
                 </p>
                 <p className="text-base font-semibold text-foreground/85">
-                {event.company}
+                {primaryCollaborator}
                 </p>
             </div>
             )}
@@ -541,7 +531,7 @@ return (
                 </Chip>
             </div>
             )}
-            {event.cost === 'free' && (
+            {isFreeEvent && (
             <div className="pt-2 sm:pt-0">
                 <p className="text-xs uppercase tracking-widest font-bold text-muted-foreground mb-1">
                 Costo
@@ -556,19 +546,17 @@ return (
                 </Chip>
             </div>
             )}
-            {hasText(event.location?.name) && (
+            {hasText(event.location) && (
             <div className="sm:col-span-2">
                 <p className="text-xs uppercase tracking-widest font-bold text-muted-foreground mb-1">
                 Ubicación
                 </p>
                 <p className="text-base sm:text-lg font-semibold text-foreground/90">
-                {event.location?.name}
+                {event.location}
                 </p>
-                <p className="text-sm text-foreground/75">
-                {[event.location?.institution, event.location?.address]
-                    .filter(Boolean)
-                    .join(' · ')}
-                </p>
+                {hasText(event.locationDetails) && (
+                <p className="text-sm text-foreground/75">{event.locationDetails}</p>
+                )}
             </div>
             )}
         </div>
@@ -590,7 +578,7 @@ return (
 
         <div className="event-info-card rounded-2xl p-6 sm:p-8 feature-card">
         <p className="text-sm sm:text-base text-foreground/75 leading-relaxed">
-            {event.sponsorInfo}
+            {event.aboutOurAllies}
         </p>
         </div>
     </section>
@@ -620,40 +608,42 @@ return (
     </div>
     </section>
 
-    {event.sponsors?.length ? (
     <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-12 pb-8 lg:pb-12">
         <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6">
-        {event.sponsors.map((sponsor) => {
-            const logo = (
+        {isGripEvent && (
+        <a
+            href="https://gripshipping.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="transition-opacity hover:opacity-80"
+            aria-label="Ir al sitio de GRIP Shipping"
+        >
             <Image
-                src={sponsor.logoSrc}
-                alt={sponsor.name}
-                width={140}
-                height={44}
-                className="h-9 w-auto object-contain"
+            src="/Grip-Logo-final-blanco.gif"
+            alt="GRIP Shipping"
+            width={140}
+            height={44}
+            className="h-9 w-auto object-contain"
             />
-            );
-
-            if (!sponsor.url) {
-            return <div key={sponsor.name}>{logo}</div>;
-            }
-
-            return (
-            <a
-                key={sponsor.name}
-                href={sponsor.url}
-                target="_blank"
-                rel="noreferrer"
-                className="transition-opacity hover:opacity-80"
-                aria-label={`Ir al sitio de ${sponsor.name}`}
-                >
-                {logo}
-                </a>
-            );
-            })}
+        </a>
+        )}
+        <a
+            href="https://www.uninorte.edu.co"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="transition-opacity hover:opacity-80"
+            aria-label="Ir al sitio de Uninorte 60"
+        >
+            <Image
+            src="/Logo60-Uninorte.png"
+            alt="Uninorte 60"
+            width={140}
+            height={44}
+            className="h-9 w-auto object-contain"
+            />
+        </a>
         </div>
         </section>
-    ) : null}
 
     <Footer />
     </div>

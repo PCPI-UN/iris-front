@@ -12,12 +12,12 @@ export const DashboardInfo = () => {
       ? 'Admin'
       : 'User');
 
-  // Si es ADMIN, mostrar el AdminDashboard
+  // If the user is an ADMIN, display the AdminDashboard
   if (primaryRoleName === 'Admin') {
     return <AdminDashboard />;
   }
 
-  // Para usuarios USER, mostrar la lista de eventos
+  // For regular users, display the list of events
   return (
     <div className="dashboard-page space-y-4 md:space-y-6">
       <div className="space-y-1 md:space-y-2">

@@ -8,6 +8,13 @@ type JoinUser = {
   email?: string | null;
 };
 
+type JoinParticipant = {
+  firstName?: unknown;
+  lastName?: unknown;
+  name?: unknown;
+  email?: unknown;
+};
+
 const normalize = (value?: string | null) =>
   String(value ?? '')
     .trim()
@@ -25,12 +32,7 @@ const toParticipants = (value: unknown): string[] => {
       }
 
       if (participant && typeof participant === 'object') {
-        const participantData = participant as {
-          firstName?: unknown;
-          lastName?: unknown;
-          name?: unknown;
-          email?: unknown;
-        };
+        const participantData = participant as JoinParticipant;
 
         const fullName = `${String(participantData.firstName ?? '')} ${String(participantData.lastName ?? '')}`.trim();
 
@@ -48,7 +50,9 @@ const toParticipants = (value: unknown): string[] => {
 
 const getEventParticipants = async (eventId: string): Promise<string[]> => {
   try {
-    const response = await api.get<unknown>(`/events/public/${eventId}`);
+    const response = await api.get<unknown>(`/events/public/${eventId}`, {
+      suppressErrorNotification: true,
+    });
     const eventData =
       response && typeof response === 'object' && response !== null
         ? (response as { data?: unknown; event?: unknown }).data ??
@@ -62,7 +66,9 @@ const getEventParticipants = async (eventId: string): Promise<string[]> => {
         : undefined,
     );
   } catch {
-    const response = await api.get<unknown>(`/events/${eventId}`);
+    const response = await api.get<unknown>(`/events/${eventId}`, {
+      suppressErrorNotification: true,
+    });
     const eventData =
       response && typeof response === 'object' && response !== null
         ? (response as { data?: unknown; event?: unknown }).data ??

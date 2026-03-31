@@ -9,9 +9,30 @@ import { api } from '@/lib/api-client';
 import { resolveJoinTarget } from '@/features/events/utils/resolve-join-target';
 import "@/features/landing/index.css";
 
+const resolveSafeRedirect = (redirectTo: string | null | undefined, fallback: string) => {
+  if (!redirectTo) {
+    return fallback;
+  }
+
+  let decodedRedirect = redirectTo;
+
+  try {
+    decodedRedirect = decodeURIComponent(redirectTo);
+  } catch {
+    return fallback;
+  }
+
+  // Just a basic check to prevent open redirects. We want to allow relative paths but not absolute URLs.
+  if (!decodedRedirect.startsWith('/') || decodedRedirect.startsWith('//')) {
+    return fallback;
+  }
+
+  return decodedRedirect;
+};
+
 const resolvePostLoginTarget = async (redirectTo?: string | null) => {
   const defaultTarget = paths.app.dashboard.getHref();
-  const decodedRedirect = redirectTo ? decodeURIComponent(redirectTo) : defaultTarget;
+  const decodedRedirect = resolveSafeRedirect(redirectTo, defaultTarget);
 
   const projectMatch = decodedRedirect.match(/^\/public\/projects\/([^/?#]+)/);
 
@@ -82,9 +103,9 @@ const LoginPage = () => {
           <div className="glass-card p-6 sm:p-8 w-full">
             <LoginForm
               onSuccess={async () => {
-                // Usar window.location.href en lugar de router.replace
-                // para forzar una recarga completa y asegurar que las cookies
-                // se envíen correctamente en producción
+                // We use window.location.href instead of router.replace
+                // to force a complete reload and ensure cookies
+                // are sent correctly in production
                 const targetUrl = await resolvePostLoginTarget(redirectTo);
                 window.location.href = targetUrl;
               }}

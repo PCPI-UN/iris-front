@@ -39,7 +39,7 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
   const { mutate: logout, isPending: isLoggingOut } = useLogout({
     onSuccess: () => {
       setIsMobileMenuOpen(false);
-      router.push(paths.home.getHref());
+      window.location.href = paths.home.getHref();
     },
   });
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);

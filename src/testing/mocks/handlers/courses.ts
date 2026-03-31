@@ -46,7 +46,7 @@ export const coursesHandlers = [
                     code: course.code,
                     description: course.description,
                     eventId: course.eventId,
-                    event: event ? { id: event.id, title: event.title } : null,
+                    event: event ? { id: event.id, title: event.name } : null,
                     active: course.active,
                 };
             });
@@ -86,7 +86,7 @@ export const coursesHandlers = [
 
             const result = {
                 ...course,
-                event: event ? { id: event.id, title: event.title } : null,
+                event: event ? { id: event.id, title: event.name } : null,
             };
 
             return HttpResponse.json({ data: result });
@@ -144,7 +144,7 @@ export const coursesHandlers = [
             return HttpResponse.json({
                 data: {
                     ...course,
-                    event: { id: event.id, title: event.title }
+                    event: { id: event.id, title: event.name }
                 },
             });
         } catch (error: any) {
@@ -230,7 +230,7 @@ export const coursesHandlers = [
                 return HttpResponse.json({
                     data: {
                         ...course,
-                        event: event ? { id: event.id, title: event.title } : null
+                        event: event ? { id: event.id, title: event.name } : null
                     },
                 });
             } catch (error: any) {
@@ -314,7 +314,7 @@ export const coursesHandlers = [
                         code: course.code,
                         description: course.description,
                         eventId: course.eventId,
-                        event: { id: event.id, title: event.title },
+                        event: { id: event.id, title: event.name },
                         active: course.active,
                     }));
 
