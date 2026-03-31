@@ -1,0 +1,127 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ProjectState {
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+}
+
+enum TypedDocument {
+  LOGO
+  POSTER
+  SUPPORTING_DOCUMENT
+}
+
+enum Status {
+  ACTIVE
+  INACTIVE
+}
+
+enum PendingParticipantStatus {
+  PENDING // Captured when the project is submitted.
+  INVITED // Invitation created or sent after the project is approved.
+  JOINED // The participant accepted and became a ProjectParticipant.
+}
+
+// Main project entity.
+// Stores project metadata, event linkage, category linkage, and lifecycle state.
+// Specific details:
+// - `eventId` references an event managed by event-service.
+// - `courseId` is a legacy field name and should be interpreted as the project category reference.
+model Project {
+  id              Int          @id @default(autoincrement())
+  eventId         Int          @map("event_id")
+  courseId        Int          @map("course_id")
+  name            String       @db.VarChar(255)
+  description     String?      @db.Text
+  eventNumber     String?      @map("event_number") @db.VarChar(150)
+  state           ProjectState @map("state")
+  rejectionReason String?      @map("rejection_reason") @db.Text
+  createdAt       DateTime     @default(now()) @map("created_at") @db.Timestamp()
+  updatedAt       DateTime     @updatedAt @map("updated_at") @db.Timestamp()
+
+  documents           ProjectDocument[]
+  participants        ProjectParticipant[]
+  jurorsAssigned      ProjectAssignment[]
+  pendingParticipants PendingProjectParticipant[]
+
+  @@unique([eventId, name])
+  @@map("projects")
+}
+
+// Document attached to a project, such as a logo, poster, or supporting file.
+model ProjectDocument {
+  id        Int           @id @default(autoincrement())
+  projectId Int           @map("project_id")
+  type      TypedDocument @map("type")
+  state     Status        @default(ACTIVE) @map("state")
+  url       String        @db.VarChar(255)
+  createdAt DateTime      @default(now()) @map("created_at") @db.Timestamp()
+  updatedAt DateTime      @updatedAt @map("updated_at") @db.Timestamp()
+
+  project Project @relation(fields: [projectId], references: [id])
+
+  @@map("project_documents")
+}
+
+// Junction model between a user and a project.
+// Specific detail:
+// - `userId` references a user managed by auth-service.
+model ProjectParticipant {
+  userId      Int     @map("user_id")
+  projectId   Int     @map("project_id")
+  studentCode String  @map("student_code") @db.VarChar(20)
+
+  project Project @relation(fields: [projectId], references: [id])
+
+  @@id([userId, projectId])
+  @@map("project_participants")
+}
+
+// Assignment of a juror to evaluate a project.
+// Specific detail:
+// - `memberUserId`, `memberEventId`, and `memberRoleId` identify the juror
+//   using the composite key shape from `event-service.StaffEventMember`.
+model ProjectAssignment {
+  projectId Int @map("project_id")
+
+  memberUserId  Int @map("member_user_id")
+  memberEventId Int @map("member_event_id")
+  memberRoleId  Int @map("member_role_id")
+
+  assignedAt DateTime @default(now()) @map("assigned_at") @db.Timestamp()
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamp()
+
+  project Project @relation(fields: [projectId], references: [id])
+
+  @@id([projectId, memberUserId, memberEventId, memberRoleId])
+  @@map("project_assignments")
+}
+
+// Pending participant captured before the invited student formally joins the project.
+// Used to manage invitation and onboarding status for future project members.
+model PendingProjectParticipant {
+  pendingId   Int                      @id @default(autoincrement())
+  projectId   Int                      @map("project_id")
+  firstName   String                   @map("first_name") @db.VarChar(100)
+  lastName    String?                  @map("last_name") @db.VarChar(100)
+  email       String                   @db.VarChar(255)
+  studentCode String                   @map("student_code") @db.VarChar(20)
+  status      PendingParticipantStatus @default(PENDING)
+  invitedAt   DateTime?                @map("invited_at") @db.Timestamp()
+  joinedAt    DateTime?                @map("joined_at") @db.Timestamp()
+  createdAt   DateTime                 @default(now()) @map("created_at") @db.Timestamp()
+  updatedAt   DateTime                 @updatedAt @map("updated_at") @db.Timestamp()
+
+  project Project @relation(fields: [projectId], references: [id])
+
+  @@unique([projectId, email])
+  @@map("pending_project_participants")
+}

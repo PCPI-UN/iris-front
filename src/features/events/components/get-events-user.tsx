@@ -78,7 +78,11 @@ export const GetEventsUser = () => {
         {events.map((event) => {
           const start = formatDateShort(event.startDate);
           const end = formatDateShort(event.endDate);
+<<<<<<< feature/CU-86e0d9d4g/Landing-Page-Add-public-event-detail-page
           const eventRoleName = event.role?.name;
+=======
+          const roleName = event?.role?.name;
+>>>>>>> CU-86e0gpfwj/Event-Redesign-Create-Event-Form-new-Figma-fields
 
           return (
             <Card shadow="sm" key={event.id} className="glass-card">
@@ -89,6 +93,7 @@ export const GetEventsUser = () => {
                       {event.name}
                     </h3>
 
+<<<<<<< feature/CU-86e0d9d4g/Landing-Page-Add-public-event-detail-page
                     {eventRoleName && (
                       <Chip
                         color={getRoleColor(eventRoleName)}
@@ -97,6 +102,16 @@ export const GetEventsUser = () => {
                         startContent={getRoleIcon(eventRoleName)}
                       >
                         {getRoleLabel(eventRoleName)}
+=======
+                    {roleName && (
+                      <Chip
+                        color={getRoleColor(roleName)}
+                        variant="flat"
+                        size="sm"
+                        startContent={getRoleIcon(roleName)}
+                      >
+                        {getRoleLabel(roleName)}
+>>>>>>> CU-86e0gpfwj/Event-Redesign-Create-Event-Form-new-Figma-fields
                       </Chip>
                     )}
                   </div>
@@ -176,7 +191,11 @@ export const GetEventsUser = () => {
                     isDisabled={!event.evaluationsOpened}
                   >
                     {event.evaluationsOpened
+<<<<<<< feature/CU-86e0d9d4g/Landing-Page-Add-public-event-detail-page
                       ? eventRoleName === "Juror"
+=======
+                      ? roleName === "Juror"
+>>>>>>> CU-86e0gpfwj/Event-Redesign-Create-Event-Form-new-Figma-fields
                         ? "View Projects"
                         : "View My Project"
                       : "La feria aún no ha comenzado"}

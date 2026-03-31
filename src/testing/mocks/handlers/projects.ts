@@ -7,7 +7,7 @@ type ProjectBody = {
   eventId: string;
   courseId: string;
   name: string;
-  logo: string;
+  logo?: string;
   description?: string | undefined;
   eventNumber?: string | undefined;
   state?: string;
@@ -24,6 +24,41 @@ type ProjectBody = {
 };
 
 const PAGE_SIZE = 10;
+
+const toInternalPrefixedId = (value: string, prefix: string): string => {
+  if (value.startsWith(`${prefix}-`)) return value;
+  if (/^\d+$/.test(value)) return `${prefix}-${value.padStart(3, "0")}`;
+  return value;
+};
+
+const parseJsonArray = <T>(value: FormDataEntryValue | null, fallback: T): T => {
+  if (typeof value !== "string") return fallback;
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return fallback;
+  }
+};
+
+const parseProjectBody = async (request: Request): Promise<ProjectBody> => {
+  const contentType = request.headers.get("content-type") || "";
+
+  if (contentType.includes("multipart/form-data")) {
+    const form = await request.formData();
+    return {
+      name: String(form.get("name") || ""),
+      description: String(form.get("description") || ""),
+      eventId: String(form.get("eventId") || ""),
+      courseId: String(form.get("courseId") || ""),
+      logo: String(form.get("logo") || ""),
+      state: String(form.get("state") || "UNDER_REVIEW"),
+      participants: parseJsonArray(form.get("participants"), []),
+      documents: parseJsonArray(form.get("documents"), []),
+    };
+  }
+
+  return (await request.json()) as ProjectBody;
+};
 
 type ProjectDTO = {
   id: string;
@@ -93,17 +128,99 @@ const isUserJuryOfEvent = (userId: string, eventId: string): boolean => {
 };
 
 export const projectsHandlers = [
+  // Contract used by src/features/projects/api/get-projects.ts
+  http.get(`${env.API_URL}/projects/by-event/:eventId`, async ({ cookies, request, params }) => {
+    await networkDelay();
+
+    try {
+      const { user, error } = requireAuth(cookies);
+      if (error || !user) {
+        return HttpResponse.json({ message: error || "Unauthorized" }, { status: 401 });
+      }
+
+      const rawEventId = String(params.eventId ?? "");
+      if (!rawEventId || rawEventId === "undefined" || rawEventId === "NaN") {
+        return HttpResponse.json({ items: [], page: 1, limit: PAGE_SIZE, total: 0, totalPages: 1 });
+      }
+
+      const eventId = toInternalPrefixedId(rawEventId, "event");
+      const url = new URL(request.url);
+      const page = Number(url.searchParams.get("page") || 1);
+      const state = url.searchParams.get("state");
+      const pageSize = PAGE_SIZE;
+      const validPage = validatePage(page);
+
+      let allProjects = db.project
+        .getAll()
+        .filter((p) => String(p.eventId) === String(eventId));
+
+      if (state) {
+        allProjects = allProjects.filter((p) => String(p.state) === String(state));
+      }
+
+      // USER role: only assigned projects if jury of event
+      if (user.role !== "ADMIN") {
+        const userId = (user as any)?.id ?? (user as any)?.userId;
+        if (!userId || !isUserJuryOfEvent(userId, eventId)) {
+          allProjects = [];
+        } else {
+          allProjects = allProjects.filter((p) => isUserAssignedToProject(p, userId));
+        }
+      }
+
+      const total = allProjects.length;
+      const pagination = calculatePagination(total, validPage, pageSize);
+      const start = pageSize * (pagination.page - 1);
+      const end = start + pageSize;
+      const items = allProjects.slice(start, end).map(mapProjectToDTO);
+
+      return HttpResponse.json({
+        items,
+        page: pagination.page,
+        limit: pageSize,
+        total: pagination.total,
+        totalPages: pagination.totalPages,
+      });
+    } catch (error: any) {
+      return HttpResponse.json(
+        { message: error?.message || "Server Error" },
+        { status: 500 }
+      );
+    }
+  }),
+
   http.post(`${env.API_URL}/projects`, async ({ cookies, request }) => {
     await networkDelay();
 
     try {
-      const data = (await request.json()) as ProjectBody;
+      const data = await parseProjectBody(request);
+
+      if (!data.name?.trim()) {
+        return HttpResponse.json(
+          { message: "name is required" },
+          { status: 400 }
+        );
+      }
+
+      if (!data.eventId?.trim()) {
+        return HttpResponse.json(
+          { message: "eventId is required" },
+          { status: 400 }
+        );
+      }
+
+      if (!data.courseId?.trim()) {
+        return HttpResponse.json(
+          { message: "courseId is required" },
+          { status: 400 }
+        );
+      }
 
       const result = db.project.create({
-        eventId: data.eventId,
-        courseId: data.courseId,
+        eventId: toInternalPrefixedId(String(data.eventId), "event"),
+        courseId: toInternalPrefixedId(String(data.courseId), "course"),
         name: data.name,
-        logo: data.logo,
+        logo: data.logo || "",
         description: data.description || undefined,
         eventNumber: undefined,
         state: data.state || "UNDER_REVIEW",

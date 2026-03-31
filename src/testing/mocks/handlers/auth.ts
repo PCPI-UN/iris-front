@@ -16,8 +16,6 @@ type RegisterBody = {
   lastName: string;
   email: string;
   password: string;
-  teamId?: string;
-  teamName?: string;
 };
 
 type LoginBody = {
@@ -46,43 +44,31 @@ export const authHandlers = [
         );
       }
 
-      let teamId;
-      let role;
-
-      if (!userObject.teamId) {
-        const team = db.team.create({
-          name: userObject.teamName ?? `${userObject.firstName} Team`,
-        });
-        await persistDb('team');
-        teamId = team.id;
-        role = 'ADMIN';
-      } else {
-        const existingTeam = db.team.findFirst({
-          where: {
-            id: {
-              equals: userObject.teamId,
-            },
-          },
-        });
-
-        if (!existingTeam) {
-          return HttpResponse.json(
-            {
-              message: 'The team you are trying to join does not exist!',
-            },
-            { status: 400 },
-          );
-        }
-        teamId = userObject.teamId;
-        role = 'USER';
-      }
+      // Create default team for user
+      const team = db.team.create({
+        name: `${userObject.firstName} Team`,
+      });
+      await persistDb('team');
+      
+      const teamId = team.id;
+      const role = 'ADMIN';
 
       db.user.create({
         ...userObject,
         role,
+        active: true,
+        status: 'ACTIVE',
+        platformRoles: [
+          {
+            id: role === 'ADMIN' ? 1 : 2,
+            name: role === 'ADMIN' ? 'Admin' : 'User',
+            scope: 'platform',
+          },
+        ],
+        platformPermissions: role === 'ADMIN' ? ['*'] : [],
         password: hash(userObject.password),
         teamId,
-      });
+      } as any);
 
       await persistDb('user');
 
@@ -143,6 +129,7 @@ export const authHandlers = [
     await networkDelay();
 
     try {
+<<<<<<< feature/CU-86e0d9d4g/Landing-Page-Add-public-event-detail-page
       const { user, error } = requireAuth(cookies);
 
       if (error || !user) {
@@ -153,6 +140,15 @@ export const authHandlers = [
       }
 
       return HttpResponse.json({ data: user });
+=======
+      const { user } = requireAuth(cookies);
+
+      if (!user) {
+        return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 });
+      }
+
+      return HttpResponse.json(user);
+>>>>>>> CU-86e0gpfwj/Event-Redesign-Create-Event-Form-new-Figma-fields
     } catch (error: any) {
       return HttpResponse.json(
         { message: error?.message || 'Server Error' },
