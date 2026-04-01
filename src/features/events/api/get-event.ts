@@ -31,5 +31,9 @@ type UseEventOptions = {
 };
 
 export const useEvent = ({ eventId, queryConfig }: UseEventOptions) => {
-  return useQuery({ ...getEventQueryOptions(eventId), ...queryConfig });
+  return useQuery({ 
+    ...getEventQueryOptions(eventId), 
+    enabled: !!eventId,
+    ...queryConfig 
+  });
 };

@@ -468,6 +468,7 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                       <Textarea
                         label="Inscription Requirements"
                         name="inscriptionRequirements"
+                        isRequired
                         value={formData.inscriptionRequirements}
                         onChange={(e) =>
                           setFormData((prev) => ({
@@ -766,7 +767,7 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                                   </span>
                                 </div>
 
-                                {/* RIGHT: CONTENEDOR */}
+                                {/* RIGHT: CONTENEDOR */} 
                                 <div className="flex flex-col flex-1 gap-2">
 
                                   {/* TOP ROW */}

@@ -367,7 +367,7 @@ export const eventsHandlers = [
     await networkDelay();
 
     try {
-      const eventId = params.eventId as string;
+      const eventId = toInternalPrefixedId(String(params.eventId), "event");
 
       const event = db.event.findFirst({
         where: {
@@ -683,47 +683,7 @@ export const eventsHandlers = [
   }),
 
   http.patch(`${env.API_URL}/events/:eventId`, async ({ params, request, cookies }) => {
-      await networkDelay();
-
-      try {
-        const { /*user,*/ error } = requireAuth(cookies);
-        if (error) {
-          return HttpResponse.json({ message: error }, { status: 401 });
-        }
-        const eventId = params.eventId as string;
-        const data = (await request.json()) as Partial<EventBody>;
-        // requireAdmin(user);
-        const event = db.event.update({
-          where: {
-            id: {
-              equals: eventId,
-            },
-          },
-          data: {
-            ...(data.name && { name: data.name }),
-            ...(data.description && { description: data.description }),
-            ...(data.startDate && { startDate: data.startDate }),
-            ...(data.endDate && { endDate: data.endDate }),
-            ...(data.inscriptionDeadline && {
-              inscriptionDeadline: data.inscriptionDeadline,
-            }),
-            ...(data.isPubliclyJoinable !== undefined && {
-              isPubliclyJoinable: data.isPubliclyJoinable,
-            }),
-            ...(data.statusName && {
-              statusName: data.statusName,
-              evaluationsOpened: data.statusName === "OPEN",
-            }),
-            updatedAt: Date.now(),
-          },
-        });
-
-        if (!event) {
-          return HttpResponse.json(
-            { message: "Event not found" },
-            { status: 404 }
-          );
-        }
+    await networkDelay();
 
     try {
       const { /*user,*/ error } = requireAuth(cookies);
@@ -803,8 +763,7 @@ export const eventsHandlers = [
         { status: 500 }
       );
     }
-  }
-  ),
+  }),
 
   http.delete(`${env.API_URL}/events/:eventId`, async ({ params, cookies }) => {
     await networkDelay();

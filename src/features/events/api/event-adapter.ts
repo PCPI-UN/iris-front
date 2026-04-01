@@ -12,6 +12,27 @@ const normalizeRoleName = (
   return undefined;
 };
 
+const normalizeEventId = (value: unknown): number => {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    const numeric = Number(value);
+    if (Number.isFinite(numeric)) {
+      return numeric;
+    }
+
+    // Support mock IDs like "event-001" while keeping numeric ID contract in UI.
+    const match = value.match(/(\d+)$/);
+    if (match) {
+      return Number(match[1]);
+    }
+  }
+
+  return 0;
+};
+
 export const normalizeEvent = (raw: any): Event => {
   const evaluationsOpened =
     typeof raw?.evaluationsOpened === "boolean"
@@ -24,6 +45,7 @@ export const normalizeEvent = (raw: any): Event => {
 
   return {
     ...raw,
+    id: normalizeEventId(raw?.id),
     name: raw?.name ?? raw?.title ?? "",
     title: raw?.title ?? raw?.name ?? "",
     eventType:

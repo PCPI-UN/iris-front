@@ -30,8 +30,8 @@ type Award = {
   position: number;
 };
 
-const isWholeNumberInput = (value: string) =>value === "" || /^(0|[1-9]\d*)$/.test(value);
-const isDecimalNumberInput = (value: string) =>value === "" || /^(0|[1-9]\d*)(\.\d{0,2})?$/.test(value);
+const isWholeNumberInput = (value: string) => value === "" || /^(0|[1-9]\d*)$/.test(value);
+const isDecimalNumberInput = (value: string) => value === "" || /^(0|[1-9]\d*)(\.\d{0,2})?$/.test(value);
 export const CreateEvent = () => {
   const { addNotification } = useNotifications();
   const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
@@ -269,6 +269,7 @@ export const CreateEvent = () => {
                     <Textarea
                       label="Inscription Requirements"
                       name="inscriptionRequirements"
+                      isRequired
                       placeholder="Enter all the details of inscription requirements for participants."
                       value={formData.inscriptionRequirements || ""}
                       onChange={(e) => setFormData({ ...formData, inscriptionRequirements: e.target.value })}
@@ -494,52 +495,70 @@ export const CreateEvent = () => {
                                 <Minus size={14} />
                               </Button>
                             </div>
-                            <div className="flex flex-row gap-4 w-full pr-8">
-                              {/* TOP BADGE */}
+                            <div className="flex gap-4 w-full pr-8">
+                              {/* LEFT: Position */}
                               <div className="flex flex-col items-center justify-center bg-default-100 rounded-md px-3 py-2 min-w-[80px]">
-                                <span className="text-sm text-default-500 font-semibold uppercase tracking-wider">Position</span>
-                                <span className="text-4xl font-extrabold text-primary">{award.position}</span>
+                                <span className="text-sm text-default-500 font-semibold uppercase tracking-wider">
+                                  Position
+                                </span>
+                                <span className="text-4xl font-extrabold text-primary">
+                                  {award.position}
+                                </span>
                               </div>
-                              <Input
-                                label="Award Title"
-                                placeholder="Top 1"
-                                value={award.title}
-                                onChange={(e) => {
-                                  const newArr = [...awards];
-                                  newArr[index].title = e.target.value;
-                                  setAwards(newArr);
-                                }}
-                                className="flex-1"
-                              />
-                              <Textarea
-                                label="Award Description (Optional)"
-                                placeholder="Description..."
-                                value={award.description}
-                                onChange={(e) => {
-                                  const newArr = [...awards];
-                                  newArr[index].description = e.target.value;
-                                  setAwards(newArr);
-                                }}
-                                className="flex-1"
-                              />
-                              <Input
-                                label="Value (Optional)"
-                                type="text"
-                                placeholder="0"
-                                value={award.value}
-                                min={0}
-                                step={1}
-                                inputMode="decimal"
-                                pattern="[0-9]*"
-                                onChange={(e) => {
-                                  if (isWholeNumberInput(e.target.value)) {
-                                    const newArr = [...awards];
-                                    newArr[index].value = e.target.value;
-                                    setAwards(newArr);
-                                  }
-                                }}
-                                className="max-w-[160px]"
-                              />
+
+                              {/* RIGHT: CONTENEDOR */}
+                              <div className="flex flex-col flex-1 gap-2">
+
+                                {/* TOP ROW */}
+                                <div className="flex gap-3">
+                                  <Input
+                                    label="Award Title"
+                                    value={award.title}
+                                    onChange={(e) => {
+                                      setAwards((prev) => {
+                                        const next = [...prev];
+                                        next[index].title = e.target.value;
+                                        return next;
+                                      });
+                                    }}
+                                    className="flex-1"
+                                  />
+
+                                  <Input
+                                    label="$"
+                                    type="text"
+                                    value={award.value}
+                                    min={0}
+                                    step={1}
+                                    inputMode="decimal"
+                                    pattern="[0-9]*"
+                                    onChange={(e) => {
+                                      if (isDecimalNumberInput(e.target.value)) {
+                                        setAwards((prev) => {
+                                          const next = [...prev];
+                                          next[index].value = e.target.value;
+                                          return next;
+                                        });
+                                      }
+                                    }}
+                                    className="w-[120px]"
+                                  />
+                                </div>
+
+                                {/* BOTTOM ROW */}
+                                <Textarea
+                                  label="Award Description (Optional)"
+                                  value={award.description}
+                                  onChange={(e) => {
+                                    setAwards((prev) => {
+                                      const next = [...prev];
+                                      next[index].description = e.target.value;
+                                      return next;
+                                    });
+                                  }}
+                                  className="w-full"
+                                />
+                              </div>
                             </div>
                           </div>
                         ))}
