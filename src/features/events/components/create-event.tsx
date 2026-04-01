@@ -169,7 +169,7 @@ export const CreateEvent = () => {
                     <Input
                       label="Title"
                       name="name"
-                      placeholder="Enter nombre del evento"
+                      placeholder="Nombre del evento. Ej: Hackathon de Logística Empresarial (mínimo 2 caracteres)"
                       isRequired
                       value={formData.name || ""}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -179,7 +179,7 @@ export const CreateEvent = () => {
                       <Input
                         label="Location"
                         name="location"
-                        placeholder="Enter Event Location"
+                        placeholder="Ej: Universidad del Norte, Bloque, Salón."
                         isRequired
                         value={formData.location || ""}
                         onChange={(e) => setFormData({ ...formData, location: e.target.value })}
@@ -188,7 +188,7 @@ export const CreateEvent = () => {
                       <Input
                         label="Location detail (Optional)"
                         name="locationDetails"
-                        placeholder="Enter Event Location detail"
+                        placeholder="Ej: Km 5 vía Puerto Colombia, Barranquilla "
                         value={formData.locationDetails || ""}
                         onChange={(e) => setFormData({ ...formData, locationDetails: e.target.value })}
                         className="flex-1"
@@ -239,7 +239,7 @@ export const CreateEvent = () => {
                       <Textarea
                         label="Description"
                         name="description"
-                        placeholder="Enter Event General Description"
+                        placeholder="Describe de qué trata el evento. Ej: Un desafío tipo hackathon de 48 horas enfocado en optimización logística..."
                         isRequired
                         value={formData.description || ""}
                         onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -285,7 +285,7 @@ export const CreateEvent = () => {
                       label="Inscription Requirements"
                       name="inscriptionRequirements"
                       isRequired
-                      placeholder="Enter all the details of inscription requirements for participants."
+                      placeholder="Describa los requisitos para inscribirse en el evento. Ej: Equipos de 3 a 5 personas, con al menos un estudiante de ingeniería..."
                       value={formData.inscriptionRequirements || ""}
                       onChange={(e) => setFormData({ ...formData, inscriptionRequirements: e.target.value })}
                     />
@@ -303,7 +303,7 @@ export const CreateEvent = () => {
                         label="Inscription Cost"
                         name="inscriptionCost"
                         type="text"
-                        placeholder="No cost"
+                        placeholder="Ej: 0 o 50000"
                         value={formData.inscriptionCost || ""}
                         min={0}
                         step={1}
@@ -320,7 +320,7 @@ export const CreateEvent = () => {
                         label="Minimum Team Size"
                         name="minimumTeamSize"
                         type="number"
-                        placeholder="Enter min size"
+                        placeholder="Ej: 3"
                         value={formData.minimumTeamSize || ""}
                         min={0}
                         step={1}
@@ -354,7 +354,7 @@ export const CreateEvent = () => {
                           <div key={index} className="flex gap-2 items-start bg-default-50 p-3 rounded-md relative">
                             <Input
                               label="Title"
-                              placeholder="Enter Title Specific Detail"
+                              placeholder="Ej: Tamaño del equipo"
                               value={detail.title}
                               onChange={(e) => {
                                 const newArr = [...specificDetails];
@@ -365,7 +365,7 @@ export const CreateEvent = () => {
                             />
                             <Input
                               label="Description"
-                              placeholder="Enter Description of Specific Detail"
+                              placeholder="Informacion Precisa. Ej: 3 a 5 estudiantes."
                               value={detail.description}
                               onChange={(e) => {
                                 const newArr = [...specificDetails];
@@ -399,7 +399,7 @@ export const CreateEvent = () => {
                     <Textarea
                       label="About Our Allies"
                       name="aboutOurAllies"
-                      placeholder="Information about partners and allies"
+                      placeholder="Información sobre socios y aliados. Ej: Este evento cuenta con el apoyo de GRIP Shipping como aliado estratégico..."
                       value={formData.aboutOurAllies || ""}
                       onChange={(e) => setFormData({ ...formData, aboutOurAllies: e.target.value })}
                     />
@@ -528,6 +528,7 @@ export const CreateEvent = () => {
                                 <div className="flex gap-3">
                                   <Input
                                     label="Award Title"
+                                    placeholder="Ej: TOP 1"
                                     value={award.title}
                                     onChange={(e) => {
                                       setAwards((prev) => {
@@ -542,6 +543,7 @@ export const CreateEvent = () => {
                                   <Input
                                     label="$"
                                     type="text"
+                                    placeholder="Ej:2000000"
                                     value={award.value}
                                     min={0}
                                     step={1}
@@ -563,6 +565,7 @@ export const CreateEvent = () => {
                                 {/* BOTTOM ROW */}
                                 <Textarea
                                   label="Award Description (Optional)"
+                                  placeholder="Ej: Premio monetario de $2.000.000 COP"
                                   value={award.description}
                                   onChange={(e) => {
                                     setAwards((prev) => {

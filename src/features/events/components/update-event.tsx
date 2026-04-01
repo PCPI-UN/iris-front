@@ -327,6 +327,7 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                       <Input
                         label="Name"
                         name="name"
+                        placeholder="Nombre del evento. Ej: Hackathon de Logística Empresarial (mínimo 2 caracteres)"      
                         isRequired
                         value={formData.name}
                         onChange={(e) =>
@@ -338,6 +339,7 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                         <Input
                           label="Location"
                           name="location"
+                          placeholder="Ej: Universidad del Norte, Bloque, Salón."
                           isRequired
                           value={formData.location}
                           onChange={(e) =>
@@ -348,6 +350,7 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                         <Input
                           label="Location detail (Optional)"
                           name="locationDetails"
+                          placeholder="Ej: Km 5 vía Puerto Colombia, Barranquilla "
                           value={formData.locationDetails}
                           onChange={(e) =>
                             setFormData((prev) => ({ ...prev, locationDetails: e.target.value }))
@@ -416,6 +419,7 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                         <Textarea
                           label="Description"
                           name="description"
+                          placeholder="Describe de qué trata el evento. Ej: Un desafío tipo hackathon de 48 horas enfocado en optimización logística..."
                           isRequired
                           value={formData.description}
                           onChange={(e) =>
@@ -473,6 +477,7 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                       <Textarea
                         label="Inscription Requirements"
                         name="inscriptionRequirements"
+                        placeholder="Describa los requisitos para inscribirse en el evento. Ej: Equipos de 3 a 5 personas, con al menos un estudiante de ingeniería..."
                         isRequired
                         value={formData.inscriptionRequirements}
                         onChange={(e) =>
@@ -504,6 +509,7 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                         <Input
                           label="Inscription Cost"
                           name="inscriptionCost"
+                          placeholder="Ej: 0 o 50000"
                           type="text"
                           value={formData.inscriptionCost}
                           min={0}
@@ -519,6 +525,7 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                         <Input
                           label="Minimum Team Size"
                           name="minimumTeamSize"
+                          placeholder="Ej: 3"
                           type="number"
                           value={formData.minimumTeamSize}
                           min={0}
@@ -559,6 +566,7 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                             >
                               <Input
                                 label="Title"
+                                placeholder="Ej: Tamaño del equipo"
                                 value={detail.title}
                                 onChange={(e) => {
                                   setSpecificDetails((prev) => {
@@ -571,6 +579,7 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                               />
                               <Input
                                 label="Description"
+                                placeholder="Informacion Precisa. Ej: 3 a 5 estudiantes."
                                 value={detail.description}
                                 onChange={(e) => {
                                   setSpecificDetails((prev) => {
@@ -611,6 +620,7 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                       <Textarea
                         label="About Our Allies"
                         name="aboutOurAllies"
+                        placeholder="Información sobre socios y aliados. Ej: Este evento cuenta con el apoyo de GRIP Shipping como aliado estratégico..."
                         value={formData.aboutOurAllies}
                         onChange={(e) =>
                           setFormData((prev) => ({ ...prev, aboutOurAllies: e.target.value }))
@@ -779,6 +789,7 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                                   <div className="flex gap-3">
                                     <Input
                                       label="Award Title"
+                                      placeholder="Ej: TOP 1"
                                       value={award.title}
                                       onChange={(e) => {
                                         setAwards((prev) => {
@@ -793,6 +804,7 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                                     <Input
                                       label="$"
                                       type="text"
+                                      placeholder="Ej:2000000"
                                       value={award.value}
                                       min={0}
                                       step={1}
@@ -814,6 +826,7 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                                   {/* BOTTOM ROW */}
                                   <Textarea
                                     label="Award Description (Optional)"
+                                    placeholder="Ej: Premio monetario de $2.000.000 COP"
                                     value={award.description}
                                     onChange={(e) => {
                                       setAwards((prev) => {
