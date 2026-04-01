@@ -34,11 +34,6 @@ type EventBody = {
     position: number;
     categoryId?: string;
   }[];
-  evaluationsStatus?: "open" | "closed";
-  isPublic?: boolean;
-  locationDetail?: string;
-  cost?: number;
-  organizations?: string[];
 };
 
 const PAGE_SIZE = 10;
@@ -82,6 +77,7 @@ type EventDTO = {
   inscriptionRequirements?: string;
   inscriptionCost?: number;
   minimumTeamSize?: number;
+  active: boolean;
   specificInscriptionDetails?: { title: string; description: string }[];
   aboutOurAllies?: string;
   organizers?: string[];
@@ -93,10 +89,6 @@ type EventDTO = {
     position: number;
     categoryId?: string;
   }[];
-  isPublic: boolean;
-  evaluationsStatus: "open" | "closed";
-  locationDetail?: string;
-  cost?: number;
   organizations?: string[];
   createdAt: string;
   userEventRole?: "Participant" | "JURY";
@@ -151,6 +143,8 @@ const mapEventToDTO = (event: any, membership?: any): EventDTO => {
     typeof event.evaluationsOpened === "boolean"
       ? event.evaluationsOpened
       : event.evaluationsStatus === "open";
+  const active =
+    typeof event.active === "boolean" ? event.active : event.status === 1;
   const isPubliclyJoinable =
     typeof event.isPubliclyJoinable === "boolean"
       ? event.isPubliclyJoinable
@@ -180,6 +174,7 @@ const mapEventToDTO = (event: any, membership?: any): EventDTO => {
     inscriptionRequirements: event.inscriptionRequirements,
     inscriptionCost,
     minimumTeamSize: event.minimumTeamSize,
+    active,
     specificInscriptionDetails: event.specificInscriptionDetails,
     aboutOurAllies: event.aboutOurAllies,
     organizers,
@@ -200,6 +195,7 @@ const mapEventToPublicDTO = (event: any): PublicEventDTO => {
   const now = new Date();
   const inscriptionDeadline = new Date(event.inscriptionDeadline);
   const isOpen = inscriptionDeadline >= now;
+  const active = typeof event.active === "boolean" ? event.active : event.status === 1;
 
   const statusName = String(event.statusName ?? (isOpen ? "OPEN" : "CLOSED"));
   const location =
@@ -245,7 +241,7 @@ const mapEventToPublicDTO = (event: any): PublicEventDTO => {
     isPubliclyJoinable: Boolean(event.isPubliclyJoinable ?? event.isPublic),
     evaluationsOpened: Boolean(event.evaluationsOpened ?? statusName === "OPEN"),
     role: String(event.role ?? "USER"),
-    active: Boolean(event.active ?? true),
+    active,
     location,
     locationDetails,
     eventType: event.eventType,
@@ -655,20 +651,20 @@ export const eventsHandlers = [
         endDate: data.endDate,
         inscriptionDeadline: data.inscriptionDeadline ?? data.startDate,
         accessCode: `EVT${Date.now().toString().slice(-6)}`,
-        isPubliclyJoinable: data.isPubliclyJoinable ?? data.isPublic ?? true,
+        isPubliclyJoinable: data.isPubliclyJoinable ?? true,
         active: data.active ?? true,
         evaluationsOpened:
-          data.evaluationsOpened ?? (data.evaluationsStatus === "open"),
+          data.evaluationsOpened ?? (data.evaluationsOpened === true),
         location: data.location,
-        locationDetails: data.locationDetails ?? data.locationDetail,
+        locationDetails: data.locationDetails,
         eventType: data.eventType,
         evaluationType: data.evaluationType,
         inscriptionRequirements: data.inscriptionRequirements,
-        inscriptionCost: data.inscriptionCost ?? data.cost,
+        inscriptionCost: data.inscriptionCost,
         minimumTeamSize: data.minimumTeamSize,
         specificInscriptionDetails: data.specificInscriptionDetails || [],
         aboutOurAllies: data.aboutOurAllies,
-        organizers: data.organizers ?? data.organizations ?? [],
+        organizers: data.organizers || [],
         collaborators: data.collaborators || [],
         awards: data.awards || [],
       });
@@ -711,22 +707,18 @@ export const eventsHandlers = [
           ...(hasField("inscriptionDeadline") && {
             inscriptionDeadline: data.inscriptionDeadline,
           }),
+          ...(hasField("active") && { active: data.active }),
           ...(hasField("isPubliclyJoinable") && {
             isPubliclyJoinable: data.isPubliclyJoinable,
           }),
-          ...(hasField("isPublic") && { isPubliclyJoinable: data.isPublic }),
+         
           ...(hasField("evaluationsOpened") && {
             evaluationsOpened: data.evaluationsOpened,
           }),
-          ...(hasField("evaluationsStatus") && {
-            evaluationsOpened: data.evaluationsStatus === "open",
-          }),
+
           ...(hasField("location") && { location: data.location }),
           ...(hasField("locationDetails") && {
             locationDetails: data.locationDetails,
-          }),
-          ...(hasField("locationDetail") && {
-            locationDetails: data.locationDetail,
           }),
           ...(hasField("eventType") && { eventType: data.eventType }),
           ...(hasField("evaluationType") && { evaluationType: data.evaluationType }),
@@ -736,14 +728,12 @@ export const eventsHandlers = [
           ...(hasField("inscriptionCost") && {
             inscriptionCost: data.inscriptionCost,
           }),
-          ...(hasField("cost") && { inscriptionCost: data.cost }),
           ...(hasField("minimumTeamSize") && { minimumTeamSize: data.minimumTeamSize }),
           ...(hasField("specificInscriptionDetails") && {
             specificInscriptionDetails: data.specificInscriptionDetails,
           }),
           ...(hasField("aboutOurAllies") && { aboutOurAllies: data.aboutOurAllies }),
           ...(hasField("organizers") && { organizers: data.organizers }),
-          ...(hasField("organizations") && { organizers: data.organizations }),
           ...(hasField("collaborators") && { collaborators: data.collaborators }),
           ...(hasField("awards") && { awards: data.awards }),
         },

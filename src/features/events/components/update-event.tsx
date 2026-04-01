@@ -40,8 +40,8 @@ type Award = {
   categoryId: string;
   categoryName?: string;
 };
-const isWholeNumberInput = (value: string) =>value === "" || /^(0|[1-9]\d*)$/.test(value);
-const isDecimalNumberInput = (value: string) =>value === "" || /^(0|[1-9]\d*)(\.\d{0,2})?$/.test(value);
+const isWholeNumberInput = (value: string) => value === "" || /^(0|[1-9]\d*)$/.test(value);
+const isDecimalNumberInput = (value: string) => value === "" || /^(0|[1-9]\d*)(\.\d{0,2})?$/.test(value);
 type InscriptionDetail = {
   title: string;
   description: string;
@@ -216,12 +216,12 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
         name: formData.name,
         description: formData.description,
         accessCode: formData.accessCode || undefined,
-        isPubliclyJoinable: formData.isPubliclyJoinable?? event?.isPubliclyJoinable,
+        isPubliclyJoinable: formData.isPubliclyJoinable ?? event?.isPubliclyJoinable,
         startDate: formData.startDate,
         endDate: formData.endDate,
         inscriptionDeadline: formData.inscriptionDeadline,
         evaluationsOpened: formData.evaluationsOpened,
-        active: formData.active?? event?.active,
+        active: formData.active,
         location: formData.location || undefined,
         locationDetails: formData.locationDetails || undefined,
         inscriptionCost: formData.inscriptionCost === "" ? undefined : Number(formData.inscriptionCost),
@@ -269,10 +269,13 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
         variant="shadow"
         className="w-full"
         size="sm"
-        onPress={() => {
+        onPress={async () => {
           setStep(1);
-          eventQuery.refetch();
-          onOpen();
+          try {
+            await eventQuery.refetch();
+          } finally {
+            onOpen();
+          }
         }}
       >
         <SquarePen size={16} />
@@ -439,20 +442,19 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                           <Switch
                             isSelected={formData.active}
                             onValueChange={(isSelected) =>
-                              setFormData((prev) => ({ ...prev, active: isSelected }))
+                              setFormData((prev) => ({ ...prev, active: isSelected, }))
                             }
                             color="success"
                           />
                         </div>
-                           
+
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-medium">Public for Join</span>
                           <Switch
                             isSelected={formData.isPubliclyJoinable}
                             onValueChange={(isSelected) =>
                               setFormData((prev) => ({
-                                ...prev,
-                                isPubliclyJoinable: isSelected,
+                                ...prev,isPubliclyJoinable: isSelected,
                               }))
                             }
                             color="success"
@@ -770,7 +772,7 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                                   </span>
                                 </div>
 
-                                {/* RIGHT: CONTENEDOR */} 
+                                {/* RIGHT: CONTENEDOR */}
                                 <div className="flex flex-col flex-1 gap-2">
 
                                   {/* TOP ROW */}
@@ -843,7 +845,7 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                     </Button>
                   )}
 
-                                    {step < 3 ? (
+                  {step < 3 ? (
                     <Button type="submit">Next</Button>
                   ) : (
                     <Button

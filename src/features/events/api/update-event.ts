@@ -60,7 +60,9 @@ export const updateEvent = ({
 }): Promise<Event> => {
   return api
     .patch<Record<string, any>>(`/events/${data.id}`, data)
-    .then((response) => normalizeEvent(response?.data ?? response));
+    .then((response) =>
+      normalizeEvent(response?.data?.data ?? response?.event ?? response?.data ?? response)
+    );
 };
 
 type UseUpdateEventOptions = {
@@ -76,6 +78,9 @@ export const useUpdateEvent = ({
 
   return useMutation({
     onSuccess: (data, ...args) => {
+      queryClient.setQueryData(getEventQueryOptions(data.id).queryKey, {
+        data,
+      });
       queryClient.invalidateQueries({
         queryKey: getEventQueryOptions(data.id).queryKey,
       });

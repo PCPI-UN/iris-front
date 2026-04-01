@@ -1,17 +1,5 @@
 import { Event } from "@/types/api";
 
-const normalizeRoleName = (
-  value?: string
-): "Juror" | "Participant" | undefined => {
-  if (!value) return undefined;
-  const normalized = value.toLowerCase();
-  if (normalized === "juror" || normalized === "jury") return "Juror";
-  if (normalized === "participant" || normalized === "student") {
-    return "Participant";
-  }
-  return undefined;
-};
-
 const normalizeEventId = (value: unknown): number => {
   if (typeof value === "number" && Number.isFinite(value)) {
     return value;
@@ -33,52 +21,84 @@ const normalizeEventId = (value: unknown): number => {
   return 0;
 };
 
+const normalizeTimestamp = (value: unknown): number => {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    const parsed = Date.parse(value);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+
+  return Date.now();
+};
+
 export const normalizeEvent = (raw: any): Event => {
   const evaluationsOpened =
     typeof raw?.evaluationsOpened === "boolean"
       ? raw.evaluationsOpened
       : raw?.evaluationsStatus === "open";
 
-  const roleName = normalizeRoleName(
-    raw?.role?.name ?? raw?.userEventRole ?? raw?.eventRole
-  );
+  const roleName =
+    raw?.role?.name === "Juror" || raw?.userEventRole === "JURY" || raw?.eventRole === "JURY"
+      ? "Juror"
+      : raw?.role?.name === "Participant" || raw?.userEventRole === "Participant" || raw?.eventRole === "Participant"
+        ? "Participant"
+        : undefined;
+
+  const active = typeof raw?.active === "boolean" ? raw.active : raw?.status === 1;
+  const inscriptionCost =
+    typeof raw?.inscriptionCost === "number"
+      ? raw.inscriptionCost
+      : typeof raw?.cost === "number"
+        ? raw.cost
+        : undefined;
+  const locationDetails = raw?.locationDetails ?? raw?.locationDetail;
+  const organizers = raw?.organizers ?? raw?.organizations ?? [];
+  const collaborators = raw?.collaborators ?? [];
+  const awards = raw?.awards ?? [];
+  const categories = raw?.categories ?? [];
+  const role = roleName
+    ? {
+        ...(typeof raw?.role === "object" && raw?.role !== null ? raw.role : {}),
+        name: roleName,
+      }
+    : undefined;
 
   return {
-    ...raw,
     id: normalizeEventId(raw?.id),
-    name: raw?.name ?? raw?.title ?? "",
-    title: raw?.title ?? raw?.name ?? "",
-    eventType:
-      raw?.eventType === "Expo" || raw?.eventType === "Competencia"
-        ? raw.eventType
-        : raw?.eventType === "Exhibition"
-          ? "Expo"
-          : raw?.eventType === "Competition"
-            ? "Competencia"
-            : raw?.eventType,
+    name: raw?.name ?? "",
+    description: raw?.description ?? "",
+    startDate: raw?.startDate ?? "",
+    endDate: raw?.endDate ?? "",
+    inscriptionDeadline: raw?.inscriptionDeadline ?? "",
+    accessCode: raw?.accessCode ?? "",
     isPubliclyJoinable:
       typeof raw?.isPubliclyJoinable === "boolean"
         ? raw.isPubliclyJoinable
         : Boolean(raw?.isPublic),
-    locationDetails: raw?.locationDetails ?? raw?.locationDetail,
-    locationDetail: raw?.locationDetail ?? raw?.locationDetails,
-    inscriptionCost:
-      typeof raw?.inscriptionCost === "number" ? raw.inscriptionCost : raw?.cost,
-    cost: typeof raw?.cost === "number" ? raw.cost : raw?.inscriptionCost,
-    organizers: raw?.organizers ?? raw?.organizations ?? [],
-    organizations: raw?.organizations ?? raw?.organizers ?? [],
-    isPublic:
-      typeof raw?.isPublic === "boolean"
-        ? raw.isPublic
-        : Boolean(raw?.isPubliclyJoinable),
     evaluationsOpened,
-    evaluationsStatus:
-      raw?.evaluationsStatus ?? (evaluationsOpened ? "open" : "closed"),
-    role: roleName
-      ? {
-          ...(raw?.role ?? {}),
-          name: roleName,
-        }
-      : raw?.role,
+    statusName: raw?.statusName ?? (active ? "ACTIVE" : "INACTIVE"),
+    location: raw?.location,
+    locationDetails,
+    eventType: raw?.eventType,
+    inscriptionCost,
+    inscriptionRequirements: raw?.inscriptionRequirements,
+    aboutOurAllies: raw?.aboutOurAllies,
+    evaluationType: raw?.evaluationType,
+    minimumTeamSize: raw?.minimumTeamSize,
+    specificInscriptionDetails: raw?.specificInscriptionDetails,
+    categories,
+    organizers,
+    collaborators,
+    awards,
+    status: raw?.status,
+    active,
+    role,
+    createdAt: normalizeTimestamp(raw?.createdAt),
+    updatedAt: normalizeTimestamp(raw?.updatedAt ?? raw?.createdAt),
   } as Event;
 };

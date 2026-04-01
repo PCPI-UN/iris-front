@@ -83,7 +83,7 @@ export type Event = Entity<{
   startDate: string;
   endDate: string;
   inscriptionDeadline: string;
-  accessCode: string;
+  accessCode: string; 
   isPubliclyJoinable: boolean;
   evaluationsOpened: boolean;
   statusName: string;
@@ -106,10 +106,9 @@ export type Event = Entity<{
     position: number;
     categoryId?: number;
   }[];
-  participants?: string[];
   status?: number;
   active: boolean;
-  role: role;
+  role?: role;
   createdAt: number;
   updatedAt: number;
 }>;
