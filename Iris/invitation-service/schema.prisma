@@ -1,0 +1,56 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+}
+
+enum InvitationStatus {
+  PENDING
+  EXPIRED
+  REJECTED
+  ACCEPTED
+}
+
+enum InvitationTargetType {
+  EVENT
+  PLATFORM
+  PROJECT
+}
+
+// Invitation entity used to grant access to a target resource.
+// Specific details:
+// - `targetType` and `targetId` define the invited resource.
+// - `invitedByUserId` and `invitedUserId` reference users managed by auth-service.
+model Invitation {
+  id              String               @id @default(uuid())
+  token           String               @unique@db.Text
+  email           String               @db.VarChar(255)
+  targetType      InvitationTargetType @map("target_type")
+  targetId        Int                  @map("target_id")
+  status          InvitationStatus
+  expiresAt       DateTime             @map("expires_at") @db.Timestamptz()
+  invitedByUserId Int                  @map("invited_by_user_id")
+  invitedUserId   Int                  @map("invited_user_id")
+  createdAt       DateTime             @map("created_at") @default(now()) @db.Timestamptz()
+  updatedAt       DateTime             @map("updated_at") @updatedAt @db.Timestamptz()
+
+  roles          InvitationRole[]        @relation("invitation_roles")
+  @@map("invitations")
+}
+
+// Junction model between an invitation and the roles granted through it.
+// Specific detail:
+// - `roleId` references a role managed by auth-service.
+model InvitationRole {
+  invitationId    String               @map("invitation_id")
+  roleId          Int                  @map("role_id")
+
+  invitation Invitation @relation("invitation_roles", fields: [invitationId], references: [id])
+
+  @@id([invitationId, roleId])
+}
+
+

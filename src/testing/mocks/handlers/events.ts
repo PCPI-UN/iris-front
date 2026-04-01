@@ -13,14 +13,59 @@ type EventBody = {
   startDate: string;
   endDate: string;
   inscriptionDeadline?: string;
-  statusName?: "OPEN" | "CLOSED";
+  evaluationsOpened?: boolean;
   isPubliclyJoinable?: boolean;
+  location: string;
+  locationDetails?: string;
+  eventType: "Competition" | "Exposition";
+  evaluationType?: "ZERO_TO_FIVE" | "ZERO_TO_HUNDRED";
+  inscriptionRequirements?: string;
+  inscriptionCost?: number;
+  minimumTeamSize?: number;
+  specificInscriptionDetails?: { title: string; description: string }[];
+  aboutOurAllies?: string;
+  organizers?: string[];
+  collaborators?: string[];
+  awards?: {
+    title: string;
+    description?: string;
+    value?: number;
+    position: number;
+    categoryId?: string;
+  }[];
+  evaluationsStatus?: "open" | "closed";
+  isPublic?: boolean;
+  locationDetail?: string;
+  cost?: number;
+  organizations?: string[];
 };
 
 const PAGE_SIZE = 10;
 
+const toPublicNumericId = (value: string, prefix: string): number => {
+  const match = value.match(new RegExp(`^${prefix}-(\\d+)$`));
+  if (match) return Number(match[1]);
+  const numeric = Number(value);
+  return Number.isNaN(numeric) ? 0 : numeric;
+};
+
+const toInternalPrefixedId = (value: string, prefix: string): string => {
+  if (value.startsWith(`${prefix}-`)) return value;
+  if (/^\d+$/.test(value)) return `${prefix}-${value.padStart(3, "0")}`;
+  return value;
+};
+
+const getNextEventId = (): string => {
+  const maxNumericId = db.event
+    .getAll()
+    .map((event) => toPublicNumericId(String(event.id), "event"))
+    .reduce((max, current) => (current > max ? current : max), 0);
+
+  return `event-${String(maxNumericId + 1).padStart(3, "0")}`;
+};
+
 type EventDTO = {
-  id: string;
+  id: number;
   name: string;
   description: string;
   startDate: string;
@@ -29,9 +74,30 @@ type EventDTO = {
   accessCode: string;
   isPubliclyJoinable: boolean;
   evaluationsOpened: boolean;
-  statusName: string;
-  createdAt: number;
-  updatedAt: number;
+  location: string;
+  locationDetails?: string;
+  eventType: "Competition" | "Exposition";
+  evaluationType?: "ZERO_TO_FIVE" | "ZERO_TO_HUNDRED";
+  inscriptionRequirements?: string;
+  inscriptionCost?: number;
+  minimumTeamSize?: number;
+  specificInscriptionDetails?: { title: string; description: string }[];
+  aboutOurAllies?: string;
+  organizers?: string[];
+  collaborators?: string[];
+  awards?: {
+    title: string;
+    description?: string;
+    value?: number;
+    position: number;
+    categoryId?: string;
+  }[];
+  isPublic: boolean;
+  evaluationsStatus: "open" | "closed";
+  locationDetail?: string;
+  cost?: number;
+  organizations?: string[];
+  createdAt: string;
   userEventRole?: "Participant" | "JURY";
 };
 
@@ -80,19 +146,49 @@ type PublicEventDTO = {
 };
 
 const mapEventToDTO = (event: any, membership?: any): EventDTO => {
-  const statusName = String(event.statusName ?? (event.evaluationsStatus === "open" ? "OPEN" : "CLOSED"));
+  const evaluationsOpened =
+    typeof event.evaluationsOpened === "boolean"
+      ? event.evaluationsOpened
+      : event.evaluationsStatus === "open";
+  const isPubliclyJoinable =
+    typeof event.isPubliclyJoinable === "boolean"
+      ? event.isPubliclyJoinable
+      : Boolean(event.isPublic);
+  const locationDetails = event.locationDetails ?? event.locationDetail;
+  const inscriptionCost =
+    typeof event.inscriptionCost === "number"
+      ? event.inscriptionCost
+      : event.cost;
+  const organizers = event.organizers ?? event.organizations ?? [];
+  const eventType = event.eventType === "Exhibition" ? "Exposition" : event.eventType;
 
   return {
-    id: event.id,
-    name: event.name ?? event.title,
+    id: toPublicNumericId(String(event.id), "event"),
+    name: event.name as string,
     description: event.description,
     startDate: event.startDate,
     endDate: event.endDate,
     inscriptionDeadline: event.inscriptionDeadline,
     accessCode: event.accessCode,
-    isPubliclyJoinable: Boolean(event.isPubliclyJoinable ?? event.isPublic),
-    evaluationsOpened: Boolean(event.evaluationsOpened ?? statusName === "OPEN"),
-    statusName,
+    isPubliclyJoinable,
+    evaluationsOpened,
+    location: event.location,
+    locationDetails,
+    eventType,
+    evaluationType: event.evaluationType,
+    inscriptionRequirements: event.inscriptionRequirements,
+    inscriptionCost,
+    minimumTeamSize: event.minimumTeamSize,
+    specificInscriptionDetails: event.specificInscriptionDetails,
+    aboutOurAllies: event.aboutOurAllies,
+    organizers,
+    collaborators: event.collaborators,
+    awards: event.awards,
+    isPublic: isPubliclyJoinable,
+    evaluationsStatus: evaluationsOpened ? "open" : "closed",
+    locationDetail: locationDetails,
+    cost: inscriptionCost,
+    organizations: organizers,
     createdAt: event.createdAt,
     updatedAt: event.updatedAt ?? event.createdAt,
     ...(membership && { userEventRole: membership.eventRole }),
@@ -212,6 +308,16 @@ const calculatePagination = (total: number, page: number) => {
     totalPages,
   };
 };
+
+const toDualResponse = (events: EventDTO[], pagination: { page: number; total: number; totalPages: number }) => ({
+  data: events,
+  meta: pagination,
+  events,
+  page: pagination.page,
+  limit: PAGE_SIZE,
+  total: pagination.total,
+  totalPages: pagination.totalPages,
+});
 
 export const eventsHandlers = [
   http.get(`${env.API_URL}/events/public`, async ({ request }) => {
@@ -336,10 +442,7 @@ export const eventsHandlers = [
           })
           .map((event) => mapEventToDTO(event));
 
-        return HttpResponse.json({
-          data: events,
-          meta: pagination,
-        });
+        return HttpResponse.json(toDualResponse(events, pagination));
       }
 
       // Para usuarios USER, solo mostrar eventos donde tienen membresía
@@ -351,10 +454,8 @@ export const eventsHandlers = [
 
       // Si no tiene membresías, retornar lista vacía
       if (userMemberships.length === 0) {
-        return HttpResponse.json({
-          data: [],
-          meta: calculatePagination(0, validPage),
-        });
+        const pagination = calculatePagination(0, validPage);
+        return HttpResponse.json(toDualResponse([], pagination));
       }
 
       const eventIds = userMemberships.map((m) => m.eventId);
@@ -378,10 +479,95 @@ export const eventsHandlers = [
       const endIndex = startIndex + PAGE_SIZE;
       const paginatedEvents = userEvents.slice(startIndex, endIndex);
 
-      return HttpResponse.json({
-        data: paginatedEvents,
-        meta: pagination,
-      });
+      return HttpResponse.json(toDualResponse(paginatedEvents, pagination));
+    } catch (error: any) {
+      return HttpResponse.json(
+        { message: error?.message || "Server Error" },
+        { status: 500 }
+      );
+    }
+  }),
+
+  http.get(`${env.API_URL}/events/public`, async ({ request }) => {
+    await networkDelay();
+
+    try {
+      const url = new URL(request.url);
+      const page = Number(url.searchParams.get("page") || 1);
+      const validPage = validatePage(page);
+
+      const publicEvents = db.event
+        .findMany({
+          where: {
+            isPubliclyJoinable: {
+              equals: true,
+            },
+          },
+        })
+        .map((event) => mapEventToDTO(event));
+
+      const total = publicEvents.length;
+      const pagination = calculatePagination(total, validPage);
+      const startIndex = PAGE_SIZE * (pagination.page - 1);
+      const endIndex = startIndex + PAGE_SIZE;
+      const paginatedEvents = publicEvents.slice(startIndex, endIndex);
+
+      return HttpResponse.json(toDualResponse(paginatedEvents, pagination));
+    } catch (error: any) {
+      return HttpResponse.json(
+        { message: error?.message || "Server Error" },
+        { status: 500 }
+      );
+    }
+  }),
+
+  http.get(`${env.API_URL}/events/my-events`, async ({ cookies, request }) => {
+    await networkDelay();
+
+    try {
+      const { user, error } = requireAuth(cookies);
+      if (error || !user) {
+        return HttpResponse.json({ message: error || "Unauthorized" }, { status: 401 });
+      }
+
+      const url = new URL(request.url);
+      const page = Number(url.searchParams.get("page") || 1);
+      const validPage = validatePage(page);
+
+      const memberships = db.eventMembership?.findMany({
+        where: {
+          userId: {
+            equals: user.id,
+          },
+        },
+      }) || [];
+
+      if (memberships.length === 0) {
+        const pagination = calculatePagination(0, validPage);
+        return HttpResponse.json(toDualResponse([], pagination));
+      }
+
+      const eventIds = memberships.map((m) => m.eventId);
+      const myEvents = db.event
+        .findMany({
+          where: {
+            id: {
+              in: eventIds,
+            },
+          },
+        })
+        .map((event) => {
+          const membership = memberships.find((m) => m.eventId === event.id);
+          return mapEventToDTO(event, membership);
+        });
+
+      const total = myEvents.length;
+      const pagination = calculatePagination(total, validPage);
+      const startIndex = PAGE_SIZE * (pagination.page - 1);
+      const endIndex = startIndex + PAGE_SIZE;
+      const paginatedEvents = myEvents.slice(startIndex, endIndex);
+
+      return HttpResponse.json(toDualResponse(paginatedEvents, pagination));
     } catch (error: any) {
       return HttpResponse.json(
         { message: error?.message || "Server Error" },
@@ -401,8 +587,8 @@ export const eventsHandlers = [
 
       const events = db.event.findMany({}).map((event) => {
         return {
-          id: event.id,
-          title: event.name,
+          id: toPublicNumericId(String(event.id), "event"),
+          name: event.name,
         };
       });
 
@@ -424,7 +610,7 @@ export const eventsHandlers = [
         return HttpResponse.json({ message: error }, { status: 401 });
       }
 
-      const eventId = params.eventId as string;
+      const eventId = toInternalPrefixedId(String(params.eventId), "event");
       const event = db.event.findFirst({
         where: {
           id: {
@@ -440,9 +626,7 @@ export const eventsHandlers = [
         );
       }
 
-      return HttpResponse.json({
-        data: event,
-      });
+      return HttpResponse.json({ data: mapEventToDTO(event) });
     } catch (error: any) {
       return HttpResponse.json(
         { message: error?.message || "Server Error" },
@@ -463,24 +647,33 @@ export const eventsHandlers = [
       // requireAdmin(user);
 
       const event = db.event.create({
+        id: getNextEventId(),
         name: data.name,
         description: data.description,
         startDate: data.startDate,
         endDate: data.endDate,
         inscriptionDeadline: data.inscriptionDeadline ?? data.startDate,
         accessCode: `EVT${Date.now().toString().slice(-6)}`,
-        isPubliclyJoinable: data.isPubliclyJoinable ?? true,
-        evaluationsOpened: (data.statusName ?? "CLOSED") === "OPEN",
-        statusName: data.statusName ?? "CLOSED",
-        role: "USER",
-        active: true,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
+        isPubliclyJoinable: data.isPubliclyJoinable ?? data.isPublic ?? true,
+        evaluationsOpened:
+          data.evaluationsOpened ?? (data.evaluationsStatus === "open"),
+        location: data.location,
+        locationDetails: data.locationDetails ?? data.locationDetail,
+        eventType: data.eventType,
+        evaluationType: data.evaluationType,
+        inscriptionRequirements: data.inscriptionRequirements,
+        inscriptionCost: data.inscriptionCost ?? data.cost,
+        minimumTeamSize: data.minimumTeamSize,
+        specificInscriptionDetails: data.specificInscriptionDetails || [],
+        aboutOurAllies: data.aboutOurAllies,
+        organizers: data.organizers ?? data.organizations ?? [],
+        collaborators: data.collaborators || [],
+        awards: data.awards || [],
       });
 
       await persistDb("event");
 
-      return HttpResponse.json({ data: event });
+      return HttpResponse.json({ data: mapEventToDTO(event) });
     } catch (error: any) {
       return HttpResponse.json(
         { message: error?.message || "Server Error" },
@@ -532,16 +725,85 @@ export const eventsHandlers = [
           );
         }
 
-        await persistDb("event");
+    try {
+      const { /*user,*/ error } = requireAuth(cookies);
+      if (error) {
+        return HttpResponse.json({ message: error }, { status: 401 });
+      }
+      const eventId = toInternalPrefixedId(String(params.eventId), "event");
+      const data = (await request.json()) as Partial<EventBody>;
+      const hasField = <K extends keyof EventBody>(key: K) =>
+        Object.prototype.hasOwnProperty.call(data, key);
+      // requireAdmin(user);
+      const event = db.event.update({
+        where: {
+          id: {
+            equals: eventId,
+          },
+        },
+        data: {
+          ...(hasField("name") && { name: data.name }),
+          ...(hasField("description") && { description: data.description }),
+          ...(hasField("startDate") && { startDate: data.startDate }),
+          ...(hasField("endDate") && { endDate: data.endDate }),
+          ...(hasField("inscriptionDeadline") && {
+            inscriptionDeadline: data.inscriptionDeadline,
+          }),
+          ...(hasField("isPubliclyJoinable") && {
+            isPubliclyJoinable: data.isPubliclyJoinable,
+          }),
+          ...(hasField("isPublic") && { isPubliclyJoinable: data.isPublic }),
+          ...(hasField("evaluationsOpened") && {
+            evaluationsOpened: data.evaluationsOpened,
+          }),
+          ...(hasField("evaluationsStatus") && {
+            evaluationsOpened: data.evaluationsStatus === "open",
+          }),
+          ...(hasField("location") && { location: data.location }),
+          ...(hasField("locationDetails") && {
+            locationDetails: data.locationDetails,
+          }),
+          ...(hasField("locationDetail") && {
+            locationDetails: data.locationDetail,
+          }),
+          ...(hasField("eventType") && { eventType: data.eventType }),
+          ...(hasField("evaluationType") && { evaluationType: data.evaluationType }),
+          ...(hasField("inscriptionRequirements") && {
+            inscriptionRequirements: data.inscriptionRequirements,
+          }),
+          ...(hasField("inscriptionCost") && {
+            inscriptionCost: data.inscriptionCost,
+          }),
+          ...(hasField("cost") && { inscriptionCost: data.cost }),
+          ...(hasField("minimumTeamSize") && { minimumTeamSize: data.minimumTeamSize }),
+          ...(hasField("specificInscriptionDetails") && {
+            specificInscriptionDetails: data.specificInscriptionDetails,
+          }),
+          ...(hasField("aboutOurAllies") && { aboutOurAllies: data.aboutOurAllies }),
+          ...(hasField("organizers") && { organizers: data.organizers }),
+          ...(hasField("organizations") && { organizers: data.organizations }),
+          ...(hasField("collaborators") && { collaborators: data.collaborators }),
+          ...(hasField("awards") && { awards: data.awards }),
+        },
+      });
 
-        return HttpResponse.json({ data: event });
-      } catch (error: any) {
+      if (!event) {
         return HttpResponse.json(
-          { message: error?.message || "Server Error" },
-          { status: 500 }
+          { message: "Event not found" },
+          { status: 404 }
         );
       }
+
+      await persistDb("event");
+
+      return HttpResponse.json({ data: event ? mapEventToDTO(event) : event });
+    } catch (error: any) {
+      return HttpResponse.json(
+        { message: error?.message || "Server Error" },
+        { status: 500 }
+      );
     }
+  }
   ),
 
   http.delete(`${env.API_URL}/events/:eventId`, async ({ params, cookies }) => {
@@ -552,7 +814,7 @@ export const eventsHandlers = [
       if (error) {
         return HttpResponse.json({ message: error }, { status: 401 });
       }
-      const eventId = params.eventId as string;
+      const eventId = toInternalPrefixedId(String(params.eventId), "event");
       // requireAdmin(user);
       const event = db.event.delete({
         where: {
@@ -571,7 +833,7 @@ export const eventsHandlers = [
 
       await persistDb("event");
 
-      return HttpResponse.json({ data: event });
+      return HttpResponse.json({ data: event ? mapEventToDTO(event) : event });
     } catch (error: any) {
       return HttpResponse.json(
         { message: error?.message || "Server Error" },

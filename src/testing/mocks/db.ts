@@ -7,9 +7,14 @@ const models = {
     firstName: String,
     lastName: String,
     email: String,
+    phone: String,
     password: String,
     teamId: String,
     role: String,
+    active: Boolean,
+    status: String,
+    platformRoles: Array,
+    platformPermissions: Array,
     bio: String,
     createdAt: Date.now,
   },
@@ -144,7 +149,15 @@ export const loadDb = async () => {
     const { readFile, writeFile } = await import("fs/promises");
     try {
       const data = await readFile(dbFilePath, "utf8");
-      return JSON.parse(data);
+      // Strip UTF-8 BOM when present to avoid JSON.parse failures.
+      const normalizedData = data.charCodeAt(0) === 0xfeff ? data.slice(1) : data;
+
+      try {
+        return JSON.parse(normalizedData);
+      } catch (parseError) {
+        console.error("Error parsing mocked DB JSON:", parseError);
+        return {};
+      }
     } catch (error: any) {
       if (error?.code === "ENOENT") {
         const emptyDB = {};
@@ -152,7 +165,7 @@ export const loadDb = async () => {
         return emptyDB;
       } else {
         console.error("Error loading mocked DB:", error);
-        return null;
+        return {};
       }
     }
   }
@@ -181,11 +194,11 @@ export const persistDb = async (model: Model) => {
 };
 
 export const initializeDb = async () => {
-  const database = await loadDb();
+  const database = (await loadDb()) ?? {};
   Object.entries(db).forEach(([key, model]) => {
-    const dataEntres = database[key];
-    if (dataEntres) {
-      dataEntres?.forEach((entry: Record<string, any>) => {
+    const dataEntries = database[key];
+    if (Array.isArray(dataEntries)) {
+      dataEntries.forEach((entry: Record<string, any>) => {
         model.create(entry);
       });
     }
