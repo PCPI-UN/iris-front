@@ -34,6 +34,8 @@ export type Participant = {
   lastName: string;
   email: string;
   studentCode: string;
+  semester: string;
+  career: string;
 };
 
 export type ProjectData = {
@@ -184,6 +186,8 @@ const handleSubmit = () => {
             lastName: p.lastName,
             email: p.email,
             studentCode: p.studentCode,
+            semester: p.semester,
+            career: p.career,
           }))
         ),
       };
@@ -208,6 +212,8 @@ const handleSubmit = () => {
           lastName: p.lastName,
           email: p.email,
           studentCode: p.studentCode,
+          semester: p.semester,
+          career: p.career,
         }))
       ),
       documents: JSON.stringify([
