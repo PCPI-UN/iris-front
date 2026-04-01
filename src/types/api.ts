@@ -106,6 +106,7 @@ export type Event = Entity<{
     position: number;
     categoryId?: number;
   }[];
+  participants?: string[];
   status?: number;
   active: boolean;
   role?: role;
