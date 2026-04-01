@@ -9,9 +9,15 @@ export const getPublicEventDetail = async ({
 }: {
   eventId: string;
 }): Promise<{ data: Event }> => {
-  try {
+  const toFallbackEventId = (rawEventId: string) => {
+    if (/^event-\d+$/i.test(rawEventId)) return rawEventId.toLowerCase();
+    if (/^\d+$/.test(rawEventId)) return `event-${rawEventId.padStart(3, '0')}`;
+    return rawEventId;
+  };
+
+  const fetchEvent = async (targetEventId: string) => {
     const response = await api.get<{ data?: Event; event?: Event }>(
-      `/events/public/${eventId}`,
+      `/events/public/${targetEventId}`,
       { suppressErrorNotification: true },
     );
 
@@ -23,7 +29,20 @@ export const getPublicEventDetail = async ({
     return {
       data: event,
     };
+  };
+
+  try {
+    return await fetchEvent(eventId);
   } catch {
+    const fallbackEventId = toFallbackEventId(eventId);
+    if (fallbackEventId !== eventId) {
+      try {
+        return await fetchEvent(fallbackEventId);
+      } catch {
+        // Keep unified error message for UI.
+      }
+    }
+
     throw new Error('Evento no encontrado');
   }
 };

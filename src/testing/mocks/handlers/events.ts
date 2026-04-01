@@ -14,6 +14,7 @@ type EventBody = {
   endDate: string;
   inscriptionDeadline?: string;
   evaluationsOpened?: boolean;
+  active?: boolean;
   isPubliclyJoinable?: boolean;
   location: string;
   locationDetails?: string;
@@ -655,6 +656,7 @@ export const eventsHandlers = [
         inscriptionDeadline: data.inscriptionDeadline ?? data.startDate,
         accessCode: `EVT${Date.now().toString().slice(-6)}`,
         isPubliclyJoinable: data.isPubliclyJoinable ?? data.isPublic ?? true,
+        active: data.active ?? true,
         evaluationsOpened:
           data.evaluationsOpened ?? (data.evaluationsStatus === "open"),
         location: data.location,

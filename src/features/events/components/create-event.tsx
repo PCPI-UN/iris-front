@@ -39,6 +39,7 @@ export const CreateEvent = () => {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<any>({
     isPubliclyJoinable: true,
+    active: true,
     evaluationsOpened: false,
     eventType: "Exposition",
     evaluationType: "ZERO_TO_FIVE",
@@ -81,6 +82,7 @@ export const CreateEvent = () => {
     setStep(1);
     setFormData({
       isPubliclyJoinable: true,
+      active: true,
       evaluationsOpened: false,
       eventType: "Exposition",
       evaluationType: "ZERO_TO_FIVE",
@@ -96,10 +98,7 @@ export const CreateEvent = () => {
     const form = e.target as HTMLFormElement;
     const currentFormData = new FormData(form);
     const rawData = Object.fromEntries(currentFormData);
-    const updatedForm = { ...formData, ...rawData };
-
-    if (rawData.isPubliclyJoinable !== undefined) updatedForm.isPubliclyJoinable = true;
-    else updatedForm.isPubliclyJoinable = false;
+    const updatedForm = { ...formData, ...rawData, isPubliclyJoinable: formData.isPubliclyJoinable, active: formData.active };
 
     setFormData(updatedForm);
     setStep((prev) => prev + 1);
@@ -112,6 +111,8 @@ export const CreateEvent = () => {
       const dataToSubmit = {
         ...formData,
         evaluationsOpened: Boolean(formData.evaluationsOpened),
+        isPubliclyJoinable: Boolean(formData.isPubliclyJoinable),
+        active: Boolean(formData.active)??true,
         locationDetails: formData.locationDetails || undefined,
         inscriptionCost:
           formData.inscriptionCost === "" || formData.inscriptionCost === undefined
@@ -245,18 +246,32 @@ export const CreateEvent = () => {
                         maxLength={1000}
                       />
                     </div>
-
-                    <div className="flex items-center gap-2 py-2">
-                      <span className="text-sm font-medium">Public For Join</span>
+                    <div className="flex flex-wrap items-center gap-6 py-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium">Public For Join</span>
+                        <Switch
+                          size="sm"
+                          name="isPubliclyJoinable"
+                          isSelected={Boolean(formData.isPubliclyJoinable)}
+                          onValueChange={(isSelected) =>
+                            setFormData({ ...formData, isPubliclyJoinable: isSelected })
+                            
+                          }
+                          color="success"
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium">Active Event</span>
                       <Switch
                         size="sm"
-                        name="isPubliclyJoinable"
-                        defaultSelected={formData.isPubliclyJoinable}
+                        name="active"
+                        isSelected={Boolean(formData.active)}
                         onValueChange={(isSelected) =>
-                          setFormData({ ...formData, isPubliclyJoinable: isSelected })
+                          setFormData({ ...formData, active: isSelected })
                         }
                         color="success"
                       />
+                      </div>
                     </div>
                   </div>
                 )}

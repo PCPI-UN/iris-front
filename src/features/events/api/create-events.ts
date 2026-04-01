@@ -16,6 +16,7 @@ export const createEventInputSchema = z.object({
   inscriptionDeadline: z.string().min(10).max(10),
   evaluationsOpened: z.boolean(),
   isPubliclyJoinable: z.boolean().optional(),
+  active: z.boolean().optional(),
   location: z.string().min(1, 'Required'),
   locationDetails: z.string().optional(),
   eventType: z.enum(["Exposition", "Competition"]),
@@ -52,6 +53,7 @@ export const createEvent = ({
   data: CreateEventInput;
 }): Promise<Event> => {
   return api.post('/events', data);
+
 };
 
 type UseCreateEventOptions = {

@@ -76,8 +76,8 @@ const INITIAL_FORM_STATE: UpdateEventFormState = {
   location: "",
   locationDetails: "",
   evaluationsOpened: false,
-  isPubliclyJoinable: false,
-  active: false,
+  isPubliclyJoinable: true,
+  active: true,
   inscriptionCost: "",
   inscriptionRequirements: "",
   minimumTeamSize: "",
@@ -209,21 +209,19 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
     setStep((prev) => Math.min(prev + 1, 3));
   };
 
-  const handleUpdateSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
+  const submitUpdate = async () => {
     try {
       const dataToSubmit = {
         id: Number(eventId),
         name: formData.name,
         description: formData.description,
         accessCode: formData.accessCode || undefined,
-        isPubliclyJoinable: formData.isPubliclyJoinable,
+        isPubliclyJoinable: formData.isPubliclyJoinable?? event?.isPubliclyJoinable,
         startDate: formData.startDate,
         endDate: formData.endDate,
         inscriptionDeadline: formData.inscriptionDeadline,
         evaluationsOpened: formData.evaluationsOpened,
-        active: formData.active,
+        active: formData.active?? event?.active,
         location: formData.location || undefined,
         locationDetails: formData.locationDetails || undefined,
         inscriptionCost: formData.inscriptionCost === "" ? undefined : Number(formData.inscriptionCost),
@@ -258,6 +256,11 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
         message: "Check required fields.",
       });
     }
+  };
+
+  const handleUpdateSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    await submitUpdate();
   };
 
   return (
@@ -441,9 +444,9 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                             color="success"
                           />
                         </div>
-
+                           
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium">Publicly Joinable</span>
+                          <span className="text-sm font-medium">Public for Join</span>
                           <Switch
                             isSelected={formData.isPubliclyJoinable}
                             onValueChange={(isSelected) =>
@@ -840,7 +843,7 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                     </Button>
                   )}
 
-                  {step < 3 ? (
+                                    {step < 3 ? (
                     <Button type="submit">Next</Button>
                   ) : (
                     <Button
@@ -851,6 +854,7 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                       Save Changes
                     </Button>
                   )}
+
                 </ModalFooter>
               </Form>
             );
