@@ -95,5 +95,8 @@ export const paths = {
     event: {
       getHref: () => "/public/events",
     },
+    developers: {
+      getHref: () => '/public/developers',
+    },
   },
 } as const;

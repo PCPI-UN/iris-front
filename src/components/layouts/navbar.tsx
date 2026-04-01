@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Menu, X } from 'lucide-react';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { paths } from '@/config/paths';
 
 interface NavbarProps {
   showNavLinks?: boolean;
@@ -137,10 +138,9 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
               >
                 {landingContent.navbar.links.pastEvents}
               </a>
-
+              {/* developers link */}
               <a
-                href="#developers"
-                onClick={(e) => handleSmoothScroll(e, 'developers')}
+                onClick={() => router.push(paths.public.developers.getHref())}
                 className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
               >
                 {landingContent.navbar.links.developers}
@@ -211,8 +211,10 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
               </a>
 
               <a
-                href="#developers"
-                onClick={(e) => handleSmoothScroll(e, 'developers')}
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  router.push(paths.public.developers.getHref());
+                }}
                 className="px-6 py-4 text-muted-foreground hover:text-foreground transition-all cursor-pointer border-t border-border/20"
               >
                 {landingContent.navbar.links.developers}
