@@ -23,6 +23,7 @@ import {
   ChevronDown,
   LayoutDashboard,
 } from 'lucide-react';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 interface NavbarProps {
   showNavLinks?: boolean;
@@ -52,14 +53,82 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
   const handleSmoothScroll = (e: React.MouseEvent<HTMLAnchorElement>, targetId: string) => {
     e.preventDefault();
     setIsMobileMenuOpen(false); // Close mobile menu on navigation
-    setIsMobileUserMenuOpen(false);
+
+    // Disable smooth scrolling temporarily
+    const html = document.documentElement;
+    const originalBehavior = html.style.scrollBehavior;
+    html.style.scrollBehavior = 'auto';
+
+    const horizontalTargetPanelIndex =
+      targetId === 'informacion' ? 0 : targetId === 'recorrido' ? 2 : null;
+
+    const scrollToPosition = (position: number) => {
+      const targetTop = Math.max(0, Math.round(position));
+      window.scrollTo({ top: targetTop, behavior: 'auto' });
+      document.documentElement.scrollTop = targetTop;
+      document.body.scrollTop = targetTop;
+    };
+
+    const getNavbarHeight = () => {
+      const navbar = document.querySelector('nav');
+      return navbar?.getBoundingClientRect().height ?? 0;
+    };
+
+    if (horizontalTargetPanelIndex !== null) {
+      const horizontalSection = document.getElementById('informacion');
+
+      if (horizontalSection) {
+        const pinSpacer = horizontalSection.parentElement?.classList.contains('pin-spacer')
+          ? horizontalSection.parentElement
+          : null;
+
+        const panels = horizontalSection.querySelectorAll('.horizontal-panel');
+        const panelsCount = panels.length;
+        const maxIndex = Math.max(panelsCount - 1, 0);
+        const targetPanelIndex = Math.min(horizontalTargetPanelIndex, maxIndex);
+        const progress = maxIndex > 0 ? targetPanelIndex / maxIndex : 0;
+
+        const navHeight = getNavbarHeight();
+        const visualCenterOffset = navHeight / 2;
+        const informationExtraOffset = targetId === 'informacion' ? -50 : 0;
+
+        const currentTriggers = ScrollTrigger.getAll();
+        const horizontalTrigger = currentTriggers.find(
+          (trigger) => trigger.trigger === horizontalSection
+        );
+
+        if (horizontalTrigger) {
+          const triggerDistance = Math.max(horizontalTrigger.end - horizontalTrigger.start, 0);
+          const triggerTarget = horizontalTrigger.start + triggerDistance * progress;
+          scrollToPosition(triggerTarget - visualCenterOffset - informationExtraOffset);
+        } else {
+          const sectionTop = pinSpacer
+            ? pinSpacer.getBoundingClientRect().top + window.scrollY
+            : horizontalSection.getBoundingClientRect().top + window.scrollY;
+          const horizontalContent = horizontalSection.querySelector('.flex') as HTMLElement | null;
+          const horizontalDistance = horizontalContent
+            ? Math.max(horizontalContent.scrollWidth - horizontalSection.clientWidth, 0)
+            : 0;
+          const fallbackTravel = horizontalDistance * 0.6;
+          const fallbackTarget = sectionTop + fallbackTravel * progress;
+          scrollToPosition(fallbackTarget - visualCenterOffset - informationExtraOffset);
+        }
+
+        // Restore original scroll behavior
+        html.style.scrollBehavior = originalBehavior;
+        return;
+      }
+    }
+
     const targetElement = document.getElementById(targetId);
     if (targetElement) {
-      targetElement.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start',
-      });
+      const targetTop = targetElement.getBoundingClientRect().top + window.scrollY;
+      const navHeight = getNavbarHeight();
+      scrollToPosition(targetTop - navHeight / 2);
     }
+
+    // Restore original scroll behavior
+    html.style.scrollBehavior = originalBehavior;
   };
 
   const handleBack = () => {
@@ -142,15 +211,7 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
               >
                 {landingContent.navbar.links.information}
               </a>
-              
-              <a
-                href="#ingenierias"
-                onClick={(e) => handleSmoothScroll(e, 'ingenierias')}
-                className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-              >
-                {landingContent.navbar.links.engineering}
-              </a>
-              
+
               <a
                 href="#eventos"
                 onClick={(e) => handleSmoothScroll(e, 'eventos')}
@@ -160,11 +221,19 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
               </a>
 
               <a
-                href="#ganadores"
-                onClick={(e) => handleSmoothScroll(e, 'ganadores')}
+                href="#recorrido"
+                onClick={(e) => handleSmoothScroll(e, 'recorrido')}
                 className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
               >
-                {landingContent.navbar.links.winners}
+                {landingContent.navbar.links.pastEvents}
+              </a>
+
+              <a
+                href="#developers"
+                onClick={(e) => handleSmoothScroll(e, 'developers')}
+                className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+              >
+                {landingContent.navbar.links.developers}
               </a>
             </div>
           )}
@@ -254,9 +323,8 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
       {/* Mobile Menu */}
       {showNavLinks && isLandingPage && (
         <div
-          className={`fixed top-[73px] left-0 right-0 z-30 md:hidden transition-all duration-300 ${
-            isMobileMenuOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4 pointer-events-none'
-          }`}
+          className={`fixed top-[73px] left-0 right-0 z-30 md:hidden transition-all duration-300 ${isMobileMenuOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4 pointer-events-none'
+            }`}
         >
           <div className="mx-6 mt-2 glass-effect border border-border/30 rounded-lg overflow-hidden">
             <div className="flex flex-col gap-0.5 p-1.5">
@@ -267,15 +335,8 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
               >
                 {landingContent.navbar.links.information}
               </a>
-              
-              <a
-                href="#ingenierias"
-                onClick={(e) => handleSmoothScroll(e, 'ingenierias')}
-                className="rounded-md px-4 py-3 text-muted-foreground hover:bg-primary/10 hover:text-foreground transition-all cursor-pointer"
-              >
-                {landingContent.navbar.links.engineering}
-              </a>
-              
+
+
               <a
                 href="#eventos"
                 onClick={(e) => handleSmoothScroll(e, 'eventos')}
@@ -285,11 +346,19 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
               </a>
 
               <a
-                href="#ganadores"
-                onClick={(e) => handleSmoothScroll(e, 'ganadores')}
-                className="rounded-md px-4 py-3 text-muted-foreground hover:bg-primary/10 hover:text-foreground transition-all cursor-pointer"
+                href="#recorrido"
+                onClick={(e) => handleSmoothScroll(e, 'recorrido')}
+                className="px-6 py-4 text-muted-foreground hover:text-foreground transition-all cursor-pointer border-t border-border/20"
               >
-                {landingContent.navbar.links.winners}
+                {landingContent.navbar.links.pastEvents}
+              </a>
+
+              <a
+                href="#developers"
+                onClick={(e) => handleSmoothScroll(e, 'developers')}
+                className="px-6 py-4 text-muted-foreground hover:text-foreground transition-all cursor-pointer border-t border-border/20"
+              >
+                {landingContent.navbar.links.developers}
               </a>
             </div>
 
@@ -320,36 +389,36 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
                 </button>
 
                 {isMobileUserMenuOpen && (
-                <div className="mt-1.5 rounded-lg p-1.5">
-                  
-                  <Link
-                    href={paths.app.dashboard.getHref()}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="block w-full rounded-md px-4 py-2.5 text-sm text-muted-foreground transition-all hover:text-foreground"
-                  >
-                    Dashboard
-                  </Link>
+                  <div className="mt-1.5 rounded-lg p-1.5">
 
-                  <Link
-                    href={paths.app.profile.getHref()}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="block w-full rounded-md px-4 py-2.5 text-sm text-muted-foreground transition-all hover:text-foreground"
-                  >
-                    Ver cuenta
-                  </Link>
+                    <Link
+                      href={paths.app.dashboard.getHref()}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="block w-full rounded-md px-4 py-2.5 text-sm text-muted-foreground transition-all hover:text-foreground"
+                    >
+                      Dashboard
+                    </Link>
 
-                  <button
-                    type="button"
-                    onClick={handleLogout}
-                    disabled={isLoggingOut}
-                    className="block w-full cursor-pointer rounded-md px-4 py-2.5 text-left text-sm 
+                    <Link
+                      href={paths.app.profile.getHref()}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="block w-full rounded-md px-4 py-2.5 text-sm text-muted-foreground transition-all hover:text-foreground"
+                    >
+                      Ver cuenta
+                    </Link>
+
+                    <button
+                      type="button"
+                      onClick={handleLogout}
+                      disabled={isLoggingOut}
+                      className="block w-full cursor-pointer rounded-md px-4 py-2.5 text-left text-sm 
 !text-white !bg-transparent 
 transition-all 
 hover:!text-white focus:!text-white active:!text-white">
-                    {isLoggingOut ? 'Cerrando sesión...' : 'Cerrar sesión'}
-                  </button>
-                </div>
-                              )}
+                      {isLoggingOut ? 'Cerrando sesión...' : 'Cerrar sesión'}
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
