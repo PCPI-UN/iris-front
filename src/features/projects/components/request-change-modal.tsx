@@ -6,23 +6,26 @@ import { Textarea } from "@/components/ui/textarea";
 import { useDisclosure } from "@/hooks/use-disclosure";
 import { useNotifications } from "@/components/ui/notifications";
 import { useState } from "react";
-import { useRejectProject } from "../api/reject-project";
 import { useRequestChangesProject } from "../api/request-changes-project";
 
-export const RequestProjectModal = ({ projectId }: { projectId: number }) => {
+export const RequestProjectModal = ({ projectId, isOpenTable, onOpenChangeTable }: { projectId: number, isOpenTable?: boolean; onOpenChangeTable?: (open: boolean) => void; }) => {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const { addNotification } = useNotifications();
   const requestChangeMutation = useRequestChangesProject();
 
   const [comment, setComment] = useState("");
+  const controlled = isOpenTable !== undefined;
 
   return (
     <>
-      <Button size="sm" color="warning" onPress={onOpen} className="bg-transparent border border-[#ffffff30] py-5 text-white hover:bg-yellow-500/40">
-        Pedir cambios
-      </Button>
-
-      <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="md">
+      {
+        !controlled && (
+          <Button size="sm" color="warning" onPress={onOpen} className="bg-transparent border border-[#ffffff30] py-5 text-white hover:bg-yellow-500/40">
+            Pedir cambios
+          </Button>
+        )
+      }
+      <Modal isOpen={controlled ? isOpenTable : isOpen} onOpenChange={controlled ? onOpenChangeTable : onOpenChange} size="md">
         <ModalContent>
           {(onCloseModal) => (
             <>

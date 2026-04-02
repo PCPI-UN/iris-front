@@ -8,20 +8,24 @@ import { useNotifications } from "@/components/ui/notifications";
 import { useState } from "react";
 import { useRejectProject } from "../api/reject-project";
 
-export const RejectProjectModal = ({ projectId }: { projectId: number }) => {
-  const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
+export const RejectProjectModal = ({ projectId, isOpenTable, onOpenChangeTable }: { projectId: number, isOpenTable?: boolean; onOpenChangeTable?: (open: boolean) => void; }) => {
+  const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const { addNotification } = useNotifications();
   const rejectMutation = useRejectProject();
 
   const [reason, setReason] = useState("");
+  const controlled = isOpenTable !== undefined;
 
   return (
     <>
-      <Button size="sm" color="warning" onPress={onOpen} className="bg-transparent border border-[#ffffff30] py-5 text-white hover:bg-red-500/40">
-        Rechazar
-      </Button>
-
-      <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="md">
+      {
+        !controlled && (
+          <Button size="sm" color="warning" onPress={onOpen} className="bg-transparent border border-[#ffffff30] py-5 text-white hover:bg-red-500/40">
+            Rechazar
+          </Button>
+        )
+      }
+      <Modal isOpen={controlled ? isOpenTable : isOpen} onOpenChange={controlled ? onOpenChangeTable : onOpenChange} size="md">
         <ModalContent>
           {(onCloseModal) => (
             <>

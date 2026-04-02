@@ -2,7 +2,6 @@
 
 import { useSearchParams, useRouter } from "next/navigation";
 import { Spinner } from "@/components/ui/spinner";
-import { Card, CardBody } from "@/components/ui/card";
 import { Pagination } from "@/components/ui/pagination";
 import { useProjects } from "../api/get-projects";
 import { ApproveProjectModal } from "./approve-modal";
@@ -12,9 +11,12 @@ import { AvatarGroup } from "./avatar-icon";
 import { FileText } from "lucide-react";
 import { GlassCard } from "@/features/landing/components/glass-card";
 import { StatusBadge } from "@/components/ui/status-badge/status-badge";
-import { stylesBadge, stylesGradient } from "@/components/ui/status-badge/status-style";
+import { stylesGradient } from "@/components/ui/status-badge/status-style";
 import { RequestProjectModal } from "./request-change-modal";
 import { ViewDetails } from "./view-details";
+import { DataTable } from "@/components/data-table";
+import { columnsProject } from "./columns-project-table";
+import React from "react";
 
 export const ProjectList = () => {
   const searchParams = useSearchParams();
@@ -28,6 +30,29 @@ export const ProjectList = () => {
   const projectsQuery = useProjects({ page, eventId, state, category });
   const projects = projectsQuery.data?.data;
   const meta = projectsQuery.data?.meta;
+  
+
+  {/* ======================== ACTIONS APPROVE, REJECT, REQUEST FOR TABLE ======================== */}
+  const [selectedId, setSelectedId] = React.useState<number | null>(null);
+  const [action, setAction] = React.useState<"approve" | "reject" | "request" | null>(null);
+
+  const handleApprove = (id: number) => {
+    setSelectedId(id);
+    setAction("approve");
+  };
+
+  const handleReject = (id: number) => {
+    setSelectedId(id);
+    setAction("reject");
+  };
+
+  const handleRequest = (id: number) => {
+    setSelectedId(id);
+    setAction("request");
+  };
+  {/* ======================== ACTIONS APPROVE, REJECT, REQUEST FOR TABLE ======================== */}
+  const columns = columnsProject({onApprove: handleApprove, onReject: handleReject, onRequest: handleRequest,
+});
 
   const handlePageChange = (newPage: number) => {
     const params = new URLSearchParams();
@@ -46,6 +71,7 @@ export const ProjectList = () => {
     router.push(`?${params.toString()}`);
   };
 
+  
   return (
     <div className="space-y-4 sm:space-y-6 md:space-y-8">
 
@@ -103,7 +129,7 @@ export const ProjectList = () => {
 
       {/* ======================== GRID DE PROYECTOS ======================== */}
       {projects && projects.length > 0 && (
-        <div className="grid gap-4 sm:gap-6 md:gap-8 grid-cols-1 lg:grid-cols-2">
+        <div className="grid md:hidden gap-4 sm:gap-6 md:gap-8 grid-cols-1 lg:grid-cols-2">
           {projects.map((project) => (
             <GlassCard
               key={project.id}
@@ -217,18 +243,9 @@ export const ProjectList = () => {
                         <ApproveProjectModal projectId={project.id} />
                       </div>
                     )}
-
-                    
                       <div className="flex justify-center items-center">
                         <ViewDetails project={project}/>
                       </div>
-                    
-
-                    {project.state === "REJECTED" && (
-                      <div className="text-muted-foreground text-sm">
-                        {/* Sin botones */}
-                      </div>
-                    )}
                   </div>
 
                 </div>
@@ -237,6 +254,40 @@ export const ProjectList = () => {
           ))}
         </div>
       )}
+
+      <div className="hidden md:flex">
+        <DataTable
+          data={projects ? projects : []}
+            columns={columns}
+        />
+        {selectedId && (
+          <>
+            <ApproveProjectModal
+              projectId={selectedId}
+              isOpenTable={action === "approve"}
+              onOpenChangeTable={(open) => {
+                if (!open) setAction(null);
+              }}
+            />
+
+            <RejectProjectModal
+              projectId={selectedId}
+              isOpenTable={action === "reject"}
+              onOpenChangeTable={(open) => {
+                if (!open) setAction(null);
+              }}
+            />
+
+            <RequestProjectModal
+              projectId={selectedId}
+              isOpenTable={action === "request"}
+              onOpenChangeTable={(open) => {
+                if (!open) setAction(null);
+              }}
+            />
+          </>
+        )}
+      </div>
 
       {/* ======================== PAGINACIÓN ======================== */}
       {meta && meta.totalPages > 1 && (
@@ -249,7 +300,6 @@ export const ProjectList = () => {
           />
         </div>
       )}
-
     </div>
   );
 };

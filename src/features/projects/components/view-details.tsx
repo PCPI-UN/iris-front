@@ -1,30 +1,21 @@
 import { Button } from "@/components/ui/button";
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@/components/ui/modal";
 import { useDisclosure } from "@/hooks/use-disclosure";
-import { useNotifications } from "@/components/ui/notifications";
-import { useApproveProject } from "../api/approve-project";
-import { useRejectProject } from "../api/reject-project";
-import { useRequestChangesProject } from "../api/request-changes-project";
 import { Project } from "@/types/api";
 import { AvatarGroup } from "./avatar-icon";
-import { FileText } from "lucide-react";
+import { Eye, FileText } from "lucide-react";
 import { RejectProjectModal } from "./reject-modal";
 import { RequestProjectModal } from "./request-change-modal";
 import { ApproveProjectModal } from "./approve-modal";
 
 export const ViewDetails = ({project} : {project: Project}) => {
-  const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
-  const { addNotification } = useNotifications();
-  const approveMutation = useApproveProject();
-  const rejectMutation = useRejectProject();
-  const requestChangeMutatcion = useRequestChangesProject();
-
-  console.log("Este es un comentario", project.comment)
+  const { isOpen, onOpen, onOpenChange } = useDisclosure();
 
   return (
     <>
       <Button size="sm" onPress={onOpen} className={`w-full bg-transparent border border-[#ffffff30] py-5 text-white hover:bg-[#eeeeee30]`}>
-        Ver detalles
+        <Eye className="hidden md:flex h-4 w-4"/>
+        <h2 className="md:hidden flex">Ver detalles</h2>
       </Button>
 
       <Modal isOpen={isOpen} onOpenChange={onOpenChange} className="m-auto mx-5 lg:max-w-[50vw] max-h-[70vh] overflow-y-auto">

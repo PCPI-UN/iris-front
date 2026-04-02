@@ -127,7 +127,6 @@ export const projectsHandlers = [
       const page = Number(url.searchParams.get("page") || 1);
       const state = url.searchParams.get("state");
       const rawCategoryId = url.searchParams.get("category");
-      console.log("smkfnjdnvdksvknkdfvbdf__: ", rawCategoryId)
       const categoryId = rawCategoryId ? toInternalPrefixedId(rawCategoryId, "course") : undefined;
       const pageSize = PAGE_SIZE;
       const validPage = validatePage(page);
