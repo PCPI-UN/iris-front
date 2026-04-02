@@ -1,25 +1,19 @@
-// use-fake-categories.ts
-import { useEffect, useState } from "react";
-import { categoriesByEvent } from "../components/fake-categories";
+import { api } from "@/lib/api-client";
+import { useQuery } from "@tanstack/react-query";
 
-export const useFakeCategories = (eventId?: number) => {
-  const [data, setData] = useState<{ id: number; name: string }[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+export const getCoursesByEvent = async (eventId?: number) => {
+  if (!eventId) return { courses: [] };
 
-  useEffect(() => {
-    if (!eventId) {
-      setData([]);
-      return;
-    }
+  return await api.get<{
+    courses: any[];
+    nextPageToken?: string;
+  }>(`/events/courses/event/${eventId}`);
+};
 
-    setIsLoading(true);
-
-    // simulamos delay
-    setTimeout(() => {
-      setData(categoriesByEvent[eventId] || []);
-      setIsLoading(false);
-    }, 300);
-  }, [eventId]);
-
-  return { data, isLoading };
+export const useCoursesByEvent = (eventId?: number) => {
+  return useQuery({
+    queryKey: ["courses", eventId],
+    queryFn: () => getCoursesByEvent(eventId),
+    enabled: !!eventId,
+  });
 };

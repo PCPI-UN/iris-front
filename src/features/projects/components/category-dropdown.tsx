@@ -1,44 +1,31 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Select, SelectItem } from "@/components/ui/select";
-import { useFakeCategories } from "../api/use-category";
+import { useCoursesByEvent } from "../api/use-category";
+import type { Key } from "@react-types/shared";
 
 export const CategoriesDropdown = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
 
-  // 🔥 viene del EventsDropdown
   const eventId = searchParams?.get("event")
     ? Number(searchParams.get("event"))
     : undefined;
 
-  const { data: categories, isLoading } = useFakeCategories(eventId);
+  const { data, isLoading } = useCoursesByEvent(eventId);
+  const courses = data?.courses || [];
 
-  const [selectedKeys, setSelectedKeys] = React.useState<Set<string>>(new Set());
-
-  // Sync con URL
-  useEffect(() => {
+  const selectedKeys = React.useMemo<Set<Key>>(() => {
     const cat = searchParams?.get("category");
-    if (cat) {
-      setSelectedKeys(new Set(cat.split(",")));
-    } else {
-      setSelectedKeys(new Set());
-    }
-  }, [searchParams?.toString()]);
-
-  // 🔥 Reset cuando cambia evento
-  useEffect(() => {
-    setSelectedKeys(new Set());
-  }, [eventId]);
+    return cat ? new Set([cat]) : new Set<Key>();
+  }, [searchParams]);
 
   const handleSelectionChange = (keys: Set<string> | string[]) => {
     const nextSet = keys instanceof Set ? keys : new Set(Array.from(keys));
-    setSelectedKeys(nextSet);
-
-    const csv = Array.from(nextSet).join(",");
+    const value = Array.from(nextSet)[0];
 
     const params = new URLSearchParams();
     searchParams?.forEach((v, k) => {
@@ -46,7 +33,7 @@ export const CategoriesDropdown = () => {
       params.set(k, v);
     });
 
-    if (csv) params.set("category", csv);
+    if (value) params.set("category", value);
     else params.delete("category");
 
     router.push(`${pathname}?${params.toString()}`);
@@ -61,7 +48,7 @@ export const CategoriesDropdown = () => {
             ? "Selecciona categorías"
             : "Selecciona un evento primero"
         }
-        selectionMode="multiple"
+        selectionMode="single"
         selectedKeys={selectedKeys}
         onSelectionChange={(keys) =>
           handleSelectionChange(keys as Set<string>)
@@ -69,9 +56,11 @@ export const CategoriesDropdown = () => {
         isLoading={isLoading}
         isDisabled={!eventId}
       >
-        {categories.length > 0 ? (
-          categories.map((cat) => (
-            <SelectItem key={cat.id}>{cat.name}</SelectItem>
+        {courses.length > 0 ? (
+          courses.map((course) => (
+            <SelectItem key={String(course.id)}>
+              {course.code}
+            </SelectItem>
           ))
         ) : (
           <SelectItem key="no-categories" isDisabled>

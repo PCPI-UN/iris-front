@@ -23,9 +23,9 @@ export const ProjectList = () => {
   const page = searchParams?.get("page") ? Number(searchParams.get("page")) : 1;
   const eventId = searchParams?.get("event") ? Number(searchParams.get("event")) : undefined;
   const state = searchParams?.get("state") || "UNDER_REVIEW";
-  const categoryId = searchParams?.get("category") ? Number(searchParams.get("category")) : undefined;
+  const category = searchParams?.get("category") ? Number(searchParams.get("category")) : undefined;
 
-  const projectsQuery = useProjects({ page, eventId, state });
+  const projectsQuery = useProjects({ page, eventId, state, category });
   const projects = projectsQuery.data?.data;
   const meta = projectsQuery.data?.meta;
 
@@ -42,6 +42,7 @@ export const ProjectList = () => {
     params.set("page", "1");
     if (eventId) params.set("event", String(eventId));
     if (newStatus) params.set("state", newStatus);
+    if (category) params.set("category", String(category))
     router.push(`?${params.toString()}`);
   };
 

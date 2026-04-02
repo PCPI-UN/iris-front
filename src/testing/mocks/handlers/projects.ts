@@ -126,6 +126,9 @@ export const projectsHandlers = [
       const url = new URL(request.url);
       const page = Number(url.searchParams.get("page") || 1);
       const state = url.searchParams.get("state");
+      const rawCategoryId = url.searchParams.get("category");
+      console.log("smkfnjdnvdksvknkdfvbdf__: ", rawCategoryId)
+      const categoryId = rawCategoryId ? toInternalPrefixedId(rawCategoryId, "course") : undefined;
       const pageSize = PAGE_SIZE;
       const validPage = validatePage(page);
 
@@ -135,6 +138,10 @@ export const projectsHandlers = [
 
       if (state) {
         allProjects = allProjects.filter((p) => String(p.state) === String(state));
+      }
+
+      if (categoryId) {
+        allProjects = allProjects.filter((p) => String(p.courseId) === String(categoryId))
       }
 
       // USER role: only assigned projects if jury of event
