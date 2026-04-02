@@ -23,6 +23,7 @@ export const ProjectList = () => {
   const page = searchParams?.get("page") ? Number(searchParams.get("page")) : 1;
   const eventId = searchParams?.get("event") ? Number(searchParams.get("event")) : undefined;
   const state = searchParams?.get("state") || "UNDER_REVIEW";
+  const categoryId = searchParams?.get("category") ? Number(searchParams.get("category")) : undefined;
 
   const projectsQuery = useProjects({ page, eventId, state });
   const projects = projectsQuery.data?.data;
@@ -43,8 +44,6 @@ export const ProjectList = () => {
     if (newStatus) params.set("state", newStatus);
     router.push(`?${params.toString()}`);
   };
-
-  console.log("Estos son los proyectos: ", projects)
 
   return (
     <div className="space-y-4 sm:space-y-6 md:space-y-8">

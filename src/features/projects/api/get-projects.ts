@@ -14,8 +14,6 @@ export const getProjects = async (
     total: number;
     totalPages: number;
   }>(`/projects/by-event/${eventId}`, { params: { page, state } });
-
-  console.log('sjfnjdbciebhivker: ', response.items)
   
   return {
     data: response.items || [],

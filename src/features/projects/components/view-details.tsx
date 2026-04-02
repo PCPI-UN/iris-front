@@ -95,7 +95,7 @@ export const ViewDetails = ({project} : {project: Project}) => {
 
                           return (
                             <div
-                              key={doc.id}
+                              key={doc.url}
                               className="w-full flex items-center justify-between p-3 hover:bg-gradient-to-br from-cyan-400/10 to-cyan-400/5 rounded-lg border border-gray-100/20 transition-all duration-500 cursor-pointer"
                               onClick={() => window.open(doc.url, "_blank")}
                             >
