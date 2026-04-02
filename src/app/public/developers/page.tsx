@@ -1,16 +1,5 @@
-// Developers page
-import { PublicLayout } from '@/components/layouts/public-layout';
-import { Developers } from '@/features/developers';
-
-export const metadata = {
-  title: 'Developers',
-  description: 'Contributors and development team',
-};
+import { redirect } from 'next/navigation';
 
 export default function DevelopersPage() {
-  return (
-    <PublicLayout showNavLinks={false}>
-      <Developers />
-    </PublicLayout>
-  );
+  redirect('/public/contribuidores');
 }

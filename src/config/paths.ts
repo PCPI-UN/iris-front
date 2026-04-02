@@ -96,7 +96,7 @@ export const paths = {
       getHref: () => "/public/events",
     },
     developers: {
-      getHref: () => '/public/developers',
+      getHref: () => '/public/contribuidores',
     },
   },
 } as const;

@@ -23,6 +23,7 @@ export function StorySections({
     <>
       {blocks.includes('section1') && (
         <section
+          id="story-section-1"
           ref={storySection1Ref}
           className="relative z-10 min-h-[85vh] flex items-start justify-center px-6 pt-10 pb-24 md:pt-14 md:pb-28"
         >

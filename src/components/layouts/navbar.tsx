@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { IrisLogo } from '@/features/landing/components/iris-logo';
 import { landingContent } from '@/features/landing/content';
@@ -18,14 +18,14 @@ interface NavbarProps {
 export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarProps) {
   const pathname = usePathname();
   const isLandingPage = pathname === '/';
+  const isDevelopersPage = pathname === paths.public.developers.getHref();
+  const shouldShowNavLinks = showNavLinks && (isLandingPage || isDevelopersPage);
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  const handleSmoothScroll = (e: React.MouseEvent<HTMLAnchorElement>, targetId: string) => {
-    e.preventDefault();
-    setIsMobileMenuOpen(false); // Close mobile menu on navigation
+  const smoothScrollToTarget = (targetId: string) => {
+    setIsMobileMenuOpen(false);
 
-    // Disable smooth scrolling temporarily
     const html = document.documentElement;
     const originalBehavior = html.style.scrollBehavior;
     html.style.scrollBehavior = 'auto';
@@ -102,6 +102,39 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
     html.style.scrollBehavior = originalBehavior;
   };
 
+  useEffect(() => {
+    if (!isLandingPage) return;
+
+    const hash = window.location.hash.replace('#', '');
+    if (!hash) return;
+
+    if (hash === 'informacion' || hash === 'eventos' || hash === 'recorrido') {
+      requestAnimationFrame(() => {
+        smoothScrollToTarget(hash);
+      });
+    }
+  }, [isLandingPage, pathname]);
+
+  const handleSectionNavigation = (
+    e: React.MouseEvent<HTMLAnchorElement>,
+    targetId: 'informacion' | 'eventos' | 'recorrido' | 'developers'
+  ) => {
+    e.preventDefault();
+
+    if (isLandingPage && targetId !== 'developers') {
+      smoothScrollToTarget(targetId);
+      return;
+    }
+    setIsMobileMenuOpen(false);
+
+    if (targetId === 'developers') {
+      router.push(paths.public.developers.getHref());
+      return;
+    }
+
+    router.push(`/#${targetId}`);
+  };
+
   return (
     <>
       <nav className="fixed top-0 left-0 right-0 z-40 px-6 py-4 md:px-12 glass-effect border-b border-border/30">
@@ -113,11 +146,11 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
             </div>
           </Link>
 
-          {showNavLinks && isLandingPage && (
+          {shouldShowNavLinks && (
             <div className="hidden md:flex items-center gap-8 text-sm">
               <a
                 href="#informacion"
-                onClick={(e) => handleSmoothScroll(e, 'informacion')}
+                onClick={(e) => handleSectionNavigation(e, 'informacion')}
                 className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
               >
                 {landingContent.navbar.links.information}
@@ -125,7 +158,7 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
 
                <a
                 href="#eventos"
-                onClick={(e) => handleSmoothScroll(e, 'eventos')}
+                onClick={(e) => handleSectionNavigation(e, 'eventos')}
                 className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
               >
                 {landingContent.navbar.links.events}
@@ -133,14 +166,15 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
 
               <a
                 href="#recorrido"
-                onClick={(e) => handleSmoothScroll(e, 'recorrido')}
+                onClick={(e) => handleSectionNavigation(e, 'recorrido')}
                 className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
               >
                 {landingContent.navbar.links.pastEvents}
               </a>
               {/* developers link */}
               <a
-                onClick={() => router.push(paths.public.developers.getHref())}
+                href={paths.public.developers.getHref()}
+                onClick={(e) => handleSectionNavigation(e, 'developers')}
                 className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
               >
                 {landingContent.navbar.links.developers}
@@ -163,7 +197,7 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
             )}
 
             {/* Mobile Menu Button */}
-            {showNavLinks && isLandingPage && (
+            {shouldShowNavLinks && (
               <a
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 className="md:hidden p-2 text-white hover:text-primary transition-colors"
@@ -177,7 +211,7 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
       </nav>
 
       {/* Mobile Menu */}
-      {showNavLinks && isLandingPage && (
+      {shouldShowNavLinks && (
         <div
           className={`fixed top-[73px] left-0 right-0 z-30 md:hidden transition-all duration-300 ${
             isMobileMenuOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4 pointer-events-none'
@@ -187,7 +221,7 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
             <div className="flex flex-col">
               <a
                 href="#informacion"
-                onClick={(e) => handleSmoothScroll(e, 'informacion')}
+                onClick={(e) => handleSectionNavigation(e, 'informacion')}
                 className="px-6 py-4 text-muted-foreground hover:text-foreground transition-all cursor-pointer border-b border-border/20"
               >
                 {landingContent.navbar.links.information}
@@ -196,7 +230,7 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
 
                <a
                 href="#eventos"
-                onClick={(e) => handleSmoothScroll(e, 'eventos')}
+                onClick={(e) => handleSectionNavigation(e, 'eventos')}
                 className="px-6 py-4 text-muted-foreground hover:text-foreground transition-all cursor-pointer"
               >
                 {landingContent.navbar.links.events}
@@ -204,17 +238,15 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
 
               <a
                 href="#recorrido"
-                onClick={(e) => handleSmoothScroll(e, 'recorrido')}
+                onClick={(e) => handleSectionNavigation(e, 'recorrido')}
                 className="px-6 py-4 text-muted-foreground hover:text-foreground transition-all cursor-pointer border-t border-border/20"
               >
                 {landingContent.navbar.links.pastEvents}
               </a>
 
               <a
-                onClick={() => {
-                  setIsMobileMenuOpen(false);
-                  router.push(paths.public.developers.getHref());
-                }}
+                href={paths.public.developers.getHref()}
+                onClick={(e) => handleSectionNavigation(e, 'developers')}
                 className="px-6 py-4 text-muted-foreground hover:text-foreground transition-all cursor-pointer border-t border-border/20"
               >
                 {landingContent.navbar.links.developers}
