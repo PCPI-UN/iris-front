@@ -1,3 +1,4 @@
+// Navigation bar component
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -6,14 +7,20 @@ import { IrisLogo } from '@/features/landing/components/iris-logo';
 import { landingContent } from '@/features/landing/content';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Menu, X } from 'lucide-react';
+import { ArrowLeft, Menu, X } from 'lucide-react';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { paths } from '@/config/paths';
+import { Geist } from 'next/font/google';
 
 interface NavbarProps {
   showNavLinks?: boolean;
   showLoginButton?: boolean;
 }
+
+const LANDING_SCROLL_TARGET_KEY = 'landing-scroll-target';
+const validLandingTargets = ['informacion', 'eventos', 'recorrido'] as const;
+type LandingTarget = (typeof validLandingTargets)[number];
+const navbarFont = Geist({ subsets: ['latin'] });
 
 export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarProps) {
   const pathname = usePathname();
@@ -22,6 +29,9 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
   const shouldShowNavLinks = showNavLinks && (isLandingPage || isDevelopersPage);
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const navLinkClassName = 'text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer';
+  const mobileNavLinkClassName =
+    'text-sm px-6 py-4 text-muted-foreground hover:text-foreground transition-all cursor-pointer';
 
   const smoothScrollToTarget = (targetId: string) => {
     setIsMobileMenuOpen(false);
@@ -105,6 +115,16 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
   useEffect(() => {
     if (!isLandingPage) return;
 
+    const pendingTarget = sessionStorage.getItem(LANDING_SCROLL_TARGET_KEY);
+    if (pendingTarget && validLandingTargets.includes(pendingTarget as LandingTarget)) {
+      sessionStorage.removeItem(LANDING_SCROLL_TARGET_KEY);
+      requestAnimationFrame(() => {
+        smoothScrollToTarget(pendingTarget);
+        window.history.replaceState(null, '', '/');
+      });
+      return;
+    }
+
     const hash = window.location.hash.replace('#', '');
     if (!hash) return;
 
@@ -128,30 +148,49 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
     setIsMobileMenuOpen(false);
 
     if (targetId === 'developers') {
-      router.push(paths.public.developers.getHref());
+      router.push(paths.public.developers.getHref(), { scroll: false });
       return;
     }
 
-    router.push(`/#${targetId}`);
+    sessionStorage.setItem(LANDING_SCROLL_TARGET_KEY, targetId);
+    router.push('/');
+  };
+
+  const handleBackToLanding = () => {
+    setIsMobileMenuOpen(false);
+    router.push(paths.home.getHref(), { scroll: false });
   };
 
   return (
     <>
-      <nav className="fixed top-0 left-0 right-0 z-40 px-6 py-4 md:px-12 glass-effect border-b border-border/30">
+      <nav className={`${navbarFont.className} fixed top-0 left-0 right-0 z-40 px-6 py-4 md:px-12 glass-effect border-b border-border/30`}>
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="relative">
-              <IrisLogo size={40} />
-              <div className="absolute inset-0 blur-xl bg-primary/30 animate-pulse" />
-            </div>
-          </Link>
+          <div className="flex items-center gap-2">
+            {isDevelopersPage && (
+              <button
+                type="button"
+                onClick={handleBackToLanding}
+                aria-label="Volver al landing"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-primary/40 text-primary transition-all hover:border-primary/60 hover:text-foreground hover:shadow-[0_0_18px_oklch(0.75_0.15_195_/_0.45)] md:h-8 md:w-8"
+              >
+                <ArrowLeft size={18} className="drop-shadow-[0_0_6px_oklch(0.75_0.15_195_/_0.7)] md:h-4 md:w-4" />
+              </button>
+            )}
+
+            <Link href="/" className="flex items-center gap-2">
+              <div className="relative">
+                <IrisLogo size={40} />
+                <div className="absolute inset-0 blur-xl bg-primary/30 animate-pulse" />
+              </div>
+            </Link>
+          </div>
 
           {shouldShowNavLinks && (
             <div className="hidden md:flex items-center gap-8 text-sm">
               <a
                 href="#informacion"
                 onClick={(e) => handleSectionNavigation(e, 'informacion')}
-                className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                className={navLinkClassName}
               >
                 {landingContent.navbar.links.information}
               </a>
@@ -159,7 +198,7 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
                <a
                 href="#eventos"
                 onClick={(e) => handleSectionNavigation(e, 'eventos')}
-                className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                className={navLinkClassName}
               >
                 {landingContent.navbar.links.events}
               </a>
@@ -167,7 +206,7 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
               <a
                 href="#recorrido"
                 onClick={(e) => handleSectionNavigation(e, 'recorrido')}
-                className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                className={navLinkClassName}
               >
                 {landingContent.navbar.links.pastEvents}
               </a>
@@ -175,7 +214,7 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
               <a
                 href={paths.public.developers.getHref()}
                 onClick={(e) => handleSectionNavigation(e, 'developers')}
-                className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                className={navLinkClassName}
               >
                 {landingContent.navbar.links.developers}
               </a>
@@ -222,7 +261,7 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
               <a
                 href="#informacion"
                 onClick={(e) => handleSectionNavigation(e, 'informacion')}
-                className="px-6 py-4 text-muted-foreground hover:text-foreground transition-all cursor-pointer border-b border-border/20"
+                className={`${mobileNavLinkClassName} border-b border-border/20`}
               >
                 {landingContent.navbar.links.information}
               </a>
@@ -231,7 +270,7 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
                <a
                 href="#eventos"
                 onClick={(e) => handleSectionNavigation(e, 'eventos')}
-                className="px-6 py-4 text-muted-foreground hover:text-foreground transition-all cursor-pointer"
+                className={mobileNavLinkClassName}
               >
                 {landingContent.navbar.links.events}
               </a>
@@ -239,7 +278,7 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
               <a
                 href="#recorrido"
                 onClick={(e) => handleSectionNavigation(e, 'recorrido')}
-                className="px-6 py-4 text-muted-foreground hover:text-foreground transition-all cursor-pointer border-t border-border/20"
+                className={`${mobileNavLinkClassName} border-t border-border/20`}
               >
                 {landingContent.navbar.links.pastEvents}
               </a>
@@ -247,7 +286,7 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
               <a
                 href={paths.public.developers.getHref()}
                 onClick={(e) => handleSectionNavigation(e, 'developers')}
-                className="px-6 py-4 text-muted-foreground hover:text-foreground transition-all cursor-pointer border-t border-border/20"
+                className={`${mobileNavLinkClassName} border-t border-border/20`}
               >
                 {landingContent.navbar.links.developers}
               </a>

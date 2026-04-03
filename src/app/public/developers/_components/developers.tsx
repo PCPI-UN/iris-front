@@ -1,5 +1,5 @@
 'use client';
-
+// UI component for the developers page
 export function Developers() {
   return (
     <section className="container mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-10 relative z-10">

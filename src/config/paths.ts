@@ -75,11 +75,11 @@ export const paths = {
     },
     project_jury: {
       getHref: (id: string) => `/app/events/${id}`,
-      roles: ["User"], // Requiere subrol JURY en el evento específico
+      roles: ["User"], // Requires subrole JURY in the specific event
     },
     evaluations: {
       getHref: (id: string) => `/app/evaluations/${id}`,
-      roles: ["User"], // Requiere subrol JURY en el evento específico
+      roles: ["User"], // Requires subrole JURY in the specific event
     },
     criteria: {
       getHref: () => "/app/criteria",
@@ -96,7 +96,7 @@ export const paths = {
       getHref: () => "/public/events",
     },
     developers: {
-      getHref: () => '/public/contribuidores',
+      getHref: () => '/public/developers',
     },
   },
 } as const;

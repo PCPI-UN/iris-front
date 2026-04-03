@@ -1,55 +1,25 @@
+// Component responsible for displaying the developers that have made IRIS possible.
 'use client';
 
 import { useMemo, useState } from 'react';
 import {
-  ContributorCard,
   ContributorRoleGroup,
   contributors,
-  getContributorRoleGroup,
 } from '@/features/developers/data/contributors';
+// Utility functions for handling contributor data and filtering
 import { Code2, Layers3, Sparkles, Users } from 'lucide-react';
+import {
+  buildRoleStats,
+  compareVersions,
+  countDistinctRoleGroups,
+  filterContributors,
+  getContributorsByVersion,
+  getVersionFilters,
+  summarizeContributors,
+} from '@/features/developers/lib/contributor-utils';
 
 const normalize = (value: string) => value.trim().toLowerCase();
-
-const getVersionParts = (version: string) => {
-  const matches = normalize(version).match(/\d+/g);
-  return matches ? matches.map(Number) : [0];
-};
-
-const compareVersions = (a: string, b: string) => {
-  const aParts = getVersionParts(a);
-  const bParts = getVersionParts(b);
-  const length = Math.max(aParts.length, bParts.length);
-
-  for (let index = 0; index < length; index += 1) {
-    const aValue = aParts[index] ?? 0;
-    const bValue = bParts[index] ?? 0;
-
-    if (aValue > bValue) return 1;
-    if (aValue < bValue) return -1;
-  }
-
-  return 0;
-};
-
-type ContributorSummary = {
-  name: string;
-  versions: string[];
-  roleGroups: ContributorRoleGroup[];
-  roleLabels: string[];
-};
-
-const roleStatsInitial: Record<ContributorRoleGroup, number> = {
-  Frontend: 0,
-  Backend: 0,
-  FullStack: 0,
-  'UX & UI': 0,
-  'Software Architecture': 0,
-  DevOps: 0,
-  'Scrum Master': 0,
-  Otros: 0,
-};
-
+// Color palette for version accents
 const versionAccentPalette = [
   { dotClass: 'bg-cyan-400', textClass: 'text-cyan-300' },
   { dotClass: 'bg-emerald-400', textClass: 'text-emerald-300' },
@@ -85,54 +55,12 @@ export function Developers() {
   const [versionFilter, setVersionFilter] = useState<string>('Todas');
   const [roleFilter, setRoleFilter] = useState<ContributorRoleGroup | 'Todos'>('Todos');
 
-  const summarizedContributors = useMemo<ContributorSummary[]>(() => {
-    const contributorsMap = new Map<
-      string,
-      {
-        name: string;
-        versions: Set<string>;
-        roleGroups: Set<ContributorRoleGroup>;
-        roleLabels: Set<string>;
-      }
-    >();
+  const summarizedContributors = useMemo(
+    () => summarizeContributors(contributors),
+    []
+  );
 
-    contributors.forEach((contributor: ContributorCard) => {
-      const normalizedName = normalize(contributor.name);
-      const roleGroup = getContributorRoleGroup(contributor.role);
-
-      if (!contributorsMap.has(normalizedName)) {
-        contributorsMap.set(normalizedName, {
-          name: contributor.name,
-          versions: new Set<string>(),
-          roleGroups: new Set<ContributorRoleGroup>(),
-          roleLabels: new Set<string>(),
-        });
-      }
-
-      const summary = contributorsMap.get(normalizedName);
-      if (!summary) return;
-
-      summary.versions.add(contributor.version);
-      summary.roleGroups.add(roleGroup);
-      summary.roleLabels.add(contributor.role.trim());
-    });
-
-    return Array.from(contributorsMap.values())
-      .map((summary) => ({
-        name: summary.name,
-        versions: Array.from(summary.versions).sort(compareVersions),
-        roleGroups: Array.from(summary.roleGroups),
-        roleLabels: Array.from(summary.roleLabels).sort((a, b) => a.localeCompare(b, 'es')),
-      }))
-      .sort((a, b) => a.name.localeCompare(b.name, 'es'));
-  }, []);
-
-  const versions = useMemo<string[]>(() => {
-    const list = Array.from(new Set(contributors.map((contributor: ContributorCard) => contributor.version))).sort(
-      compareVersions
-    );
-    return ['Todas', ...list];
-  }, []);
+  const versions = useMemo(() => getVersionFilters(contributors), []);
 
   const versionValues = useMemo<string[]>(
     () => versions.filter((version) => version !== 'Todas'),
@@ -147,13 +75,10 @@ export function Developers() {
 
   const totalVersions = versionValues.length;
   const totalContributors = summarizedContributors.length;
-  const totalDistinctRoles = useMemo(() => {
-    const rolesSet = new Set<ContributorRoleGroup>();
-    summarizedContributors.forEach((contributor) => {
-      contributor.roleGroups.forEach((role) => rolesSet.add(role));
-    });
-    return rolesSet.size;
-  }, [summarizedContributors]);
+  const totalDistinctRoles = useMemo(
+    () => countDistinctRoleGroups(summarizedContributors),
+    [summarizedContributors]
+  );
 
   const latestVersion = useMemo(() => {
     if (versionValues.length === 0) return null;
@@ -162,27 +87,17 @@ export function Developers() {
     );
   }, [versionValues]);
 
-  const contributorsByVersionFilter = useMemo(() => {
-    if (versionFilter === 'Todas') return summarizedContributors;
-
-    return summarizedContributors.filter((contributor) =>
-      contributor.versions.some((version) => normalize(version) === normalize(versionFilter))
-    );
-  }, [summarizedContributors, versionFilter]);
+  const contributorsByVersionFilter = useMemo(
+    () => getContributorsByVersion(summarizedContributors, versionFilter),
+    [summarizedContributors, versionFilter]
+  );
 
   const totalContributorsBySelectedVersion = contributorsByVersionFilter.length;
 
-  const roleStats = useMemo(() => {
-    const stats = { ...roleStatsInitial };
-
-    contributorsByVersionFilter.forEach((contributor) => {
-      contributor.roleGroups.forEach((roleGroup) => {
-        stats[roleGroup] += 1;
-      });
-    });
-
-    return stats;
-  }, [contributorsByVersionFilter]);
+  const roleStats = useMemo(
+    () => buildRoleStats(contributorsByVersionFilter),
+    [contributorsByVersionFilter]
+  );
 
   const roles = useMemo(() => {
     const roleList = (Object.keys(roleStats) as ContributorRoleGroup[]).filter(
@@ -191,17 +106,10 @@ export function Developers() {
     return ['Todos', ...roleList] as Array<'Todos' | ContributorRoleGroup>;
   }, [roleStats]);
 
-  const filtered = useMemo(() => {
-    return summarizedContributors
-      .filter((contributor) => {
-        const versionOk = versionFilter === 'Todas' || contributor.versions.some(
-          (version) => normalize(version) === normalize(versionFilter)
-        );
-        const roleOk = roleFilter === 'Todos' || contributor.roleGroups.includes(roleFilter);
-        return versionOk && roleOk;
-      })
-      .sort((a, b) => a.name.localeCompare(b.name, 'es'));
-  }, [summarizedContributors, versionFilter, roleFilter]);
+  const filtered = useMemo(
+    () => filterContributors(summarizedContributors, versionFilter, roleFilter),
+    [summarizedContributors, versionFilter, roleFilter]
+  );
 
   return (
     <section className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10 space-y-6 relative z-10">
@@ -215,7 +123,7 @@ export function Developers() {
             <span>Contribuidores IRIS</span>
           </div>
 
-          <h1 className="text-5xl md:text-5xl font-bold leading-tight">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight">
             <span style={rainbowTextStyle}>IRIS</span> — Equipo de Desarrollo
           </h1>
 
@@ -350,8 +258,8 @@ export function Developers() {
                 }}
               />
 
-              <h3 className="text-xl font-semibold text-white">{developer.name}</h3>
-              <p className="mt-3 inline-flex rounded-full border border-white/45 bg-transparent px-3 py-1 text-sm text-white justify-center text-center">
+              <h3 className="text-lg sm:text-xl font-semibold text-white">{developer.name}</h3>
+              <p className="mt-3 inline-flex max-w-full rounded-full border border-white/45 bg-transparent px-3 py-1 text-sm text-white justify-center text-center break-words">
                 {developer.roleLabels.join(' • ')}
               </p>
 

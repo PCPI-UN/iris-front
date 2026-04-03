@@ -17,7 +17,7 @@ const normalizeRole = (role: string) => role.trim().toLowerCase();
 
 export const getContributorRoleGroup = (role: string): ContributorRoleGroup => {
   const normalizedRole = normalizeRole(role);
-
+// Simple keyword-based mapping to role groups
   if (normalizedRole.includes('frontend')) return 'Frontend';
   if (normalizedRole.includes('backend')) return 'Backend';
   if (normalizedRole.includes('devops')) return 'DevOps';
@@ -44,6 +44,7 @@ export const contributors: ContributorCard[] = [
   { name: 'Gabriel Palencia', role: 'Backend Developer', version: 'v1.0' },
   { name: 'Daniel Romero', role: 'Software Architect', version: 'v1.0' },
 
+  { name: 'Daniel Romero', role: 'Software Architect', version: 'v2.0' },
   { name: 'Kevin Torregrosa', role: 'Backend Leader', version: 'v2.0' },
   { name: 'Paula Núñez', role: 'Frontend Leader', version: 'v2.0' },
   { name: 'Andrés Monserrat', role: 'Frontend Developer', version: 'v2.0' },
@@ -54,5 +55,4 @@ export const contributors: ContributorCard[] = [
   { name: 'Wilmer Santiago', role: 'Full Stack Developer', version: 'v2.0' },
   { name: 'Camilo de la Rosa', role: 'DevOps Engineer', version: 'v2.0' },
   { name: 'Natalia Carpintero', role: 'Scrum Master', version: 'v2.0' },
-  { name: 'Daniel Romero', role: 'Software Architect', version: 'v2.0' },
 ];

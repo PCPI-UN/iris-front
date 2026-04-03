@@ -1,9 +1,13 @@
+// This component is responsible for displaying a carousel of developers on the landing page.
+// It shows the latest version of the project and allows users to see the contributors associated with that version. 
 'use client';
 
-import { RefObject, useEffect, useRef, useState } from 'react';
-import { Rows3, Grid2x2 } from 'lucide-react';
+import { RefObject, useEffect, useRef } from 'react';
+import { Plus } from 'lucide-react';
+import Link from 'next/link';
 import { landingContent } from '../content';
-
+import { paths } from '@/config/paths';
+// Types and utility functions for handling developer versions and sorting
 interface DevelopersCarouselProps {
   developersRef: RefObject<HTMLElement>;
 }
@@ -32,12 +36,11 @@ const compareVersions = (a: string, b: string) => {
 
   return 0;
 };
-
 interface VersionCarouselProps {
   developers: Developer[];
   version: string;
 }
-
+// Function to display a horizontally scrolling carousel.
 function VersionCarousel({ developers, version }: VersionCarouselProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const normalizedVersion = normalizeVersion(version);
@@ -76,7 +79,7 @@ function VersionCarousel({ developers, version }: VersionCarouselProps) {
       </div>
     );
   }
-
+// Seamless infinite scroll
   const duplicatedDevelopers = [...developers, ...developers, ...developers];
 
   return (
@@ -114,58 +117,8 @@ function VersionCarousel({ developers, version }: VersionCarouselProps) {
     </div>
   );
 }
-
-interface VersionColumnProps {
-  developers: Developer[];
-  version: string;
-}
-
-function VersionColumn({ developers, version }: VersionColumnProps) {
-  const normalizedVersion = normalizeVersion(version);
-  const isLatestStyle = normalizedVersion !== 'v1.0';
-
-  if (developers.length === 0) {
-    return (
-      <div className="rounded-xl border border-border/40 bg-muted/20 px-4 py-6 text-center text-sm text-muted-foreground">
-        Aún no hay integrantes registrados para {version.toUpperCase()}.
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-3">
-      {developers.map((dev) => (
-        <div
-          key={`${version}-${dev.name}`}
-          className={`rounded-lg border px-4 py-3 backdrop-blur-sm transition-all ${
-            isLatestStyle
-              ? 'border-emerald-500/35 bg-emerald-500/10'
-              : 'border-blue-500/35 bg-blue-500/10'
-          }`}
-        >
-          <div className="flex items-center justify-between gap-3">
-            <h3 className="text-sm md:text-base font-semibold text-foreground/95">{dev.name}</h3>
-            <span
-              className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] md:text-xs font-mono ${
-                isLatestStyle
-                  ? 'border-emerald-500/45 bg-emerald-500/20 text-emerald-300'
-                  : 'border-blue-500/45 bg-blue-500/20 text-blue-300'
-              }`}
-            >
-              {dev.version}
-            </span>
-          </div>
-          <p className="mt-1 text-[11px] md:text-xs font-mono text-muted-foreground uppercase tracking-wider">
-            {dev.role}
-          </p>
-        </div>
-      ))}
-    </div>
-  );
-}
-
+// Man component for the developers carousel section.
 export function DevelopersCarousel({ developersRef }: DevelopersCarouselProps) {
-  const [viewMode, setViewMode] = useState<'carousel' | 'list'>('carousel');
   const developers = landingContent.developers.team;
 
   const versions = Array.from(new Set(developers.map((dev) => dev.version)));
@@ -193,39 +146,30 @@ export function DevelopersCarousel({ developersRef }: DevelopersCarouselProps) {
           </h2>
 
           <div className="mt-4 flex justify-center">
-            <button
-              type="button"
-              onClick={() => setViewMode((prev) => (prev === 'carousel' ? 'list' : 'carousel'))}
+            <Link
+              href={paths.public.developers.getHref()}
+              scroll={false}
               className="inline-flex h-10 w-10 items-center justify-center rounded-full cursor-pointer text-black transition-all duration-200 hover:scale-105 hover:brightness-110"
               style={{
                 background:
                   'linear-gradient(135deg, oklch(0.75 0.15 195), oklch(0.82 0.18 330), oklch(0.88 0.16 85), oklch(0.75 0.15 195))',
               }}
-              aria-label={viewMode === 'carousel' ? 'Cambiar a vista de lista' : 'Cambiar a vista de carrusel'}
-              title={viewMode === 'carousel' ? 'Vista lista' : 'Vista carrusel'}
+              aria-label="Ver más contribuidores"
+              title="Ver más"
             >
-              {viewMode === 'carousel' ? <Rows3 className="h-4 w-4 text-black" /> : <Grid2x2 className="h-4 w-4 text-black" />}
-            </button>
+              <Plus className="h-4 w-4 text-black" />
+            </Link>
           </div>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-6 md:px-12">
-        {viewMode === 'carousel' ? (
-          <div>
-            <div className="mb-3 text-xs md:text-sm font-mono text-emerald-400/90 uppercase tracking-[0.2em]">
-              Versión {latestVersion}
-            </div>
-            <VersionCarousel developers={latestDevelopers} version={latestVersion} />
+        <div>
+          <div className="mb-3 text-xs md:text-sm font-mono text-emerald-400/90 uppercase tracking-[0.2em]">
+            Versión {latestVersion}
           </div>
-        ) : (
-          <div>
-            <div className="mb-3 text-xs md:text-sm font-mono text-emerald-400/90 uppercase tracking-[0.2em]">
-              Versión {latestVersion}
-            </div>
-            <VersionColumn developers={latestDevelopers} version={latestVersion} />
-          </div>
-        )}
+          <VersionCarousel developers={latestDevelopers} version={latestVersion} />
+        </div>
       </div>
 
       {/* Bottom subtle line */}
