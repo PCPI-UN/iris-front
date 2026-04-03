@@ -18,6 +18,9 @@ import { DataTable } from "@/components/data-table";
 import { columnsProject } from "./columns-project-table";
 import React from "react";
 
+//MOCKAPI -> category
+//BACK -> courseId
+
 export const ProjectList = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -25,9 +28,9 @@ export const ProjectList = () => {
   const page = searchParams?.get("page") ? Number(searchParams.get("page")) : 1;
   const eventId = searchParams?.get("event") ? Number(searchParams.get("event")) : undefined;
   const state = searchParams?.get("state") || "UNDER_REVIEW";
-  const category = searchParams?.get("category") ? Number(searchParams.get("category")) : undefined;
+  const courseId = searchParams?.get("courseId") ? Number(searchParams.get("courseId")) : undefined;
 
-  const projectsQuery = useProjects({ page, eventId, state, category });
+  const projectsQuery = useProjects({ page, eventId, state, courseId });
   const projects = projectsQuery.data?.data;
   const meta = projectsQuery.data?.meta;
   
@@ -67,7 +70,7 @@ export const ProjectList = () => {
     params.set("page", "1");
     if (eventId) params.set("event", String(eventId));
     if (newStatus) params.set("state", newStatus);
-    if (category) params.set("category", String(category))
+    if (courseId) params.set("courseId", String(courseId))
     router.push(`?${params.toString()}`);
   };
 

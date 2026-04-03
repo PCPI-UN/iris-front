@@ -12,11 +12,17 @@ export type RejectResponse = {
 };
 
 export const RejectProject = async ({ projectId, reason }: RejectPayload): Promise<RejectResponse> => {
-  const res = await api.patch<RejectResponse>(`/projects/${projectId}/status`, { 
+  const res = await api.patch<RejectResponse>(`/projects/${projectId}/reject`, { 
     state: "REJECTED",
-    comment: reason
+    reason: reason
   });
   return res;
+
+  //MOCKAPI
+  //const res = await api.patch<RejectResponse>(`/projects/${projectId}/status`, { 
+  //  state: "REJECTED",
+  //  comment: reason
+  //});
 };
 
 export const useRejectProject = () => {

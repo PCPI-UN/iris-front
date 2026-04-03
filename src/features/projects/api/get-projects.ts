@@ -4,8 +4,11 @@ import { api } from "@/lib/api-client";
 import { QueryConfig } from "@/lib/react-query";
 import { Meta, Project } from "@/types/api";
 
+//MOCKAPI -> category
+//BACK -> courseId
+
 export const getProjects = async (
-  { page, eventId, state, category }: { page?: number; eventId?: number, state?: string, category?: number } = { page: 1 }
+  { page, eventId, state, courseId }: { page?: number; eventId?: number, state?: string, courseId?: number } = { page: 1 }
 ): Promise<{ data: Project[]; meta: Meta }> => {
   const response = await api.get<{
     items: Project[];
@@ -13,7 +16,7 @@ export const getProjects = async (
     limit: number;
     total: number;
     totalPages: number;
-  }>(`/projects/by-event/${eventId}`, { params: { page, state, category } });
+  }>(`/projects/by-event/${eventId}`, { params: { page, state, courseId } });
   
   return {
     data: response.items || [],
@@ -30,14 +33,14 @@ export const getProjectsQueryOptions = ({
   page = 1,
   eventId,
   state,
-  category,
-}: { page?: number; eventId?: number; state?: string, category?: number } = {}) => {
+  courseId,
+}: { page?: number; eventId?: number; state?: string, courseId?: number } = {}) => {
   return queryOptions({
     queryKey: [
       "projects",
-      { page, eventId, state, category },
+      { page, eventId, state, courseId },
     ],
-    queryFn: () => getProjects({ page, eventId, state, category }),
+    queryFn: () => getProjects({ page, eventId, state, courseId }),
   });
 };
 
@@ -45,7 +48,7 @@ type UseProjectsOptions = {
   page?: number;
   eventId?: number;
   state?: string;
-  category?: number;
+  courseId?: number;
   queryConfig?: QueryConfig<typeof getProjectsQueryOptions>;
 };
 
@@ -54,10 +57,10 @@ export const useProjects = ({
   page,
   eventId,
   state,
-  category,
+  courseId
 }: UseProjectsOptions) => {
   return useQuery({
-    ...getProjectsQueryOptions({ page, eventId, state, category }),
+    ...getProjectsQueryOptions({ page, eventId, state, courseId }),
     ...queryConfig,
   });
 };

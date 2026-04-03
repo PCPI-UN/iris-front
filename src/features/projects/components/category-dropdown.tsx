@@ -6,6 +6,9 @@ import { Select, SelectItem } from "@/components/ui/select";
 import { useCoursesByEvent } from "../api/use-category";
 import type { Key } from "@react-types/shared";
 
+//MOCKAPI -> category
+//BACK -> courseId
+
 export const CategoriesDropdown = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -19,7 +22,7 @@ export const CategoriesDropdown = () => {
   const courses = data?.courses || [];
 
   const selectedKeys = React.useMemo<Set<Key>>(() => {
-    const cat = searchParams?.get("category");
+    const cat = searchParams?.get("courseId");
     return cat ? new Set([cat]) : new Set<Key>();
   }, [searchParams]);
 
@@ -29,12 +32,12 @@ export const CategoriesDropdown = () => {
 
     const params = new URLSearchParams();
     searchParams?.forEach((v, k) => {
-      if (k === "category") return;
+      if (k === "courseId") return;
       params.set(k, v);
     });
 
-    if (value) params.set("category", value);
-    else params.delete("category");
+    if (value) params.set("courseId", value);
+    else params.delete("courseId");
 
     router.push(`${pathname}?${params.toString()}`);
   };
