@@ -24,6 +24,10 @@ export const paths = {
       getHref: (token: string) =>
         `/auth/chg-password?token=${encodeURIComponent(token)}`,
     },
+    confirm: {
+      getHref: (token: string) =>
+        `/auth/confirm?token=${encodeURIComponent(token)}`,
+    },
   },
 
   app: {
