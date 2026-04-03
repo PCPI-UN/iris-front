@@ -109,7 +109,8 @@ export type Event = Entity<{
   participants?: string[];
   status?: number;
   active: boolean;
-  role?: role;
+  role: role;
+  eventType?: "Competition" | "Exhibition" | string;
   createdAt: number;
   updatedAt: number;
 }>;

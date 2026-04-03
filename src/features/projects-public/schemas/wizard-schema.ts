@@ -6,6 +6,8 @@ export const participantSchema = z.object({
   lastName: z.string().min(1, 'Apellido requerido'),
   email: z.string().email('Email inválido'),
   studentCode: z.string().optional(),
+  semester: z.string().min(1, 'Semestre requerido'),
+  career: z.string().min(1, 'Carrera requerida'),
 })
 
 export const projectSchema = z.object({
