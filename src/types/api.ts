@@ -91,7 +91,6 @@ export type Event = Entity<{
   statusName: string;
   location?: string;
   locationDetails?: string;
-  eventType: "Exposition" | "Competition" ;
   inscriptionCost?: number;
   inscriptionRequirements?: string;
   aboutOurAllies?: string;
