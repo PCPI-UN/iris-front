@@ -90,10 +90,11 @@ export const paths = {
       getHref: (id: string) => `/public/discussions/${id}`,
     },
     project: {
-      getHref: (accessCode: string) => `/public/projects/${accessCode}`,
+      getHref: (eventId: string | number) => `/public/projects/${eventId}`,
     },
     event: {
-      getHref: () => "/public/events",
+      getHref: (eventId?: string | number) =>
+        eventId ? `/public/events/${eventId}` : '/public/events',
     },
   },
 } as const;

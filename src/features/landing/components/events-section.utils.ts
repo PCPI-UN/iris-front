@@ -21,14 +21,24 @@ export const PRISMATIC_GRADIENT =
 export const PRISMATIC_GRADIENT_DIM =
   "linear-gradient(115deg, oklch(0.75 0.15 195 / 0.3), oklch(0.82 0.18 330 / 0.3), oklch(0.88 0.16 85 / 0.3), oklch(0.75 0.15 195 / 0.3))";
 
-export const getEventColor = (_eventId: number, index: number) => {
+export const getEventColor = (_eventId: string | number, index: number) => {
   const colorIndex = index % EVENT_COLORS.length;
   return EVENT_COLORS[colorIndex];
 };
 
+const parseLocalDate = (value: string) => {
+  const [year, month, day] = value.split("-").map(Number);
+
+  if (!year || !month || !day) {
+    return new Date(value);
+  }
+
+  return new Date(year, month - 1, day);
+};
+
 export const formatDateRange = (startDate: string, endDate: string) => {
-  const start = new Date(startDate);
-  const end = new Date(endDate);
+  const start = parseLocalDate(startDate);
+  const end = parseLocalDate(endDate);
 
   const endDay = end.getDate();
   const month = start.toLocaleDateString("es", { month: "long" });
@@ -38,7 +48,8 @@ export const formatDateRange = (startDate: string, endDate: string) => {
 };
 
 export const getStatusText = (statusName: string) => {
-  const normalizedStatus = statusName.trim().toUpperCase();
+  const normalizedStatus = String(statusName ?? "").trim().toUpperCase();
+
   if (normalizedStatus === "CLOSED") {
     return landingContent.events.status.closed;
   }

@@ -2,9 +2,6 @@
 // ideally, we want to keep these api related types in sync
 // with the backend instead of manually writing them out
 
-import { user } from "@heroui/theme";
-import { User } from "lucide-react";
-
 export type BaseEntity = {
   id: string;
   createdAt: number;
@@ -86,11 +83,30 @@ export type Event = Entity<{
   startDate: string;
   endDate: string;
   inscriptionDeadline: string;
-  accessCode: string;
+  accessCode: string; 
   isPubliclyJoinable: boolean;
   evaluationsOpened: boolean;
   statusName: string;
   location?: string;
+  locationDetails?: string;
+  eventType: "Exposition" | "Competition" ;
+  inscriptionCost?: number;
+  inscriptionRequirements?: string;
+  aboutOurAllies?: string;
+  evaluationType?: "ZERO_TO_FIVE" | "ZERO_TO_HUNDRED" ;
+  minimumTeamSize?: number;
+  specificInscriptionDetails?: { title: string; description: string }[];
+  categories?: { id: number; name: string; active?: boolean }[];
+  organizers?: string[];
+  collaborators?: string[];
+  awards?: {
+    title: string;
+    description?: string;
+    value?: number;
+    position: number;
+    categoryId?: number;
+  }[];
+  participants?: string[];
   status?: number;
   active: boolean;
   role: role;

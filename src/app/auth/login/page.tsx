@@ -1,16 +1,77 @@
 "use client";
 
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 
 import { paths } from "@/config/paths";
 import { LoginForm } from "@/features/auth/components/login-form";
 import { PublicLayout } from "@/components/layouts/public-layout";
+import { api } from '@/lib/api-client';
+import { resolveJoinTarget } from '@/features/events/utils/resolve-join-target';
 import "@/features/landing/index.css";
+
+const resolveSafeRedirect = (redirectTo: string | null | undefined, fallback: string) => {
+  if (!redirectTo) {
+    return fallback;
+  }
+
+  let decodedRedirect = redirectTo;
+
+  try {
+    decodedRedirect = decodeURIComponent(redirectTo);
+  } catch {
+    return fallback;
+  }
+
+  // Just a basic check to prevent open redirects. We want to allow relative paths but not absolute URLs.
+  if (!decodedRedirect.startsWith('/') || decodedRedirect.startsWith('//')) {
+    return fallback;
+  }
+
+  return decodedRedirect;
+};
+
+const resolvePostLoginTarget = async (redirectTo?: string | null) => {
+  const defaultTarget = paths.app.dashboard.getHref();
+  const decodedRedirect = resolveSafeRedirect(redirectTo, defaultTarget);
+
+  const projectMatch = decodedRedirect.match(/^\/public\/projects\/([^/?#]+)/);
+
+  if (!projectMatch) {
+    return decodedRedirect;
+  }
+
+  const eventId = projectMatch[1];
+
+  try {
+    const userResponse = await api.get<unknown>('/auth/me');
+    const userCandidate =
+      userResponse && typeof userResponse === 'object' && 'data' in userResponse
+        ? (userResponse as { data?: unknown }).data
+        : userResponse;
+
+    const user = userCandidate as {
+      id?: string | null;
+      firstName?: string | null;
+      lastName?: string | null;
+      email?: string | null;
+    } | null;
+
+    if (!user?.id) {
+      return decodedRedirect;
+    }
+
+    return resolveJoinTarget({
+      eventId,
+      user,
+    });
+  } catch {
+    return decodedRedirect;
+  }
+};
 
 const LoginPage = () => {
   const searchParams = useSearchParams();
-  // Comentamos redirectTo para siempre ir a /app después del login
-  // const redirectTo = searchParams?.get('redirectTo');
+  const redirectTo = searchParams?.get('redirectTo');
 
   return (
     <PublicLayout showNavLinks={false} showLoginButton={false}>
@@ -41,11 +102,12 @@ const LoginPage = () => {
         <div className="w-full max-w-md px-4 sm:px-6 lg:px-8">
           <div className="glass-card p-6 sm:p-8 w-full">
             <LoginForm
-              onSuccess={() => {
-                // Usar window.location.href en lugar de router.replace
-                // para forzar una recarga completa y asegurar que las cookies
-                // se envíen correctamente en producción
-                window.location.href = paths.app.dashboard.getHref();
+              onSuccess={async () => {
+                // We use window.location.href instead of router.replace
+                // to force a complete reload and ensure cookies
+                // are sent correctly in production
+                const targetUrl = await resolvePostLoginTarget(redirectTo);
+                window.location.href = targetUrl;
               }}
             />
           </div>

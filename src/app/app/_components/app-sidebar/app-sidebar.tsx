@@ -35,13 +35,18 @@ import "@/features/landing/index.css";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const user = useUser();
+  const primaryRoleName =
+    user.data?.platformRoles?.[0]?.name ??
+    ((user.data as { role?: string } | undefined)?.role === "ADMIN"
+      ? "Admin"
+      : "User");
 
   const getMenuItems = React.useMemo((): {
     title: string;
     url: string;
     icon: LucideIcon;
   }[] => {
-    switch (user.data?.platformRoles[0].name) {
+    switch (primaryRoleName) {
       case "Admin":
         return [
           { title: "Dashboard", url: paths.app.root.getHref(), icon: Home },
@@ -82,7 +87,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           { title: "Dashboard", url: paths.app.root.getHref(), icon: Home },
         ];
     }
-  }, [user.data?.platformRoles[0].name]);
+  }, [primaryRoleName]);
 
   const menuItems = getMenuItems;
 
