@@ -6,12 +6,21 @@ import {
 import { ProjectWizard } from "@/features/projects-public/components/project-wizard";
 import { PublicLayout } from "@/components/layouts/public-layout";
 import { getCoursesDropdownQueryOptions } from '@/features/courses/api/get-courses-dropdown';
+import { getPublicEventDetailQueryOptions } from '@/features/events/api/get-public-event-detail';
 
 const PublicProjectPage = async ({ params }: { params: Promise<{ eventId: number }> }) => {
     const { eventId } = await params;
     
     const queryClient = new QueryClient();
+    
+    // Fetch event details to get the event type
+    const eventDetailResult = await queryClient.fetchQuery(
+      getPublicEventDetailQueryOptions(String(eventId))
+    );
+    const eventType = eventDetailResult?.data?.eventType || "Exposition";
+    
     await queryClient.prefetchQuery(getCoursesDropdownQueryOptions(eventId));
+    
     const dehydratedState = dehydrate(queryClient);
 
     return (
@@ -40,7 +49,7 @@ const PublicProjectPage = async ({ params }: { params: Promise<{ eventId: number
                             Complete el formulario para registrar su proyecto académico
                         </p>
                     </div>
-                    <ProjectWizard eventId={eventId} />
+                    <ProjectWizard eventId={eventId} eventType={eventType as "Competition" | "Exposition"} />
                 </div>
             </HydrationBoundary>
         </PublicLayout>
