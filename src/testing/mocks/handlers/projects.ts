@@ -17,6 +17,8 @@ type ProjectBody = {
     lastName: string;
     email: string;
     studentCode?: string;
+    carreer?: string;
+    semester?: string;
   }>;
   jurorAssignments?: Array<{
     memberUserId: string;
@@ -195,13 +197,7 @@ export const projectsHandlers = [
     try {
       const data = await parseProjectBody(request);
 
-      if (!data.name?.trim()) {
-        return HttpResponse.json(
-          { message: "name is required" },
-          { status: 400 }
-        );
-      }
-
+      // Validar eventId siempre (requerido para ambos tipos)
       if (!data.eventId?.trim()) {
         return HttpResponse.json(
           { message: "eventId is required" },
@@ -209,24 +205,54 @@ export const projectsHandlers = [
         );
       }
 
-      if (!data.courseId?.trim()) {
+      // Validar participants siempre (requerido para ambos tipos)
+      const participants = parseJsonArray(
+        typeof data.participants === "string" 
+          ? data.participants 
+          : JSON.stringify(data.participants),
+        []
+      );
+      
+      if (!Array.isArray(participants) || participants.length === 0) {
         return HttpResponse.json(
-          { message: "courseId is required" },
+          { message: "At least one participant is required" },
           { status: 400 }
         );
       }
 
+      // Determinar si es Competition o Exposition:
+      // Competition: solo tiene eventId y participants
+      // Exposition: tiene eventId, courseId, name y participants
+      const isCompetition = !data.name?.trim() && !data.courseId?.trim(); // ✅ Correcto
+
+      if (!isCompetition) {
+        // Para Exposition: validar name y courseId
+        if (!data.name?.trim()) {
+          return HttpResponse.json(
+            { message: "name is required" },
+            { status: 400 }
+          );
+        }
+
+        if (!data.courseId?.trim()) {
+          return HttpResponse.json(
+            { message: "courseId is required" },
+            { status: 400 }
+          );
+        }
+      }
+
       const result = db.project.create({
         eventId: toInternalPrefixedId(String(data.eventId), "event"),
-        courseId: toInternalPrefixedId(String(data.courseId), "course"),
-        name: data.name,
+        courseId: data.courseId ? toInternalPrefixedId(String(data.courseId), "course") : "no-course",
+        name: data.name || (isCompetition ? "Competition Entry" : ""),
         logo: data.logo || "",
         description: data.description || undefined,
         eventNumber: undefined,
         state: data.state || "UNDER_REVIEW",
         createdAt: Date.now(),
         documents: data.documents ?? [],
-        participants: data.participants ?? [],
+        participants: participants,
         jurorAssignments: data.jurorAssignments ?? [],
       });
       await persistDb("project");

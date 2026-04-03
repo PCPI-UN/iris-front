@@ -11,11 +11,13 @@ import { CheckCircle2, FileText, Users, Upload } from "lucide-react";
 import { cn } from "@/utils/cn";
 import { set, z } from "zod";
 import {
-  participantSchema,
+  participantSchemaCompetition,
+  participantSchemaExposition,
   projectSchema,
   documentsSchema,
 } from "../schemas/wizard-schema";
 import {
+  createCompetitionInputSchema,
   createProjectInputSchema,
   useCreateProject,
 } from "../api/create-project";
@@ -82,6 +84,7 @@ export function ProjectWizard({ eventId, eventType}: ProjectWizardProps) {
   const steps = getSteps(eventType);
   const [stepErrors, setStepErrors] = useState<string[]>([]);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  
   const [wizardData, setWizardData] = useState<WizardData>({
     participants: [],
     project: {
@@ -127,7 +130,11 @@ const validateStep = (step: number): boolean => {
   try {
     switch (step) {
       case 1: // Participantes
-        z.array(participantSchema)
+        const participantSchemaToUse = eventType === "Competition"
+          ? z.array(participantSchemaCompetition)
+          : z.array(participantSchemaExposition);
+        
+        participantSchemaToUse
           .min(1, "Debe agregar al menos un participante")
           .parse(wizardData.participants);
         return true;
@@ -178,6 +185,12 @@ const handleSubmit = () => {
   try {
     // Para Competition, solo envía participantes
     if (eventType === "Competition") {
+      // Validar participantes
+      z.array(participantSchemaCompetition)
+        .min(1, "Debe agregar al menos un participante")
+        .parse(wizardData.participants);
+
+      // Validar schema de competencia
       const payloadData = {
         eventId: String(eventId),
         participants: JSON.stringify(
@@ -192,6 +205,8 @@ const handleSubmit = () => {
         ),
       };
 
+      createCompetitionInputSchema.parse(payloadData);
+
       const formData = new FormData();
       formData.append("eventId", payloadData.eventId);
       formData.append("participants", payloadData.participants);
@@ -201,6 +216,17 @@ const handleSubmit = () => {
     }
 
     // Para Exposition, envía todo como está
+    // Validar participantes
+    z.array(participantSchemaExposition)
+      .min(1, "Debe agregar al menos un participante")
+      .parse(wizardData.participants);
+
+    // Validar proyecto
+    projectSchema.parse(wizardData.project);
+
+    // Validar documentos
+    documentsSchema.parse(wizardData.documents);
+
     const payloadData = {
       name: wizardData.project.name,
       description: wizardData.project.description,
@@ -212,8 +238,8 @@ const handleSubmit = () => {
           lastName: p.lastName,
           email: p.email,
           studentCode: p.studentCode,
-          semester: p.semester,
-          career: p.career,
+          semester: p.semester || "",
+          career: p.career || "",
         }))
       ),
       documents: JSON.stringify([
@@ -323,6 +349,7 @@ const handleSubmit = () => {
             <ParticipantsStep
               participants={wizardData.participants}
               onUpdate={updateParticipants}
+              eventType={eventType}  // ← AÑADE ESTO
             />
           )}
           {currentStep === 2 && eventType === "Exposition" && (
@@ -339,10 +366,10 @@ const handleSubmit = () => {
             />
           )}
           {currentStep === 4 && eventType === "Exposition" && (
-            <ReviewStep data={wizardData} />
+            <ReviewStep data={wizardData} eventType={eventType} />
           )}
           {currentStep === 2 && eventType === "Competition" && (
-            <ReviewStep data={wizardData} />
+            <ReviewStep data={wizardData} eventType={eventType} />
           )}
 
           {/* Mostrar errores de validación */}
@@ -389,7 +416,13 @@ const handleSubmit = () => {
             isDisabled={createProjectMutation.isPending}
             className="shadow-lg shadow-success/30 hover:shadow-xl hover:shadow-success/40 transition-all w-full sm:w-auto order-1 sm:order-2"
           >
-            {createProjectMutation.isPending ? "Creando..." : "Enviar Proyecto"}
+            {createProjectMutation.isPending 
+              ? eventType === "Competition" 
+                ? "Inscribiendo..." 
+                : "Creando..."
+              : eventType === "Competition"
+              ? "Inscribir Equipo"
+              : "Enviar Proyecto"}
           </Button>
         )}
       </div>
@@ -414,18 +447,19 @@ const handleSubmit = () => {
               </ModalHeader>
               <ModalBody className="text-center pb-6">
                 <h3 className="text-2xl font-bold text-foreground mb-2">
-                  ¡Proyecto Enviado Exitosamente!
+                  {eventType === "Competition"
+                    ? "¡Equipo Inscrito Exitosamente!"
+                    : "¡Proyecto Enviado Exitosamente!"}
                 </h3>
                 <p className="text-muted-foreground">
-                  Tu proyecto{" "}
-                  <span className="font-semibold text-foreground">
-                    {wizardData.project.name}
-                  </span>{" "}
-                  ha sido registrado correctamente.
+                  {eventType === "Competition"
+                    ? "Tu participación ha sido recibida correctamente."
+                    : `Tu proyecto "${wizardData.project.name}" ha sido registrado correctamente.`}
                 </p>
                 <p className="text-sm text-muted-foreground mt-4">
-                  Recibirás una notificación cuando sea revisado por el equipo
-                  administrativo.
+                  Te notificaremos sobre el estado de tu{" "}
+                  {eventType === "Competition" ? "participación" : "proyecto"}{" "}
+                  a través de tu correo electrónico.
                 </p>
               </ModalBody>
               <ModalFooter className="justify-center">
@@ -437,7 +471,7 @@ const handleSubmit = () => {
                   }}
                   className="w-full sm:w-auto shadow-lg shadow-primary/30"
                 >
-                  Volver al Inicio
+                  {eventType === "Competition" ? "Ir al Inicio" : "Ir al Dashboard"}
                 </Button>
               </ModalFooter>
             </>

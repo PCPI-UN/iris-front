@@ -19,20 +19,26 @@ const SEMESTER_OPTIONS = [
   { key: "6", label: "6to Semestre" },
   { key: "7", label: "7mo Semestre" },
   { key: "8", label: "8vo Semestre" },
+  { key: "9", label: "9no Semestre" },
+  { key: "10", label: "10mo Semestre" },
 ];
 
 // Career options - Universidad del Norte
 const CAREER_OPTIONS = [
   { key: "ingenieria_sistemas", label: "Ingeniería en Sistemas" },
-  { key: "ingenieria_telematica", label: "Ingeniería Telemática" },
   { key: "ingenieria_civil", label: "Ingeniería Civil" },
   { key: "ingenieria_industrial", label: "Ingeniería Industrial" },
-  { key: "ingenieria_ambiental", label: "Ingeniería Ambiental" },
-  { key: "administracion", label: "Administración de Empresas" },
-  { key: "contabilidad", label: "Contabilidad" },
-  { key: "economia", label: "Economía" },
-  { key: "psicologia", label: "Psicología" },
-  { key: "comunicacion_social", label: "Comunicación Social" },
+  { key: "ingenieria_electrica", label: "Ingeniería Eléctrica" },
+  { key: "ingenieria_electronica", label: "Ingeniería Electrónica" },
+  { key: "ingenieria_mecanica", label: "Ingeniería Mecánica" },
+  { key: "ingenieria_biomedica", label: "Ingeniería Biomedica" },
+  { key: "ciencias_datos", label: "Ciencias de Datos" },
+  { key: "matematicas", label: "Matemáticas" },
+  // { key: "administracion", label: "Administración de Empresas" },
+  // { key: "contabilidad", label: "Contabilidad" },
+  // { key: "economia", label: "Economía" },
+  // { key: "psicologia", label: "Psicología" },
+  // { key: "comunicacion_social", label: "Comunicación Social" },
 ];
 
 const getSemesterLabel = (key: string) => {
@@ -46,11 +52,13 @@ const getCareerLabel = (key: string) => {
 type ParticipantsStepProps = {
   participants: Participant[];
   onUpdate: (participants: Participant[]) => void;
+  eventType: "Competition" | "Exposition";
 };
 
 export function ParticipantsStep({
   participants,
   onUpdate,
+  eventType,
 }: ParticipantsStepProps) {
   const [currentParticipant, setCurrentParticipant] = useState<
     Omit<Participant, "id">
@@ -89,12 +97,16 @@ export function ParticipantsStep({
       newErrors.studentCode = "El código estudiantil es requerido";
     }
 
-    if (!currentParticipant.semester.trim()) {
-      newErrors.semester = "El semestre es requerido";
-    }
+    // Para Competition: semester y career son obligatorios
+    // Para Exposition: semester y career son opcionales
+    if (eventType === "Competition") {
+      if (!currentParticipant.semester.trim()) {
+        newErrors.semester = "El semestre es requerido";
+      }
 
-    if (!currentParticipant.career.trim()) {
-      newErrors.career = "La carrera es requerida";
+      if (!currentParticipant.career.trim()) {
+        newErrors.career = "La carrera es requerida";
+      }
     }
 
     setErrors(newErrors);
@@ -172,9 +184,9 @@ export function ParticipantsStep({
           />
           <Input
             label="Código Estudiantil"
-            placeholder="2021-1234"
+            placeholder="200123456"
             value={currentParticipant.studentCode}
-            onValueChange={(value) =>{
+            onValueChange={(value) => {
               setCurrentParticipant({
                 ...currentParticipant,
                 studentCode: value,
@@ -186,27 +198,6 @@ export function ParticipantsStep({
             errorMessage={errors.studentCode}
           />
           <Select
-            label="Semestre"
-            placeholder="Seleccionar semestre"
-            value={currentParticipant.semester}
-            onChange={(e) => {
-              setCurrentParticipant({
-                ...currentParticipant,
-                semester: e.target.value,
-              });
-              if (errors.semester) setErrors({ ...errors, semester: "" });
-            }}
-            isRequired
-            isInvalid={!!errors.semester}
-            errorMessage={errors.semester}
-          >
-            {SEMESTER_OPTIONS.map((option) => (
-              <SelectItem key={option.key}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </Select>
-          <Select
             label="Carrera"
             placeholder="Seleccionar carrera"
             value={currentParticipant.career}
@@ -217,7 +208,7 @@ export function ParticipantsStep({
               });
               if (errors.career) setErrors({ ...errors, career: "" });
             }}
-            isRequired
+            isRequired={eventType === "Competition"}
             isInvalid={!!errors.career}
             errorMessage={errors.career}
           >
@@ -227,7 +218,30 @@ export function ParticipantsStep({
               </SelectItem>
             ))}
           </Select>
+          <Select
+            label="Semestre"
+            placeholder="Seleccionar semestre"
+            value={currentParticipant.semester}
+            onChange={(e) => {
+              setCurrentParticipant({
+                ...currentParticipant,
+                semester: e.target.value,
+              });
+              if (errors.semester) setErrors({ ...errors, semester: "" });
+            }}
+            isRequired={eventType === "Competition"}
+            isInvalid={!!errors.semester}
+            errorMessage={errors.semester}
+          >
+            {SEMESTER_OPTIONS.map((option) => (
+              <SelectItem key={option.key}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </Select>
+          
         </div>
+
         <Button
           color="primary"
           onPress={addParticipant}
@@ -256,9 +270,22 @@ export function ParticipantsStep({
                     </p>
                     {participant.studentCode && (
                       <p className="text-sm text-default-500">
-                        Código: {participant.studentCode}
+                        {participant.studentCode}
                       </p>
                     )}
+
+                    <div className="flex flex-wrap gap-4">
+                      {participant.career && (
+                        <p className="text-sm text-default-500">
+                          {getCareerLabel(participant.career)}
+                        </p>
+                      )}
+                      {participant.semester && (
+                        <p className="text-sm text-default-500">
+                          {getSemesterLabel(participant.semester)}
+                        </p>
+                      )}
+                    </div>
                   </div>
                   <Button
                     isIconOnly
@@ -268,18 +295,6 @@ export function ParticipantsStep({
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
-                </div>
-                <div className="flex-1 hidden sm:block text-right space-y-1">
-                  {participant.semester && (
-                    <p className="text-sm text-default-500">
-                      {getSemesterLabel(participant.semester)}
-                    </p>
-                  )}
-                  {participant.career && (
-                    <p className="text-sm text-default-500">
-                      {getCareerLabel(participant.career)}
-                    </p>
-                  )}
                 </div>
               </CardBody>
             </Card>

@@ -1,14 +1,26 @@
 import { z } from 'zod'
 
-export const participantSchema = z.object({
+export const participantSchemaCompetition = z.object({
   id: z.string(),
   firstName: z.string().min(1, 'Nombre requerido'),
   lastName: z.string().min(1, 'Apellido requerido'),
   email: z.string().email('Email inválido'),
-  studentCode: z.string().optional(),
+  studentCode: z.string().min(1, 'Código estudiantil requerido'),
   semester: z.string().min(1, 'Semestre requerido'),
   career: z.string().min(1, 'Carrera requerida'),
 })
+
+export const participantSchemaExposition = z.object({
+  id: z.string(),
+  firstName: z.string().min(1, 'Nombre requerido'),
+  lastName: z.string().min(1, 'Apellido requerido'),
+  email: z.string().email('Email inválido'),
+  studentCode: z.string().min(1, 'Código estudiantil requerido'),
+  semester: z.string().optional(),
+  career: z.string().optional(),
+})
+
+export const participantSchema = participantSchemaCompetition
 
 export const projectSchema = z.object({
   name: z.string().min(3, 'El nombre debe tener al menos 3 caracteres').max(255, 'El nombre no puede exceder 255 caracteres'),
