@@ -13,7 +13,7 @@ export const RequestProjectModal = ({ projectId, isOpenTable, onOpenChangeTable 
   const { addNotification } = useNotifications();
   const requestChangeMutation = useRequestChangesProject();
 
-  const [rejection_reason, setrejection_reason] = useState("");
+  const [reason, setreason] = useState("");
   const controlled = isOpenTable !== undefined;
 
   return (
@@ -33,8 +33,8 @@ export const RequestProjectModal = ({ projectId, isOpenTable, onOpenChangeTable 
               <ModalBody className="space-y-2">
                 <p>Indica qué debe corregir el equipo:</p>
                 <Textarea
-                  value={rejection_reason}
-                  onChange={(e) => setrejection_reason(e.target.value)}
+                  value={reason}
+                  onChange={(e) => setreason(e.target.value)}
                   placeholder="Describe los cambios requeridos..."
                   rows={4}
                 />
@@ -46,7 +46,7 @@ export const RequestProjectModal = ({ projectId, isOpenTable, onOpenChangeTable 
                 <Button
                   color="warning"
                   onPress={() => {
-                    if (!rejection_reason.trim()) {
+                    if (!reason.trim()) {
                       addNotification({
                         type: "error",
                         title: "Error",
@@ -55,14 +55,14 @@ export const RequestProjectModal = ({ projectId, isOpenTable, onOpenChangeTable 
                       return;
                     }
                     requestChangeMutation.mutate(
-                      { projectId, rejection_reason },
+                      { projectId, reason },
                       {
                         onSuccess: (res) => {
                           addNotification({
                             type: "success",
                             title: "Cambios requeridos",
                           });
-                          setrejection_reason("");
+                          setreason("");
                           onCloseModal();
                         },
                         onError: () => {
