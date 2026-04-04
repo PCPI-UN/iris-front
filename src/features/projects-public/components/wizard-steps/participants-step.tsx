@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectItem } from '@/components/ui/select';
@@ -9,6 +9,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { Participant } from "../project-wizard";
 import { z } from "zod";
 import { SEMESTER_OPTIONS, CAREER_OPTIONS, getCareerLabel, getSemesterLabel } from "./constants-carrers-semesters";
+import { useUser } from "@/lib/auth";
 
 type ParticipantsStepProps = {
   participants: Participant[];
@@ -21,6 +22,7 @@ export function ParticipantsStep({
   onUpdate,
   eventType,
 }: ParticipantsStepProps) {
+  const user = useUser();
   const [currentParticipant, setCurrentParticipant] = useState<
     Omit<Participant, "id">
   >({
@@ -32,6 +34,18 @@ export function ParticipantsStep({
     career: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Pre-fill with current user data
+  useEffect(() => {
+    if (user.data?.firstName || user.data?.lastName || user.data?.email) {
+      setCurrentParticipant((prev) => ({
+        ...prev,
+        firstName: user.data?.firstName || prev.firstName,
+        lastName: user.data?.lastName || prev.lastName,
+        email: user.data?.email || prev.email,
+      }));
+    }
+  }, [user.data?.firstName, user.data?.lastName, user.data?.email]);
 
   const validateParticipant = () => {
     const newErrors: Record<string, string> = {};
