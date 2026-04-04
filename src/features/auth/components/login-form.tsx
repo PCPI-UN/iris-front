@@ -28,7 +28,7 @@ export const LoginForm = ({ onSuccess }: LoginFormProps) => {
 
     // Allow only relative paths to avoid forwarding open redirects.
     if (redirectTo && redirectTo.startsWith('/') && !redirectTo.startsWith('//')) {
-      params.set('redirect', redirectTo);
+      params.set('redirect', `redirect:${redirectTo}`);
     }
 
     const query = params.toString();
