@@ -234,8 +234,6 @@ export type DeveloperProfile = Entity<{
   name: string;
   role: string;
   version: DeveloperVersion;
-  githubUrl?: string;
-  linkedinUrl?: string;
 }>;
 
 export type DevelopersResponse = {

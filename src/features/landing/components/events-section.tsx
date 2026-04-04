@@ -84,21 +84,21 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
     <section
       id="eventos"
       ref={eventsSectionRef}
-      className="relative z-10 min-h-screen px-6 py-20 md:px-12"
+      className="relative z-10 min-h-screen px-6 py-16 sm:py-20 md:px-12 md:py-24"
     >
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-16">
+        <div className="text-center mb-10 sm:mb-12 md:mb-16">
           <div className="inline-flex items-center gap-2 glass-effect px-4 py-2 rounded-full text-sm text-primary mb-6">
             <Calendar className="w-4 h-4" />
             <span>{landingContent.events.badge}</span>
           </div>
-          <h2 className="text-4xl md:text-6xl font-bold mb-6">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6">
             {landingContent.events.title}{" "}
             <span className="prismatic-text">
               {landingContent.events.titleHighlight}
             </span>
           </h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
             {landingContent.events.subtitle}
           </p>
         </div>
@@ -114,7 +114,7 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
             </p>
           </div>
         ) : (
-          <div className="space-y-8">
+          <div className="space-y-6 sm:space-y-8">
             <div className="overflow-hidden">
               <div
                 className="flex transition-transform duration-500 ease-out"
@@ -122,7 +122,7 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
               >
                 {eventsPages.map((eventsPage, pageIndex) => (
                   <div key={`events-page-${pageIndex}`} className="min-w-full">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div className="grid items-stretch grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
                       {eventsPage.map((event, index) => {
                         const globalIndex = pageIndex * cardsPerView + index;
                         const eventTheme = getEventColor(event.id, globalIndex);
@@ -135,7 +135,7 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
                         return (
                           <GlassCard
                             key={event.id}
-                            className="event-card group cursor-pointer transition-all duration-500 relative overflow-hidden w-full max-w-md mx-auto"
+                            className="event-card group cursor-pointer transition-all duration-500 relative overflow-hidden h-full w-full max-w-md mx-auto"
                           >
                             <div
                               className={`absolute inset-0 bg-gradient-to-br ${eventTheme.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`}
@@ -168,11 +168,11 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
                                 </div>
                               </div>
 
-                              <h3 className="text-2xl font-bold mb-3 group-hover:text-primary transition-colors leading-tight">
+                              <h3 className="text-xl sm:text-2xl font-bold mb-2 sm:mb-3 group-hover:text-primary transition-colors leading-tight">
                                 {event.name}
                               </h3>
 
-                              <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
+                              <p className="text-sm text-muted-foreground mb-5 sm:mb-6 leading-relaxed break-words">
                                 {event.description}
                               </p>
 
@@ -238,7 +238,7 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
                                 </div>
                               </div>
 
-                              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3">
                                 <Button
                                   onClick={() =>
                                     router.push(
@@ -283,11 +283,11 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
             </div>
 
             {totalPages > 1 && (
-              <div className="flex items-center justify-center gap-4">
+              <div className="flex items-center justify-center gap-3 sm:gap-4">
                 <Button
                   type="button"
                   variant="bordered"
-                  className="events-nav-button h-10 w-10 p-0 border-white/25 backdrop-blur-sm transition-all enabled:hover:shadow-[0_0_18px_rgba(244,114,182,0.28)] disabled:opacity-40 disabled:shadow-none disabled:cursor-default"
+                  className="events-nav-button h-9 w-9 sm:h-10 sm:w-10 p-0 border-white/25 backdrop-blur-sm transition-all enabled:hover:shadow-[0_0_18px_rgba(244,114,182,0.28)] disabled:opacity-40 disabled:shadow-none disabled:cursor-default"
                   onClick={goToPreviousPage}
                   disabled={currentPage === 0}
                   aria-label="Página anterior"
@@ -305,7 +305,7 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
                         }
                   }
                 >
-                  <ChevronLeft className="h-5 w-5 text-black" />
+                  <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5 text-black" />
                 </Button>
 
                 <div className="flex items-center gap-2">
@@ -314,7 +314,7 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
                       key={`events-dot-${pageIndex}`}
                       type="button"
                       onClick={() => setCurrentPage(pageIndex)}
-                      className={`h-2.5 w-2.5 rounded-full border border-white/20 transition-all ${
+                      className={`h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full border border-white/20 transition-all ${
                         pageIndex === currentPage
                           ? "scale-110 shadow-[0_0_10px_rgba(244,114,182,0.35)]"
                           : "opacity-60 hover:opacity-90"
@@ -332,7 +332,7 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
                 <Button
                   type="button"
                   variant="bordered"
-                  className="events-nav-button h-10 w-10 p-0 border-white/25 backdrop-blur-sm transition-all enabled:hover:shadow-[0_0_18px_rgba(244,114,182,0.28)] disabled:opacity-40 disabled:shadow-none disabled:cursor-default"
+                  className="events-nav-button h-9 w-9 sm:h-10 sm:w-10 p-0 border-white/25 backdrop-blur-sm transition-all enabled:hover:shadow-[0_0_18px_rgba(244,114,182,0.28)] disabled:opacity-40 disabled:shadow-none disabled:cursor-default"
                   onClick={goToNextPage}
                   disabled={currentPage === totalPages - 1}
                   aria-label="Página siguiente"
@@ -350,7 +350,7 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
                         }
                   }
                 >
-                  <ChevronRight className="h-5 w-5 text-black" />
+                  <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 text-black" />
                 </Button>
               </div>
             )}
