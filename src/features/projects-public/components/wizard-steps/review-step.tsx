@@ -5,6 +5,7 @@ import { Chip } from "@heroui/react"
 import { Users, FileText, Upload, CheckCircle2, AlertCircle } from "lucide-react"
 import { WizardData } from "../project-wizard"
 import { useCourse } from "@/features/courses/api/get-course"
+import { getSemesterLabel, getCareerLabel } from "./constants-carrers-semesters"
 
 type ReviewStepProps = {
   data: WizardData
@@ -50,13 +51,13 @@ export function ReviewStep({ data, eventType }: ReviewStepProps) {
                     {eventType === "Competition" && participant.semester && (
                       <div>
                         <p className="text-xs font-medium text-default-500 uppercase">Semestre</p>
-                        <p className="text-sm text-foreground">{participant.semester}</p>
+                        <p className="text-sm text-foreground">{getSemesterLabel(participant.semester)}</p>
                       </div>
                     )}
                     {eventType === "Competition" && participant.career && (
                       <div className="col-span-2">
                         <p className="text-xs font-medium text-default-500 uppercase">Carrera</p>
-                        <p className="text-sm text-foreground">{participant.career}</p>
+                        <p className="text-sm text-foreground">{getCareerLabel(participant.career)}</p>
                       </div>
                     )}
                   </div>

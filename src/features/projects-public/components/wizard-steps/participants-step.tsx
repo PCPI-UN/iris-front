@@ -8,48 +8,7 @@ import { Card, CardBody } from '@/components/ui/card';
 import { Plus, Trash2 } from "lucide-react";
 import { Participant } from "../project-wizard";
 import { z } from "zod";
-
-// Semester options
-const SEMESTER_OPTIONS = [
-  { key: "1", label: "1er Semestre" },
-  { key: "2", label: "2do Semestre" },
-  { key: "3", label: "3er Semestre" },
-  { key: "4", label: "4to Semestre" },
-  { key: "5", label: "5to Semestre" },
-  { key: "6", label: "6to Semestre" },
-  { key: "7", label: "7mo Semestre" },
-  { key: "8", label: "8vo Semestre" },
-  { key: "9", label: "9no Semestre" },
-  { key: "10", label: "10mo Semestre" },
-];
-
-// Career options - Universidad del Norte
-const CAREER_OPTIONS = [
-  { key: "ingenieria_sistemas", label: "Ingeniería en Sistemas" },
-  { key: "ingenieria_civil", label: "Ingeniería Civil" },
-  { key: "ingenieria_industrial", label: "Ingeniería Industrial" },
-  { key: "ingenieria_electrica", label: "Ingeniería Eléctrica" },
-  { key: "ingenieria_electronica", label: "Ingeniería Electrónica" },
-  { key: "ingenieria_mecanica", label: "Ingeniería Mecánica" },
-  { key: "ingenieria_biomedica", label: "Ingeniería Biomedica" },
-  { key: "ciencias_datos", label: "Ciencias de Datos" },
-  { key: "matematicas", label: "Matemáticas" },
-  // { key: "administracion", label: "Administración de Empresas" },
-  // { key: "contabilidad", label: "Contabilidad" },
-  // { key: "economia", label: "Economía" },
-  // { key: "psicologia", label: "Psicología" },
-  // { key: "comunicacion_social", label: "Comunicación Social" },
-];
-
-const getSemesterLabel = (key: string) => {
-  return SEMESTER_OPTIONS.find((opt) => opt.key === key)?.label || key;
-};
-
-const getCareerLabel = (key: string) => {
-  return CAREER_OPTIONS.find((opt) => opt.key === key)?.label || key;
-};
-
-
+import { SEMESTER_OPTIONS, CAREER_OPTIONS, getCareerLabel, getSemesterLabel } from "./constants-carrers-semesters";
 
 type ParticipantsStepProps = {
   participants: Participant[];
@@ -93,10 +52,20 @@ export function ParticipantsStep({
       } catch {
         newErrors.email = "El email no es válido";
       }
+      // Validar que el email no esté repetido
+      if (participants.some((p) => p.email === currentParticipant.email)) {
+        newErrors.email = "Este email ya está registrado";
+      }
     }
 
     if (!currentParticipant.studentCode.trim()) {
       newErrors.studentCode = "El código estudiantil es requerido";
+    } else if (!/^\d+$/.test(currentParticipant.studentCode)) {
+      newErrors.studentCode = "El código debe contener solo números";
+    } else if (currentParticipant.studentCode.length < 9) {
+      newErrors.studentCode = "El código debe tener mínimo 9 dígitos";
+    } else if (participants.some((p) => p.studentCode === currentParticipant.studentCode)) {
+      newErrors.studentCode = "Este código estudiantil ya está registrado";
     }
 
     // Para Competition: semester y career son obligatorios
@@ -176,7 +145,7 @@ export function ParticipantsStep({
           <Input
             label="Correo Electrónico"
             type="email"
-            placeholder="juan.perez@universidad.edu"
+            placeholder="juanperez@universidad.edu.co"
             value={currentParticipant.email}
             onValueChange={(value) => {
               setCurrentParticipant({ ...currentParticipant, email: value });

@@ -462,7 +462,7 @@ const handleSubmit = () => {
                   a través de tu correo electrónico.
                 </p>
               </ModalBody>
-              <ModalFooter className="justify-center">
+              <ModalFooter className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Button
                   color="primary"
                   onPress={() => {
@@ -471,7 +471,18 @@ const handleSubmit = () => {
                   }}
                   className="w-full sm:w-auto shadow-lg shadow-primary/30"
                 >
-                  {eventType === "Competition" ? "Ir al Inicio" : "Ir al Dashboard"}
+                  Ir al Inicio
+                </Button>
+                <Button
+                  color="primary"
+                  variant="bordered"
+                  onPress={() => {
+                    setShowSuccessModal(false);
+                    router.push(paths.app.dashboard.getHref());
+                  }}
+                  className="w-full sm:w-auto shadow-lg shadow-primary/30"
+                >
+                  Ir al Dashboard
                 </Button>
               </ModalFooter>
             </>
