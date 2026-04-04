@@ -331,7 +331,7 @@ const handleSubmit = () => {
                 {stepIdx !== steps.length - 1 && (
                   <div
                     className={cn(
-                      "absolute top-4 sm:top-5 h-0.5 left-[50%] right-0 translate-x-[16px] sm:translate-x-[20px] -mr-[32px] sm:-mr-[56px]",
+                      "absolute top-4 sm:top-5 h-0.5 left-1/2 w-full",
                       isCompleted ? "bg-primary" : "bg-border/30"
                     )}
                     aria-hidden="true"
