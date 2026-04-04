@@ -247,6 +247,7 @@ const handleSubmit = () => {
       formData.append("eventId", payloadData.eventId);
       formData.append("courseId", payloadData.courseId);
       formData.append("participants", payloadData.participants);
+      formData.append("name", `Equipo de ${wizardData.participants.map(p => p.firstName).join("-")}`);
 
       createProjectMutation.mutate({ data: formData });
       return;
