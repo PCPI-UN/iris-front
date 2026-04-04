@@ -31,7 +31,7 @@ export const CAREER_OPTIONS = [
   { key: "ingenieria_electronica", label: "Ingeniería Electrónica" },
   { key: "ingenieria_industrial", label: "Ingeniería Industrial" },
   { key: "ingenieria_mecanica", label: "Ingeniería Mecánica" },
-  { key: "ingenieria_sistemas", label: "Ingeniería en Sistemas" },
+  { key: "ingenieria_sistemas", label: "Ingeniería de Sistemas y computación" },
   { key: "matematicas", label: "Matemáticas" },
   { key: "medicina", label: "Medicina" },
   { key: "odontologia", label: "Odontología" },
