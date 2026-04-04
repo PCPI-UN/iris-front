@@ -2,9 +2,6 @@
 // ideally, we want to keep these api related types in sync
 // with the backend instead of manually writing them out
 
-import { user } from "@heroui/theme";
-import { User } from "lucide-react";
-
 export type BaseEntity = {
   id: string;
   createdAt: number;
@@ -228,12 +225,10 @@ export type CriterionCourse = Entity<{
   criterionId: number;
 }>;
 
-export type DeveloperVersion = string;
-
 export type DeveloperProfile = Entity<{
   name: string;
   role: string;
-  version: DeveloperVersion;
+  version: string;
 }>;
 
 export type DevelopersResponse = {

@@ -3,7 +3,6 @@
 import { useLayoutEffect } from 'react';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { paths } from '@/config/paths';
-import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 
 const LANDING_SCROLL_TARGET_KEY = 'landing-scroll-target';
 const validLandingTargets = ['informacion', 'eventos', 'recorrido'] as const;
@@ -12,9 +11,13 @@ export type LandingTarget = (typeof validLandingTargets)[number];
 
 type HandleSectionEvent = React.MouseEvent<HTMLAnchorElement>;
 
+type LandingRouter = {
+  push: (href: string, options?: { scroll?: boolean }) => void;
+};
+
 type UseLandingNavigationParams = {
   isLandingPage: boolean;
-  router: AppRouterInstance;
+  router: LandingRouter;
   pathname: string;
   setIsMobileMenuOpen: (isOpen: boolean) => void;
 };
