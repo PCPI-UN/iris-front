@@ -107,7 +107,7 @@ const registerWithEmailAndPassword = async (
   data: RegisterInput,
 ): Promise<User> => {
   // 1. Register - setea la cookie en el backend
-  await api.post<AuthResponse>('/auth/register', data);
+  await api.post<AuthResponse>('/auth/signup', {phone: "3007207238", ...data});
 
   // 2. Obtener el usuario autenticado con la cookie
   const user = await getUser();

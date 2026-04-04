@@ -13,7 +13,7 @@ export const RejectProjectModal = ({ projectId, isOpenTable, onOpenChangeTable }
   const { addNotification } = useNotifications();
   const rejectMutation = useRejectProject();
 
-  const [reason, setReason] = useState("");
+  const [rejection_reason, setrejection_reason] = useState("");
   const controlled = isOpenTable !== undefined;
 
   return (
@@ -33,8 +33,8 @@ export const RejectProjectModal = ({ projectId, isOpenTable, onOpenChangeTable }
               <ModalBody className="space-y-2">
                 <p>Ingresa el motivo del rechazo:</p>
                 <Textarea
-                  value={reason}
-                  onChange={(e) => setReason(e.target.value)}
+                  value={rejection_reason}
+                  onChange={(e) => setrejection_reason(e.target.value)}
                   placeholder="Escribe el motivo del rechazo aquí..."
                   rows={4}
                 />
@@ -46,7 +46,7 @@ export const RejectProjectModal = ({ projectId, isOpenTable, onOpenChangeTable }
                 <Button
                   color="danger"
                   onPress={() => {
-                    if (!reason.trim()) {
+                    if (!rejection_reason.trim()) {
                       addNotification({
                         type: "error",
                         title: "Error",
@@ -55,15 +55,15 @@ export const RejectProjectModal = ({ projectId, isOpenTable, onOpenChangeTable }
                       return;
                     }
                     rejectMutation.mutate(
-                      { projectId, reason },
+                      { projectId, rejection_reason },
                       {
                         onSuccess: (res) => {
                           addNotification({
                             type: "success",
                             title: "Proyecto rechazado",
-                            message: `Motivo: ${res.reason}`,
+                            message: `Motivo: ${res.rejection_reason}`,
                           });
-                          setReason("");
+                          setrejection_reason("");
                           onCloseModal();
                         },
                         onError: () => {

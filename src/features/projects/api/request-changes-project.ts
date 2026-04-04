@@ -3,18 +3,18 @@ import { api } from "@/lib/api-client";
 
 export type RequestChanges = {
   projectId: number;
-  comment: string;
+  rejection_reason: string;
 };
 
 export type RequestChangesResponse = {
   id: number;
-  comment: string;
+  rejection_reason: string;
 };
 
-export const requestChangesProject = async ({ projectId, comment }: RequestChanges) => {
-  return await api.patch(`/projects/${projectId}/status`, {
+export const requestChangesProject = async ({ projectId, rejection_reason }: RequestChanges) => {
+  return await api.patch(`/projects/${projectId}/request-changes`, {
     state: "REQUEST_CHANGES",
-    comment: comment
+    rejection_reason: rejection_reason
   });
   
 };
@@ -23,8 +23,8 @@ export const useRequestChangesProject = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ projectId, comment }: RequestChanges) =>
-      requestChangesProject({ projectId, comment }),
+    mutationFn: ({ projectId, rejection_reason }: RequestChanges) =>
+      requestChangesProject({ projectId, rejection_reason }),
 
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["projects"] });
