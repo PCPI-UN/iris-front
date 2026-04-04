@@ -78,7 +78,7 @@ export function HeroSection({
             ease: 'elastic.out(1, 0.6)', 
             delay: 0.3,
             onComplete: () => {
-              // Activar la animación CSS solo después de que termine la entrada
+              // Start animation after entrance
               if (diamondRef.current) {
                 diamondRef.current.style.animation = 'float-medium 9s ease-in-out infinite';
                 diamondRef.current.style.animationDelay = '2s';

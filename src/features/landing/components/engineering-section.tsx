@@ -61,7 +61,7 @@ export function EngineeringSection({
                 <Link
                   key={field.id}
                   href={field.url}
-                  className="block" // asegura que todo el card sea clickeable
+                  className="block" 
                 >
                   <GlassCard
                     key={field.id}

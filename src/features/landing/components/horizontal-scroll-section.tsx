@@ -66,7 +66,7 @@ export function HorizontalScrollSection({
             </p>
             {panels[2].cta && (
               <a
-                href="https://www.uninorte.edu.co/web/ingenierias/proyectos-fin-de-carrera" // 🔗 cambia esto por la URL que necesites
+                href="https://www.uninorte.edu.co/web/ingenierias/proyectos-fin-de-carrera"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex"

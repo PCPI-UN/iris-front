@@ -66,20 +66,20 @@ async function fetchApi<T>(
     cookieHeader = await getServerCookies();
   }
 
-  // Usar rutas relativas /api/* que serán proxeadas al backend
+  // Relative URLs will be prefixed with the API base URL from environment variables
   const fullUrl = buildUrlWithParams(`/api${url}`, params);
 
-  // Detectar si el body es FormData
+  // Detect if the body is FormData to set headers and body correctly
   const isFormData = body instanceof FormData;
   
-  // Preparar headers
+  // Prepare headers
   const requestHeaders: Record<string, string> = {
     Accept: 'application/json',
     ...headers,
     ...(cookieHeader ? { Cookie: cookieHeader } : {}),
   };
   
-  // No establecer Content-Type si es FormData (el browser lo hace automáticamente con el boundary)
+  // Set Content-Type to application/json if body is not FormData and Content-Type is not already set
   if (!isFormData) {
     requestHeaders['Content-Type'] = 'application/json';
   }
@@ -93,22 +93,22 @@ async function fetchApi<T>(
     next,
   });
 
-  // Interceptor para 401: Refrescar token y reintentar
-  // Solo intentar refresh si:
-  // 1. No es un endpoint de auth
-  // 2. No estamos en una página de auth (evita loops)
+  // If response is 401, attempt to refresh token and retry the request
+  // Only do this if:
+  // 1. It's not an auth endpoint
+  // 2. We are not already on an auth page (to avoid redirect loops)
   const isAuthEndpoint = url.includes('/auth/refresh') || url.includes('/auth/login') || url.includes('/auth/logout') || url.includes('/auth/register');
   const isAuthPage = typeof window !== 'undefined' && window.location.pathname.startsWith('/auth');
 
   if (response.status === 401 && !isAuthEndpoint && !isAuthPage) {
     try {
-      // Importación dinámica para evitar dependencia circular
+      // Dynamically import the refreshToken function to avoid circular dependencies and only load it when needed
       const { refreshToken } = await import('./auth');
 
-      // Intentar refrescar el token
+      // Try to refresh the token
       await refreshToken();
 
-      // Reintentar la petición original con el nuevo token
+      // Retry the original request with the new token
       const retryResponse = await fetch(fullUrl, {
         method,
         headers: requestHeaders,
@@ -132,7 +132,7 @@ async function fetchApi<T>(
 
       return retryResponse.json();
     } catch (refreshError) {
-      // Si el refresh falla, redirigir al login solo si no estamos ya ahí
+      // If refresh fails, redirect to login page and show notification
       if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/auth')) {
         window.location.href = '/auth/login';
       }

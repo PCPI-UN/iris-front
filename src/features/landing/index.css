@@ -58,12 +58,12 @@
   font-family: 'Geist Mono', 'Courier New', monospace !important;
 }
 
-/* Scroll offset para secciones con ID (compensar navbar fijo) */
+/* Scroll offset for sections with ID (compensate for fixed navbar) */
 .landing-page section[id] {
   scroll-margin-top: clamp(84px, 10vh, 112px);
 }
 
-/* Estilos para botones - Sobrescribir HeroUI */
+/* Styles for buttons */
 .landing-page button,
 .landing-page [role="button"],
 .landing-page .bg-primary {
@@ -113,7 +113,7 @@
   background-color: oklch(0.82 0.18 330 / 0.3) !important;
 }
 
-/* Utilidades CSS - Sin capa para máxima compatibilidad con Tailwind */
+/* Tailwind CSS compatibility */
 /* Glass effects */
 .glass-effect {
   background: rgba(18, 18, 28, 0.3);
