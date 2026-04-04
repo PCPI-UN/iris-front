@@ -128,7 +128,16 @@ export function DevelopersCarousel({ developersRef }: DevelopersCarouselProps) {
   const latestDevelopers = developers.filter(
     (dev) => normalizeVersion(dev.version) === normalizeVersion(latestVersion)
   );
+  const PRIORITY_NAME = 'daniel romero';
 
+const latestDevelopersOrdered = [...latestDevelopers].sort((a, b) => {
+  const aIsPriority = a.name.trim().toLowerCase() === PRIORITY_NAME;
+  const bIsPriority = b.name.trim().toLowerCase() === PRIORITY_NAME;
+
+  if (aIsPriority && !bIsPriority) return -1;
+  if (!aIsPriority && bIsPriority) return 1;
+  return 0; // keep original order if neither is priority
+});
   return (
     <section
       id="developers"
@@ -168,7 +177,7 @@ export function DevelopersCarousel({ developersRef }: DevelopersCarouselProps) {
           <div className="mb-3 text-xs md:text-sm font-mono text-emerald-400/90 uppercase tracking-[0.2em]">
             Versión {latestVersion}
           </div>
-          <VersionCarousel developers={latestDevelopers} version={latestVersion} />
+          <VersionCarousel developers={latestDevelopersOrdered} version={latestVersion} />
         </div>
       </div>
 
