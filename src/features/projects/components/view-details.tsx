@@ -4,9 +4,6 @@ import { useDisclosure } from "@/hooks/use-disclosure";
 import { Project } from "@/types/api";
 import { AvatarGroup } from "./avatar-icon";
 import { Eye, FileText } from "lucide-react";
-import { RejectProjectModal } from "./reject-modal";
-import { RequestProjectModal } from "./request-change-modal";
-import { ApproveProjectModal } from "./approve-modal";
 
 export const ViewDetails = ({project} : {project: Project}) => {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
@@ -112,11 +109,11 @@ export const ViewDetails = ({project} : {project: Project}) => {
                 </section>
                 <section className="space-y-2">
                   {
-                  (project.comment === "" || project.comment === null) ?  null 
+                  (project.reason === "" || project.reason === null) ?  null 
                     :
                     <h2 className="font-medium bg-gradient-to-br from-white via-white/80 to-white bg-clip-text text-transparent inline-block">Comentarios</h2>
                   }
-                  <p className="text-sm">{project.comment}</p>
+                  <p className="text-sm">{project.reason}</p>
                   
                 </section>
               </ModalBody>

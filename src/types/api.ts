@@ -110,7 +110,7 @@ export type Project = Entity<{
   documents: ProjectDocument[];
   jurorAssignments: ProjectAssignment[];
   pendingParticipants: ProjectParticipant[];
-  comment: string;
+  reason: string;
   evaluated: boolean;
   createdAt: number;
   updatedAt: number;
