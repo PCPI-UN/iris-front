@@ -10,12 +10,13 @@ export const SEMESTER_OPTIONS = [
   { key: "8", label: "8vo Semestre" },
   { key: "9", label: "9no Semestre" },
   { key: "10", label: "10mo Semestre" },
+  { key: "11", label: "11vo Semestre" },
+  { key: "12", label: "12vo Semestre" },
 ];
 
 // Career options - Universidad del Norte
 export const CAREER_OPTIONS = [
   { key: "administracion_empresas", label: "Administración de Empresas" },
-  { key: "administracion_turismo", label: "Administración Turística y Hotelera" },
   { key: "arquitectura", label: "Arquitectura" },
   { key: "ciencias_datos", label: "Ciencias de Datos" },
   { key: "comunicacion_social", label: "Comunicación Social y Periodismo" },
@@ -31,7 +32,7 @@ export const CAREER_OPTIONS = [
   { key: "ingenieria_electronica", label: "Ingeniería Electrónica" },
   { key: "ingenieria_industrial", label: "Ingeniería Industrial" },
   { key: "ingenieria_mecanica", label: "Ingeniería Mecánica" },
-  { key: "ingenieria_sistemas", label: "Ingeniería de Sistemas y computación" },
+  { key: "ingenieria_sistemas", label: "Ingeniería de Sistemas y Computación" },
   { key: "matematicas", label: "Matemáticas" },
   { key: "medicina", label: "Medicina" },
   { key: "odontologia", label: "Odontología" },
