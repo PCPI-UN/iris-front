@@ -1,15 +1,26 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query';
+import {
+  dehydrate,
+  HydrationBoundary,
+  QueryClient,
+} from "@tanstack/react-query";
 import { ProjectWizard } from "@/features/projects-public/components/project-wizard";
 import { PublicLayout } from "@/components/layouts/public-layout";
-import { getCoursesDropdownQueryOptions } from '@/features/courses/api/get-courses-dropdown';
-import { getPublicEventDetailQueryOptions } from '@/features/events/api/get-public-event-detail';
+import { getCoursesDropdownQueryOptions } from "@/features/courses/api/get-courses-dropdown";
+import { getPublicEventDetailQueryOptions } from "@/features/events/api/get-public-event-detail";
+import { toPublicEventType } from "@/features/events/utils/normalize-event-type";
 
-const PublicProjectPage = ({ params }: { params: Promise<{ eventId: number }> }) => {
+const PublicProjectPage = ({
+  params,
+}: {
+  params: Promise<{ eventId: number }>;
+}) => {
   const [eventId, setEventId] = useState<number | null>(null);
-  const [eventType, setEventType] = useState<"Competition" | "Exposition">("Exposition");
+  const [eventType, setEventType] = useState<"Competition" | "Exposition">(
+    "Exposition",
+  );
   const [dehydratedState, setDehydratedState] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -24,12 +35,14 @@ const PublicProjectPage = ({ params }: { params: Promise<{ eventId: number }> })
 
         // Fetch event details
         const eventDetailResult = await queryClient.fetchQuery(
-          getPublicEventDetailQueryOptions(String(resolvedParams.eventId))
+          getPublicEventDetailQueryOptions(resolvedParams.eventId),
         );
 
-        setEventType(eventDetailResult.data.eventType || "Exposition");
+        setEventType(toPublicEventType(eventDetailResult.data.eventType));
 
-        await queryClient.prefetchQuery(getCoursesDropdownQueryOptions(resolvedParams.eventId));
+        await queryClient.prefetchQuery(
+          getCoursesDropdownQueryOptions(resolvedParams.eventId),
+        );
 
         setDehydratedState(dehydrate(queryClient));
       } catch (err) {
@@ -48,13 +61,15 @@ const PublicProjectPage = ({ params }: { params: Promise<{ eventId: number }> })
       return {
         title: "Registro de",
         highlight: "Participantes",
-        description: "Complete el formulario para registrar su equipo en la competencia"
+        description:
+          "Complete el formulario para registrar su equipo en la competencia",
       };
     }
     return {
       title: "Registro de",
       highlight: "Proyectos",
-      description: "Complete el formulario para registrar su proyecto académico"
+      description:
+        "Complete el formulario para registrar su proyecto académico",
     };
   };
 
@@ -74,7 +89,9 @@ const PublicProjectPage = ({ params }: { params: Promise<{ eventId: number }> })
     return (
       <PublicLayout showNavLinks={false}>
         <div className="flex items-center justify-center min-h-[calc(100vh-6rem)]">
-          <p className="text-red-500">{error || "No se pudo cargar el evento"}</p>
+          <p className="text-red-500">
+            {error || "No se pudo cargar el evento"}
+          </p>
         </div>
       </PublicLayout>
     );
@@ -99,7 +116,8 @@ const PublicProjectPage = ({ params }: { params: Promise<{ eventId: number }> })
         <div className="container mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-8 sm:py-12 relative z-10">
           <div className="mb-6 sm:mb-8 text-center px-2">
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground mb-3 text-balance">
-              {pageContent.title} <span className="prismatic-text">{pageContent.highlight}</span>
+              {pageContent.title}{" "}
+              <span className="prismatic-text">{pageContent.highlight}</span>
             </h1>
             <p className="text-base sm:text-lg text-muted-foreground text-pretty">
               {pageContent.description}

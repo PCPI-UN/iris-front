@@ -13,7 +13,7 @@ import { EventDetail } from './_components/event-detail';
 const PublicEventDetailPage = async ({
   params,
 }: {
-  params: Promise<{ eventId: string }>;
+  params: Promise<{ eventId: number }>;
 }) => {
   const { eventId } = await params;
 
