@@ -33,7 +33,9 @@ export type PlatformRole = {
   scope: string;
 };
 
-export type User = Entity<{
+export type User = {
+  id: string | number;
+  createdAt?: number;
   firstName: string;
   lastName: string;
   email: string;
@@ -42,7 +44,7 @@ export type User = Entity<{
   status: string;
   platformRoles: PlatformRole[];
   platformPermissions: string[];
-}>;
+};
 
 export type AuthResponse = {
   message: string;
@@ -89,7 +91,6 @@ export type Event = Entity<{
   statusName: string;
   location?: string;
   locationDetails?: string;
-  eventType: "Exposition" | "Competition" ;
   inscriptionCost?: number;
   inscriptionRequirements?: string;
   aboutOurAllies?: string;
