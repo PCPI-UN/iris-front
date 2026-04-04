@@ -49,6 +49,8 @@ const getCareerLabel = (key: string) => {
   return CAREER_OPTIONS.find((opt) => opt.key === key)?.label || key;
 };
 
+
+
 type ParticipantsStepProps = {
   participants: Participant[];
   onUpdate: (participants: Participant[]) => void;
@@ -120,6 +122,7 @@ export function ParticipantsStep({
         id: Date.now().toString(),
       };
       onUpdate([...participants, newParticipant]);
+
       setCurrentParticipant({
         firstName: "",
         lastName: "",
@@ -128,6 +131,7 @@ export function ParticipantsStep({
         semester: "",
         career: "",
       });
+      
       setErrors({});
     }
   };
@@ -200,11 +204,12 @@ export function ParticipantsStep({
           <Select
             label="Carrera"
             placeholder="Seleccionar carrera"
-            value={currentParticipant.career}
-            onChange={(e) => {
+            selectedKeys={currentParticipant.career ? [currentParticipant.career] : []}
+            onSelectionChange={(value) => {
+              const selectedValue = Array.from(value as Set<string>)[0] || "";
               setCurrentParticipant({
                 ...currentParticipant,
-                career: e.target.value,
+                career: selectedValue,
               });
               if (errors.career) setErrors({ ...errors, career: "" });
             }}
@@ -221,11 +226,12 @@ export function ParticipantsStep({
           <Select
             label="Semestre"
             placeholder="Seleccionar semestre"
-            value={currentParticipant.semester}
-            onChange={(e) => {
+            selectedKeys={currentParticipant.semester ? [currentParticipant.semester] : []}
+            onSelectionChange={(value) => {
+              const selectedValue = Array.from(value as Set<string>)[0] || "";
               setCurrentParticipant({
                 ...currentParticipant,
-                semester: e.target.value,
+                semester: selectedValue,
               });
               if (errors.semester) setErrors({ ...errors, semester: "" });
             }}
