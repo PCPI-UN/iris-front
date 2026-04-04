@@ -221,9 +221,9 @@ export const projectsHandlers = [
       }
 
       // Determinar si es Competition o Exposition:
-      // Competition: solo tiene eventId y participants
-      // Exposition: tiene eventId, courseId, name y participants
-      const isCompetition = !data.name?.trim() && !data.courseId?.trim(); // ✅ Correcto
+      // Competition: no env?a name (solo participantes, curso asignado en cliente)
+      // Exposition: requiere name y courseId ingresados por el usuario
+      const isCompetition = !data.name?.trim();
 
       if (!isCompetition) {
         // Para Exposition: validar name y courseId
