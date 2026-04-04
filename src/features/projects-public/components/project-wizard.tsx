@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@heroui/button";
 import { ParticipantsStep } from "./wizard-steps/participants-step";
 import { ProjectDetailsStep } from "./wizard-steps/project-details-step";
 import { DocumentsStep } from "./wizard-steps/documents-step";
 import { ReviewStep } from "./wizard-steps/review-step";
+import { useCoursesDropdown } from "@/features/courses/api/get-courses-dropdown";
 import { CheckCircle2, FileText, Users, Upload } from "lucide-react";
 import { cn } from "@/utils/cn";
 import { set, z } from "zod";
@@ -65,9 +66,9 @@ type ProjectWizardProps = {
 export function ProjectWizard({ eventId, eventType}: ProjectWizardProps) {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
-
-  const getSteps = (eventType: "Competition" | "Exposition") => {
-    if (eventType === "Competition") {
+  const isCompetitionEvent = eventType === "Competition";
+  const getSteps = () => {
+    if (isCompetitionEvent) {
       return [
         { id: 1, name: "Participantes", icon: Users },
         { id: 2, name: "Revisión", icon: CheckCircle2 },
@@ -81,10 +82,11 @@ export function ProjectWizard({ eventId, eventType}: ProjectWizardProps) {
     ];
   };
 
-  const steps = getSteps(eventType);
+  const steps = getSteps();
   const [stepErrors, setStepErrors] = useState<string[]>([]);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   
+
   const [wizardData, setWizardData] = useState<WizardData>({
     participants: [],
     project: {
@@ -97,6 +99,34 @@ export function ProjectWizard({ eventId, eventType}: ProjectWizardProps) {
       additionalDocuments: [],
     },
   });
+
+  const competitionCoursesQuery = useCoursesDropdown({
+    eventId,
+    queryConfig: { enabled: isCompetitionEvent && !!eventId },
+  });
+
+  const autoAssignedCourseId = competitionCoursesQuery.data?.data?.[0]?.id;
+
+  useEffect(() => {
+    if (!isCompetitionEvent || !autoAssignedCourseId) {
+      return;
+    }
+
+    setWizardData((prev) => {
+      if (prev.project.courseId === autoAssignedCourseId) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        project: {
+          ...prev.project,
+          courseId: autoAssignedCourseId,
+        },
+      };
+    });
+  }, [isCompetitionEvent, autoAssignedCourseId]);
+
   const createProjectMutation = useCreateProject({
     mutationConfig: {
       onSuccess: () => {
@@ -184,15 +214,21 @@ const handleSubmit = () => {
 
   try {
     // Para Competition, solo envía participantes
-    if (eventType === "Competition") {
+    if (isCompetitionEvent) {
       // Validar participantes
       z.array(participantSchemaCompetition)
         .min(1, "Debe agregar al menos un participante")
         .parse(wizardData.participants);
 
+      if (!wizardData.project.courseId) {
+        setStepErrors(["No se pudo asignar automáticamente un curso para este evento. Intente nuevamente más tarde."]);
+        return;
+      }
+
       // Validar schema de competencia
       const payloadData = {
         eventId: String(eventId),
+        courseId: String(wizardData.project.courseId),
         participants: JSON.stringify(
           wizardData.participants.map(p => ({
             firstName: p.firstName,
@@ -209,6 +245,7 @@ const handleSubmit = () => {
 
       const formData = new FormData();
       formData.append("eventId", payloadData.eventId);
+      formData.append("courseId", payloadData.courseId);
       formData.append("participants", payloadData.participants);
 
       createProjectMutation.mutate({ data: formData });

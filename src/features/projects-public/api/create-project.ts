@@ -9,6 +9,7 @@ import { z } from "zod";
 // Schema para Competition (solo participantes)
 export const createCompetitionInputSchema = z.object({
   eventId: z.string().min(1),
+  courseId: z.string().min(1),
   participants: z.string().min(1), // JSON string
 });
 
