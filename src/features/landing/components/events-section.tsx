@@ -11,6 +11,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { GlassCard } from "./glass-card";
 import { Button } from "@/components/ui/button";
 import { useEventsPublic } from "@/features/events/api/get-event-public";
@@ -133,6 +134,17 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
     setCurrentPage(0);
   }, [cardsPerView, eventsQuery.data?.data?.length]);
 
+  useEffect(() => {
+    // Recalculate pinned sections after async events content affects layout height.
+    if (eventsQuery.isLoading) {
+      return;
+    }
+
+    requestAnimationFrame(() => {
+      ScrollTrigger.refresh();
+    });
+  }, [eventsQuery.isLoading, eventsQuery.data?.data?.length, cardsPerView]);
+
   const handleJoin = async (eventId: string | number) => {
     if (isUserStatusResolving) {
       return;
@@ -158,7 +170,7 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
       <section
         id="eventos"
         ref={eventsSectionRef}
-        className="relative z-10 px-6 py-20 md:px-12"
+        className="relative z-10 px-6 pt-20 pb-12 md:px-12 md:pb-14"
       >
         <div className="flex h-48 w-full items-center justify-center">
           <Spinner size="lg" />
@@ -171,7 +183,7 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
     <section
       id="eventos"
       ref={eventsSectionRef}
-      className="relative z-10 px-6 py-20 md:px-12"
+      className="relative z-10 px-6 pt-20 pb-12 md:px-12 md:pb-14"
     >
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-16">
