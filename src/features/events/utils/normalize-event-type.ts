@@ -1,8 +1,8 @@
 export type PublicEventType = "Competition" | "Exposition";
 
 const EVENT_TYPE_BY_ID: Record<number, PublicEventType> = {
-  0: "Exposition",
-  1: "Competition",
+  1: "Exposition",
+  2: "Competition",
 };
 
 export const normalizeEventType = (value: unknown): PublicEventType | null => {
