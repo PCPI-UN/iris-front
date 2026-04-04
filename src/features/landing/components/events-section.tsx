@@ -1,3 +1,4 @@
+
 "use client";
 
 import { RefObject, useEffect, useMemo, useState } from "react";
@@ -10,10 +11,13 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { GlassCard } from "./glass-card";
 import { Button } from "@/components/ui/button";
 import { useEventsPublic } from "@/features/events/api/get-event-public";
 import { Spinner } from "@/components/ui/spinner";
+import { useUser } from "@/lib/auth";
+import { resolveJoinTarget } from "@/features/events/utils/resolve-join-target";
 import { paths } from "@/config/paths";
 import { landingContent } from "../content";
 import {
@@ -24,13 +28,82 @@ import {
   PRISMATIC_GRADIENT_DIM,
 } from "./events-section.utils";
 
+
 interface EventsSectionProps {
   eventsSectionRef: RefObject<HTMLElement>;
 }
 
+type ThemeKey = 'cyan' | 'pink' | 'yellow';
+
+const getThemeKey = (index: number): ThemeKey => {
+  const themes: ThemeKey[] = ['cyan', 'pink', 'yellow'];
+  return themes[index % themes.length];
+};
+
+const summarizeDescription = (text?: string) => {
+  const normalized = String(text ?? '').replace(/\s+/g, ' ').trim();
+
+  if (!normalized) {
+    return 'Sin descripción disponible.';
+  }
+
+  const firstSentence = normalized.match(/^[^.]*\./)?.[0]?.trim();
+  return firstSentence || normalized;
+};
+
+const resolveEventLocation = (
+  location: unknown,
+  fallback: string,
+) => {
+  if (typeof location === 'string' && location.trim()) {
+    return location.trim();
+  }
+
+  if (location && typeof location === 'object') {
+    const value = location as {
+      name?: unknown;
+      institution?: unknown;
+      address?: unknown;
+      city?: unknown;
+      venue?: unknown;
+    };
+
+    const label =
+      String(value.name ?? value.venue ?? '').trim() ||
+      [value.institution, value.address ?? value.city]
+        .map((part) => String(part ?? '').trim())
+        .filter(Boolean)
+        .join(' · ');
+
+    if (label) {
+      return label;
+    }
+  }
+
+  return fallback;
+};
+
+const parseLocalDate = (value: string) => {
+  const [year, month, day] = value.split('-').map(Number);
+
+  if (!year || !month || !day) {
+    return new Date(value);
+  }
+
+  return new Date(year, month - 1, day);
+};
+
 export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
   const router = useRouter();
   const eventsQuery = useEventsPublic({ page: 1 });
+  const {
+    data: user,
+    isLoading: isUserLoading,
+    isFetching: isUserFetching,
+  } = useUser();
+  const isUserStatusResolving = isUserLoading || isUserFetching;
+
+  // Carousel state
   const [currentPage, setCurrentPage] = useState(0);
   const [cardsPerView, setCardsPerView] = useState(3);
 
@@ -52,39 +125,65 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
     updateCardsPerView();
     window.addEventListener("resize", updateCardsPerView);
 
-    return () => window.removeEventListener("resize", updateCardsPerView);
+    return () => {
+      window.removeEventListener("resize", updateCardsPerView);
+    };
   }, []);
+
+  useEffect(() => {
+    setCurrentPage(0);
+  }, [cardsPerView, eventsQuery.data?.data?.length]);
+
+  useEffect(() => {
+    // Recalculate pinned sections after async events content affects layout height.
+    if (eventsQuery.isLoading) {
+      return;
+    }
+
+    requestAnimationFrame(() => {
+      ScrollTrigger.refresh();
+    });
+  }, [eventsQuery.isLoading, eventsQuery.data?.data?.length, cardsPerView]);
+
+  const handleJoin = async (eventId: string | number) => {
+    if (isUserStatusResolving) {
+      return;
+    }
+    const targetHref = await resolveJoinTarget({
+      eventId,
+      user,
+    });
+    router.push(targetHref);
+  };
 
   const events = eventsQuery.data?.data || [];
   const totalPages = Math.ceil(events.length / cardsPerView);
-
-  const eventsPages = useMemo(() => {
+  const pages = useMemo(() => {
     return Array.from({ length: totalPages }, (_, pageIndex) => {
       const start = pageIndex * cardsPerView;
       return events.slice(start, start + cardsPerView);
     });
-  }, [cardsPerView, events, totalPages]);
+  }, [events, totalPages, cardsPerView]);
 
-  useEffect(() => {
-    setCurrentPage((previousPage) => {
-      const maxPage = Math.max(totalPages - 1, 0);
-      return Math.min(previousPage, maxPage);
-    });
-  }, [totalPages]);
-
-  const goToPreviousPage = () => {
-    setCurrentPage((previousPage) => Math.max(previousPage - 1, 0));
-  };
-
-  const goToNextPage = () => {
-    setCurrentPage((previousPage) => Math.min(previousPage + 1, totalPages - 1));
-  };
+  if (eventsQuery.isLoading) {
+    return (
+      <section
+        id="eventos"
+        ref={eventsSectionRef}
+        className="relative z-10 px-6 pt-20 pb-12 md:px-12 md:pb-14"
+      >
+        <div className="flex h-48 w-full items-center justify-center">
+          <Spinner size="lg" />
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section
       id="eventos"
       ref={eventsSectionRef}
-      className="relative z-10 min-h-screen px-6 py-20 md:px-12"
+      className="relative z-10 px-6 pt-20 pb-12 md:px-12 md:pb-14"
     >
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-16">
@@ -103,11 +202,7 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
           </p>
         </div>
 
-        {eventsQuery.isLoading ? (
-          <div className="flex h-48 w-full items-center justify-center">
-            <Spinner size="lg" />
-          </div>
-        ) : events.length === 0 ? (
+        {events.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-lg text-muted-foreground">
               No hay eventos disponibles en este momento.
@@ -117,25 +212,28 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
           <div className="space-y-8">
             <div className="overflow-hidden">
               <div
-                className="flex transition-transform duration-500 ease-out"
+                className="flex transition-transform duration-500"
                 style={{ transform: `translateX(-${currentPage * 100}%)` }}
               >
-                {eventsPages.map((eventsPage, pageIndex) => (
-                  <div key={`events-page-${pageIndex}`} className="min-w-full">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                      {eventsPage.map((event, index) => {
+                {pages.map((page, pageIndex) => (
+                  <div key={pageIndex} className="min-w-full">
+                    <div className="flex flex-wrap justify-center gap-8">
+                      {page.map((event, index) => {
                         const globalIndex = pageIndex * cardsPerView + index;
                         const eventTheme = getEventColor(event.id, globalIndex);
-                        const dateRange = formatDateRange(
-                          event.startDate,
-                          event.endDate
+                        const themeKey = getThemeKey(globalIndex);
+                        const shortDescription = summarizeDescription(event.description);
+                        const eventLocation = resolveEventLocation(
+                          (event as { location?: unknown }).location,
+                          landingContent.events.location,
                         );
+                        const dateRange = formatDateRange(event.startDate, event.endDate);
                         const status = getStatusText(event.statusName);
 
                         return (
                           <GlassCard
                             key={event.id}
-                            className="event-card group cursor-pointer transition-all duration-500 relative overflow-hidden w-full max-w-md mx-auto"
+                            className="event-card group cursor-pointer transition-all duration-500 relative overflow-hidden w-full lg:w-[calc(33.333%-1.5rem)] max-w-md"
                           >
                             <div
                               className={`absolute inset-0 bg-gradient-to-br ${eventTheme.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`}
@@ -173,7 +271,7 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
                               </h3>
 
                               <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
-                                {event.description}
+                                {shortDescription}
                               </p>
 
                               <div className="space-y-3 mb-6">
@@ -209,9 +307,7 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
                                     />
                                   </div>
                                   <span className="text-muted-foreground">
-                                    {new Date(
-                                      event.inscriptionDeadline
-                                    ).toLocaleDateString("es", {
+                                    {parseLocalDate(event.inscriptionDeadline).toLocaleDateString("es", {
                                       day: "numeric",
                                       month: "long",
                                     })}{" "}
@@ -233,18 +329,17 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
                                     />
                                   </div>
                                   <span className="text-muted-foreground">
-                                    {landingContent.events.location}
+                                    {eventLocation}
                                   </span>
                                 </div>
                               </div>
 
                               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                                 <Button
-                                  onClick={() =>
-                                    router.push(
-                                      paths.public.event.getHref()
-                                    )
-                                  }
+                                  onClick={() => {
+                                    sessionStorage.setItem(`eventTheme:${String(event.id)}`, themeKey);
+                                    router.push(paths.public.event.getHref(String(event.id)));
+                                  }}
                                   className="w-full"
                                   variant="bordered"
                                 >
@@ -252,11 +347,10 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
                                 </Button>
 
                                 <Button
-                                  onClick={() =>
-                                    router.push(
-                                      paths.public.project.getHref(String(event.accessCode))
-                                    )
-                                  }
+                                  onPress={() => {
+                                    void handleJoin(event.id);
+                                  }}
+                                  isDisabled={isUserStatusResolving}
                                   className="w-full group-hover:scale-102 transition-transform event-button"
                                   style={
                                     {
@@ -266,9 +360,7 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
                                     } as React.CSSProperties
                                   }
                                 >
-                                  {status === landingContent.events.status.upcoming
-                                    ? landingContent.events.cta.open
-                                    : landingContent.events.cta.default}
+                                  Inscribirse
                                   <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                                 </Button>
                               </div>
@@ -285,11 +377,13 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
             {totalPages > 1 && (
               <div className="flex items-center justify-center gap-4">
                 <Button
-                  type="button"
                   variant="bordered"
+                  type="button"
                   className="events-nav-button h-10 w-10 p-0 border-white/25 backdrop-blur-sm transition-all enabled:hover:shadow-[0_0_18px_rgba(244,114,182,0.28)] disabled:opacity-40 disabled:shadow-none disabled:cursor-default"
-                  onClick={goToPreviousPage}
-                  disabled={currentPage === 0}
+                  onClick={() => {
+                    setCurrentPage((prev) => Math.max(prev - 1, 0));
+                  }}
+                  isDisabled={currentPage === 0}
                   aria-label="Página anterior"
                   style={
                     currentPage === 0
@@ -309,17 +403,19 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
                 </Button>
 
                 <div className="flex items-center gap-2">
-                  {Array.from({ length: totalPages }).map((_, pageIndex) => (
+                  {pages.map((_, pageIndex) => (
                     <button
-                      key={`events-dot-${pageIndex}`}
+                      key={pageIndex}
                       type="button"
-                      onClick={() => setCurrentPage(pageIndex)}
+                      onClick={() => {
+                        setCurrentPage(pageIndex);
+                      }}
                       className={`h-2.5 w-2.5 rounded-full border border-white/20 transition-all ${
-                        pageIndex === currentPage
+                        currentPage === pageIndex
                           ? "scale-110 shadow-[0_0_10px_rgba(244,114,182,0.35)]"
                           : "opacity-60 hover:opacity-90"
                       }`}
-                      aria-label={`Ir a la página ${pageIndex + 1}`}
+                      aria-label={`Ir a página ${pageIndex + 1}`}
                       style={{
                         backgroundImage: PRISMATIC_GRADIENT,
                         backgroundSize: "200% auto",
@@ -330,11 +426,13 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
                 </div>
 
                 <Button
-                  type="button"
                   variant="bordered"
+                  type="button"
                   className="events-nav-button h-10 w-10 p-0 border-white/25 backdrop-blur-sm transition-all enabled:hover:shadow-[0_0_18px_rgba(244,114,182,0.28)] disabled:opacity-40 disabled:shadow-none disabled:cursor-default"
-                  onClick={goToNextPage}
-                  disabled={currentPage === totalPages - 1}
+                  onClick={() => {
+                    setCurrentPage((prev) => Math.min(prev + 1, totalPages - 1));
+                  }}
+                  isDisabled={currentPage === totalPages - 1}
                   aria-label="Página siguiente"
                   style={
                     currentPage === totalPages - 1

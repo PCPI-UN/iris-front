@@ -8,21 +8,15 @@ import { Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Select, SelectItem } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
 import { paths } from '@/config/paths';
 import { useRegister, registerInputSchema } from '@/lib/auth';
 
 type RegisterFormProps = {
   onSuccess: () => void;
-  chooseTeam: boolean;
-  setChooseTeam: () => void;
 };
 
 export const RegisterForm = ({
   onSuccess,
-  chooseTeam,
-  setChooseTeam,
 }: RegisterFormProps) => {
   const [showPassword, setShowPassword] = useState(false);
   const registering = useRegister({ onSuccess });
@@ -44,22 +38,28 @@ export const RegisterForm = ({
             <Input
               name="firstName"
               type="text"
-              label="First Name"
+              label="Nombre"
+              isRequired
             />
             <Input
               name="lastName"
               type="text"
-              label="Last Name"
+              label="Apellido"
+              isRequired
             />
             <Input
               name="email"
               type="email"
-              label="Email Address"
+              label="Correo electrónico"
+              placeholder="tu@correo.com"
+              isRequired
             />
             <Input
               name="password"
               type={showPassword ? "text" : "password"}
-              label="Password"
+              label="Contraseña"
+              placeholder="••••••••"
+              isRequired
               endContent={
                 <a
                   type="button"
@@ -75,34 +75,24 @@ export const RegisterForm = ({
               }
             />
 
-            <div className="flex items-center space-x-2">
-              <Switch
-                isSelected={chooseTeam}
-                onValueChange={setChooseTeam}
-                className={`${
-                  chooseTeam ? 'bg-blue-600' : 'bg-gray-200'
-                } relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2`}
-                id="choose-team"
-              />
-              <label htmlFor="choose-team">Join Existing Team</label>
-            </div>
             <div>
               <Button
                 isLoading={registering.isPending}
                 type="submit"
-                className="w-full"
+                className="w-full mt-2"
               >
-                Register
+                Registrarse
               </Button>
             </div>
       </Form>
-      <div className="mt-2 flex items-center justify-end">
+      <div className="mt-4 flex items-center justify-center">
         <div className="text-sm">
+          ¿Ya tienes cuenta?
           <NextLink
             href={paths.auth.login.getHref(redirectTo)}
-            className="font-medium text-blue-600 hover:text-blue-500"
+            className="font-medium text-primary hover:underline ml-1"
           >
-            Log In
+            Inicia sesión
           </NextLink>
         </div>
       </div>

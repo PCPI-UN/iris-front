@@ -4,13 +4,11 @@ import { useState } from 'react';
 import NextLink from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Eye, EyeOff } from 'lucide-react';
-
 import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { paths } from '@/config/paths';
 import { useLogin, loginInputSchema } from '@/lib/auth';
-import { env } from '@/config/env';
 
 type LoginFormProps = {
   onSuccess: () => void;
@@ -22,12 +20,25 @@ export const LoginForm = ({ onSuccess }: LoginFormProps) => {
     onSuccess,
   });
 
-  const handleMicrosoftLogin = () => {
-    window.location.replace(`/api/auth/login/microsoft`);
-  };
-
   const searchParams = useSearchParams();
   const redirectTo = searchParams?.get('redirectTo');
+
+  const handleMicrosoftLogin = () => {
+    const params = new URLSearchParams();
+
+    // Allow only relative paths to avoid forwarding open redirects.
+    if (redirectTo && redirectTo.startsWith('/') && !redirectTo.startsWith('//')) {
+      params.set('redirect', `redirect:${redirectTo}`);
+    }
+
+    const query = params.toString();
+    const loginUrl = query
+      ? `/api/auth/login/microsoft?${query}`
+      : '/api/auth/login/microsoft';
+
+    window.location.replace(loginUrl);
+  };
+
   return (
     <div className="space-y-4">
       <Form

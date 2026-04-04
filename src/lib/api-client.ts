@@ -9,6 +9,7 @@ type RequestOptions = {
   params?: Record<string, string | number | boolean | undefined | null>;
   cache?: RequestCache;
   next?: NextFetchRequestConfig;
+  suppressErrorNotification?: boolean;
 };
 
 function buildUrlWithParams(
@@ -58,6 +59,7 @@ async function fetchApi<T>(
     params,
     cache = 'no-store',
     next,
+    suppressErrorNotification = false,
   } = options;
 
   // Get cookies from the request when running on server
@@ -66,20 +68,20 @@ async function fetchApi<T>(
     cookieHeader = await getServerCookies();
   }
 
-  // Usar rutas relativas /api/* que serán proxeadas al backend
+  // Use relative paths /api/* that will be proxied to the backend
   const fullUrl = buildUrlWithParams(`/api${url}`, params);
 
-  // Detectar si el body es FormData
+  // Detect if the body is FormData
   const isFormData = body instanceof FormData;
   
-  // Preparar headers
+  // Prepare headers
   const requestHeaders: Record<string, string> = {
     Accept: 'application/json',
     ...headers,
     ...(cookieHeader ? { Cookie: cookieHeader } : {}),
   };
   
-  // No establecer Content-Type si es FormData (el browser lo hace automáticamente con el boundary)
+  // DDo not set Content-Type if it's FormData (the browser sets it automatically with the boundary)
   if (!isFormData) {
     requestHeaders['Content-Type'] = 'application/json';
   }
@@ -93,22 +95,27 @@ async function fetchApi<T>(
     next,
   });
 
-  // Interceptor para 401: Refrescar token y reintentar
-  // Solo intentar refresh si:
-  // 1. No es un endpoint de auth
-  // 2. No estamos en una página de auth (evita loops)
-  const isAuthEndpoint = url.includes('/auth/refresh') || url.includes('/auth/login') || url.includes('/auth/logout') || url.includes('/auth/register');
+  // Interceptor for 401: Refresh token and retry
+  // Only attempt auto refresh/redirect if we are on a protected route.
+  // On public routes, a 401 might be expected (e.g., /auth/me without session).
+  const isAuthEndpoint =
+    url.includes('/auth/refresh') ||
+    url.includes('/auth/login') ||
+    url.includes('/auth/logout') ||
+    url.includes('/auth/register');
+  const isAuthMeEndpoint = url.includes('/auth/me');
   const isAuthPage = typeof window !== 'undefined' && window.location.pathname.startsWith('/auth');
+  const isProtectedPage = typeof window !== 'undefined' && window.location.pathname.startsWith('/app');
 
-  if (response.status === 401 && !isAuthEndpoint && !isAuthPage) {
+  if (response.status === 401 && !isAuthEndpoint && !isAuthPage && isProtectedPage) {
     try {
-      // Importación dinámica para evitar dependencia circular
+      // Dynamic import to avoid circular dependency
       const { refreshToken } = await import('./auth');
 
-      // Intentar refrescar el token
+      // Attempt to refresh the token
       await refreshToken();
 
-      // Reintentar la petición original con el nuevo token
+      // Retry the original request with the new token
       const retryResponse = await fetch(fullUrl, {
         method,
         headers: requestHeaders,
@@ -132,8 +139,12 @@ async function fetchApi<T>(
 
       return retryResponse.json();
     } catch (refreshError) {
-      // Si el refresh falla, redirigir al login solo si no estamos ya ahí
-      if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/auth')) {
+      // If the refresh fails, redirect to the login only if we are not already there.
+      if (
+        typeof window !== 'undefined' &&
+        window.location.pathname.startsWith('/app') &&
+        !window.location.pathname.startsWith('/auth')
+      ) {
         window.location.href = '/auth/login';
       }
       throw refreshError;
@@ -142,7 +153,12 @@ async function fetchApi<T>(
 
   if (!response.ok) {
     const message = (await response.json()).message || response.statusText;
-    if (typeof window !== 'undefined') {
+    const shouldNotify =
+      typeof window !== 'undefined' &&
+      !suppressErrorNotification &&
+      !(response.status === 401 && isAuthMeEndpoint);
+
+    if (shouldNotify) {
       useNotifications.getState().addNotification({
         type: 'error',
         title: 'Error',
