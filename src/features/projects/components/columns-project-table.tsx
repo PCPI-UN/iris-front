@@ -31,33 +31,33 @@ const getActions = (entry: Project) => {
       ]
     case "REQUEST_CHANGES":
       return [
-        <DropdownItem key="approve" onPress={() => onApprove(entry.id)}>
+        /*<DropdownItem key="approve" onPress={() => onApprove(entry.id)}>
           Aprobar
         </DropdownItem>,
         
         <DropdownItem key="reject" color="danger" onPress={() => onReject(entry.id)}>
           Rechazar
-        </DropdownItem>
+        </DropdownItem>*/
       ]
     case "REJECTED":
       return [
-        <DropdownItem key="request" onPress={() => onRequest(entry.id)}>
+        /*<DropdownItem key="request" onPress={() => onRequest(entry.id)}>
           Pedir cambios
         </DropdownItem>,
 
         <DropdownItem key="approve" onPress={() => onApprove(entry.id)}>
           Aprobar
-        </DropdownItem>,
+        </DropdownItem>,*/
       ]
     case "APPROVED":
       return [
-        <DropdownItem key="request" onPress={() => onRequest(entry.id)}>
+        /*<DropdownItem key="request" onPress={() => onRequest(entry.id)}>
           Pedir cambios
         </DropdownItem>,
 
         <DropdownItem key="reject" color="danger" onPress={() => onReject(entry.id)}>
           Rechazar
-        </DropdownItem> 
+        </DropdownItem> */
       ]
   }
 }

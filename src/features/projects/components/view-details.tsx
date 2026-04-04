@@ -124,7 +124,7 @@ export const ViewDetails = ({project} : {project: Project}) => {
                 
                   {/* ---------- Acciones por estado ---------- */}
                 
-                  {project.state === "APPROVED" && (
+                  {/*project.state === "APPROVED" && (
                     <div className="grid grid-cols-2 gap-2 mb-2">
                       <RejectProjectModal projectId={project.id} />
                       <RequestProjectModal projectId={project.id}/>
@@ -142,7 +142,7 @@ export const ViewDetails = ({project} : {project: Project}) => {
                       <RequestProjectModal projectId={project.id}/>
                       <ApproveProjectModal projectId={project.id}/>
                     </div>
-                  )}
+                  )*/}
                 
               </ModalFooter>
             </>
