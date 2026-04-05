@@ -182,8 +182,13 @@ export function Developers() {
         style={rainbowBorderStyle}
       >
         <div className="rounded-[1.45rem] bg-transparent p-4 md:p-5 flex flex-col gap-4">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm text-muted-foreground mr-2">Versión:</span>
+          <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-center">
+            <span className="text-sm text-muted-foreground md:ml-auto md:order-2">
+              Mostrando: <span className="font-semibold" style={rainbowTextStyle}>{filtered.length}</span> contribuidores
+            </span>
+
+            <div className="flex flex-wrap items-center gap-2 md:order-1">
+              <span className="text-sm text-muted-foreground mr-2">Versión:</span>
             {versions.map((version) => (
               <button
                 key={version}
@@ -206,9 +211,7 @@ export function Developers() {
                 {version}
               </button>
             ))}
-            <span className="ml-auto text-sm text-muted-foreground">
-              Mostrando: <span className="font-semibold" style={rainbowTextStyle}>{filtered.length}</span> contribuidores
-            </span>
+            </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
