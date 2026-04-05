@@ -1200,4 +1200,228 @@ section[class*="story"]::before {
   .landing-page .event-card {
     max-width: 100% !important;
   }
+/* ========================================= */
+/* Event Detail Page                         */
+/* ========================================= */
+
+/* Base: defaults to cyan */
+.event-detail-page {
+  --event-color: oklch(0.75 0.15 195);
+  --button-bg: oklch(0.75 0.15 195);
+  --button-color: oklch(0.12 0.01 264);
+  background:
+    radial-gradient(
+      1200px 520px at 50% -12%,
+      color-mix(in oklch, var(--event-color), transparent 82%) 0%,
+      transparent 62%
+    ),
+    linear-gradient(180deg, oklch(0.12 0.01 264) 0%, oklch(0.11 0.01 264) 100%);
+}
+
+.event-detail-page[data-theme="pink"] {
+  --event-color: oklch(0.82 0.18 330);
+  --button-bg: oklch(0.82 0.18 330);
+}
+
+.event-detail-page[data-theme="yellow"] {
+  --event-color: oklch(0.88 0.16 85);
+  --button-bg: oklch(0.88 0.16 85);
+}
+
+/* Button: override landing-page's hardcoded cyan */
+.event-detail-page .event-button {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  z-index: 1;
+  background-color: var(--button-bg) !important;
+  color: var(--button-color) !important;
+}
+
+.event-detail-page .event-button:hover {
+  background-color: color-mix(in oklch, var(--button-bg), white 10%) !important;
+}
+
+.event-detail-page .event-button::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    45deg,
+    oklch(0.75 0.15 195),
+    oklch(0.82 0.18 330),
+    oklch(0.88 0.16 85),
+    oklch(0.75 0.15 195)
+  );
+  background-size: 300% 300%;
+  border-radius: inherit;
+  opacity: 0;
+  z-index: -1;
+  filter: blur(10px);
+  animation: gradient-rotate 3s linear infinite;
+  transition: opacity 0.3s;
+}
+
+.event-detail-page .event-button:hover::before {
+  opacity: 0.7;
+}
+
+/* Ambient glow blobs */
+.event-detail-blob {
+  background: var(--event-color);
+}
+
+/* Badge / pill text */
+.event-badge {
+  color: var(--event-color);
+}
+
+/* Section icon container */
+.event-section-icon {
+  background: color-mix(in oklch, var(--event-color), transparent 80%);
+  border: 1px solid color-mix(in oklch, var(--event-color), transparent 60%);
+  color: var(--event-color);
+}
+
+/* Section title / colored text */
+.event-section-title {
+  color: var(--event-color);
+}
+
+/* Dividers */
+.event-divider {
+  background: color-mix(in oklch, var(--event-color), transparent 70%) !important;
+}
+
+/* Numbered badge on participant rows */
+.event-number-badge {
+  background: color-mix(in oklch, var(--event-color), transparent 70%);
+  border: 1.5px solid var(--event-color);
+  color: var(--event-color);
+  transition: transform 0.2s ease;
+}
+
+.group:hover .event-number-badge {
+  transform: scale(1.1);
+}
+
+/* Awards / premios card */
+.event-awards-card {
+  background: linear-gradient(
+    135deg,
+    color-mix(in oklch, var(--event-color), transparent 92%) 0%,
+    transparent 60%
+  );
+  border: 1px solid color-mix(in oklch, var(--event-color), transparent 75%);
+}
+
+.event-awards-blob {
+  background: var(--event-color);
+}
+
+/* Participant count badge */
+.event-count-badge {
+  background: color-mix(in oklch, var(--event-color), transparent 80%);
+  color: var(--event-color);
+}
+
+/* Info / detail cards */
+.event-info-card {
+  background: linear-gradient(
+    135deg,
+    color-mix(in oklch, var(--event-color), transparent 92%) 0%,
+    transparent 80%
+  );
+  border: 1px solid color-mix(in oklch, var(--event-color), transparent 80%);
+}
+
+/* Program date badge */
+.event-date-badge {
+  background: color-mix(in oklch, var(--event-color), transparent 85%);
+  color: var(--event-color);
+}
+
+/* Bullet dot */
+.event-bullet {
+  background: var(--event-color);
+}
+
+/* Requirement number circles */
+.event-req-number {
+  background: color-mix(in oklch, var(--event-color), transparent 80%);
+  color: var(--event-color);
+  border: 1px solid color-mix(in oklch, var(--event-color), transparent 60%);
+}
+
+/* Deadline info box */
+.event-deadline-box {
+  background: color-mix(in oklch, var(--event-color), transparent 85%);
+  border: 1px solid color-mix(in oklch, var(--event-color), transparent 70%);
+}
+
+.event-deadline-text {
+  color: var(--event-color);
+}
+
+/* Bottom CTA footer card */
+.event-cta-footer-card {
+  border: 1px solid color-mix(in oklch, var(--event-color), transparent 70%);
+}
+
+/* CTA card overlay gradient (theme-specific) */
+.event-cta-overlay {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  opacity: 0.2;
+  width: 100%;
+  height: 100%;
+  
+}
+
+.event-detail-page[data-theme="cyan"] .event-cta-overlay {
+  background: linear-gradient(135deg, oklch(0.75 0.15 195) 0%, oklch(0.6 0.2 220) 50%, oklch(0.75 0.15 195) 100%);
+}
+
+.event-detail-page[data-theme="pink"] .event-cta-overlay {
+  background: linear-gradient(135deg, oklch(0.82 0.18 330) 0%, oklch(0.75 0.2 350) 50%, oklch(0.82 0.18 330) 100%);
+}
+
+.event-detail-page[data-theme="yellow"] .event-cta-overlay {
+  background: linear-gradient(135deg, oklch(0.88 0.16 85) 0%, oklch(0.8 0.18 55) 50%, oklch(0.88 0.16 85) 100%);
+}
+
+/* Details section subtle bg gradient (theme-specific) */
+.event-detail-page[data-theme="cyan"] .event-details-section {
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    oklch(0.75 0.15 195 / 0.06) 55%,
+    transparent 100%
+  );
+}
+
+.event-detail-page[data-theme="pink"] .event-details-section {
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    oklch(0.82 0.18 330 / 0.06) 55%,
+    transparent 100%
+  );
+}
+
+.event-detail-page[data-theme="yellow"] .event-details-section {
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    oklch(0.88 0.16 85 / 0.06) 55%,
+    transparent 100%
+  );
+}
+
+/* Generic event glow (replaces glow-cyan/pink/yellow in detail page) */
+.event-glow {
+  box-shadow:
+    0 0 40px color-mix(in oklch, var(--event-color), transparent 70%),
+    0 0 80px color-mix(in oklch, var(--event-color), transparent 85%);
 }

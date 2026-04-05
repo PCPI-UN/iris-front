@@ -9,6 +9,7 @@ type RequestOptions = {
   params?: Record<string, string | number | boolean | undefined | null>;
   cache?: RequestCache;
   next?: NextFetchRequestConfig;
+  suppressErrorNotification?: boolean;
 };
 
 function buildUrlWithParams(
@@ -58,6 +59,7 @@ async function fetchApi<T>(
     params,
     cache = 'no-store',
     next,
+    suppressErrorNotification = false,
   } = options;
 
   // Get cookies from the request when running on server
@@ -66,10 +68,10 @@ async function fetchApi<T>(
     cookieHeader = await getServerCookies();
   }
 
-  // Relative URLs will be prefixed with the API base URL from environment variables
+  // Use relative paths /api/* that will be proxied to the backend
   const fullUrl = buildUrlWithParams(`/api${url}`, params);
 
-  // Detect if the body is FormData to set headers and body correctly
+  // Detect if the body is FormData
   const isFormData = body instanceof FormData;
   
   // Prepare headers
@@ -79,7 +81,7 @@ async function fetchApi<T>(
     ...(cookieHeader ? { Cookie: cookieHeader } : {}),
   };
   
-  // Set Content-Type to application/json if body is not FormData and Content-Type is not already set
+  // DDo not set Content-Type if it's FormData (the browser sets it automatically with the boundary)
   if (!isFormData) {
     requestHeaders['Content-Type'] = 'application/json';
   }
@@ -93,19 +95,24 @@ async function fetchApi<T>(
     next,
   });
 
-  // If response is 401, attempt to refresh token and retry the request
-  // Only do this if:
-  // 1. It's not an auth endpoint
-  // 2. We are not already on an auth page (to avoid redirect loops)
-  const isAuthEndpoint = url.includes('/auth/refresh') || url.includes('/auth/login') || url.includes('/auth/logout') || url.includes('/auth/register');
+  // Interceptor for 401: Refresh token and retry
+  // Only attempt auto refresh/redirect if we are on a protected route.
+  // On public routes, a 401 might be expected (e.g., /auth/me without session).
+  const isAuthEndpoint =
+    url.includes('/auth/refresh') ||
+    url.includes('/auth/login') ||
+    url.includes('/auth/logout') ||
+    url.includes('/auth/register');
+  const isAuthMeEndpoint = url.includes('/auth/me');
   const isAuthPage = typeof window !== 'undefined' && window.location.pathname.startsWith('/auth');
+  const isProtectedPage = typeof window !== 'undefined' && window.location.pathname.startsWith('/app');
 
-  if (response.status === 401 && !isAuthEndpoint && !isAuthPage) {
+  if (response.status === 401 && !isAuthEndpoint && !isAuthPage && isProtectedPage) {
     try {
-      // Dynamically import the refreshToken function to avoid circular dependencies and only load it when needed
+      // Dynamic import to avoid circular dependency
       const { refreshToken } = await import('./auth');
 
-      // Try to refresh the token
+      // Attempt to refresh the token
       await refreshToken();
 
       // Retry the original request with the new token
@@ -132,8 +139,12 @@ async function fetchApi<T>(
 
       return retryResponse.json();
     } catch (refreshError) {
-      // If refresh fails, redirect to login page and show notification
-      if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/auth')) {
+      // If the refresh fails, redirect to the login only if we are not already there.
+      if (
+        typeof window !== 'undefined' &&
+        window.location.pathname.startsWith('/app') &&
+        !window.location.pathname.startsWith('/auth')
+      ) {
         window.location.href = '/auth/login';
       }
       throw refreshError;
@@ -142,7 +153,12 @@ async function fetchApi<T>(
 
   if (!response.ok) {
     const message = (await response.json()).message || response.statusText;
-    if (typeof window !== 'undefined') {
+    const shouldNotify =
+      typeof window !== 'undefined' &&
+      !suppressErrorNotification &&
+      !(response.status === 401 && isAuthMeEndpoint);
+
+    if (shouldNotify) {
       useNotifications.getState().addNotification({
         type: 'error',
         title: 'Error',

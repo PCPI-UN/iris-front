@@ -68,12 +68,21 @@ export const GetEventsLanding = () => {
                 </div>
               </div>
 
-              <Button
-                id={event.id}
-                onPress={() => router.push(paths.public.project.getHref(event.accessCode))}
-              >
-                Registrarse
-              </Button>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <Button
+                  id={event.id}
+                  variant="bordered"
+                  onPress={() => router.push(paths.public.event.getHref(event.id))}
+                >
+                  Ver más
+                </Button>
+
+                <Button
+                  onPress={() => router.push(paths.public.project.getHref(event.id))}
+                >
+                  Registrarse
+                </Button>
+              </div>
             </CardBody>
           </Card>
         ))}

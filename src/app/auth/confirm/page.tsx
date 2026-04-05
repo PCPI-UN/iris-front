@@ -1,19 +1,12 @@
 "use client";
 
-import { useSearchParams } from 'next/navigation';
-
-import { paths } from "@/config/paths";
-import { RegisterForm } from "@/features/auth/components/register-form";
+import { ConfirmAccountForm } from "@/features/auth/components/confirm-account";
 import { PublicLayout } from "@/components/layouts/public-layout";
 import "@/features/landing/index.css";
 
-const RegisterPage = () => {
-  const searchParams = useSearchParams();
-  const redirectTo = searchParams?.get("redirectTo");
-
+export default function ConfirmPage() {
   return (
     <PublicLayout showNavLinks={false} showLoginButton={false}>
-      {/* Animated Background Gradient - Same as landing */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
         <div
           className="parallax-slow absolute top-0 left-0 w-[150%] h-[150%]"
@@ -30,31 +23,16 @@ const RegisterPage = () => {
       <div className="auth-page relative z-10 flex flex-col items-center justify-center min-h-[calc(100vh-6rem)]">
         <div className="w-full max-w-2xl mb-6 sm:mb-8 text-center px-4">
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground mb-3">
-            Crea tu <span className="prismatic-text">cuenta</span>
+            Confirma tu <span className="prismatic-text">cuenta</span>
           </h1>
-          <p className="text-base sm:text-lg text-muted-foreground">
-            Únete a Iris y comienza tu viaje
-          </p>
         </div>
 
         <div className="w-full max-w-md px-4 sm:px-6 lg:px-8">
           <div className="glass-card p-6 sm:p-8 w-full">
-            <RegisterForm
-              onSuccess={() => {
-                // Usar window.location.href en lugar de router.replace
-                // para forzar una recarga completa y asegurar que las cookies
-                // se envíen correctamente en producción
-                const targetUrl = redirectTo
-                  ? decodeURIComponent(redirectTo)
-                  : paths.app.dashboard.getHref();
-                window.location.href = targetUrl;
-              }}
-            />
+            <ConfirmAccountForm />
           </div>
         </div>
       </div>
     </PublicLayout>
   );
-};
-
-export default RegisterPage;
+}

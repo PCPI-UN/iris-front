@@ -34,6 +34,8 @@ export type Participant = {
   lastName: string;
   email: string;
   studentCode: string;
+  semester: string;
+  career: string;
 };
 
 export type ProjectData = {
@@ -53,20 +55,31 @@ export type WizardData = {
   documents: DocumentsData;
 };
 
-const steps = [
-  { id: 1, name: "Participantes", icon: Users },
-  { id: 2, name: "Proyecto", icon: FileText },
-  { id: 3, name: "Documentos", icon: Upload },
-  { id: 4, name: "Revisión", icon: CheckCircle2 },
-];
-
 type ProjectWizardProps = {
   eventId: number;
+  eventType?: "Competition" | "Exhibition";
 };
 
-export function ProjectWizard({ eventId }: ProjectWizardProps) {
+export function ProjectWizard({ eventId, eventType = "Exhibition" }: ProjectWizardProps) {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
+
+  const getSteps = (eventType: "Competition" | "Exhibition") => {
+    if (eventType === "Competition") {
+      return [
+        { id: 1, name: "Participantes", icon: Users },
+        { id: 2, name: "Revisión", icon: CheckCircle2 },
+      ];
+    }
+    return [
+      { id: 1, name: "Participantes", icon: Users },
+      { id: 2, name: "Proyecto", icon: FileText },
+      { id: 3, name: "Documentos", icon: Upload },
+      { id: 4, name: "Revisión", icon: CheckCircle2 },
+    ];
+  };
+
+  const steps = getSteps(eventType);
   const [stepErrors, setStepErrors] = useState<string[]>([]);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [wizardData, setWizardData] = useState<WizardData>({
@@ -119,11 +132,15 @@ const validateStep = (step: number): boolean => {
           .parse(wizardData.participants);
         return true;
 
-      case 2: // Proyecto
-        projectSchema.parse(wizardData.project);
+      case 2:
+        // Para Exhibition, paso 2 es Proyecto
+        if (eventType === "Exhibition") {
+          projectSchema.parse(wizardData.project);
+        }
+        // Para Competition, paso 2 es Review (no valida, solo muestra)
         return true;
 
-      case 3: // Documentos
+      case 3: // Documentos (solo Exhibition)
         documentsSchema.parse(wizardData.documents);
         return true;
 
@@ -159,6 +176,31 @@ const handleSubmit = () => {
   setStepErrors([]);
 
   try {
+    // Para Competition, solo envía participantes
+    if (eventType === "Competition") {
+      const payloadData = {
+        eventId: String(eventId),
+        participants: JSON.stringify(
+          wizardData.participants.map(p => ({
+            firstName: p.firstName,
+            lastName: p.lastName,
+            email: p.email,
+            studentCode: p.studentCode,
+            semester: p.semester,
+            career: p.career,
+          }))
+        ),
+      };
+
+      const formData = new FormData();
+      formData.append("eventId", payloadData.eventId);
+      formData.append("participants", payloadData.participants);
+
+      createProjectMutation.mutate({ data: formData });
+      return;
+    }
+
+    // Para Exhibition, envía todo como está
     const payloadData = {
       name: wizardData.project.name,
       description: wizardData.project.description,
@@ -170,6 +212,8 @@ const handleSubmit = () => {
           lastName: p.lastName,
           email: p.email,
           studentCode: p.studentCode,
+          semester: p.semester,
+          career: p.career,
         }))
       ),
       documents: JSON.stringify([
@@ -265,10 +309,11 @@ const handleSubmit = () => {
               {steps[currentStep - 1].name}
             </h2>
             <p className="text-muted-foreground text-xs sm:text-sm">
-              {currentStep === 1 && "Agregue los participantes del proyecto"}
-              {currentStep === 2 && "Ingrese los detalles del proyecto"}
-              {currentStep === 3 && "Suba los documentos requeridos"}
-              {currentStep === 4 && "Revise la información antes de enviar"}
+              {currentStep === 1 && "Agregue los participantes"}
+              {currentStep === 2 && eventType === "Exhibition" && "Ingrese los detalles del proyecto"}
+              {currentStep === 3 && eventType === "Exhibition" && "Suba los documentos requeridos"}
+              {currentStep === 2 && eventType === "Competition" && "Revise la información antes de enviar"}
+              {currentStep === 4 && eventType === "Exhibition" && "Revise la información antes de enviar"}
             </p>
           </div>
         </div>
@@ -280,20 +325,25 @@ const handleSubmit = () => {
               onUpdate={updateParticipants}
             />
           )}
-          {currentStep === 2 && (
+          {currentStep === 2 && eventType === "Exhibition" && (
             <ProjectDetailsStep
               eventId={eventId}
               project={wizardData.project}
               onUpdate={updateProject}
             />
           )}
-          {currentStep === 3 && (
+          {currentStep === 3 && eventType === "Exhibition" && (
             <DocumentsStep
               documents={wizardData.documents}
               onUpdate={updateDocuments}
             />
           )}
-          {currentStep === 4 && <ReviewStep data={wizardData} />}
+          {currentStep === 4 && eventType === "Exhibition" && (
+            <ReviewStep data={wizardData} />
+          )}
+          {currentStep === 2 && eventType === "Competition" && (
+            <ReviewStep data={wizardData} />
+          )}
 
           {/* Mostrar errores de validación */}
           {stepErrors.length > 0 && (

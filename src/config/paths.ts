@@ -24,6 +24,10 @@ export const paths = {
       getHref: (token: string) =>
         `/auth/chg-password?token=${encodeURIComponent(token)}`,
     },
+    confirm: {
+      getHref: (token: string) =>
+        `/auth/confirm?token=${encodeURIComponent(token)}`,
+    },
   },
 
   app: {
@@ -90,10 +94,11 @@ export const paths = {
       getHref: (id: string) => `/public/discussions/${id}`,
     },
     project: {
-      getHref: (accessCode: string) => `/public/projects/${accessCode}`,
+      getHref: (eventId: string | number) => `/public/projects/${eventId}`,
     },
     event: {
-      getHref: () => "/public/events",
+      getHref: (eventId?: string | number) =>
+        eventId ? `/public/events/${eventId}` : '/public/events',
     },
     developers: {
       getHref: () => '/public/developers',

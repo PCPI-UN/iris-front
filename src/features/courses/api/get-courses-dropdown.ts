@@ -39,6 +39,7 @@ export const useCoursesDropdown = ({
 }: UseCoursesDropdownOptions = {}) => {
   return useQuery({
     ...getCoursesDropdownQueryOptions(eventId),
+    enabled: !!eventId,
     ...queryConfig,
   });
 };

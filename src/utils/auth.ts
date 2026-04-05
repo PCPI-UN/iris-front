@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers';
 
-export const AUTH_TOKEN_COOKIE_NAME = 'bulletproof_react_app_token';
+export const AUTH_TOKEN_COOKIE_NAME = 'access_token';
 
 export const getAuthTokenCookie = async () => {
   if (typeof window !== 'undefined') return '';
