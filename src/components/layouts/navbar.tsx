@@ -34,8 +34,8 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
   const pathname = usePathname();
   const isLandingPage = pathname === '/';
   const isPublicEventDetail = /^\/public\/events\/[^/]+$/.test(pathname);
-  const isLoginPage = pathname === '/auth/login';
-  const isSignupPage = pathname === '/auth/signup';
+  const isLoginPage = pathname === paths.auth.login.getHref();
+  const isSignupPage = pathname === paths.auth.signup.getHref();
   const router = useRouter();
   const { data: user, isLoading: isUserLoading } = useUser();
   const { mutate: logout, isPending: isLoggingOut } = useLogout({

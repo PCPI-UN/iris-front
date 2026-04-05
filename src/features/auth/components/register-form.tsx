@@ -1,5 +1,5 @@
 'use client';
-
+// Signup form component used in the registration page
 import { useState } from 'react';
 import NextLink from 'next/link';
 import { useSearchParams } from 'next/navigation';
@@ -102,17 +102,6 @@ export const RegisterForm = ({
               </Button>
             
       </Form>
-      <div className="mt-4 flex items-center justify-center">
-        <div className="text-sm">
-          ¿Ya tienes cuenta?
-          <NextLink
-            href={paths.auth.login.getHref(redirectTo)}
-            className="font-medium text-primary hover:underline ml-1"
-          >
-            Inicia sesión
-          </NextLink>
-        </div>
-      </div>
 
             <div className="w-full flex items-center justify-center mb-2 mt-2">
         <a className="text-sm font-medium text-gray-400 text-center">
@@ -132,6 +121,17 @@ export const RegisterForm = ({
         Iniciar sesión con Outlook
       </Button>
           
+            <div className="mt-4 flex items-center justify-center">
+        <div className="text-sm">
+          ¿Ya tienes cuenta?
+          <NextLink
+            href={paths.auth.login.getHref(redirectTo)}
+            className="font-medium text-primary hover:underline ml-1"
+          >
+            Inicia sesión
+          </NextLink>
+        </div>
+      </div>
 
     </div>
   );

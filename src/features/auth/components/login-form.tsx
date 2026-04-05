@@ -94,21 +94,8 @@ export const LoginForm = ({ onSuccess }: LoginFormProps) => {
             ¿Olvidaste tu contraseña?
           </NextLink>
         </div>
-
-       {/* Redirection to sign-up page */}
-             <div className="w-full flex items-center justify-center mt-4">
-        <div className="text-sm">
-          ¿Eres nuevo?
-          <NextLink
-            href={paths.auth.signup.getHref(redirectTo)}
-            className="font-medium text-primary hover:underline ml-1"
-          >
-            Crea tu cuenta
-          </NextLink>
-        </div>
-      </div>
- 
       </Form>
+
       <div className="w-full flex items-center justify-center mb-2 mt-2">
         <a
           className="text-sm font-medium text-gray-400 text-center"
@@ -116,6 +103,7 @@ export const LoginForm = ({ onSuccess }: LoginFormProps) => {
           Si eres usuario Uninorte, puedes:
         </a>
       </div>
+
       <Button
         className="w-full mb-4"
         onClick={handleMicrosoftLogin}
@@ -128,6 +116,20 @@ export const LoginForm = ({ onSuccess }: LoginFormProps) => {
         />
         Iniciar sesión con Outlook
       </Button>
+
+                       <div className="w-full flex items-center justify-center mt-4">
+        <div className="text-sm">
+          ¿Eres nuevo?
+          <NextLink
+            href={paths.auth.signup.getHref(redirectTo)}
+            className="font-medium text-primary hover:underline ml-1"
+          >
+            Crea tu cuenta
+          </NextLink>
+        </div>
+      </div>
     </div>
+
+    
   );
 };
