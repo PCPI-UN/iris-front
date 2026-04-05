@@ -24,7 +24,7 @@ type LoginBody = {
 };
 
 export const authHandlers = [
-  http.post(`${env.API_URL}/auth/register`, async ({ request }) => {
+  http.post(`${env.API_URL}/auth/signup`, async ({ request }) => {
     await networkDelay();
     try {
       const userObject = (await request.json()) as RegisterBody;

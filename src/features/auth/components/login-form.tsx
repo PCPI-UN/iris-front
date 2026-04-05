@@ -94,6 +94,20 @@ export const LoginForm = ({ onSuccess }: LoginFormProps) => {
             ¿Olvidaste tu contraseña?
           </NextLink>
         </div>
+
+       {/* Redirection to sign-up page */}
+             <div className="w-full flex items-center justify-center mt-4">
+        <div className="text-sm">
+          ¿Eres nuevo?
+          <NextLink
+            href={paths.auth.signup.getHref(redirectTo)}
+            className="font-medium text-primary hover:underline ml-1"
+          >
+            Crea tu cuenta
+          </NextLink>
+        </div>
+      </div>
+ 
       </Form>
       <div className="w-full flex items-center justify-center mb-2 mt-2">
         <a
