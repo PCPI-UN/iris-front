@@ -84,7 +84,7 @@ const models = {
     eventNumber: String,
     state: String,
     documents: Array,
-    comment: String,
+    reason: String,
     participants: Array,
     jurorAssignments: Array,
     createdAt: Date.now,

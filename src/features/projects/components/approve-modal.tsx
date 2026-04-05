@@ -33,7 +33,8 @@ export const ApproveProjectModal = ({ projectId, isOpenTable, onOpenChangeTable 
                 </Button>
                 <Button
                   color="primary"
-                  isLoading={approveMutation.isPending}
+                  isLoading={ approveMutation.isPending }
+                  isDisabled={ approveMutation.isPending }
                   onPress={() =>
                     approveMutation.mutate(projectId, {
                       onSuccess: (res) => {

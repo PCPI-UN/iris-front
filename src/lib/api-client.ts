@@ -97,7 +97,13 @@ async function fetchApi<T>(
   // Solo intentar refresh si:
   // 1. No es un endpoint de auth
   // 2. No estamos en una página de auth (evita loops)
-  const isAuthEndpoint = url.includes('/auth/refresh') || url.includes('/auth/login') || url.includes('/auth/logout') || url.includes('/auth/signup');
+  const isAuthEndpoint = [
+    '/auth/refresh',
+    '/auth/login',
+    '/auth/logout',
+    '/auth/register',
+    '/auth/signup',
+  ].some((authPath) => url.includes(authPath));
   const isAuthPage = typeof window !== 'undefined' && window.location.pathname.startsWith('/auth');
 
   if (response.status === 401 && !isAuthEndpoint && !isAuthPage) {

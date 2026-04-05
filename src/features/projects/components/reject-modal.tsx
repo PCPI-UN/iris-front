@@ -13,8 +13,20 @@ export const RejectProjectModal = ({ projectId, isOpenTable, onOpenChangeTable }
   const { addNotification } = useNotifications();
   const rejectMutation = useRejectProject();
 
-  const [reason, setreason] = useState("");
+  const [reason, setReason] = useState("");
   const controlled = isOpenTable !== undefined;
+
+  const handleOpenChange = (open: boolean) => {
+  if (!open) {
+    setReason("");
+  }
+
+  if (controlled) {
+    onOpenChangeTable?.(open);
+  } else {
+    onOpenChange();
+  }
+};
 
   return (
     <>
@@ -25,7 +37,7 @@ export const RejectProjectModal = ({ projectId, isOpenTable, onOpenChangeTable }
           </Button>
         )
       }
-      <Modal isOpen={controlled ? isOpenTable : isOpen} onOpenChange={controlled ? onOpenChangeTable : onOpenChange} size="md">
+      <Modal isOpen={controlled ? isOpenTable : isOpen} onOpenChange={handleOpenChange} size="md">
         <ModalContent>
           {(onCloseModal) => (
             <>
@@ -34,17 +46,20 @@ export const RejectProjectModal = ({ projectId, isOpenTable, onOpenChangeTable }
                 <p>Ingresa el motivo del rechazo:</p>
                 <Textarea
                   value={reason}
-                  onChange={(e) => setreason(e.target.value)}
+                  onChange={(e) => setReason(e.target.value)}
                   placeholder="Escribe el motivo del rechazo aquí..."
                   rows={4}
+                  isDisabled={ rejectMutation.isPending }
                 />
               </ModalBody>
               <ModalFooter className="space-x-2">
-                <Button variant="light" onPress={onCloseModal}>
+                <Button variant="light" onPress={() => {setReason(""); onCloseModal()}}>
                   Cancelar
                 </Button>
                 <Button
                   color="danger"
+                  isLoading={ rejectMutation.isPending }
+                  isDisabled={ rejectMutation.isPending }
                   onPress={() => {
                     if (!reason.trim()) {
                       addNotification({
@@ -63,7 +78,7 @@ export const RejectProjectModal = ({ projectId, isOpenTable, onOpenChangeTable }
                             title: "Proyecto rechazado",
                             message: `Motivo: ${res.reason}`,
                           });
-                          setreason("");
+                          setReason("");
                           onCloseModal();
                         },
                         onError: () => {

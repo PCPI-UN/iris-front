@@ -12,9 +12,20 @@ export const RequestProjectModal = ({ projectId, isOpenTable, onOpenChangeTable 
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const { addNotification } = useNotifications();
   const requestChangeMutation = useRequestChangesProject();
-
-  const [reason, setreason] = useState("");
+  const [reason, setReason] = useState("");
   const controlled = isOpenTable !== undefined;
+
+  const handleOpenChange = (open: boolean) => {
+  if (!open) {
+    setReason("");
+  }
+
+  if (controlled) {
+    onOpenChangeTable?.(open);
+  } else {
+    onOpenChange();
+  }
+};
 
   return (
     <>
@@ -25,7 +36,7 @@ export const RequestProjectModal = ({ projectId, isOpenTable, onOpenChangeTable 
           </Button>
         )
       }
-      <Modal isOpen={controlled ? isOpenTable : isOpen} onOpenChange={controlled ? onOpenChangeTable : onOpenChange} size="md">
+      <Modal isOpen={controlled ? isOpenTable : isOpen} onOpenChange={handleOpenChange} size="md">
         <ModalContent>
           {(onCloseModal) => (
             <>
@@ -34,17 +45,20 @@ export const RequestProjectModal = ({ projectId, isOpenTable, onOpenChangeTable 
                 <p>Indica qué debe corregir el equipo:</p>
                 <Textarea
                   value={reason}
-                  onChange={(e) => setreason(e.target.value)}
+                  onChange={(e) => setReason(e.target.value)}
                   placeholder="Describe los cambios requeridos..."
+                  isDisabled={requestChangeMutation.isPending}
                   rows={4}
                 />
               </ModalBody>
               <ModalFooter className="space-x-2">
-                <Button variant="light" onPress={onCloseModal}>
+                <Button variant="light" onPress={() => {setReason(""); onCloseModal()}}>
                   Cancelar
                 </Button>
                 <Button
                   color="warning"
+                  isLoading = { requestChangeMutation.isPending }
+                  isDisabled = { requestChangeMutation.isPending }
                   onPress={() => {
                     if (!reason.trim()) {
                       addNotification({
@@ -62,7 +76,7 @@ export const RequestProjectModal = ({ projectId, isOpenTable, onOpenChangeTable 
                             type: "success",
                             title: "Cambios requeridos",
                           });
-                          setreason("");
+                          setReason("");
                           onCloseModal();
                         },
                         onError: () => {
@@ -83,6 +97,7 @@ export const RequestProjectModal = ({ projectId, isOpenTable, onOpenChangeTable 
           )}
         </ModalContent>
       </Modal>
+      
     </>
   );
 };

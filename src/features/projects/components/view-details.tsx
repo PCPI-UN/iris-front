@@ -1,3 +1,5 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@/components/ui/modal";
 import { useDisclosure } from "@/hooks/use-disclosure";
@@ -108,13 +110,12 @@ export const ViewDetails = ({project} : {project: Project}) => {
                   )}
                 </section>
                 <section className="space-y-2">
-                  {
-                  (project.reason === "" || project.reason === null) ?  null 
-                    :
-                    <h2 className="font-medium bg-gradient-to-br from-white via-white/80 to-white bg-clip-text text-transparent inline-block">Comentarios</h2>
-                  }
-                  <p className="text-sm">{project.reason}</p>
-                  
+                  {project.reason && (
+                    <>
+                      <h2 className="font-medium bg-gradient-to-br from-white via-white/80 to-white bg-clip-text text-transparent inline-block">Comentarios</h2> 
+                      <p className="text-sm">{project.reason}</p>
+                    </>
+                  )}
                 </section>
               </ModalBody>
               <ModalFooter>
