@@ -245,3 +245,14 @@ export type CriterionCourse = Entity<{
   courseId: number;
   criterionId: number;
 }>;
+
+export type DeveloperProfile = Entity<{
+  name: string;
+  role: string;
+  version: string;
+}>;
+
+export type DevelopersResponse = {
+  data: DeveloperProfile[];
+  meta?: Meta;
+};
