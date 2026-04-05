@@ -2,6 +2,7 @@
 import {
   ContributorCard,
   ContributorRoleGroup,
+  getContributorRoleLabels,
   getContributorRoleGroup,
 } from '@/features/developers/data/contributors';
 
@@ -64,7 +65,7 @@ export const summarizeContributors = (contributors: ContributorCard[]): Contribu
 
   contributors.forEach((contributor) => {
     const normalizedName = normalize(contributor.name);
-    const roleGroup = getContributorRoleGroup(contributor.role);
+    const roleLabels = getContributorRoleLabels(contributor.role);
 
     if (!contributorsMap.has(normalizedName)) {
       contributorsMap.set(normalizedName, {
@@ -79,8 +80,11 @@ export const summarizeContributors = (contributors: ContributorCard[]): Contribu
     if (!summary) return;
 
     summary.versions.add(contributor.version);
-    summary.roleGroups.add(roleGroup);
-    summary.roleLabels.add(contributor.role.trim());
+    roleLabels.forEach((roleLabel) => {
+  summary.roleGroups.add(getContributorRoleGroup(roleLabel));
+  summary.roleLabels.add(roleLabel);
+});
+
   });
 // Convert sets to arrays and sort them before returning the final list of summaries
   return Array.from(contributorsMap.values())

@@ -15,9 +15,15 @@ export type ContributorRoleGroup =
 
 const normalizeRole = (role: string) => role.trim().toLowerCase();
 
+export const getContributorRoleLabels = (role: string) =>
+  role
+    .split(/\s+-\s+/)
+    .map((roleLabel) => roleLabel.trim())
+    .filter(Boolean);
+
 export const getContributorRoleGroup = (role: string): ContributorRoleGroup => {
   const normalizedRole = normalizeRole(role);
-// Simple keyword-based mapping to role groups
+  // Simple keyword-based mapping to role groups
   if (normalizedRole.includes('frontend')) return 'Frontend';
   if (normalizedRole.includes('backend')) return 'Backend';
   if (normalizedRole.includes('devops')) return 'DevOps';
@@ -34,7 +40,7 @@ export const getContributorRoleGroup = (role: string): ContributorRoleGroup => {
 export const contributors: ContributorCard[] = [
   { name: 'Juan Povea', role: 'Backend Leader', version: 'v1.0' },
   { name: 'Jorge Sánchez', role: 'Frontend Leader', version: 'v1.0' },
-  { name: 'Alejandra Valencia', role: 'Backend Developer', version: 'v1.0' },
+  { name: 'Alejandra Valencia', role: 'Scrum Master - Backend Developer', version: 'v1.0' },
   { name: 'Carlos López', role: 'UI/UX Leader - Frontend Developer', version: 'v1.0' },
   { name: 'Yovany Zhu Ye', role: 'Full Stack Developer', version: 'v1.0' },
   { name: 'Jhonatan Romero', role: 'Frontend Developer', version: 'v1.0' },
@@ -54,5 +60,5 @@ export const contributors: ContributorCard[] = [
   { name: 'Carlos Arango', role: 'Full Stack Developer', version: 'v2.0' },
   { name: 'Wilmer Santiago', role: 'Full Stack Developer', version: 'v2.0' },
   { name: 'Camilo de la Rosa', role: 'DevOps Engineer', version: 'v2.0' },
-  { name: 'Natalia Carpintero', role: 'Scrum Master', version: 'v2.0' },
+  { name: 'Natalia Carpintero', role: 'Scrum Master - Frontend Developer', version: 'v2.0' },
 ];
