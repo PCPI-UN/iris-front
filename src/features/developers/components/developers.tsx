@@ -112,7 +112,7 @@ export function Developers() {
   );
 
   return (
-    <section className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10 space-y-6 relative z-10">
+    <section id="contributors-section" className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10 space-y-6 relative z-10">
       <div
         className="rounded-[1.5rem] p-[1px] overflow-hidden shadow-[0_0_45px_oklch(0.82_0.18_330_/_0.12)]"
         style={rainbowBorderStyle}
@@ -242,7 +242,7 @@ export function Developers() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+      <div id="contributors-grid" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {filtered.map((developer) => (
           <div
             key={developer.name}

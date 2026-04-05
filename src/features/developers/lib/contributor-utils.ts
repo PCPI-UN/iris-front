@@ -27,6 +27,8 @@ export const compareVersions = (a: string, b: string) => {
 
   return 0;
 };
+
+const compareVersionsDesc = (a: string, b: string) => compareVersions(b, a);
 // Check if version matches the selected version (considering "Todas" as a wildcard)
 const matchVersion = (version: string, selectedVersion: string) =>
   normalize(version) === normalize(selectedVersion);
@@ -84,7 +86,7 @@ export const summarizeContributors = (contributors: ContributorCard[]): Contribu
   return Array.from(contributorsMap.values())
     .map((summary) => ({
       name: summary.name,
-      versions: Array.from(summary.versions).sort(compareVersions),
+      versions: Array.from(summary.versions).sort(compareVersionsDesc),
       roleGroups: Array.from(summary.roleGroups),
       roleLabels: Array.from(summary.roleLabels).sort((a, b) => a.localeCompare(b, 'es')),
     }))
@@ -92,7 +94,7 @@ export const summarizeContributors = (contributors: ContributorCard[]): Contribu
 };
 // Get unique version filters from the contributors list, sorted by version
 export const getVersionFilters = (contributors: ContributorCard[]) => {
-  const versions = Array.from(new Set(contributors.map((contributor) => contributor.version))).sort(compareVersions);
+  const versions = Array.from(new Set(contributors.map((contributor) => contributor.version))).sort(compareVersionsDesc);
   return ['Todas', ...versions];
 };
 // Get unique role group filters from the contributors list, sorted alphabetically
@@ -140,4 +142,12 @@ export const filterContributors = (
     const roleOk = roleFilter === 'Todos' || contributor.roleGroups.includes(roleFilter);
 
     return versionOk && roleOk;
+  }).sort((a, b) => {
+    const aTopVersion = a.versions[0] ?? '';
+    const bTopVersion = b.versions[0] ?? '';
+    const versionComparison = compareVersionsDesc(aTopVersion, bTopVersion);
+
+    if (versionComparison !== 0) return versionComparison;
+
+    return a.name.localeCompare(b.name, 'es');
   });
