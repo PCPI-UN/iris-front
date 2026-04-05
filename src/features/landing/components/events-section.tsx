@@ -17,6 +17,7 @@ import { useEventsPublic } from '@/features/events/api/get-event-public';
 import { Spinner } from '@/components/ui/spinner';
 import { useUser } from '@/lib/auth';
 import { resolveJoinTarget } from '@/features/events/utils/resolve-join-target';
+import { hasInscriptionDeadlinePassed } from '@/features/events/utils/inscription-deadline';
 import { paths } from '@/config/paths';
 import { landingContent } from '../content';
 import {
@@ -40,13 +41,20 @@ const getThemeKey = (index: number): ThemeKey => {
 
 const summarizeDescription = (text?: string) => {
   const normalized = String(text ?? '').replace(/\s+/g, ' ').trim();
+  const maxLength = 130;
 
   if (!normalized) {
     return 'Sin descripción disponible.';
   }
 
   const firstSentence = normalized.match(/^[^.]*\./)?.[0]?.trim();
-  return firstSentence || normalized;
+  const summary = firstSentence || normalized;
+
+  if (summary.length <= maxLength) {
+    return summary;
+  }
+
+  return `${summary.slice(0, maxLength).trimEnd()}...`;
 };
 
 const resolveEventLocation = (location: unknown, fallback: string) => {
@@ -88,6 +96,26 @@ const parseLocalDate = (value: string) => {
   return new Date(year, month - 1, day);
 };
 
+const getEventSortTimestamp = (value?: string | null) => {
+  if (!value) {
+    return Number.POSITIVE_INFINITY;
+  }
+
+  const timestamp = parseLocalDate(value).getTime();
+
+  return Number.isNaN(timestamp) ? Number.POSITIVE_INFINITY : timestamp;
+};
+
+const getTodayStartTimestamp = () => {
+  const today = new Date();
+
+  return new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate(),
+  ).getTime();
+};
+
 export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
   const router = useRouter();
   const eventsQuery = useEventsPublic({ page: 1 });
@@ -100,6 +128,7 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
   const isUserStatusResolving = isUserLoading || isUserFetching;
   const [currentPage, setCurrentPage] = useState(0);
   const [cardsPerView, setCardsPerView] = useState(3);
+  const [uniformCardHeight, setUniformCardHeight] = useState<number | null>(null);
 
   useEffect(() => {
     const updateCardsPerView = () => {
@@ -152,21 +181,94 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
   };
 
   const events = eventsQuery.data?.data || [];
-  const totalPages = Math.ceil(events.length / cardsPerView);
+  const sortedEvents = useMemo(() => {
+    const todayStartTimestamp = getTodayStartTimestamp();
+
+    return events
+      .map((event, index) => ({
+        event,
+        index,
+        timestamp: getEventSortTimestamp(event.startDate ?? event.inscriptionDeadline),
+        isInscriptionClosed: hasInscriptionDeadlinePassed(event.inscriptionDeadline),
+        isPastEvent:
+          getEventSortTimestamp(event.startDate ?? event.inscriptionDeadline) < todayStartTimestamp,
+      }))
+      .sort((left, right) => {
+        if (left.isInscriptionClosed !== right.isInscriptionClosed) {
+          return Number(left.isInscriptionClosed) - Number(right.isInscriptionClosed);
+        }
+
+        if (left.isPastEvent !== right.isPastEvent) {
+          return Number(left.isPastEvent) - Number(right.isPastEvent);
+        }
+
+        if (left.timestamp !== right.timestamp) {
+          return left.isPastEvent
+            ? right.timestamp - left.timestamp
+            : left.timestamp - right.timestamp;
+        }
+
+        return left.index - right.index;
+      })
+      .map(({ event }) => event);
+  }, [events]);
+
+  const eventsToRender = sortedEvents;
+  const totalPages = Math.ceil(eventsToRender.length / cardsPerView);
 
   const pages = useMemo(() => {
     return Array.from({ length: totalPages }, (_, pageIndex) => {
       const start = pageIndex * cardsPerView;
-      return events.slice(start, start + cardsPerView);
+      return eventsToRender.slice(start, start + cardsPerView);
     });
-  }, [events, totalPages, cardsPerView]);
+  }, [eventsToRender, totalPages, cardsPerView]);
+
+  useEffect(() => {
+    const measureCards = () => {
+      const section = eventsSectionRef.current;
+
+      if (!section) {
+        return;
+      }
+
+      const cards = Array.from(section.querySelectorAll<HTMLElement>('.event-card'));
+
+      if (cards.length === 0) {
+        setUniformCardHeight(null);
+        return;
+      }
+
+      cards.forEach((card) => {
+        card.style.minHeight = '0px';
+      });
+
+      const maxHeight = Math.ceil(
+        Math.max(...cards.map((card) => card.scrollHeight)),
+      );
+
+      if (!Number.isFinite(maxHeight) || maxHeight <= 0) {
+        setUniformCardHeight(null);
+        return;
+      }
+
+      setUniformCardHeight((previous) => (previous === maxHeight ? previous : maxHeight));
+    };
+
+    const frameId = requestAnimationFrame(measureCards);
+    window.addEventListener('resize', measureCards);
+
+    return () => {
+      cancelAnimationFrame(frameId);
+      window.removeEventListener('resize', measureCards);
+    };
+  }, [eventsSectionRef, cardsPerView, eventsToRender.length]);
 
   if (eventsQuery.isLoading) {
     return (
       <section
         id="eventos"
         ref={eventsSectionRef}
-        className="relative z-10 min-h-screen px-6 py-16 sm:py-20 md:px-12 md:py-24"
+        className="relative z-10 min-h-0 px-6 pt-16 pb-4 sm:pt-20 sm:pb-6 md:min-h-screen md:px-12 md:pt-24 md:pb-8"
       >
         <div className="flex h-48 w-full items-center justify-center">
           <Spinner size="lg" />
@@ -179,7 +281,7 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
     <section
       id="eventos"
       ref={eventsSectionRef}
-      className="relative z-10 min-h-screen px-6 py-16 sm:py-20 md:px-12 md:py-24"
+      className="relative z-10 min-h-0 px-6 pt-16 pb-4 sm:pt-20 sm:pb-6 md:min-h-screen md:px-12 md:pt-24 md:pb-8"
     >
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-10 sm:mb-12 md:mb-16">
@@ -215,7 +317,7 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
               >
                 {pages.map((page, pageIndex) => (
                   <div key={`events-page-${pageIndex}`} className="min-w-full">
-                    <div className="flex flex-wrap justify-center gap-4 sm:gap-6 md:gap-8">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 md:gap-8 lg:grid-cols-3">
                       {page.map((event, index) => {
                         const globalIndex = pageIndex * cardsPerView + index;
                         const eventTheme = getEventColor(event.id, globalIndex);
@@ -227,17 +329,24 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
                         );
                         const dateRange = formatDateRange(event.startDate, event.endDate);
                         const status = getStatusText(event.statusName);
+                        const isInscriptionClosed = hasInscriptionDeadlinePassed(event.inscriptionDeadline);
+                        const cardStatusText = isInscriptionClosed ? 'Inscripciones Cerradas' : status;
 
                         return (
                           <GlassCard
                             key={event.id}
-                            className="event-card group cursor-pointer transition-all duration-500 relative overflow-hidden h-full w-full max-w-md mx-auto lg:w-[calc(33.333%-1.5rem)]"
+                            className="event-card group cursor-pointer transition-all duration-500 relative overflow-hidden h-full w-full"
+                            style={
+                              uniformCardHeight
+                                ? { minHeight: `${uniformCardHeight}px` }
+                                : undefined
+                            }
                           >
                             <div
                               className={`absolute inset-0 bg-gradient-to-br ${eventTheme.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`}
                             />
 
-                            <div className="relative z-10">
+                            <div className="relative z-10 flex h-full flex-col">
                               <div className="flex items-center justify-between mb-4">
                                 <div
                                   className="px-3 py-1 rounded-full text-xs font-semibold"
@@ -247,7 +356,7 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
                                     borderRadius: '9999px',
                                   }}
                                 >
-                                  {status}
+                                  {cardStatusText}
                                 </div>
 
                                 <div
@@ -269,11 +378,11 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
                                 {event.name}
                               </h3>
 
-                              <p className="text-sm text-muted-foreground mb-5 sm:mb-6 leading-relaxed break-words">
+                              <p className="text-sm text-muted-foreground mb-4 sm:mb-5 leading-relaxed break-words overflow-hidden [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:3] sm:[-webkit-line-clamp:2]">
                                 {shortDescription}
                               </p>
 
-                              <div className="space-y-3 mb-6">
+                              <div className="space-y-3 mb-3 sm:mb-4 flex-1">
                                 <div className="flex items-center gap-3 text-sm">
                                   <div
                                     className="w-8 h-8 rounded-lg flex items-center justify-center"
@@ -336,35 +445,50 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
                                 </div>
                               </div>
 
-                              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3">
+                              <div
+                                className={
+                                  isInscriptionClosed
+                                    ? 'mt-auto flex justify-center'
+                                    : 'mt-auto grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3'
+                                }
+                              >
                                 <Button
                                   onClick={() => {
+                                    const eventIdString = String(event.id);
                                     sessionStorage.setItem(`eventTheme:${String(event.id)}`, themeKey);
-                                    router.push(paths.public.event.getHref(String(event.id)));
+                                    sessionStorage.setItem('eventTheme', themeKey);
+                                    router.push(
+                                      paths.public.event.getHref({
+                                        id: eventIdString,
+                                        name: event.name,
+                                      }),
+                                    );
                                   }}
-                                  className="w-full"
+                                  className={isInscriptionClosed ? 'w-full sm:w-[88%]' : 'w-full'}
                                   variant="bordered"
                                 >
                                   Ver más
                                 </Button>
 
-                                <Button
-                                  onPress={() => {
-                                    void handleJoin(event.id);
-                                  }}
-                                  isDisabled={isUserStatusResolving}
-                                  className="w-full group-hover:scale-102 transition-transform event-button"
-                                  style={
-                                    {
-                                      '--button-bg': eventTheme.color,
-                                      '--button-border': eventTheme.color,
-                                      '--button-color': 'black',
-                                    } as CSSProperties
-                                  }
-                                >
-                                  Inscribirse
-                                  <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                                </Button>
+                                {!isInscriptionClosed && (
+                                  <Button
+                                    onPress={() => {
+                                      void handleJoin(event.id);
+                                    }}
+                                    isDisabled={isUserStatusResolving}
+                                    className="w-full group-hover:scale-102 transition-transform event-button"
+                                    style={
+                                      {
+                                        '--button-bg': eventTheme.color,
+                                        '--button-border': eventTheme.color,
+                                        '--button-color': 'black',
+                                      } as CSSProperties
+                                    }
+                                  >
+                                    Inscribirse
+                                    <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                                  </Button>
+                                )}
                               </div>
                             </div>
                           </GlassCard>
