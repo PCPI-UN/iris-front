@@ -47,18 +47,6 @@ type InscriptionDetail = {
   description: string;
 };
 
-const toEndOfDayISO = (value?: string) => {
-  if (!value) {
-    return value;
-  }
-  const [year, month, day] = value.split('-').map(Number);
-  if (!year || !month || !day) {
-    return value;
-  }
-  // Pin the same calendar day with explicit UTC to avoid repeated day drift on updates.
-  return `${value}T23:59:59.999Z`;
-};
-
 type UpdateEventFormState = {
   name: string;
   description: string;
@@ -231,7 +219,7 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
         isPubliclyJoinable: formData.isPubliclyJoinable ?? event?.isPubliclyJoinable,
         startDate: formData.startDate,
         endDate: formData.endDate,
-        inscriptionDeadline: toEndOfDayISO(formData.inscriptionDeadline),
+        inscriptionDeadline: formData.inscriptionDeadline,
         evaluationsOpened: formData.evaluationsOpened,
         active: formData.active,
         location: formData.location || undefined,
