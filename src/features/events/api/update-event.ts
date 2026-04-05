@@ -17,7 +17,7 @@ export const updateEventInputSchema = z.object({
   isPubliclyJoinable: z.boolean().optional(),
   startDate: z.string().min(10).max(10),
   endDate: z.string().min(10).max(10),
-  inscriptionDeadline: z.string().min(10).max(10),
+  inscriptionDeadline: z.string().min(10),
   evaluationsOpened: z.boolean(),
   active: z.boolean().optional(),
   location: z.string().optional(),

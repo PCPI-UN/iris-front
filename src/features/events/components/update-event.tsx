@@ -47,6 +47,18 @@ type InscriptionDetail = {
   description: string;
 };
 
+const toEndOfDayISO = (value?: string) => {
+  if (!value) {
+    return value;
+  }
+  const [year, month, day] = value.split('-').map(Number);
+  if (!year || !month || !day) {
+    return value;
+  }
+  const endOfDay = new Date(year, month - 1, day, 23, 59, 59, 999);
+  return endOfDay.toISOString();
+};
+
 type UpdateEventFormState = {
   name: string;
   description: string;
@@ -219,7 +231,7 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
         isPubliclyJoinable: formData.isPubliclyJoinable ?? event?.isPubliclyJoinable,
         startDate: formData.startDate,
         endDate: formData.endDate,
-        inscriptionDeadline: formData.inscriptionDeadline,
+        inscriptionDeadline: toEndOfDayISO(formData.inscriptionDeadline),
         evaluationsOpened: formData.evaluationsOpened,
         active: formData.active,
         location: formData.location || undefined,
