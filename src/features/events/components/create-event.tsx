@@ -41,8 +41,8 @@ const toEndOfDayISO = (value?: string) => {
   if (!year || !month || !day) {
     return value;
   }
-  // Preserve selected calendar day and avoid UTC timezone shifts.
-  return `${value}T23:59:59.999`;
+  // Pin the same calendar day with explicit UTC to avoid repeated day drift on updates.
+  return `${value}T23:59:59.999Z`;
 };
 export const CreateEvent = () => {
   const { addNotification } = useNotifications();
