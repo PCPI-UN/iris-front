@@ -194,7 +194,15 @@ const mapEventToDTO = (event: any, membership?: any): EventDTO => {
 const mapEventToPublicDTO = (event: any): PublicEventDTO => {
   const now = new Date();
   const inscriptionDeadline = new Date(event.inscriptionDeadline);
-  const isOpen = inscriptionDeadline >= now;
+  
+  // Compare by calendar day (not exact timestamp) - valid all day if deadline is today or future
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const deadlineDay = new Date(
+    inscriptionDeadline.getFullYear(),
+    inscriptionDeadline.getMonth(),
+    inscriptionDeadline.getDate()
+  );
+  const isOpen = Number.isFinite(inscriptionDeadline.getTime()) && deadlineDay >= today;
   const active = typeof event.active === "boolean" ? event.active : event.status === 1;
 
   const statusName = String(event.statusName ?? (isOpen ? "OPEN" : "CLOSED"));

@@ -32,6 +32,18 @@ type Award = {
 
 const isWholeNumberInput = (value: string) => value === "" || /^(0|[1-9]\d*)$/.test(value);
 const isDecimalNumberInput = (value: string) => value === "" || /^(0|[1-9]\d*)(\.\d{0,2})?$/.test(value);
+
+const toEndOfDayISO = (value?: string) => {
+  if (!value) {
+    return value;
+  }
+  const [year, month, day] = value.split('-').map(Number);
+  if (!year || !month || !day) {
+    return value;
+  }
+  const endOfDay = new Date(year, month - 1, day, 23, 59, 59, 999);
+  return endOfDay.toISOString();
+};
 export const CreateEvent = () => {
   const { addNotification } = useNotifications();
   const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
@@ -110,6 +122,7 @@ export const CreateEvent = () => {
     try {
       const dataToSubmit = {
         ...formData,
+        inscriptionDeadline: toEndOfDayISO(formData.inscriptionDeadline),
         evaluationsOpened: Boolean(formData.evaluationsOpened),
         isPubliclyJoinable: Boolean(formData.isPubliclyJoinable),
         active: Boolean(formData.active)??true,
