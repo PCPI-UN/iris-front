@@ -1,14 +1,12 @@
 "use client";
 
-import { paths } from "@/config/paths";
-import { RegisterForm } from "@/features/auth/components/register-form";
 import { PublicLayout } from "@/components/layouts/public-layout";
+import { SignupEmailSent } from "@/features/auth/components/signup-email-sent";
 import "@/features/landing/index.css";
 
-const RegisterPage = () => {
+export default function SignupSentPage() {
   return (
     <PublicLayout showNavLinks={false} showLoginButton={false}>
-      {/* Animated Background Gradient - Same as landing */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
         <div
           className="parallax-slow absolute top-0 left-0 w-[150%] h-[150%]"
@@ -25,25 +23,19 @@ const RegisterPage = () => {
       <div className="auth-page relative z-10 flex flex-col items-center justify-center min-h-[calc(100vh-6rem)]">
         <div className="w-full max-w-2xl mb-6 sm:mb-8 text-center px-4">
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground mb-3">
-            Crea tu <span className="prismatic-text">cuenta</span>
+            Revisa tu <span className="prismatic-text">correo</span>
           </h1>
           <p className="text-base sm:text-lg text-muted-foreground">
-            Únete a Iris y comienza tu viaje
+            Falta un paso para activar tu cuenta
           </p>
         </div>
 
         <div className="w-full max-w-md px-4 sm:px-6 lg:px-8">
           <div className="glass-card p-6 sm:p-8 w-full">
-            <RegisterForm
-              onSuccess={() => {
-                window.location.href = paths.auth.signup_sent.getHref();
-              }}
-            />
+            <SignupEmailSent />
           </div>
         </div>
       </div>
     </PublicLayout>
   );
-};
-
-export default RegisterPage;
+}

@@ -12,6 +12,9 @@ export const paths = {
       getHref: (redirectTo?: string | null | undefined) =>
         `/auth/signup${redirectTo ? `?redirectTo=${encodeURIComponent(redirectTo)}` : ""}`,
     },
+    signup_sent: {
+      getHref: () => '/auth/signup/sent',
+    },
     login: {
       getHref: (redirectTo?: string | null | undefined) =>
         `/auth/login${redirectTo ? `?redirectTo=${encodeURIComponent(redirectTo)}` : ""}`,
