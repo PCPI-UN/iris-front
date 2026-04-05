@@ -54,7 +54,7 @@ export const EventCardCollapsed = ({
         isExpanded ? "md:col-span-2 lg:col-span-3 row-span-1" : "col-span-1"
       }`}
     >
-      <CardBody className="p-2">
+      <CardBody className="p-0">
         <button
           type="button"
           onClick={() => onToggle(String(event.id))}
@@ -62,8 +62,8 @@ export const EventCardCollapsed = ({
         >
           <div className="flex items-start justify-between">
             <div className="min-w-0 flex-1 ">
-              <div className="flex items-end-safe w-full gap-2">
-                <h3 className="text-lg md:text-xl font-semibold line-clamp-2 ">
+              <div className="flex items-end-safe w-full gap-2 pb-3">
+                <h3 className="text-lg md:text-xl font-semibold line-clamp-2 text-ellipsis">
                   {event.name}
                 </h3>
               </div>
@@ -76,6 +76,7 @@ export const EventCardCollapsed = ({
                     variant="flat"
                     size="sm"
                     startContent={getRoleIcon(roleName)}
+                    className="gap-1 p-1 pl-2"
                   >
                     {getRoleLabel(roleName)}
                   </Chip>
@@ -94,15 +95,6 @@ export const EventCardCollapsed = ({
               <p className="text-sm text-default-500 line-clamp-2">
                 {event.description}
               </p>
-              {metaItems.map((item, idx) => (
-                <div
-                  key={`${String(event.id)}-${idx}`}
-                  className="flex items-center gap-2 text-xs text-default-400"
-                >
-                  {item.icon}
-                  <span className="truncate">{item.value}</span>
-                </div>
-              ))}
             </div>
           )}
         </button>

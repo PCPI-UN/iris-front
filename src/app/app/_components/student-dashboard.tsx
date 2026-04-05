@@ -58,7 +58,7 @@ export const StudentDashboard = ({ eventId }: StudentDashboardProps = {}) => {
     return "bg-gray-500/20 text-gray-600 dark:text-gray-400";
   };
 
-  const isEditMode = project?.state === "CHANGES_REQUIRED";
+  const isEditMode = (project?.state as string) === "CHANGES_REQUIRED";
   const posterDocument = project?.documents?.find((doc) =>
     doc.type?.toLowerCase().includes("poster"),
   );
@@ -83,18 +83,6 @@ export const StudentDashboard = ({ eventId }: StudentDashboardProps = {}) => {
       className="dashboard-page space-y-6 pb-10"
       aria-label="Dashboard del estudiante"
     >
-      {/* Boton volver */}
-      {eventId && (
-        <Button
-          variant="light"
-          className="gap-2 w-fit"
-          onClick={() => router.push("/app")}
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Volver
-        </Button>
-      )}
-
       {/* Encabezado de bienvenida */}
       <header className="relative overflow-hidden rounded-2xl to-primary/5 p-8">
         <div className="relative space-y-2">
@@ -138,6 +126,128 @@ export const StudentDashboard = ({ eventId }: StudentDashboardProps = {}) => {
             className="space-y-6"
             noValidate
           >
+            {/* Seccion 2: Estado del proyecto */}
+            <section className="grid grid-cols-1 md:grid-cols-2 justify-between gap-7 ">
+              {/* Seccion 4: Documentos del proyecto */}
+              <section
+                className="rounded-2xl border border-default-200/50 bg-background/70 backdrop-blur-sm p-5 md:p-6 space-y-4"
+                aria-label="Documentacion del proyecto"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="p-2 rounded-lg bg-primary/10 text-primary"
+                      aria-hidden="true"
+                    >
+                      <FileText className="h-5 w-5" />
+                    </div>
+                    <h2 className="text-xl font-semibold">
+                      Documentos del proyecto
+                    </h2>
+                  </div>
+                  {isEditMode && (
+                    <Button
+                      size="sm"
+                      variant="flat"
+                      className="gap-1"
+                      onClick={() => router.push("/app/projects")}
+                      aria-label="Editar documentos del proyecto"
+                    >
+                      <Edit2 className="h-3 w-3" />
+                      Editar docs
+                    </Button>
+                  )}
+                </div>
+
+                {primaryDocument ? (
+                  <a
+                    href={primaryDocument.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label={`Ver poster del proyecto: ${primaryDocument.type || "Poster"} (abre en nueva pestaña)`}
+                    className="group w-full rounded-xl border border-default-200 bg-default-50/50 px-4 py-4 flex items-center justify-between gap-3 hover:border-primary/50 hover:bg-primary/5 transition-colors"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div
+                        className="p-2 rounded-lg bg-primary/10 text-primary group-hover:scale-105 transition-transform"
+                        aria-hidden="true"
+                      >
+                        <FileText className="h-5 w-5" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs uppercase font-semibold tracking-wide text-default-500">
+                          Poster del proyecto
+                        </p>
+                        <p className="text-base font-semibold truncate">
+                          {primaryDocument.type || "Poster"}
+                        </p>
+                      </div>
+                    </div>
+                    <div
+                      className="p-2 rounded-lg bg-default-100 group-hover:bg-primary/15 transition-colors"
+                      aria-hidden="true"
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                    </div>
+                  </a>
+                ) : (
+                  <p className="rounded-xl border border-default-200 bg-background p-4 text-sm text-default-500">
+                    No hay poster registrado.
+                  </p>
+                )}
+              </section>
+              <section className="rounded-2xl border border-default-200/50 bg-background/70 backdrop-blur-sm p-5 md:p-6 space-y-5">
+                <legend className="sr-only">Estado del proyecto</legend>
+
+                <div className="flex items-center gap-3">
+                  <div
+                    className="p-2 rounded-lg bg-primary/10 text-primary"
+                    aria-hidden="true"
+                  >
+                    <ClipboardList className="h-5 w-5" />
+                  </div>
+                  <h2 className="text-xl font-semibold">Estado del proyecto</h2>
+                </div>
+
+                <div className="space-y-1.5">
+                  <div
+                    id="project-state"
+                    role="status"
+                    aria-live="polite"
+                    className="flex items-center gap-3 w-full rounded-xl border border-default-200 bg-default-50/50 px-6 py-5 justify-between"
+                  >
+                    <label
+                      htmlFor="project-state"
+                      className="text-xs uppercase tracking-wide font-semibold text-default-500"
+                    >
+                      Estado actual: 
+                    </label>
+                    <span
+                      className={`inline-flex items-center gap-2 p-1 md:px-3 md:py-1 rounded-full text-sm font-semibold ${getStateColor(project.state)}`}
+                      aria-label={`Estado: ${getProjectStateLabel(project.state)}`}
+                    >
+                      <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+                      {getProjectStateLabel(project.state)}
+                    </span>
+                  </div>
+
+                  {isEditMode && (
+                    <p
+                      role="alert"
+                      className="text-sm text-yellow-600 dark:text-yellow-400 mt-2 flex items-center gap-1.5"
+                    >
+                      <Edit2
+                        className="h-3.5 w-3.5 shrink-0"
+                        aria-hidden="true"
+                      />
+                      Tu proyecto requiere cambios. Puedes editar la informacion
+                      y volver a enviarlo.
+                    </p>
+                  )}
+                </div>
+              </section>
+            </section>
+
             {/* Seccion 1: Nombre y descripcion del proyecto */}
             <fieldset className="rounded-2xl border border-default-200/50 bg-background/70 backdrop-blur-sm p-5 md:p-6 space-y-5 hover:shadow-lg transition-shadow">
               <legend className="sr-only">Datos del proyecto</legend>
@@ -196,58 +306,6 @@ export const StudentDashboard = ({ eventId }: StudentDashboardProps = {}) => {
                     {project.description || "Sin descripcion registrada"}
                   </div>
                 </div>
-              </div>
-            </fieldset>
-
-            {/* Seccion 2: Estado del proyecto */}
-            <fieldset className="rounded-2xl border border-default-200/50 bg-background/70 backdrop-blur-sm p-5 md:p-6 space-y-5">
-              <legend className="sr-only">Estado del proyecto</legend>
-
-              <div className="flex items-center gap-3">
-                <div
-                  className="p-2 rounded-lg bg-primary/10 text-primary"
-                  aria-hidden="true"
-                >
-                  <ClipboardList className="h-5 w-5" />
-                </div>
-                <h2 className="text-xl font-semibold">Estado del proyecto</h2>
-              </div>
-
-              <div className="space-y-1.5">
-                <label
-                  htmlFor="project-state"
-                  className="text-xs uppercase tracking-wide font-semibold text-default-500"
-                >
-                  Estado actual
-                </label>
-                <div
-                  id="project-state"
-                  role="status"
-                  aria-live="polite"
-                  className="flex items-center gap-3 w-full rounded-xl border border-default-200 bg-default-50/50 px-4 py-3"
-                >
-                  <span
-                    className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-semibold ${getStateColor(project.state)}`}
-                    aria-label={`Estado: ${getProjectStateLabel(project.state)}`}
-                  >
-                    <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
-                    {getProjectStateLabel(project.state)}
-                  </span>
-                </div>
-
-                {isEditMode && (
-                  <p
-                    role="alert"
-                    className="text-sm text-yellow-600 dark:text-yellow-400 mt-2 flex items-center gap-1.5"
-                  >
-                    <Edit2
-                      className="h-3.5 w-3.5 shrink-0"
-                      aria-hidden="true"
-                    />
-                    Tu proyecto requiere cambios. Puedes editar la informacion y
-                    volver a enviarlo.
-                  </p>
-                )}
               </div>
             </fieldset>
 
@@ -391,75 +449,6 @@ export const StudentDashboard = ({ eventId }: StudentDashboardProps = {}) => {
                 )}
             </fieldset>
           </form>
-
-          {/* Seccion 4: Documentos del proyecto */}
-          <section
-            className="rounded-2xl border border-default-200/50 bg-background/70 backdrop-blur-sm p-5 md:p-6 space-y-4"
-            aria-label="Documentacion del proyecto"
-          >
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div
-                  className="p-2 rounded-lg bg-primary/10 text-primary"
-                  aria-hidden="true"
-                >
-                  <FileText className="h-5 w-5" />
-                </div>
-                <h2 className="text-xl font-semibold">
-                  Documentos del proyecto
-                </h2>
-              </div>
-              {isEditMode && (
-                <Button
-                  size="sm"
-                  variant="flat"
-                  className="gap-1"
-                  onClick={() => router.push("/app/projects")}
-                  aria-label="Editar documentos del proyecto"
-                >
-                  <Edit2 className="h-3 w-3" />
-                  Editar docs
-                </Button>
-              )}
-            </div>
-
-            {primaryDocument ? (
-              <a
-                href={primaryDocument.url}
-                target="_blank"
-                rel="noreferrer"
-                aria-label={`Ver poster del proyecto: ${primaryDocument.type || "Poster"} (abre en nueva pestaña)`}
-                className="group w-full rounded-xl border border-default-200 bg-default-50/50 px-4 py-4 flex items-center justify-between gap-3 hover:border-primary/50 hover:bg-primary/5 transition-colors"
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <div
-                    className="p-2 rounded-lg bg-primary/10 text-primary group-hover:scale-105 transition-transform"
-                    aria-hidden="true"
-                  >
-                    <FileText className="h-5 w-5" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs uppercase font-semibold tracking-wide text-default-500">
-                      Poster del proyecto
-                    </p>
-                    <p className="text-base font-semibold truncate">
-                      {primaryDocument.type || "Poster"}
-                    </p>
-                  </div>
-                </div>
-                <div
-                  className="p-2 rounded-lg bg-default-100 group-hover:bg-primary/15 transition-colors"
-                  aria-hidden="true"
-                >
-                  <ExternalLink className="h-4 w-4" />
-                </div>
-              </a>
-            ) : (
-              <p className="rounded-xl border border-default-200 bg-background p-4 text-sm text-default-500">
-                No hay poster registrado.
-              </p>
-            )}
-          </section>
         </div>
       )}
     </section>

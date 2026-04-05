@@ -73,7 +73,7 @@ export const GetEventsUser = () => {
           return (
             <div
               key={eventId}
-              className={`col-span-1 flex flex-col ${
+              className={`col-span-1 ${
                 isExpanded ? "h-full" : ""
               }`}
             >
