@@ -55,8 +55,8 @@ const toEndOfDayISO = (value?: string) => {
   if (!year || !month || !day) {
     return value;
   }
-  const endOfDay = new Date(year, month - 1, day, 23, 59, 59, 999);
-  return endOfDay.toISOString();
+  // Preserve selected calendar day and avoid UTC timezone shifts.
+  return `${value}T23:59:59.999`;
 };
 
 type UpdateEventFormState = {
