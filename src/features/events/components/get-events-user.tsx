@@ -1,30 +1,27 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Calendar, GraduationCap, Scale } from "lucide-react";
-import { Card, CardBody } from "@/components/ui/card";
+
 import { Spinner } from "@/components/ui/spinner";
 import { Pagination } from "@/components/ui/pagination";
-import { Button } from "@heroui/button";
-import { Chip } from "@/components/ui/chip";
-import { useMyEvents } from "../api/get-my-events";
-import dayjs from "dayjs";
 
-export const formatDateShort = (date: string | number) => {
-  return {
-    day: dayjs(date).format("MMM D, YYYY"),
-    time: dayjs(date).format("h:mm A"),
-  };
-};
+import { useMyEvents } from "../api/get-my-events";
+import { EventCardCollapsed } from "./get-events-user/event-card-collapsed";
+import { EventCardExpanded } from "./get-events-user/event-card-expanded";
 
 export const GetEventsUser = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const page = searchParams?.get("page") ? Number(searchParams.get("page")) : 1;
+  const [expandedEventId, setExpandedEventId] = useState<string | null>(null);
 
-  const eventsQuery = useMyEvents({
-    page: page,
-  });
+  const page = useMemo(() => {
+    const raw = searchParams?.get("page");
+    const parsed = raw ? Number(raw) : 1;
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+  }, [searchParams]);
+
+  const eventsQuery = useMyEvents({ page });
 
   if (eventsQuery.isLoading) {
     return (
@@ -51,139 +48,49 @@ export const GetEventsUser = () => {
   }
 
   const handlePageChange = (newPage: number) => {
-    router.push(`?page=${newPage}`);
+    const params = new URLSearchParams(searchParams?.toString() ?? "");
+    params.set("page", String(newPage));
+    router.push(`?${params.toString()}`);
   };
 
-  const getRoleIcon = (role?: "Participant" | "Juror") => {
-    if (role === "Juror") return <Scale className="h-4 w-4" />;
-    if (role === "Participant") return <GraduationCap className="h-4 w-4" />;
-    return null;
+  const handleToggleEvent = (eventId: string) => {
+    setExpandedEventId((prev) => (prev === eventId ? null : eventId));
   };
 
-  const getRoleColor = (role?: "Participant" | "Juror") => {
-    if (role === "Juror") return "warning";
-    if (role === "Participant") return "primary";
-    return "default";
-  };
-
-  const getRoleLabel = (role?: "Participant" | "Juror") => {
-    if (role === "Juror") return "Juror";
-    if (role === "Participant") return "Participant";
-    return "Unknown";
+  const handleGoDashboard = (eventId: string) => {
+    router.push(`/app/events/${eventId}/dashboard`);
   };
 
   return (
-    <div className="space-y-4">
-      <div className="grid p-4 gap-6 md:grid-cols-2 lg:grid-cols-3">
+    <section className="space-y-2 p-0 ">
+      <h2 className="text-white text-xl">Mis eventos</h2>
+
+      <div className="grid gap-6 md:grid-cols-2 md:grid-rows-1 lg:grid-cols-3 p-0">
         {events.map((event) => {
-          const start = formatDateShort(event.startDate);
-          const end = formatDateShort(event.endDate);
-          const eventRoleName = event.role?.name;
+          const eventId = String(event.id);
+          const isExpanded = expandedEventId === eventId;
 
           return (
-            <Card shadow="sm" key={event.id} className="glass-card">
-              <CardBody className="p-6 space-y-4 flex flex-col">
-                <div className="space-y-2">
-                  <div className="flex items-start justify-between gap-2">
-                    <h3 className="text-xl font-semibold flex-1">
-                      {event.name}
-                    </h3>
+            <div
+              key={eventId}
+              className={`col-span-1 flex flex-col ${
+                isExpanded ? "h-full" : ""
+              }`}
+            >
+              <EventCardCollapsed
+                event={event}
+                isExpanded={isExpanded}
+                onToggle={handleToggleEvent}
+              />
 
-                    {eventRoleName && (
-                      <Chip
-                        color={getRoleColor(eventRoleName)}
-                        variant="flat"
-                        size="sm"
-                        startContent={getRoleIcon(eventRoleName)}
-                      >
-                        {getRoleLabel(eventRoleName)}
-                      </Chip>
-                    )}
-                  </div>
-
-                  <p className="text-sm text-default-500">
-                    {event.description}
-                  </p>
-                </div>
-
-                {/* DATE SECTION FIXED */}
-                <div className="flex flex-col gap-2 text-m">
-                  <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                    {/* START */}
-                    <div className="flex items-start gap-2">
-                      <Calendar className="h-4 w-4 text-default-400 mt-1" />
-                      <div className="flex flex-col leading-tight">
-                        <span className="text-default-400">Start:</span>
-                        <span>{start.day}</span>
-                        <span className="text-xs text-default-500">
-                          {start.time}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* END */}
-                    <div className="flex items-start gap-2">
-                      <Calendar className="h-4 w-4 text-default-400 mt-1" />
-                      <div className="flex flex-col leading-tight">
-                        <span className="text-default-400">End:</span>
-                        <span>{end.day}</span>
-                        <span className="text-xs text-default-500">
-                          {end.time}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Evaluations */}
-                  <div className="flex items-center justify-between p-1">
-                    <span className="text-sm text-default-400">
-                      Evaluations:
-                    </span>
-                    <span
-                      className={`text-sm font-medium ${
-                        event.evaluationsOpened === true
-                          ? "text-green-600"
-                          : "text-red-600"
-                      }`}
-                    >
-                      {event.evaluationsOpened === true ? "Open" : "Closed"}
-                    </span>
-                  </div>
-                </div>
-
-                {/* BUTTON */}
-                <div className="mt-auto pt-2">
-                  <Button
-                    onPress={() =>
-                      router.push(`/app/events/${event.id}/dashboard`)
-                    }
-                    color={
-                      event.evaluationsOpened ? "primary" : "default"
-                    }
-                    className={`
-                      w-full 
-                      transition-transform
-                      ${
-                        event.evaluationsOpened
-                          ? "hover:scale-[1.01]"
-                          : "opacity-70 cursor-not-allowed bg-default-200 dark:bg-default-100"
-                      }
-                      md:text-base text-sm
-                      md:py-3 py-2
-                      rounded-xl
-                      font-medium
-                    `}
-                    isDisabled={!event.evaluationsOpened}
-                  >
-                    {event.evaluationsOpened
-                      ? eventRoleName === "Juror"
-                        ? "View Projects"
-                        : "View My Project"
-                      : "La feria aún no ha comenzado"}
-                  </Button>
-                </div>
-              </CardBody>
-            </Card>
+              {isExpanded && (
+                <EventCardExpanded
+                  event={event}
+                  isExpanded={isExpanded}
+                  onGoDashboard={handleGoDashboard}
+                />
+              )}
+            </div>
           );
         })}
       </div>
@@ -198,6 +105,6 @@ export const GetEventsUser = () => {
           />
         </div>
       )}
-    </div>
+    </section>
   );
 };
