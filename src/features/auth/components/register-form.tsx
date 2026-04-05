@@ -118,7 +118,7 @@ export const RegisterForm = ({
           alt="Microsoft Logo"
           className="inline-block w-7 h-7"
         />
-        Iniciar sesión con Outlook
+        Ingresar con Outlook
       </Button>
           
             <div className="mt-4 flex items-center justify-center">
