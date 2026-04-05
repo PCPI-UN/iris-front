@@ -23,8 +23,25 @@ export const RegisterForm = ({
   const searchParams = useSearchParams();
   const redirectTo = searchParams?.get('redirectTo');
 
+  // User can login with Microsoft instead of signing up manually.
+  const handleMicrosoftLogin = () => {
+    const params = new URLSearchParams();
+
+    if (redirectTo && redirectTo.startsWith('/') && !redirectTo.startsWith('//')) {
+      params.set('redirect', `redirect:${redirectTo}`);
+    }
+
+    const query = params.toString();
+    const loginUrl = query
+      ? `/api/auth/login/microsoft?${query}`
+      : '/api/auth/login/microsoft';
+
+    window.location.replace(loginUrl);
+  };
+
+
   return (
-    <div>
+    <div className="space-y-4">
       <Form
         onSubmit={async (e) => {
           e.preventDefault();
@@ -75,7 +92,7 @@ export const RegisterForm = ({
               }
             />
 
-            <div>
+            
               <Button
                 isLoading={registering.isPending}
                 type="submit"
@@ -83,7 +100,7 @@ export const RegisterForm = ({
               >
                 Registrarse
               </Button>
-            </div>
+            
       </Form>
       <div className="mt-4 flex items-center justify-center">
         <div className="text-sm">
@@ -96,6 +113,26 @@ export const RegisterForm = ({
           </NextLink>
         </div>
       </div>
+
+            <div className="w-full flex items-center justify-center mb-2 mt-2">
+        <a className="text-sm font-medium text-gray-400 text-center">
+          Si eres usuario Uninorte, puedes:
+        </a>
+      </div>
+      <Button
+        className="w-full mb-4"
+        onClick={handleMicrosoftLogin}
+        type="button"
+      >
+        <img
+          src="/microsoft.webp"
+          alt="Microsoft Logo"
+          className="inline-block w-7 h-7"
+        />
+        Iniciar sesión con Outlook
+      </Button>
+          
+
     </div>
   );
 };
