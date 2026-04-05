@@ -20,10 +20,14 @@ const isUser = (value: unknown): value is User => {
 
   const candidate = value as Partial<User>;
   return (
-    typeof candidate.id === 'string' &&
+    (typeof candidate.id === 'string' || typeof candidate.id === 'number') &&
     typeof candidate.firstName === 'string' &&
     typeof candidate.lastName === 'string' &&
-    typeof candidate.email === 'string'
+    typeof candidate.email === 'string' &&
+    typeof candidate.active === 'boolean' &&
+    typeof candidate.status === 'string' &&
+    Array.isArray(candidate.platformRoles) &&
+    Array.isArray(candidate.platformPermissions)
   );
 };
 

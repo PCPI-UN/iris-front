@@ -50,7 +50,7 @@ const resolvePostLoginTarget = async (redirectTo?: string | null) => {
         : userResponse;
 
     const user = userCandidate as {
-      id?: string | null;
+      id?: string | number | null;
       firstName?: string | null;
       lastName?: string | null;
       email?: string | null;

@@ -2,7 +2,7 @@ import { paths } from '@/config/paths';
 import { api } from '@/lib/api-client';
 
 type JoinUser = {
-  id?: string | null;
+  id?: string | number | null;
   firstName?: string | null;
   lastName?: string | null;
   email?: string | null;

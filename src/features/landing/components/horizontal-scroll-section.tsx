@@ -21,12 +21,12 @@ export function HorizontalScrollSection({
     <section
       id="informacion"
       ref={horizontalSectionRef}
-      className="relative z-10 mt-10 h-screen overflow-hidden md:mt-8"
+      className="relative z-10 mt-0 h-screen overflow-hidden bg-background md:mt-0"
     >
-      <div ref={horizontalContentRef} className="flex h-full">
+      <div ref={horizontalContentRef} className="flex h-full bg-background">
         {/* Panel 1 - Vision */}
         <div className="horizontal-panel min-w-full h-full flex items-center justify-center px-12">
-          <div className="max-w-4xl">
+          <div className="max-w-4xl -translate-y-8 md:-translate-y-12">
             <div className="mb-6 text-primary font-mono text-sm">{panels[0].badge}</div>
             <h2 className="text-6xl md:text-8xl font-bold mb-8 leading-none">
               {panels[0].title}
