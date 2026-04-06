@@ -9,9 +9,13 @@ import { normalizeEventsResponse } from "./normalize-events-response";
 export const getEventsPublic = async (
   { page }: { page?: number } = { page: 1 }
 ): Promise<{ data: Event[]; meta: Meta }> => {
-  const response = await api.get<Record<string, any>>(`/events/public`, {
-    params: { page },
-  });
+  const response = await api.get<Record<string, any>>(
+    "/events/public",
+    {
+      params: { page },
+      suppressErrorNotification: true,
+    }
+  );
 
   return normalizeEventsResponse(response);
 };

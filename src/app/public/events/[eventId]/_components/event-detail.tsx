@@ -19,6 +19,8 @@ import { Chip } from '@heroui/chip';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { usePublicEventDetail } from '@/features/events/api/get-public-event-detail';
+import { normalizeEventType } from '@/features/events/utils/normalize-event-type';
+import { hasInscriptionDeadlinePassed } from '@/features/events/utils/inscription-deadline';
 import { resolveJoinTarget } from '@/features/events/utils/resolve-join-target';
 import { useUser } from '@/lib/auth';
 import { Footer } from '@/features/landing/components/cta-footer';
@@ -26,7 +28,7 @@ import { Footer } from '@/features/landing/components/cta-footer';
 type ThemeKey = 'cyan' | 'pink' | 'yellow';
 
 type EventDetailProps = {
-eventId: string;
+eventId: number;
 };
 
 const parseLocalDate = (value?: string) => {
@@ -66,6 +68,24 @@ year: 'numeric',
 const hasText = (value?: string | null) =>
 typeof value === 'string' && value.trim().length > 0;
 
+const getStoredTheme = (eventId: string) => {
+    if (typeof window === 'undefined') {
+        return null;
+    }
+
+    const directTheme = sessionStorage.getItem(`eventTheme:${eventId}`);
+    if (directTheme === 'cyan' || directTheme === 'pink' || directTheme === 'yellow') {
+        return directTheme;
+    }
+
+    const fallbackTheme = sessionStorage.getItem('eventTheme');
+    if (fallbackTheme === 'cyan' || fallbackTheme === 'pink' || fallbackTheme === 'yellow') {
+        return fallbackTheme;
+    }
+
+    return null;
+};
+
 export const EventDetail = ({ eventId }: EventDetailProps) => {
 const router = useRouter();
 const {
@@ -79,12 +99,8 @@ const isUserStatusResolving = isUserLoading || isUserFetching;
 const shouldBlockPageRender = eventQuery.isLoading;
 
 const eventTheme = useMemo((): ThemeKey => {
-const rawId = event?.id ?? eventId;
-const themeStorageKey = `eventTheme:${String(rawId)}`;
-const storedTheme =
-    typeof window !== 'undefined'
-    ? sessionStorage.getItem(themeStorageKey) ?? sessionStorage.getItem('eventTheme')
-    : null;
+const rawId = String(event?.id ?? eventId);
+const storedTheme = getStoredTheme(rawId);
 
 if (
     storedTheme === 'cyan' ||
@@ -127,6 +143,11 @@ return participants.some((participant) => {
 });
 }, [participants, user?.email, user?.firstName, user?.id, user?.lastName]);
 
+const isInscriptionClosed = useMemo(
+() => hasInscriptionDeadlinePassed(event?.inscriptionDeadline),
+[event?.inscriptionDeadline],
+);
+
 const program = useMemo(() => {
 const items: { label: string; date: string }[] = [];
 if (event?.startDate) {
@@ -143,6 +164,11 @@ if (event?.endDate) {
 }
 return items;
 }, [event?.endDate, event?.inscriptionDeadline, event?.startDate]);
+
+const eventTypeLabel = useMemo(
+() => normalizeEventType(event?.eventType),
+[event?.eventType],
+);
 
 const handleJoin = async () => {
 if (!event?.id) return;
@@ -209,7 +235,7 @@ event.inscriptionCost === 0;
 const hasGeneralDetailsSection = Boolean(
 hasText(primaryOrganizer) ||
     hasText(primaryCollaborator) ||
-    hasText(event.eventType) ||
+    Boolean(eventTypeLabel) ||
     isFreeEvent ||
     hasText(event.location),
 );
@@ -260,7 +286,7 @@ return (
             {formatDateShort(event.startDate)}
             </Chip>
         )}
-        {event.inscriptionDeadline && (
+        {event.inscriptionDeadline && !isInscriptionClosed && (
             <Chip
             startContent={<Clock className="h-3.5 w-3.5" />}
             variant="flat"
@@ -288,7 +314,10 @@ return (
             <div className="glass-card rounded-2xl p-5 sm:p-6 space-y-4 relative overflow-hidden">
             <div className="event-cta-overlay" />
             <div className="relative z-10 space-y-4">
+                {!isInscriptionClosed && (
                 <p className="text-sm font-semibold text-foreground/70">¿Listo para participar?</p>
+                )}
+                {!isInscriptionClosed && (
                 <Button
                 onPress={handleJoin}
                 isDisabled={isUserStatusResolving}
@@ -300,6 +329,8 @@ return (
                 >
                 Inscríbete ya
                 </Button>
+                )}
+                {!isInscriptionClosed && (
                 <p className="text-xs text-muted-foreground text-center">
                 {!user?.id
                     ? 'Necesitas iniciar sesión para inscribirte'
@@ -307,14 +338,26 @@ return (
                     ? '✓ Ya estás inscrito en este evento'
                     : '✓ Tu cuenta está lista para inscribirse'}
                 </p>
+                )}
                 {event.inscriptionDeadline && (
                 <div className="event-deadline-box rounded-xl p-3 flex items-center gap-3">
                     <Clock className="event-deadline-text h-4 w-4 shrink-0" />
                     <div>
-                    <p className="text-xs text-muted-foreground">Cierre de inscripciones</p>
-                    <p className="event-deadline-text text-sm font-semibold">
-                        {formatDate(event.inscriptionDeadline)}
-                    </p>
+                    {isInscriptionClosed ? (
+                        <>
+                        <p className="text-xs text-muted-foreground">Las inscripciones para este evento ya finalizaron</p>
+                        <p className="event-deadline-text text-sm font-semibold">
+                            ¡Te esperamos!
+                        </p>
+                        </>
+                    ) : (
+                        <>
+                        <p className="text-xs text-muted-foreground">Cierre de inscripciones</p>
+                        <p className="event-deadline-text text-sm font-semibold">
+                            {formatDate(event.inscriptionDeadline)}
+                        </p>
+                        </>
+                    )}
                     </div>
                 </div>
                 )}
@@ -517,7 +560,7 @@ return (
                 </p>
             </div>
             )}
-            {hasText(event.eventType) && (
+            {eventTypeLabel && (
             <div>
                 <p className="text-xs uppercase tracking-widest font-bold text-muted-foreground mb-1">
                 Tipo de Evento
@@ -527,7 +570,7 @@ return (
                 size="sm"
                 classNames={{ base: 'bg-background/30 border border-border/30 w-fit', content: 'text-xs font-semibold uppercase' }}
                 >
-                {event.eventType}
+                {eventTypeLabel}
                 </Chip>
             </div>
             )}
@@ -584,6 +627,7 @@ return (
     </section>
     )}
 
+    {!isInscriptionClosed && (
     <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-12 pb-10 lg:pb-16">
     <div className="event-cta-footer-card glass-card rounded-2xl p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6">
         <div className="space-y-1 text-center sm:text-left">
@@ -596,6 +640,7 @@ return (
                 : 'Tu cuenta está lista. Completa tu inscripción ahora.'}
         </p>
         </div>
+        {!isInscriptionClosed && (
         <Button
         onPress={handleJoin}
         isDisabled={isUserStatusResolving}
@@ -605,8 +650,10 @@ return (
         >
         Inscríbete
         </Button>
+        )}
     </div>
     </section>
+    )}
 
     <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-12 pb-8 lg:pb-12">
         <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6">

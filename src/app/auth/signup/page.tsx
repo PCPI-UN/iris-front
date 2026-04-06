@@ -1,16 +1,11 @@
 "use client";
 
-import { useSearchParams } from 'next/navigation';
-
 import { paths } from "@/config/paths";
 import { RegisterForm } from "@/features/auth/components/register-form";
 import { PublicLayout } from "@/components/layouts/public-layout";
 import "@/features/landing/index.css";
 
 const RegisterPage = () => {
-  const searchParams = useSearchParams();
-  const redirectTo = searchParams?.get("redirectTo");
-
   return (
     <PublicLayout showNavLinks={false} showLoginButton={false}>
       {/* Animated Background Gradient - Same as landing */}
@@ -41,13 +36,7 @@ const RegisterPage = () => {
           <div className="glass-card p-6 sm:p-8 w-full">
             <RegisterForm
               onSuccess={() => {
-                // Usar window.location.href en lugar de router.replace
-                // para forzar una recarga completa y asegurar que las cookies
-                // se envíen correctamente en producción
-                const targetUrl = redirectTo
-                  ? decodeURIComponent(redirectTo)
-                  : paths.app.dashboard.getHref();
-                window.location.href = targetUrl;
+                window.location.href = paths.auth.signup_sent.getHref();
               }}
             />
           </div>

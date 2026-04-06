@@ -10,16 +10,24 @@ import '@/features/landing/index.css';
 
 import { EventDetail } from './_components/event-detail';
 
+const extractEventId = (value: string) => {
+  const normalizedValue = value.trim();
+
+  const numericSuffixMatch = normalizedValue.match(/(?:-(\d+)|^(\d+))$/);
+  return numericSuffixMatch?.[1] ?? numericSuffixMatch?.[2] ?? normalizedValue;
+};
+
 const PublicEventDetailPage = async ({
   params,
 }: {
-  params: Promise<{ eventId: string }>;
+  params: Promise<{ eventId: number }>;
 }) => {
   const { eventId } = await params;
+  const resolvedEventId = extractEventId(eventId);
 
   const queryClient = new QueryClient();
 
-  await queryClient.prefetchQuery(getPublicEventDetailQueryOptions(eventId));
+  await queryClient.prefetchQuery(getPublicEventDetailQueryOptions(resolvedEventId));
 
   const dehydratedState = dehydrate(queryClient);
 
@@ -27,7 +35,7 @@ const PublicEventDetailPage = async ({
     <PublicLayout showNavLinks={false}>
       <HydrationBoundary state={dehydratedState}>
         <div className="landing-page relative z-10">
-          <EventDetail eventId={eventId} />
+          <EventDetail eventId={resolvedEventId} />
         </div>
       </HydrationBoundary>
     </PublicLayout>

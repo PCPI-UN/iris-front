@@ -100,7 +100,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       enterprise: {
         name: "Iris",
         logo: "/iris.svg",
-        url: "#",
+        url: paths.home.getHref(),
       },
     }),
     [user.data?.firstName, user.data?.lastName, user.data?.email]

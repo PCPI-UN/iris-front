@@ -6,14 +6,15 @@ import { MutationConfig } from '@/lib/react-query';
 import { Event } from '@/types/api';
 
 import { getEventsQueryOptions } from './get-events';
+import { normalizeEventDatesForPayload } from '../utils/event-date-payload';
 
 export const createEventInputSchema = z.object({
   name: z.string().min(1, 'Required'),
   description: z.string().min(1, 'Required'),
   accessCode: z.string().min(1, 'Required'),
-  startDate: z.string().min(10).max(10), 
-  endDate: z.string().min(10).max(10), 
-  inscriptionDeadline: z.string().min(10).max(10),
+  startDate: z.string().min(10), 
+  endDate: z.string().min(10), 
+  inscriptionDeadline: z.string().min(10),
   evaluationsOpened: z.boolean(),
   isPubliclyJoinable: z.boolean().optional(),
   active: z.boolean().optional(),
@@ -52,7 +53,7 @@ export const createEvent = ({
 }: {
   data: CreateEventInput;
 }): Promise<Event> => {
-  return api.post('/events', data);
+  return api.post('/events', normalizeEventDatesForPayload(data));
 
 };
 

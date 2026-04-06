@@ -2,15 +2,26 @@
 // Roles are defined in src/types/api.ts as: "ADMIN" | "USER"
 // Note: STUDENT and JURY are event-specific subroles, not main user roles
 
+const slugify = (value: string) =>
+  value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
 export const paths = {
   home: {
     getHref: () => "/",
   },
 
   auth: {
-    register: {
+    signup: {
       getHref: (redirectTo?: string | null | undefined) =>
-        `/auth/register${redirectTo ? `?redirectTo=${encodeURIComponent(redirectTo)}` : ""}`,
+        `/auth/signup${redirectTo ? `?redirectTo=${encodeURIComponent(redirectTo)}` : ""}`,
+    },
+    signup_sent: {
+      getHref: () => '/auth/signup/sent',
     },
     login: {
       getHref: (redirectTo?: string | null | undefined) =>
@@ -79,11 +90,11 @@ export const paths = {
     },
     project_jury: {
       getHref: (id: string) => `/app/events/${id}`,
-      roles: ["User"], // Requiere subrol JURY en el evento específico
+      roles: ["User"], // Requires subrole JURY in the specific event
     },
     evaluations: {
       getHref: (id: string) => `/app/evaluations/${id}`,
-      roles: ["User"], // Requiere subrol JURY en el evento específico
+      roles: ["User"], // Requires subrole JURY in the specific event
     },
     criteria: {
       getHref: () => "/app/criteria",
@@ -97,8 +108,28 @@ export const paths = {
       getHref: (eventId: string | number) => `/public/projects/${eventId}`,
     },
     event: {
-      getHref: (eventId?: string | number) =>
-        eventId ? `/public/events/${eventId}` : '/public/events',
+      getHref: (
+        eventId?:
+          | string
+          | number
+          | { id: string | number; name?: string | null | undefined },
+      ) => {
+        if (!eventId) {
+          return '/public/events';
+        }
+
+        if (typeof eventId === 'object') {
+          const eventSlug = eventId.name ? slugify(eventId.name) : '';
+          return eventSlug
+            ? `/public/events/${eventSlug}-${String(eventId.id)}`
+            : `/public/events/${String(eventId.id)}`;
+        }
+
+        return `/public/events/${String(eventId)}`;
+      },
+    },
+    developers: {
+      getHref: () => '/public/developers',
     },
   },
 } as const;

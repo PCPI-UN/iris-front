@@ -58,12 +58,12 @@
   font-family: 'Geist Mono', 'Courier New', monospace !important;
 }
 
-/* Scroll offset para secciones con ID (compensar navbar fijo) */
+/* Scroll offset for sections with ID (compensate for fixed navbar) */
 .landing-page section[id] {
-  scroll-margin-top: 70px;
+  scroll-margin-top: clamp(84px, 10vh, 112px);
 }
 
-/* Estilos para botones - Sobrescribir HeroUI */
+/* Styles for buttons */
 .landing-page button,
 .landing-page [role="button"],
 .landing-page .bg-primary {
@@ -80,6 +80,17 @@
 .landing-page .events-nav-button:disabled,
 .landing-page .events-nav-button:disabled:hover {
   background-color: transparent !important;
+}
+
+.landing-page .nav-menu-toggle,
+.landing-page .nav-menu-toggle:hover,
+.landing-page .nav-menu-toggle:focus,
+.landing-page .nav-menu-toggle:active {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: white !important;
 }
 
 .landing-page .text-primary {
@@ -102,7 +113,7 @@
   background-color: oklch(0.82 0.18 330 / 0.3) !important;
 }
 
-/* Utilidades CSS - Sin capa para máxima compatibilidad con Tailwind */
+/* Tailwind CSS compatibility */
 /* Glass effects */
 .glass-effect {
   background: rgba(18, 18, 28, 0.3);
@@ -1169,10 +1180,25 @@ section[class*="story"]::before {
 /* Event card animations */
 .landing-page .event-card {
   will-change: transform, opacity;
-  opacity: 0;
-  transform: translateY(60px) scale(0.95);
 }
 
+@media (max-width: 1024px) {
+  .horizontal-panel {
+    align-items: center;
+    padding-top: clamp(4.5rem, 8vh, 6rem);
+    padding-bottom: clamp(1.5rem, 4vh, 2.5rem);
+  }
+}
+
+@media (max-width: 640px) {
+  .story-word {
+    word-break: break-word;
+  }
+
+  .landing-page .event-card {
+    max-width: 100% !important;
+  }
+}
 /* ========================================= */
 /* Event Detail Page                         */
 /* ========================================= */
