@@ -20,7 +20,7 @@ const extractEventId = (value: string) => {
 const PublicEventDetailPage = async ({
   params,
 }: {
-  params: Promise<{ eventId: string }>;
+  params: Promise<{ eventId: number }>;
 }) => {
   const { eventId } = await params;
   const resolvedEventId = extractEventId(eventId);

@@ -20,7 +20,6 @@ export type CourseCategory = {
   }[];
 };
 
-
 export type Meta = {
   page: number;
   total: number;
@@ -78,6 +77,11 @@ export type role = Entity<{
   scope: string;
 }>;
 
+enum EventType {
+  Exposition,
+  Competition
+}
+
 export type Event = Entity<{
   id: number;
   name: string;
@@ -85,7 +89,7 @@ export type Event = Entity<{
   startDate: string;
   endDate: string;
   inscriptionDeadline: string;
-  accessCode: string; 
+  accessCode: string;
   isPubliclyJoinable: boolean;
   evaluationsOpened: boolean;
   statusName: string;
@@ -94,7 +98,8 @@ export type Event = Entity<{
   inscriptionCost?: number;
   inscriptionRequirements?: string;
   aboutOurAllies?: string;
-  evaluationType?: "ZERO_TO_FIVE" | "ZERO_TO_HUNDRED" ;
+  evaluationType?: "ZERO_TO_FIVE" | "ZERO_TO_HUNDRED";
+  eventType: EventType;
   minimumTeamSize?: number;
   specificInscriptionDetails?: { title: string; description: string }[];
   categories?: { id: number; name: string; active?: boolean }[];
@@ -111,7 +116,6 @@ export type Event = Entity<{
   status?: number;
   active: boolean;
   role: role;
-  eventType?: "Competition" | "Exhibition" | string;
   createdAt: number;
   updatedAt: number;
 }>;

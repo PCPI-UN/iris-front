@@ -6,18 +6,25 @@ import { MutationConfig } from "@/lib/react-query";
 import { getProjectsQueryOptions } from "./get-projects";
 import { z } from "zod";
 
-// Schema de entrada
+// Schema para Competition (solo participantes)
+export const createCompetitionInputSchema = z.object({
+  eventId: z.string().min(1),
+  courseId: z.string().min(1),
+  participants: z.string().min(1), // JSON string
+});
+
+// Schema para Exposition (proyecto completo)
 export const createProjectInputSchema = z.object({
   name: z.string().min(2).max(255),
-  description: z.string().max(3000),
+  description: z.string().max(3000).optional(),
   eventId: z.string().min(1),
   courseId: z.string().min(1),
   participants: z.string().min(1), // JSON string
   documents: z.string().min(1),    // JSON string
-  //files: z.array(z.instanceof(File)).min(1),
 });
 
 export type CreateProjectInput = z.infer<typeof createProjectInputSchema>;
+export type CreateCompetitionInput = z.infer<typeof createCompetitionInputSchema>;
 
 // Función para enviar al backend usando FormData
 export const createProject = ({ data }: { data: FormData }): Promise<Project> => {

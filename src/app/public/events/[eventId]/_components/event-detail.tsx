@@ -19,6 +19,7 @@ import { Chip } from '@heroui/chip';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { usePublicEventDetail } from '@/features/events/api/get-public-event-detail';
+import { normalizeEventType } from '@/features/events/utils/normalize-event-type';
 import { hasInscriptionDeadlinePassed } from '@/features/events/utils/inscription-deadline';
 import { resolveJoinTarget } from '@/features/events/utils/resolve-join-target';
 import { useUser } from '@/lib/auth';
@@ -27,7 +28,7 @@ import { Footer } from '@/features/landing/components/cta-footer';
 type ThemeKey = 'cyan' | 'pink' | 'yellow';
 
 type EventDetailProps = {
-eventId: string;
+eventId: number;
 };
 
 const parseLocalDate = (value?: string) => {
@@ -164,6 +165,11 @@ if (event?.endDate) {
 return items;
 }, [event?.endDate, event?.inscriptionDeadline, event?.startDate]);
 
+const eventTypeLabel = useMemo(
+() => normalizeEventType(event?.eventType),
+[event?.eventType],
+);
+
 const handleJoin = async () => {
 if (!event?.id) return;
 if (isUserStatusResolving) return;
@@ -229,7 +235,7 @@ event.inscriptionCost === 0;
 const hasGeneralDetailsSection = Boolean(
 hasText(primaryOrganizer) ||
     hasText(primaryCollaborator) ||
-    hasText(event.eventType) ||
+    Boolean(eventTypeLabel) ||
     isFreeEvent ||
     hasText(event.location),
 );
@@ -554,7 +560,7 @@ return (
                 </p>
             </div>
             )}
-            {hasText(event.eventType) && (
+            {eventTypeLabel && (
             <div>
                 <p className="text-xs uppercase tracking-widest font-bold text-muted-foreground mb-1">
                 Tipo de Evento
@@ -564,7 +570,7 @@ return (
                 size="sm"
                 classNames={{ base: 'bg-background/30 border border-border/30 w-fit', content: 'text-xs font-semibold uppercase' }}
                 >
-                {event.eventType}
+                {eventTypeLabel}
                 </Chip>
             </div>
             )}

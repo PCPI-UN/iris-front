@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectItem } from '@/components/ui/select';
@@ -8,50 +8,21 @@ import { Card, CardBody } from '@/components/ui/card';
 import { Plus, Trash2 } from "lucide-react";
 import { Participant } from "../project-wizard";
 import { z } from "zod";
-
-// Semester options
-const SEMESTER_OPTIONS = [
-  { key: "1", label: "1er Semestre" },
-  { key: "2", label: "2do Semestre" },
-  { key: "3", label: "3er Semestre" },
-  { key: "4", label: "4to Semestre" },
-  { key: "5", label: "5to Semestre" },
-  { key: "6", label: "6to Semestre" },
-  { key: "7", label: "7mo Semestre" },
-  { key: "8", label: "8vo Semestre" },
-];
-
-// Career options - Universidad del Norte
-const CAREER_OPTIONS = [
-  { key: "ingenieria_sistemas", label: "Ingeniería en Sistemas" },
-  { key: "ingenieria_telematica", label: "Ingeniería Telemática" },
-  { key: "ingenieria_civil", label: "Ingeniería Civil" },
-  { key: "ingenieria_industrial", label: "Ingeniería Industrial" },
-  { key: "ingenieria_ambiental", label: "Ingeniería Ambiental" },
-  { key: "administracion", label: "Administración de Empresas" },
-  { key: "contabilidad", label: "Contabilidad" },
-  { key: "economia", label: "Economía" },
-  { key: "psicologia", label: "Psicología" },
-  { key: "comunicacion_social", label: "Comunicación Social" },
-];
-
-const getSemesterLabel = (key: string) => {
-  return SEMESTER_OPTIONS.find((opt) => opt.key === key)?.label || key;
-};
-
-const getCareerLabel = (key: string) => {
-  return CAREER_OPTIONS.find((opt) => opt.key === key)?.label || key;
-};
+import { SEMESTER_OPTIONS, CAREER_OPTIONS, getCareerLabel, getSemesterLabel } from "./constants-carrers-semesters";
+import { useUser } from "@/lib/auth";
 
 type ParticipantsStepProps = {
   participants: Participant[];
   onUpdate: (participants: Participant[]) => void;
+  eventType: "Competition" | "Exposition";
 };
 
 export function ParticipantsStep({
   participants,
   onUpdate,
+  eventType,
 }: ParticipantsStepProps) {
+  const user = useUser();
   const [currentParticipant, setCurrentParticipant] = useState<
     Omit<Participant, "id">
   >({
@@ -63,6 +34,18 @@ export function ParticipantsStep({
     career: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Pre-fill with current user data
+  useEffect(() => {
+    if (user.data?.firstName || user.data?.lastName || user.data?.email) {
+      setCurrentParticipant((prev) => ({
+        ...prev,
+        firstName: user.data?.firstName || prev.firstName,
+        lastName: user.data?.lastName || prev.lastName,
+        email: user.data?.email || prev.email,
+      }));
+    }
+  }, [user.data?.firstName, user.data?.lastName, user.data?.email]);
 
   const validateParticipant = () => {
     const newErrors: Record<string, string> = {};
@@ -83,18 +66,32 @@ export function ParticipantsStep({
       } catch {
         newErrors.email = "El email no es válido";
       }
+      // Validar que el email no esté repetido
+      if (participants.some((p) => p.email === currentParticipant.email)) {
+        newErrors.email = "Este email ya está registrado";
+      }
     }
 
     if (!currentParticipant.studentCode.trim()) {
       newErrors.studentCode = "El código estudiantil es requerido";
+    } else if (!/^\d+$/.test(currentParticipant.studentCode)) {
+      newErrors.studentCode = "El código debe contener solo números";
+    } else if (currentParticipant.studentCode.length < 9) {
+      newErrors.studentCode = "El código debe tener mínimo 9 dígitos";
+    } else if (participants.some((p) => p.studentCode === currentParticipant.studentCode)) {
+      newErrors.studentCode = "Este código estudiantil ya está registrado";
     }
 
-    if (!currentParticipant.semester.trim()) {
-      newErrors.semester = "El semestre es requerido";
-    }
+    // Para Competition: semester y career son obligatorios
+    // Para Exposition: semester y career son opcionales
+    if (eventType === "Competition") {
+      if (!currentParticipant.semester.trim()) {
+        newErrors.semester = "El semestre es requerido";
+      }
 
-    if (!currentParticipant.career.trim()) {
-      newErrors.career = "La carrera es requerida";
+      if (!currentParticipant.career.trim()) {
+        newErrors.career = "La carrera es requerida";
+      }
     }
 
     setErrors(newErrors);
@@ -108,6 +105,7 @@ export function ParticipantsStep({
         id: Date.now().toString(),
       };
       onUpdate([...participants, newParticipant]);
+
       setCurrentParticipant({
         firstName: "",
         lastName: "",
@@ -116,6 +114,7 @@ export function ParticipantsStep({
         semester: "",
         career: "",
       });
+      
       setErrors({});
     }
   };
@@ -160,7 +159,7 @@ export function ParticipantsStep({
           <Input
             label="Correo Electrónico"
             type="email"
-            placeholder="juan.perez@universidad.edu"
+            placeholder="juanperez@universidad.edu.co"
             value={currentParticipant.email}
             onValueChange={(value) => {
               setCurrentParticipant({ ...currentParticipant, email: value });
@@ -172,9 +171,9 @@ export function ParticipantsStep({
           />
           <Input
             label="Código Estudiantil"
-            placeholder="2021-1234"
+            placeholder="200123456"
             value={currentParticipant.studentCode}
-            onValueChange={(value) =>{
+            onValueChange={(value) => {
               setCurrentParticipant({
                 ...currentParticipant,
                 studentCode: value,
@@ -186,38 +185,18 @@ export function ParticipantsStep({
             errorMessage={errors.studentCode}
           />
           <Select
-            label="Semestre"
-            placeholder="Seleccionar semestre"
-            value={currentParticipant.semester}
-            onChange={(e) => {
-              setCurrentParticipant({
-                ...currentParticipant,
-                semester: e.target.value,
-              });
-              if (errors.semester) setErrors({ ...errors, semester: "" });
-            }}
-            isRequired
-            isInvalid={!!errors.semester}
-            errorMessage={errors.semester}
-          >
-            {SEMESTER_OPTIONS.map((option) => (
-              <SelectItem key={option.key}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </Select>
-          <Select
             label="Carrera"
             placeholder="Seleccionar carrera"
-            value={currentParticipant.career}
-            onChange={(e) => {
+            selectedKeys={currentParticipant.career ? [currentParticipant.career] : []}
+            onSelectionChange={(value) => {
+              const selectedValue = Array.from(value as Set<string>)[0] || "";
               setCurrentParticipant({
                 ...currentParticipant,
-                career: e.target.value,
+                career: selectedValue,
               });
               if (errors.career) setErrors({ ...errors, career: "" });
             }}
-            isRequired
+            isRequired={eventType === "Competition"}
             isInvalid={!!errors.career}
             errorMessage={errors.career}
           >
@@ -227,7 +206,31 @@ export function ParticipantsStep({
               </SelectItem>
             ))}
           </Select>
+          <Select
+            label="Semestre"
+            placeholder="Seleccionar semestre"
+            selectedKeys={currentParticipant.semester ? [currentParticipant.semester] : []}
+            onSelectionChange={(value) => {
+              const selectedValue = Array.from(value as Set<string>)[0] || "";
+              setCurrentParticipant({
+                ...currentParticipant,
+                semester: selectedValue,
+              });
+              if (errors.semester) setErrors({ ...errors, semester: "" });
+            }}
+            isRequired={eventType === "Competition"}
+            isInvalid={!!errors.semester}
+            errorMessage={errors.semester}
+          >
+            {SEMESTER_OPTIONS.map((option) => (
+              <SelectItem key={option.key}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </Select>
+          
         </div>
+
         <Button
           color="primary"
           onPress={addParticipant}
@@ -256,9 +259,22 @@ export function ParticipantsStep({
                     </p>
                     {participant.studentCode && (
                       <p className="text-sm text-default-500">
-                        Código: {participant.studentCode}
+                        {participant.studentCode}
                       </p>
                     )}
+
+                    <div className="flex flex-wrap gap-4">
+                      {participant.career && (
+                        <p className="text-sm text-default-500">
+                          {getCareerLabel(participant.career)}
+                        </p>
+                      )}
+                      {participant.semester && (
+                        <p className="text-sm text-default-500">
+                          {getSemesterLabel(participant.semester)}
+                        </p>
+                      )}
+                    </div>
                   </div>
                   <Button
                     isIconOnly
@@ -268,18 +284,6 @@ export function ParticipantsStep({
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
-                </div>
-                <div className="flex-1 hidden sm:block text-right space-y-1">
-                  {participant.semester && (
-                    <p className="text-sm text-default-500">
-                      {getSemesterLabel(participant.semester)}
-                    </p>
-                  )}
-                  {participant.career && (
-                    <p className="text-sm text-default-500">
-                      {getCareerLabel(participant.career)}
-                    </p>
-                  )}
                 </div>
               </CardBody>
             </Card>

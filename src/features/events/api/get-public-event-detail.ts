@@ -1,4 +1,4 @@
-import { queryOptions, useQuery } from '@tanstack/react-query';
+import { queryOptions, useQuery } from "@tanstack/react-query";
 
 import { api } from '@/lib/api-client';
 import { QueryConfig } from '@/lib/react-query';
@@ -8,15 +8,15 @@ import { normalizeEvent } from './event-adapter';
 export const getPublicEventDetail = async ({
   eventId,
 }: {
-  eventId: string;
+  eventId: number;
 }): Promise<{ data: Event }> => {
-  const toFallbackEventId = (rawEventId: string) => {
-    if (/^event-\d+$/i.test(rawEventId)) return rawEventId.toLowerCase();
-    if (/^\d+$/.test(rawEventId)) return `event-${rawEventId.padStart(3, '0')}`;
-    return rawEventId;
-  };
+  // const toFallbackEventId = (rawEventId: string) => {
+  //   if (/^event-\d+$/i.test(rawEventId)) return rawEventId.toLowerCase();
+  //   if (/^\d+$/.test(rawEventId)) return `event-${rawEventId.padStart(3, "0")}`;
+  //   return rawEventId;
+  // };
 
-  const fetchEvent = async (targetEventId: string) => {
+  const fetchEvent = async (targetEventId: number) => {
     const response = await api.get<{ data?: Event; event?: Event }>(
       `/events/public/${targetEventId}`,
       { suppressErrorNotification: true },
@@ -24,7 +24,7 @@ export const getPublicEventDetail = async ({
 
     const event = response.data ?? response.event;
     if (!event) {
-      throw new Error('Evento no encontrado');
+      throw new Error("Evento no encontrado");
     }
 
     return {
@@ -35,7 +35,7 @@ export const getPublicEventDetail = async ({
   try {
     return await fetchEvent(eventId);
   } catch {
-    const fallbackEventId = toFallbackEventId(eventId);
+    const fallbackEventId = eventId;
     if (fallbackEventId !== eventId) {
       try {
         return await fetchEvent(fallbackEventId);
@@ -44,19 +44,19 @@ export const getPublicEventDetail = async ({
       }
     }
 
-    throw new Error('Evento no encontrado');
+    throw new Error("Evento no encontrado");
   }
 };
 
-export const getPublicEventDetailQueryOptions = (eventId: string) => {
+export const getPublicEventDetailQueryOptions = (eventId: number) => {
   return queryOptions({
-    queryKey: ['public-event-detail', eventId],
+    queryKey: ["public-event-detail", eventId],
     queryFn: () => getPublicEventDetail({ eventId }),
   });
 };
 
 type UsePublicEventDetailOptions = {
-  eventId: string;
+  eventId: number;
   queryConfig?: QueryConfig<typeof getPublicEventDetailQueryOptions>;
 };
 
