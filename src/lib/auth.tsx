@@ -33,9 +33,7 @@ const isUser = (value: unknown): value is User => {
 
 export const getUser = async (): Promise<User | null> => {
   try {
-    const response = await api.get<User | { data?: User }>('/auth/me', {
-      suppressErrorNotification: true,
-    });
+    const response = await api.get<User | { data?: User }>('/auth/me');
     const userCandidate: unknown =
       response && typeof response === 'object' && 'data' in response
         ? response.data

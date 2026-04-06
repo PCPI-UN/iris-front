@@ -11,7 +11,6 @@ export const getEventsPublic = async (
 ): Promise<{ data: Event[]; meta: Meta }> => {
   const response = await api.get<Record<string, any>>(`/events/public`, {
     params: { page },
-    suppressErrorNotification: true,
   });
 
   return normalizeEventsResponse(response);
