@@ -2,14 +2,6 @@ type DateBoundary = 'start' | 'end';
 
 const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
-const formatDateTime = (date: Date) => {
-  const pad = (value: number) => String(value).padStart(2, '0');
-
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(
-    date.getHours(),
-  )}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
-};
-
 const extractDateOnly = (value?: string | null) => {
   const normalized = String(value ?? '').trim();
 
@@ -21,24 +13,9 @@ const extractDateOnly = (value?: string | null) => {
   return DATE_ONLY_PATTERN.test(dateOnly) ? dateOnly : '';
 };
 
-const toLocalPayloadDate = (value: string, boundary: DateBoundary) => {
+const toPayloadDate = (value: string) => {
   const dateOnly = extractDateOnly(value);
-
-  if (!dateOnly) {
-    return value;
-  }
-
-  const [year, month, day] = dateOnly.split('-').map(Number);
-  const baseDate = new Date(
-    year,
-    month - 1,
-    day,
-    boundary === 'end' ? 23 : 0,
-    boundary === 'end' ? 59 : 0,
-    boundary === 'end' ? 59 : 0,
-  );
-
-  return formatDateTime(baseDate);
+  return dateOnly || value;
 };
 
 export const normalizeEventDatesForPayload = <T extends {
@@ -48,8 +25,8 @@ export const normalizeEventDatesForPayload = <T extends {
 }>(data: T): T => {
   return {
     ...data,
-    startDate: toLocalPayloadDate(data.startDate, 'start'),
-    endDate: toLocalPayloadDate(data.endDate, 'end'),
-    inscriptionDeadline: toLocalPayloadDate(data.inscriptionDeadline, 'end'),
+    startDate: toPayloadDate(data.startDate),
+    endDate: toPayloadDate(data.endDate),
+    inscriptionDeadline: toPayloadDate(data.inscriptionDeadline),
   };
 };
