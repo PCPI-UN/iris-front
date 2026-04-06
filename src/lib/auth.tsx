@@ -100,10 +100,9 @@ export const useRegister = ({ onSuccess }: { onSuccess?: () => void }) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: registerWithEmailAndPassword,
-    onSuccess: (user) => {
-      // Limpiar todo el cache antes de establecer el nuevo usuario
+    onSuccess: () => {
+      // Limpiar todo el cache tras registro exitoso
       queryClient.clear();
-      queryClient.setQueryData(userQueryKey, user);
       onSuccess?.();
     },
   });
@@ -156,18 +155,10 @@ export type RegisterInput = z.infer<typeof registerInputSchema>;
 
 const registerWithEmailAndPassword = async (
   data: RegisterInput,
-): Promise<User> => {
-  // 1. Register - setea la cookie en el backend
-  await api.post<AuthResponse>('/auth/register', data);
+): Promise<AuthResponse> => {
+  return api.post<AuthResponse>('/auth/signup', data);
 
-  // 2. Obtener el usuario autenticado con la cookie
-  const user = await getUser();
-
-  if (!user) {
-    throw new Error('No se pudo obtener el usuario autenticado');
-  }
-
-  return user;
+  // return user;
 };
 
 export const refreshToken = (): Promise<AuthResponse> => {

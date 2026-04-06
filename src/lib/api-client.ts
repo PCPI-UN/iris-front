@@ -102,7 +102,7 @@ async function fetchApi<T>(
     url.includes('/auth/refresh') ||
     url.includes('/auth/login') ||
     url.includes('/auth/logout') ||
-    url.includes('/auth/register');
+    url.includes('/auth/signup');
   const isAuthMeEndpoint = url.includes('/auth/me');
   const isAuthPage = typeof window !== 'undefined' && window.location.pathname.startsWith('/auth');
   const isProtectedPage = typeof window !== 'undefined' && window.location.pathname.startsWith('/app');
