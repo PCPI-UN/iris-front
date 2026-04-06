@@ -85,7 +85,7 @@ export const useUser = () => {
   const result = useQuery(getUserQueryOptions());
   return result;
 };
-export const useLogin = ({ onSuccess }: { onSuccess?: () => void }) => {
+export const useLogin = ({ onSuccess }: { onSuccess?: (user: User) => void }) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: loginWithEmailAndPassword,
@@ -93,7 +93,7 @@ export const useLogin = ({ onSuccess }: { onSuccess?: () => void }) => {
       // Limpiar todo el cache antes de establecer el nuevo usuario
       queryClient.clear();
       queryClient.setQueryData(userQueryKey, user);
-      onSuccess?.();
+      onSuccess?.(user);
     },
   });
 };

@@ -1,28 +1,36 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   dehydrate,
   HydrationBoundary,
   QueryClient,
 } from "@tanstack/react-query";
+import { paths } from "@/config/paths";
 import { ProjectWizard } from "@/features/projects-public/components/project-wizard";
 import { PublicLayout } from "@/components/layouts/public-layout";
 import { getCoursesDropdownQueryOptions } from "@/features/courses/api/get-courses-dropdown";
 import { getPublicEventDetailQueryOptions } from "@/features/events/api/get-public-event-detail";
+import { isUserRegisteredInEvent } from "@/features/events/utils/resolve-join-target";
 import { toPublicEventType } from "@/features/events/utils/normalize-event-type";
+import { useUser } from "@/lib/auth";
 
 const PublicProjectPage = ({
   params,
 }: {
   params: Promise<{ eventId: number }>;
 }) => {
+  const router = useRouter();
+  const user = useUser();
   const [eventId, setEventId] = useState<number | null>(null);
   const [eventType, setEventType] = useState<"Competition" | "Exposition">(
     "Exposition",
   );
   const [dehydratedState, setDehydratedState] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isCheckingRegistration, setIsCheckingRegistration] = useState(false);
+  const [isRedirectingRegistered, setIsRedirectingRegistered] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -55,6 +63,38 @@ const PublicProjectPage = ({
     loadData();
   }, [params]);
 
+  useEffect(() => {
+    let isMounted = true;
+
+    const checkRegistrationStatus = async () => {
+      if (!eventId || user.isLoading || user.isFetching || !user.data?.id) {
+        return;
+      }
+
+      setIsCheckingRegistration(true);
+
+      try {
+        const isAlreadyRegistered = await isUserRegisteredInEvent(eventId);
+
+        if (isMounted && isAlreadyRegistered) {
+          setIsRedirectingRegistered(true);
+          router.replace(paths.app.dashboard.getHref());
+          return;
+        }
+      } finally {
+        if (isMounted) {
+          setIsCheckingRegistration(false);
+        }
+      }
+    };
+
+    void checkRegistrationStatus();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [eventId, router, user.data?.id, user.isFetching, user.isLoading]);
+
   // Configurar textos basados en el tipo de evento
   const getPageContent = () => {
     if (eventType === "Competition") {
@@ -75,11 +115,22 @@ const PublicProjectPage = ({
 
   const pageContent = getPageContent();
 
-  if (loading) {
+  if (
+    loading ||
+    isCheckingRegistration ||
+    isRedirectingRegistered ||
+    user.isLoading ||
+    user.isFetching
+  ) {
     return (
       <PublicLayout showNavLinks={false}>
-        <div className="flex items-center justify-center min-h-[calc(100vh-6rem)]">
-          <p>Cargando...</p>
+        <div className="flex flex-col items-center justify-center gap-2 min-h-[calc(100vh-6rem)] text-center px-4">
+          <p className="text-base font-semibold text-foreground">
+            {isRedirectingRegistered
+              ? "Ya estás inscrito. Redirigiendo al dashboard..."
+              : "Validando tu estado de inscripción..."}
+          </p>
+          <p className="text-sm text-muted-foreground">Un momento, por favor.</p>
         </div>
       </PublicLayout>
     );
