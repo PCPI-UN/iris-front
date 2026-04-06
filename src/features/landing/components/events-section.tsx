@@ -116,6 +116,31 @@ const getTodayStartTimestamp = () => {
   ).getTime();
 };
 
+const isEventExpired = (endDate?: string | null) => {
+  if (!endDate) {
+    return false;
+  }
+
+  const parsedEndDate = parseLocalDate(endDate);
+  const parsedTimestamp = parsedEndDate.getTime();
+
+  if (Number.isNaN(parsedTimestamp)) {
+    return false;
+  }
+
+  const hideAfter = new Date(
+    parsedEndDate.getFullYear(),
+    parsedEndDate.getMonth(),
+    parsedEndDate.getDate() + 2,
+    0,
+    0,
+    0,
+    0,
+  ).getTime();
+
+  return Date.now() >= hideAfter;
+};
+
 export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
   const router = useRouter();
   const eventsQuery = useEventsPublic({ page: 1 });
@@ -154,10 +179,6 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
   }, []);
 
   useEffect(() => {
-    setCurrentPage(0);
-  }, [cardsPerView, eventsQuery.data?.data?.length]);
-
-  useEffect(() => {
     if (eventsQuery.isLoading) {
       return;
     }
@@ -180,7 +201,10 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
     router.push(targetHref);
   };
 
-  const events = eventsQuery.data?.data || [];
+  const events = useMemo(
+    () => (eventsQuery.data?.data || []).filter((event) => !isEventExpired(event.endDate)),
+    [eventsQuery.data?.data],
+  );
   const sortedEvents = useMemo(() => {
     const todayStartTimestamp = getTodayStartTimestamp();
 
@@ -222,6 +246,14 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
       return eventsToRender.slice(start, start + cardsPerView);
     });
   }, [eventsToRender, totalPages, cardsPerView]);
+
+  useEffect(() => {
+    setCurrentPage(0);
+  }, [cardsPerView, eventsToRender.length]);
+
+  useEffect(() => {
+    setCurrentPage((previous) => Math.min(previous, Math.max(totalPages - 1, 0)));
+  }, [totalPages]);
 
   useEffect(() => {
     const measureCards = () => {
@@ -302,7 +334,7 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
           </p>
         </div>
 
-        {events.length === 0 ? (
+        {eventsToRender.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-lg text-muted-foreground">
               No hay eventos disponibles en este momento.

@@ -37,6 +37,39 @@ type EventBody = {
 };
 
 const PAGE_SIZE = 10;
+const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const FIVE_HOURS_IN_MS = 5 * 60 * 60 * 1000;
+
+const formatDateTime = (date: Date) => {
+  const pad = (value: number) => String(value).padStart(2, "0");
+
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(
+    date.getHours(),
+  )}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+};
+
+const addFiveHoursToMockDate = (value?: string) => {
+  const normalized = String(value ?? "").trim();
+
+  if (!normalized) {
+    return value;
+  }
+
+  let parsedDate: Date;
+
+  if (DATE_ONLY_PATTERN.test(normalized)) {
+    const [year, month, day] = normalized.split("-").map(Number);
+    parsedDate = new Date(year, month - 1, day, 0, 0, 0);
+  } else {
+    parsedDate = new Date(normalized);
+  }
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return value;
+  }
+
+  return formatDateTime(new Date(parsedDate.getTime() + FIVE_HOURS_IN_MS));
+};
 
 const toPublicNumericId = (value: string, prefix: string): number => {
   const match = value.match(new RegExp(`^${prefix}-(\\d+)$`));
@@ -651,13 +684,20 @@ export const eventsHandlers = [
       const data = (await request.json()) as EventBody;
       // requireAdmin(user);
 
+      const normalizedStartDate = addFiveHoursToMockDate(data.startDate) ?? data.startDate;
+      const normalizedEndDate = addFiveHoursToMockDate(data.endDate) ?? data.endDate;
+      const normalizedInscriptionDeadline =
+        addFiveHoursToMockDate(data.inscriptionDeadline ?? data.startDate) ??
+        data.inscriptionDeadline ??
+        data.startDate;
+
       const event = db.event.create({
         id: getNextEventId(),
         name: data.name,
         description: data.description,
-        startDate: data.startDate,
-        endDate: data.endDate,
-        inscriptionDeadline: data.inscriptionDeadline ?? data.startDate,
+        startDate: normalizedStartDate,
+        endDate: normalizedEndDate,
+        inscriptionDeadline: normalizedInscriptionDeadline,
         accessCode: `EVT${Date.now().toString().slice(-6)}`,
         isPubliclyJoinable: data.isPubliclyJoinable ?? true,
         active: data.active ?? true,
@@ -700,6 +740,17 @@ export const eventsHandlers = [
       const data = (await request.json()) as Partial<EventBody>;
       const hasField = <K extends keyof EventBody>(key: K) =>
         Object.prototype.hasOwnProperty.call(data, key);
+
+      const normalizedStartDate = hasField("startDate")
+        ? addFiveHoursToMockDate(data.startDate)
+        : undefined;
+      const normalizedEndDate = hasField("endDate")
+        ? addFiveHoursToMockDate(data.endDate)
+        : undefined;
+      const normalizedInscriptionDeadline = hasField("inscriptionDeadline")
+        ? addFiveHoursToMockDate(data.inscriptionDeadline)
+        : undefined;
+
       // requireAdmin(user);
       const event = db.event.update({
         where: {
@@ -710,10 +761,10 @@ export const eventsHandlers = [
         data: {
           ...(hasField("name") && { name: data.name }),
           ...(hasField("description") && { description: data.description }),
-          ...(hasField("startDate") && { startDate: data.startDate }),
-          ...(hasField("endDate") && { endDate: data.endDate }),
+          ...(hasField("startDate") && { startDate: normalizedStartDate ?? data.startDate }),
+          ...(hasField("endDate") && { endDate: normalizedEndDate ?? data.endDate }),
           ...(hasField("inscriptionDeadline") && {
-            inscriptionDeadline: data.inscriptionDeadline,
+            inscriptionDeadline: normalizedInscriptionDeadline ?? data.inscriptionDeadline,
           }),
           ...(hasField("active") && { active: data.active }),
           ...(hasField("isPubliclyJoinable") && {
