@@ -6,6 +6,7 @@ import { MutationConfig } from '@/lib/react-query';
 import { Event } from '@/types/api';
 
 import { getEventsQueryOptions } from './get-events';
+import { normalizeEventDatesForPayload } from '../utils/event-date-payload';
 
 export const createEventInputSchema = z.object({
   name: z.string().min(1, 'Required'),
@@ -52,7 +53,7 @@ export const createEvent = ({
 }: {
   data: CreateEventInput;
 }): Promise<Event> => {
-  return api.post('/events', data);
+  return api.post('/events', normalizeEventDatesForPayload(data));
 
 };
 
