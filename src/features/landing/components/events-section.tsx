@@ -342,14 +342,20 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
           </div>
         ) : (
           <div className="space-y-6 sm:space-y-8">
-            <div className="overflow-hidden">
+            <div className="overflow-x-hidden overflow-y-visible pb-1">
               <div
                 className="flex transition-transform duration-500 ease-out"
                 style={{ transform: `translateX(-${currentPage * 100}%)` }}
               >
                 {pages.map((page, pageIndex) => (
-                  <div key={`events-page-${pageIndex}`} className="min-w-full">
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 md:gap-8 lg:grid-cols-3">
+                  <div key={`events-page-${pageIndex}`} className="min-w-full overflow-hidden">
+                    <div 
+                      className={`grid gap-4 sm:gap-6 md:gap-8 ${
+  page.length < cardsPerView
+    ? 'grid-cols-[repeat(auto-fit,minmax(25px,420px))] justify-center'
+    : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
+}`}
+                    >
                       {page.map((event, index) => {
                         const globalIndex = pageIndex * cardsPerView + index;
                         const eventTheme = getEventColor(event.id, globalIndex);
@@ -414,7 +420,7 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
                                 {shortDescription}
                               </p>
 
-                              <div className="space-y-3 mb-3 sm:mb-4 flex-1">
+                              <div className="space-y-3 mb-8 sm:mb-8 flex-1">
                                 <div className="flex items-center gap-3 text-sm">
                                   <div
                                     className="w-8 h-8 rounded-lg flex items-center justify-center"
