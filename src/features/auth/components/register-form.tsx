@@ -19,6 +19,7 @@ export const RegisterForm = ({
   onSuccess,
 }: RegisterFormProps) => {
   const [showPassword, setShowPassword] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string>('');
   const registering = useRegister({ onSuccess });
   const searchParams = useSearchParams();
   const redirectTo = searchParams?.get('redirectTo');
@@ -45,11 +46,21 @@ export const RegisterForm = ({
       <Form
         onSubmit={async (e) => {
           e.preventDefault();
+          setErrorMessage('');
           const form = e.target as HTMLFormElement;
           const formData = new FormData(form);
           const data = Object.fromEntries(formData);
           const values = await registerInputSchema.parseAsync(data);
-          await registering.mutateAsync(values);
+          try {
+            await registering.mutateAsync(values);
+          } catch (error: any) {
+            const message = error?.message || 'Error al registrarse';
+            if (message.toLowerCase().includes('already exists')) {
+              setErrorMessage('Este correo ya está registrado');
+            } else {
+              setErrorMessage(message);
+            }
+          }
         }}
       >
             <Input
@@ -100,6 +111,11 @@ export const RegisterForm = ({
               >
                 Registrarse
               </Button>
+              {errorMessage && (
+                <div className="text-sm text-red-500 text-center mt-2">
+                  {errorMessage}
+                </div>
+              )}
             
       </Form>
 
