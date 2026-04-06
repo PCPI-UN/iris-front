@@ -78,6 +78,7 @@ export const GetEventsUser = () => {
         {events.map((event) => {
           const start = formatDateShort(event.startDate);
           const end = formatDateShort(event.endDate);
+          const eventRoleName = event.role?.name;
 
           return (
             <Card shadow="sm" key={event.id} className="glass-card">
@@ -88,14 +89,14 @@ export const GetEventsUser = () => {
                       {event.name}
                     </h3>
 
-                    {event.role && (
+                    {eventRoleName && (
                       <Chip
-                        color={getRoleColor(event.role.name)}
+                        color={getRoleColor(eventRoleName)}
                         variant="flat"
                         size="sm"
-                        startContent={getRoleIcon(event.role.name)}
+                        startContent={getRoleIcon(eventRoleName)}
                       >
-                        {getRoleLabel(event.role.name)}
+                        {getRoleLabel(eventRoleName)}
                       </Chip>
                     )}
                   </div>
@@ -175,7 +176,7 @@ export const GetEventsUser = () => {
                     isDisabled={!event.evaluationsOpened}
                   >
                     {event.evaluationsOpened
-                      ? event.role.name === "Juror"
+                      ? eventRoleName === "Juror"
                         ? "View Projects"
                         : "View My Project"
                       : "La feria aún no ha comenzado"}

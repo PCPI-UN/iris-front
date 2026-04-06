@@ -24,6 +24,10 @@ export const paths = {
       getHref: (token: string) =>
         `/auth/chg-password?token=${encodeURIComponent(token)}`,
     },
+    confirm: {
+      getHref: (token: string) =>
+        `/auth/confirm?token=${encodeURIComponent(token)}`,
+    },
   },
 
   app: {
@@ -75,11 +79,11 @@ export const paths = {
     },
     project_jury: {
       getHref: (id: string) => `/app/events/${id}`,
-      roles: ["User"], // Requiere subrol JURY en el evento específico
+      roles: ["User"], // Requires subrole JURY in the specific event
     },
     evaluations: {
       getHref: (id: string) => `/app/evaluations/${id}`,
-      roles: ["User"], // Requiere subrol JURY en el evento específico
+      roles: ["User"], // Requires subrole JURY in the specific event
     },
     criteria: {
       getHref: () => "/app/criteria",
@@ -90,10 +94,14 @@ export const paths = {
       getHref: (id: string) => `/public/discussions/${id}`,
     },
     project: {
-      getHref: (accessCode: string) => `/public/projects/${accessCode}`,
+      getHref: (eventId: string | number) => `/public/projects/${eventId}`,
     },
     event: {
-      getHref: () => "/public/events",
+      getHref: (eventId?: string | number) =>
+        eventId ? `/public/events/${eventId}` : '/public/events',
+    },
+    developers: {
+      getHref: () => '/public/developers',
     },
   },
 } as const;

@@ -33,13 +33,14 @@ export const EventDashboard = ({ eventId }: EventDashboardProps) => {
   }
 
   const events = eventsQuery.data?.data || [];
+  const currentEvent = events.find((event) => String(event.id) === String(eventId));
 
   // Renderizar el dashboard según el rol del usuario en este evento
-  if (events[0].role.name === 'Juror') {
+  if (currentEvent?.role?.name === 'Juror') {
     return <JuryDashboard eventId={eventId} />;
   }
 
-  if (events[0].role.name === 'Participant') {
+  if (currentEvent?.role?.name === 'Participant') {
     return <StudentDashboard eventId={eventId} />;
   }
 

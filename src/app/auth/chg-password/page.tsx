@@ -25,20 +25,6 @@ export default function Page() {
 
   return (
     <PublicLayout showNavLinks={false} showLoginButton={false}>
-      {/* Animated Background Gradient - Same as landing */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-        <div
-          className="parallax-slow absolute top-0 left-0 w-[150%] h-[150%]"
-          style={{
-            background: `
-							radial-gradient(circle at 20% 20%, oklch(0.75 0.15 195 / 0.15) 0%, transparent 50%),
-							radial-gradient(circle at 80% 80%, oklch(0.82 0.18 330 / 0.15) 0%, transparent 50%),
-							radial-gradient(circle at 50% 50%, oklch(0.88 0.16 85 / 0.1) 0%, transparent 50%)
-						`,
-          }}
-        />
-      </div>
-
       <div className="auth-page relative z-10 flex flex-col items-center justify-center min-h-[calc(100vh-6rem)]">
         <div className="w-full max-w-2xl mb-6 sm:mb-8 text-center px-4">
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground mb-3">

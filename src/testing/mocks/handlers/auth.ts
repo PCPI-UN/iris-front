@@ -1,4 +1,3 @@
-import Cookies from 'js-cookie';
 import { HttpResponse, http } from 'msw';
 
 import { env } from '@/config/env';
@@ -8,8 +7,8 @@ import {
   authenticate,
   hash,
   requireAuth,
-  AUTH_COOKIE,
   networkDelay,
+  AUTH_COOKIE,
 } from '../utils';
 
 type RegisterBody = {
@@ -78,9 +77,6 @@ export const authHandlers = [
         password: userObject.password,
       });
 
-      // todo: remove once tests in Github Actions are fixed
-      Cookies.set(AUTH_COOKIE, result.jwt, { path: '/' });
-
       return HttpResponse.json(result, {
         headers: {
           // with a real API servier, the token cookie should also be Secure and HttpOnly
@@ -102,9 +98,6 @@ export const authHandlers = [
       const credentials = (await request.json()) as LoginBody;
       const result = authenticate(credentials);
 
-      // todo: remove once tests in Github Actions are fixed
-      Cookies.set(AUTH_COOKIE, result.jwt, { path: '/' });
-
       return HttpResponse.json(result, {
         headers: {
           // with a real API servier, the token cookie should also be Secure and HttpOnly
@@ -122,9 +115,6 @@ export const authHandlers = [
   http.post(`${env.API_URL}/auth/logout`, async () => {
     await networkDelay();
 
-    // todo: remove once tests in Github Actions are fixed
-    Cookies.remove(AUTH_COOKIE);
-
     return HttpResponse.json(
       { message: 'Logged out' },
       {
@@ -139,13 +129,16 @@ export const authHandlers = [
     await networkDelay();
 
     try {
-      const { user } = requireAuth(cookies);
+      const { user, error } = requireAuth(cookies);
 
-      if (!user) {
-        return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 });
+      if (error || !user) {
+        return HttpResponse.json(
+          { message: error ?? 'Unauthorized' },
+          { status: 401 },
+        );
       }
 
-      return HttpResponse.json(user);
+      return HttpResponse.json({ data: user });
     } catch (error: any) {
       return HttpResponse.json(
         { message: error?.message || 'Server Error' },

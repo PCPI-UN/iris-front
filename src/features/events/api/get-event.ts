@@ -11,7 +11,7 @@ export const getEvent = async ({
   eventId: number;
 }): Promise<{ data: Event }> => {
   const response = await api.get<Record<string, any>>(`/events/${eventId}`);
-  const rawEvent = response?.event ?? response?.data;
+  const rawEvent = response?.data?.data ?? response?.event ?? response?.data;
 
   return {
     data: normalizeEvent(rawEvent),
@@ -31,5 +31,9 @@ type UseEventOptions = {
 };
 
 export const useEvent = ({ eventId, queryConfig }: UseEventOptions) => {
-  return useQuery({ ...getEventQueryOptions(eventId), ...queryConfig });
+  return useQuery({ 
+    ...getEventQueryOptions(eventId), 
+    enabled: !!eventId,
+    ...queryConfig 
+  });
 };

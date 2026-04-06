@@ -15,7 +15,7 @@ export function Footer() {
             <span className="text-2xl font-bold prismatic-text">{landingContent.footer.brand}</span>
           </div>
           
-          {/* Descripción */}
+          {/* Descripction */}
           <p className="text-sm text-muted-foreground max-w-md">
             {landingContent.footer.description}
           </p>

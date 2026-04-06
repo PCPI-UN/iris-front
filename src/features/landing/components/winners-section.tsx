@@ -11,7 +11,7 @@ interface WinnersSectionProps {
   winnersSectionRef: RefObject<HTMLElement>;
 }
 
-// Datos de ejemplo de proyectos ganadores (esto debería venir de una API)
+// Example data for winners (replace with real data as needed)
 const winnersData = [
   {
     engineeringId: 1,
