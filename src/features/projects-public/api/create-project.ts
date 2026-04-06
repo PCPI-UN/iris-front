@@ -28,7 +28,7 @@ export type CreateCompetitionInput = z.infer<typeof createCompetitionInputSchema
 
 // Función para enviar al backend usando FormData
 export const createProject = ({ data }: { data: FormData }): Promise<Project> => {
-  return api.post(`/projects`, data);
+  return api.post(`/projects`, data, { suppressErrorNotification: true });
 };
 
 // Hook para la mutación

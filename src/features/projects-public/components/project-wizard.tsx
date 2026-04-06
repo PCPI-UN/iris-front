@@ -10,7 +10,7 @@ import { ReviewStep } from "./wizard-steps/review-step";
 import { useCoursesDropdown } from "@/features/courses/api/get-courses-dropdown";
 import { CheckCircle2, FileText, Users, Upload } from "lucide-react";
 import { cn } from "@/utils/cn";
-import { set, z } from "zod";
+import { z } from "zod";
 import {
   participantSchemaCompetition,
   participantSchemaExposition,
@@ -63,6 +63,37 @@ type ProjectWizardProps = {
   eventType: "Competition" | "Exposition";
 };
 
+const CONFLICT_MESSAGE_KEYS = [
+  "Conflicting active submissions found for emails",
+  "already have an existing project in this event",
+];
+
+const normalizeBackendErrorMessage = (rawMessage: unknown): string => {
+  const fallback = "Error al crear el proyecto. Por favor intente nuevamente.";
+
+  const message = Array.isArray(rawMessage)
+    ? rawMessage.join("\n")
+    : typeof rawMessage === "string"
+      ? rawMessage
+      : fallback;
+
+  const isConflictMessage = CONFLICT_MESSAGE_KEYS.some((key) =>
+    message.toLowerCase().includes(key.toLowerCase()),
+  );
+
+  if (!isConflictMessage) {
+    return message;
+  }
+
+  const emails = message.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi) || [];
+
+  if (emails.length === 0) {
+    return "Uno o más participantes ya tienen un proyecto registrado en este evento.";
+  }
+
+  return `Uno o más participantes ya tienen un proyecto registrado en este evento: ${emails.join(", ")}`;
+};
+
 export function ProjectWizard({ eventId, eventType}: ProjectWizardProps) {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
@@ -84,6 +115,7 @@ export function ProjectWizard({ eventId, eventType}: ProjectWizardProps) {
 
   const steps = getSteps();
   const [stepErrors, setStepErrors] = useState<string[]>([]);
+  const [isSubmitError, setIsSubmitError] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   
 
@@ -130,13 +162,16 @@ export function ProjectWizard({ eventId, eventType}: ProjectWizardProps) {
   const createProjectMutation = useCreateProject({
     mutationConfig: {
       onSuccess: () => {
+        setIsSubmitError(false);
         setShowSuccessModal(true);
       },
       onError: (error: any) => {
-        const errorMessage =
+        setIsSubmitError(true);
+        const rawMessage =
           error?.response?.data?.message ||
           error?.message ||
           "Error al crear el proyecto. Por favor intente nuevamente.";
+        const errorMessage = normalizeBackendErrorMessage(rawMessage);
         setStepErrors([errorMessage]);
       },
     },
@@ -155,6 +190,7 @@ export function ProjectWizard({ eventId, eventType}: ProjectWizardProps) {
   };
 
 const validateStep = (step: number): boolean => {
+  setIsSubmitError(false);
   setStepErrors([]);
 
   try {
@@ -204,12 +240,14 @@ const validateStep = (step: number): boolean => {
 
   const handleBack = () => {
     if (currentStep > 1) {
+      setIsSubmitError(false);
       setStepErrors([]);
       setCurrentStep(currentStep - 1);
     }
   };
 
 const handleSubmit = () => {
+  setIsSubmitError(true);
   setStepErrors([]);
 
   try {
@@ -418,7 +456,9 @@ const handleSubmit = () => {
           {stepErrors.length > 0 && (
             <div className="mt-4 p-3 sm:p-4 glass-card border-2 border-red-500/50 rounded-lg">
               <p className="text-red-400 font-semibold mb-2 text-sm sm:text-base">
-                Errores de validación:
+                {isSubmitError
+                  ? "¡Ups! No pudimos completar tu registro"
+                  : "¡Ups! Algo salió mal"}
               </p>
               <ul className="list-disc list-inside space-y-1">
                 {stepErrors.map((error, idx) => (
