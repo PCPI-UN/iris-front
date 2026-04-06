@@ -95,17 +95,15 @@ async function fetchApi<T>(
     next,
   });
 
-  // Interceptor para 401: Refrescar token y reintentar
-  // Solo intentar refresh si:
-  // 1. No es un endpoint de auth
-  // 2. No estamos en una página de auth (evita loops)
-  const isAuthEndpoint = [
-    '/auth/refresh',
-    '/auth/login',
-    '/auth/logout',
-    '/auth/register',
-    '/auth/signup',
-  ].some((authPath) => url.includes(authPath));
+  // Interceptor for 401: Refresh token and retry
+  // Only attempt auto refresh/redirect if we are on a protected route.
+  // On public routes, a 401 might be expected (e.g., /auth/me without session).
+  const isAuthEndpoint =
+    url.includes('/auth/refresh') ||
+    url.includes('/auth/login') ||
+    url.includes('/auth/logout') ||
+    url.includes('/auth/signup');
+  const isAuthMeEndpoint = url.includes('/auth/me');
   const isAuthPage = typeof window !== 'undefined' && window.location.pathname.startsWith('/auth');
   const isProtectedPage = typeof window !== 'undefined' && window.location.pathname.startsWith('/app');
 

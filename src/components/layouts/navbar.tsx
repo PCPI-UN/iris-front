@@ -40,6 +40,7 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
   const isDevelopersPage = pathname === paths.public.developers.getHref();
   const isPublicEventDetail = /^\/public\/events\/[^/]+$/.test(pathname);
   const isLoginPage = pathname === paths.auth.login.getHref();
+  const isSignupPage = pathname === paths.auth.signup.getHref();
   const shouldShowNavLinks = showNavLinks && (isLandingPage || isDevelopersPage);
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -123,18 +124,6 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
       <nav className={`${navbarFont.className} fixed top-0 left-0 right-0 z-40 px-4 sm:px-6 py-3 sm:py-4 md:px-12 glass-effect border-b border-border/30`}>
         <div className="max-w-7xl mx-auto relative flex items-center justify-between">
           <div className="flex items-center gap-2">
-            {(isDevelopersPage || isPublicEventDetail || isLoginPage) && (
-  <Button
-    isIconOnly
-    size="sm"
-    variant="flat"
-    onClick={handleBack}
-    aria-label="Volver"
-    className="order-first mr-2 h-10 w-10 shrink-0 glass-effect border border-primary/40 text-primary hover:text-foreground hover:border-primary/60 shadow-[0_0_18px_oklch(0.75_0.15_195/0.45)] md:h-8 md:w-8"
-  >
-    <ArrowLeft size={18} className="drop-shadow-[0_0_6px_oklch(0.75_0.15_195/0.7)] md:h-4 md:w-4" />
-  </Button>
-)}
 
             <Link href="/" className="flex items-center gap-2">
               <div className="relative">
@@ -142,6 +131,19 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
                 <div className="absolute inset-0 blur-xl bg-primary/30 animate-pulse" />
               </div>
             </Link>
+
+            {(isDevelopersPage || isPublicEventDetail || isLoginPage || isSignupPage) && (
+              <Button
+                isIconOnly
+                size="sm"
+                variant="flat"
+                onClick={handleBack}
+                aria-label="Volver"
+                className="order-first mr-2 h-10 w-10 shrink-0 glass-effect border border-primary/40 text-primary hover:text-foreground hover:border-primary/60 shadow-[0_0_18px_oklch(0.75_0.15_195/0.45)] md:absolute md:right-full md:mr-6 md:h-8 md:w-8"
+              >
+                <ArrowLeft size={18} className="drop-shadow-[0_0_6px_oklch(0.75_0.15_195/0.7)] md:h-4 md:w-4" />
+              </Button>
+            )}
           </div>
 {/* Show navigation links where it's due */}
           {shouldShowNavLinks && (
