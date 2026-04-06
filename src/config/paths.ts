@@ -2,6 +2,14 @@
 // Roles are defined in src/types/api.ts as: "ADMIN" | "USER"
 // Note: STUDENT and JURY are event-specific subroles, not main user roles
 
+const slugify = (value: string) =>
+  value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
 export const paths = {
   home: {
     getHref: () => "/",
@@ -100,8 +108,25 @@ export const paths = {
       getHref: (eventId: string | number) => `/public/projects/${eventId}`,
     },
     event: {
-      getHref: (eventId?: string | number) =>
-        eventId ? `/public/events/${eventId}` : '/public/events',
+      getHref: (
+        eventId?:
+          | string
+          | number
+          | { id: string | number; name?: string | null | undefined },
+      ) => {
+        if (!eventId) {
+          return '/public/events';
+        }
+
+        if (typeof eventId === 'object') {
+          const eventSlug = eventId.name ? slugify(eventId.name) : '';
+          return eventSlug
+            ? `/public/events/${eventSlug}-${String(eventId.id)}`
+            : `/public/events/${String(eventId.id)}`;
+        }
+
+        return `/public/events/${String(eventId)}`;
+      },
     },
     developers: {
       getHref: () => '/public/developers',

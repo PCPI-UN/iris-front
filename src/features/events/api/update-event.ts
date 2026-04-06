@@ -8,6 +8,7 @@ import { Event } from "@/types/api";
 import { normalizeEvent } from "./event-adapter";
 import { getEventQueryOptions } from "./get-event";
 import { getEventsQueryOptions } from "./get-events";
+import { normalizeEventDatesForPayload } from '../utils/event-date-payload';
 
 export const updateEventInputSchema = z.object({
   id: z.number().positive(),
@@ -59,7 +60,7 @@ export const updateEvent = ({
   data: UpdateEventInput;
 }): Promise<Event> => {
   return api
-    .patch<Record<string, any>>(`/events/${data.id}`, data)
+    .patch<Record<string, any>>(`/events/${data.id}`, normalizeEventDatesForPayload(data))
     .then((response) =>
       normalizeEvent(response?.data?.data ?? response?.event ?? response?.data ?? response)
     );

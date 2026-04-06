@@ -36,15 +36,14 @@ const parseLocalDate = (value: string) => {
   return new Date(year, month - 1, day);
 };
 
-export const formatDateRange = (startDate: string, endDate: string) => {
+export const formatDateRange = (startDate: string, _endDate: string) => {
   const start = parseLocalDate(startDate);
-  const end = parseLocalDate(endDate);
 
-  const endDay = end.getDate();
+  const startDay = start.getDate();
   const month = start.toLocaleDateString("es", { month: "long" });
   const year = start.getFullYear();
 
-  return `${endDay} de ${month} ${year}`;
+  return `${startDay} de ${month} ${year}`;
 };
 
 export const getStatusText = (statusName: string) => {

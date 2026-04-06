@@ -1,5 +1,7 @@
 import { Event } from "@/types/api";
 
+const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
 const normalizeEventId = (value: unknown): number => {
   if (typeof value === "number" && Number.isFinite(value)) {
     return value;
@@ -34,6 +36,45 @@ const normalizeTimestamp = (value: unknown): number => {
   }
 
   return Date.now();
+};
+
+const normalizeEventDate = (value: unknown): string => {
+  if (typeof value !== "string") {
+    return "";
+  }
+
+  const normalized = value.trim();
+
+  if (!normalized) {
+    return "";
+  }
+
+  const dateOnly = normalized.slice(0, 10);
+  if (DATE_ONLY_PATTERN.test(dateOnly)) {
+    return dateOnly;
+  }
+
+  // Backend timestamps are stored with Bogotá offset applied
+  // e.g., "2026-03-23T05:00:00" represents 2026-03-23T00:00:00 COT
+  // Parse as UTC and adjust to extract the correct local date
+  let dateUTC: Date;
+  if (normalized.includes("Z") || normalized.includes("+") || /\-\d{2}:\d{2}$/.test(normalized)) {
+    dateUTC = new Date(normalized);
+  } else {
+    dateUTC = new Date(normalized + "Z");
+  }
+
+  if (Number.isNaN(dateUTC.getTime())) {
+    return normalized;
+  }
+
+  // Bogotá timezone offset: UTC-5 (subtract 5 hours to get local time)
+  const BOGOTA_OFFSET_MS = 5 * 60 * 60 * 1000;
+  const localDate = new Date(dateUTC.getTime() - BOGOTA_OFFSET_MS);
+
+  const pad = (segment: number) => String(segment).padStart(2, "0");
+
+  return `${localDate.getUTCFullYear()}-${pad(localDate.getUTCMonth() + 1)}-${pad(localDate.getUTCDate())}`;
 };
 
 export const normalizeEvent = (raw: any): Event => {
@@ -72,9 +113,9 @@ export const normalizeEvent = (raw: any): Event => {
     id: normalizeEventId(raw?.id),
     name: raw?.name ?? "",
     description: raw?.description ?? "",
-    startDate: raw?.startDate ?? "",
-    endDate: raw?.endDate ?? "",
-    inscriptionDeadline: raw?.inscriptionDeadline ?? "",
+    startDate: normalizeEventDate(raw?.startDate),
+    endDate: normalizeEventDate(raw?.endDate),
+    inscriptionDeadline: normalizeEventDate(raw?.inscriptionDeadline),
     accessCode: raw?.accessCode ?? "",
     isPubliclyJoinable:
       typeof raw?.isPubliclyJoinable === "boolean"

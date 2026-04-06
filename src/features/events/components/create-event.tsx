@@ -32,6 +32,7 @@ type Award = {
 
 const isWholeNumberInput = (value: string) => value === "" || /^(0|[1-9]\d*)$/.test(value);
 const isDecimalNumberInput = (value: string) => value === "" || /^(0|[1-9]\d*)(\.\d{0,2})?$/.test(value);
+
 export const CreateEvent = () => {
   const { addNotification } = useNotifications();
   const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
@@ -110,6 +111,7 @@ export const CreateEvent = () => {
     try {
       const dataToSubmit = {
         ...formData,
+        inscriptionDeadline: formData.inscriptionDeadline,
         evaluationsOpened: Boolean(formData.evaluationsOpened),
         isPubliclyJoinable: Boolean(formData.isPubliclyJoinable),
         active: Boolean(formData.active)??true,
