@@ -16,6 +16,7 @@ type LoginFormProps = {
 
 export const LoginForm = ({ onSuccess }: LoginFormProps) => {
   const [showPassword, setShowPassword] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string>('');
   const login = useLogin({
     onSuccess,
   });
@@ -44,11 +45,23 @@ export const LoginForm = ({ onSuccess }: LoginFormProps) => {
       <Form
         onSubmit={async (e) => {
           e.preventDefault();
+          setErrorMessage('');
           const form = e.target as HTMLFormElement;
           const formData = new FormData(form);
           const data = Object.fromEntries(formData);
           const values = await loginInputSchema.parseAsync(data);
-          await login.mutateAsync(values);
+          try {
+            await login.mutateAsync(values);
+          } catch (error: any) {
+            const message = error?.message || 'Error al iniciar sesión';
+            if (message.toLowerCase().includes('invalid username or password')) {
+              setErrorMessage('Correo o contraseña incorrectos');
+            } else if (message.toLowerCase().includes('unauthorized')) {
+              setErrorMessage('Credenciales inválidas');
+            } else {
+              setErrorMessage(message);
+            }
+          }
         }}
       >
         <Input
@@ -86,6 +99,11 @@ export const LoginForm = ({ onSuccess }: LoginFormProps) => {
         >
           Iniciar sesión
         </Button>
+        {errorMessage && (
+          <div className="text-sm text-red-500 text-center mt-2">
+            {errorMessage}
+          </div>
+        )}
         <div className="w-full flex items-center justify-center">
           <NextLink
             href={paths.auth.forgot_password.getHref(redirectTo)}
