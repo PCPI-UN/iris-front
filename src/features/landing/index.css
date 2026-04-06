@@ -1180,8 +1180,6 @@ section[class*="story"]::before {
 /* Event card animations */
 .landing-page .event-card {
   will-change: transform, opacity;
-  opacity: 0;
-  transform: translateY(60px) scale(0.95);
 }
 
 @media (max-width: 1024px) {

@@ -1,8 +1,9 @@
 import { queryOptions, useQuery } from "@tanstack/react-query";
 
-import { api } from "@/lib/api-client";
-import { QueryConfig } from "@/lib/react-query";
-import { Event } from "@/types/api";
+import { api } from '@/lib/api-client';
+import { QueryConfig } from '@/lib/react-query';
+import { Event } from '@/types/api';
+import { normalizeEvent } from './event-adapter';
 
 export const getPublicEventDetail = async ({
   eventId,
@@ -27,7 +28,7 @@ export const getPublicEventDetail = async ({
     }
 
     return {
-      data: event,
+      data: normalizeEvent(event),
     };
   };
 
