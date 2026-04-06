@@ -156,7 +156,7 @@ async function fetchApi<T>(
     const shouldNotify =
       typeof window !== 'undefined' &&
       !suppressErrorNotification &&
-      !(response.status === 401 && isAuthMeEndpoint);
+      !(response.status === 401 && isAuthEndpoint);
 
     if (shouldNotify) {
       useNotifications.getState().addNotification({

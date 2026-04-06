@@ -4,6 +4,7 @@ import React, { useEffect } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Select, SelectItem } from "@/components/ui/select";
 import { useEvents } from "@/features/events/api/get-events";
+import { CategoriesDropdown } from "./category-dropdown";
 
 export const EventsDropdown = () => {
   const router = useRouter();
@@ -50,9 +51,10 @@ export const EventsDropdown = () => {
   };
 
   return (
-    <div className="w-full max-w-xs">
-      <Select
-        label="Seleccionar eventos"
+    <div className="grid grid-cols-2 gap-2 w-full">
+      <div className="w-full">
+        <Select
+        label="Eventos"
         placeholder="Selecciona uno o más eventos"
         selectionMode="multiple"
         selectedKeys={selectedKeys}
@@ -69,6 +71,11 @@ export const EventsDropdown = () => {
           </SelectItem>
         )}
       </Select>
+      </div>
+      
+        <CategoriesDropdown/>
+      
+      
     </div>
   );
 };

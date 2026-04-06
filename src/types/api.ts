@@ -123,11 +123,12 @@ export type Project = Entity<{
   name: string;
   description?: string;
   eventNumber?: string;
-  state: "UNDER_REVIEW" | "APPROVED" | "REJECTED";
+  state: "UNDER_REVIEW" | "APPROVED" | "REJECTED" | "REQUEST_CHANGES";
   participants: ProjectParticipant[];
   documents: ProjectDocument[];
   jurorAssignments: ProjectAssignment[];
   pendingParticipants: ProjectParticipant[];
+  reason: string;
   evaluated: boolean;
   createdAt: number;
   updatedAt: number;
