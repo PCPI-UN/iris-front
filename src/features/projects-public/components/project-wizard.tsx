@@ -228,6 +228,7 @@ const handleSubmit = () => {
       // Validar schema de competencia
       const payloadData = {
         eventId: String(eventId),
+        eventType: "Competition",
         courseId: String(wizardData.project.courseId),
         participants: JSON.stringify(
           wizardData.participants.map(p => ({
@@ -245,6 +246,7 @@ const handleSubmit = () => {
 
       const formData = new FormData();
       formData.append("eventId", payloadData.eventId);
+      formData.append("eventType", payloadData.eventType);
       formData.append("courseId", payloadData.courseId);
       formData.append("participants", payloadData.participants);
       formData.append("name", `Equipo de ${wizardData.participants.map(p => p.firstName).join("-")}`);
@@ -269,6 +271,7 @@ const handleSubmit = () => {
       name: wizardData.project.name,
       description: wizardData.project.description,
       eventId: String(eventId),
+      eventType: "Exposition",
       courseId: String(wizardData.project.courseId),
       participants: JSON.stringify(
         wizardData.participants.map(p => ({
@@ -296,6 +299,7 @@ const handleSubmit = () => {
     formData.append("name", payloadData.name);
     if (payloadData.description) formData.append("description", payloadData.description);
     formData.append("eventId", payloadData.eventId);
+    formData.append("eventType", payloadData.eventType);
     formData.append("courseId", payloadData.courseId);
     formData.append("participants", payloadData.participants);
     formData.append("documents", payloadData.documents);
