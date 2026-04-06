@@ -8,9 +8,12 @@ export const paths = {
   },
 
   auth: {
-    register: {
+    signup: {
       getHref: (redirectTo?: string | null | undefined) =>
-        `/auth/register${redirectTo ? `?redirectTo=${encodeURIComponent(redirectTo)}` : ""}`,
+        `/auth/signup${redirectTo ? `?redirectTo=${encodeURIComponent(redirectTo)}` : ""}`,
+    },
+    signup_sent: {
+      getHref: () => '/auth/signup/sent',
     },
     login: {
       getHref: (redirectTo?: string | null | undefined) =>
@@ -79,11 +82,11 @@ export const paths = {
     },
     project_jury: {
       getHref: (id: string) => `/app/events/${id}`,
-      roles: ["User"], // Requiere subrol JURY en el evento específico
+      roles: ["User"], // Requires subrole JURY in the specific event
     },
     evaluations: {
       getHref: (id: string) => `/app/evaluations/${id}`,
-      roles: ["User"], // Requiere subrol JURY en el evento específico
+      roles: ["User"], // Requires subrole JURY in the specific event
     },
     criteria: {
       getHref: () => "/app/criteria",
@@ -99,6 +102,9 @@ export const paths = {
     event: {
       getHref: (eventId?: string | number) =>
         eventId ? `/public/events/${eventId}` : '/public/events',
+    },
+    developers: {
+      getHref: () => '/public/developers',
     },
   },
 } as const;

@@ -4,8 +4,11 @@ import { api } from "@/lib/api-client";
 import { QueryConfig } from "@/lib/react-query";
 import { Meta, Project } from "@/types/api";
 
+//MOCKAPI -> category
+//BACK -> courseId
+
 export const getProjects = async (
-  { page, eventId, state }: { page?: number; eventId?: number, state?: string } = { page: 1 }
+  { page, eventId, state, courseId }: { page?: number; eventId?: number, state?: string, courseId?: number } = { page: 1 }
 ): Promise<{ data: Project[]; meta: Meta }> => {
   const response = await api.get<{
     items: Project[];
@@ -13,7 +16,7 @@ export const getProjects = async (
     limit: number;
     total: number;
     totalPages: number;
-  }>(`/projects/by-event/${eventId}`, { params: { page, state } });
+  }>(`/projects/by-event/${eventId}`, { params: { page, state, courseId } });
   
   return {
     data: response.items || [],
@@ -30,13 +33,14 @@ export const getProjectsQueryOptions = ({
   page = 1,
   eventId,
   state,
-}: { page?: number; eventId?: number; state?: string } = {}) => {
+  courseId,
+}: { page?: number; eventId?: number; state?: string, courseId?: number } = {}) => {
   return queryOptions({
     queryKey: [
       "projects",
-      { page, eventId, state },
+      { page, eventId, state, courseId },
     ],
-    queryFn: () => getProjects({ page, eventId, state }),
+    queryFn: () => getProjects({ page, eventId, state, courseId }),
   });
 };
 
@@ -44,6 +48,7 @@ type UseProjectsOptions = {
   page?: number;
   eventId?: number;
   state?: string;
+  courseId?: number;
   queryConfig?: QueryConfig<typeof getProjectsQueryOptions>;
 };
 
@@ -52,9 +57,10 @@ export const useProjects = ({
   page,
   eventId,
   state,
+  courseId
 }: UseProjectsOptions) => {
   return useQuery({
-    ...getProjectsQueryOptions({ page, eventId, state }),
+    ...getProjectsQueryOptions({ page, eventId, state, courseId }),
     ...queryConfig,
   });
 };

@@ -90,7 +90,7 @@ export const AvatarGroup = ({
     );
   };
 
-  // 👉 Esta es la lógica clave:
+  // Logic to determine which participants to show (pending first, then confirmed)
   const activeMembers =
     pendingParticipants.length > 0 ? pendingParticipants : participants;
 

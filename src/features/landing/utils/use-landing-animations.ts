@@ -28,6 +28,8 @@ export function useLandingAnimations(
   }
 ) {
   useEffect(() => {
+    let delayedRefreshTimer: ReturnType<typeof setTimeout> | null = null;
+
     // Kill all existing ScrollTriggers to prevent duplicates
     ScrollTrigger.getAll().forEach(trigger => trigger.kill());
     
@@ -265,14 +267,12 @@ export function useLandingAnimations(
           scrollTrigger: {
             trigger: horizontalSection,
             start: 'top top',
-            pin: true, 
+            pin: true,
             pinSpacing: true,
-            pinType: 'fixed',
-            pinReparent: false,
-            scrub: true,
-            end: () => '+=' + getHorizontalDistance() * 0.6,
-            anticipatePin: 0,
-            invalidateOnRefresh: false,
+            scrub: 0.8,
+            end: () => '+=' + getHorizontalDistance(),
+            anticipatePin: 1,
+            invalidateOnRefresh: true,
             fastScrollEnd: false,
             refreshPriority: 1,
             onRefresh: (self) => {
@@ -371,7 +371,7 @@ export function useLandingAnimations(
         });
       }
 
-      // Events section animation - con retry para cards asíncronas
+      // Events section animation 
       if (refs.eventsSectionRef.current) {
         const setupEventCardsAnimation = () => {
           if (!refs.eventsSectionRef.current) return;
@@ -401,20 +401,26 @@ export function useLandingAnimations(
               }
             );
           } else {
-            // Si no hay cards aún, intentar de nuevo en 100ms
+            // If there are no event cards found, we can set a timeout to check again after a short delay
             setTimeout(setupEventCardsAnimation, 100);
           }
         };
         
-        // Iniciar setup con un pequeño delay
+        // Handle delay
         setTimeout(setupEventCardsAnimation, 100);
       }
 
       // Refresh ScrollTrigger after all animations are set up
       ScrollTrigger.refresh();
+      delayedRefreshTimer = setTimeout(() => {
+        ScrollTrigger.refresh();
+      }, 140);
     });
 
     return () => {
+      if (delayedRefreshTimer) {
+        clearTimeout(delayedRefreshTimer);
+      }
       ctx.revert();
       ScrollTrigger.getAll().forEach(trigger => trigger.kill());
     };

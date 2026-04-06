@@ -1,5 +1,5 @@
 'use client';
-
+// Signup form component used in the registration page
 import { useState } from 'react';
 import NextLink from 'next/link';
 import { useSearchParams } from 'next/navigation';
@@ -19,20 +19,48 @@ export const RegisterForm = ({
   onSuccess,
 }: RegisterFormProps) => {
   const [showPassword, setShowPassword] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string>('');
   const registering = useRegister({ onSuccess });
   const searchParams = useSearchParams();
   const redirectTo = searchParams?.get('redirectTo');
 
+  // User can login with Microsoft instead of signing up manually.
+  const handleMicrosoftLogin = () => {
+    const params = new URLSearchParams();
+
+    if (redirectTo && redirectTo.startsWith('/') && !redirectTo.startsWith('//')) {
+      params.set('redirect', `redirect:${redirectTo}`);
+    }
+
+    const query = params.toString();
+    const loginUrl = query
+      ? `/api/auth/login/microsoft?${query}`
+      : '/api/auth/login/microsoft';
+
+    window.location.replace(loginUrl);
+  };
+
+
   return (
-    <div>
+    <div className="space-y-4">
       <Form
         onSubmit={async (e) => {
           e.preventDefault();
+          setErrorMessage('');
           const form = e.target as HTMLFormElement;
           const formData = new FormData(form);
           const data = Object.fromEntries(formData);
           const values = await registerInputSchema.parseAsync(data);
-          await registering.mutateAsync(values);
+          try {
+            await registering.mutateAsync(values);
+          } catch (error: any) {
+            const message = error?.message || 'Error al registrarse';
+            if (message.toLowerCase().includes('already exists')) {
+              setErrorMessage('Este correo ya está registrado');
+            } else {
+              setErrorMessage(message);
+            }
+          }
         }}
       >
             <Input
@@ -75,7 +103,7 @@ export const RegisterForm = ({
               }
             />
 
-            <div>
+            
               <Button
                 isLoading={registering.isPending}
                 type="submit"
@@ -83,9 +111,33 @@ export const RegisterForm = ({
               >
                 Registrarse
               </Button>
-            </div>
+              {errorMessage && (
+                <div className="text-sm text-red-500 text-center mt-2">
+                  {errorMessage}
+                </div>
+              )}
+            
       </Form>
-      <div className="mt-4 flex items-center justify-center">
+
+            <div className="w-full flex items-center justify-center mb-2 mt-2">
+        <a className="text-sm font-medium text-gray-400 text-center">
+          Si eres usuario Uninorte, puedes:
+        </a>
+      </div>
+      <Button
+        className="w-full mb-4"
+        onClick={handleMicrosoftLogin}
+        type="button"
+      >
+        <img
+          src="/microsoft.webp"
+          alt="Microsoft Logo"
+          className="inline-block w-7 h-7"
+        />
+        Ingresar con Outlook
+      </Button>
+          
+            <div className="mt-4 flex items-center justify-center">
         <div className="text-sm">
           ¿Ya tienes cuenta?
           <NextLink
@@ -96,6 +148,7 @@ export const RegisterForm = ({
           </NextLink>
         </div>
       </div>
+
     </div>
   );
 };

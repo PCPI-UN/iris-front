@@ -127,11 +127,12 @@ export type Project = Entity<{
   name: string;
   description?: string;
   eventNumber?: string;
-  state: "UNDER_REVIEW" | "APPROVED" | "REJECTED";
+  state: "UNDER_REVIEW" | "APPROVED" | "REJECTED" | "REQUEST_CHANGES";
   participants: ProjectParticipant[];
   documents: ProjectDocument[];
   jurorAssignments: ProjectAssignment[];
   pendingParticipants: ProjectParticipant[];
+  reason: string;
   evaluated: boolean;
   createdAt: number;
   updatedAt: number;
@@ -249,3 +250,14 @@ export type CriterionCourse = Entity<{
   courseId: number;
   criterionId: number;
 }>;
+
+export type DeveloperProfile = Entity<{
+  name: string;
+  role: string;
+  version: string;
+}>;
+
+export type DevelopersResponse = {
+  data: DeveloperProfile[];
+  meta?: Meta;
+};

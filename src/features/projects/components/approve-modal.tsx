@@ -4,18 +4,24 @@ import { useDisclosure } from "@/hooks/use-disclosure";
 import { useNotifications } from "@/components/ui/notifications";
 import { useApproveProject } from "../api/approve-project";
 
-export const ApproveProjectModal = ({ projectId }: { projectId: number }) => {
-  const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
+export const ApproveProjectModal = ({ projectId, isOpenTable, onOpenChangeTable }: { projectId: number, isOpenTable?: boolean; onOpenChangeTable?: (open: boolean) => void; }) => {
+  const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const { addNotification } = useNotifications();
   const approveMutation = useApproveProject();
 
+  const controlled = isOpenTable !== undefined;
+
   return (
     <>
-      <Button size="sm" onPress={onOpen}>
-        Aprobar
-      </Button>
+      {
+        !controlled && (
+          <Button size="sm" color="warning" onPress={onOpen} className="bg-transparent border border-[#ffffff30] py-5 text-white hover:bg-emerald-500/40">
+            Aprobar
+          </Button>
+        )
+      } 
 
-      <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="md">
+      <Modal isOpen={controlled ? isOpenTable : isOpen} onOpenChange={controlled ? onOpenChangeTable : onOpenChange} size="md">
         <ModalContent>
           {(onClose) => (
             <>
@@ -27,7 +33,8 @@ export const ApproveProjectModal = ({ projectId }: { projectId: number }) => {
                 </Button>
                 <Button
                   color="primary"
-                  isLoading={approveMutation.isPending}
+                  isLoading={ approveMutation.isPending }
+                  isDisabled={ approveMutation.isPending }
                   onPress={() =>
                     approveMutation.mutate(projectId, {
                       onSuccess: (res) => {

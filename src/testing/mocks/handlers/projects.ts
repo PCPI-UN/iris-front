@@ -1,7 +1,7 @@
 import { HttpResponse, http } from "msw";
 import { env } from "@/config/env";
 import { db, persistDb } from "../db";
-import { requireAuth, requireAdmin, networkDelay } from "../utils";
+import { requireAuth, networkDelay } from "../utils";
 
 type ProjectBody = {
   eventId: string;
@@ -12,6 +12,7 @@ type ProjectBody = {
   eventNumber?: string | undefined;
   state?: string;
   documents?: Array<{ type: string; url: string }>;
+  reason?: string;
   participants?: Array<{
     firstName: string;
     lastName: string;
@@ -72,6 +73,7 @@ type ProjectDTO = {
   eventNumber?: string;
   createdAt: number;
   documents: Array<{ type: string; url: string }>;
+  reason: string;
   participants: Array<{
     firstName: string;
     lastName: string;
@@ -91,8 +93,14 @@ const mapProjectToDTO = (project: any): ProjectDTO => {
     eventNumber: project.eventNumber || "",
     createdAt: project.createdAt,
     documents: project.documents ?? [],
+    reason: project.reason,
     participants: project.participants ?? [],
   };
+};
+
+type UpdateProjectStatusBody = {
+  state: "APPROVED" | "REJECTED" | "REQUEST_CHANGES";
+  reason?: string;
 };
 
 const validatePage = (page: number): number => {
@@ -149,6 +157,8 @@ export const projectsHandlers = [
       const url = new URL(request.url);
       const page = Number(url.searchParams.get("page") || 1);
       const state = url.searchParams.get("state");
+      const rawcourseId = url.searchParams.get("courseId");
+      const courseId = rawcourseId ? toInternalPrefixedId(rawcourseId, "course") : undefined;
       const pageSize = PAGE_SIZE;
       const validPage = validatePage(page);
 
@@ -158,6 +168,10 @@ export const projectsHandlers = [
 
       if (state) {
         allProjects = allProjects.filter((p) => String(p.state) === String(state));
+      }
+
+      if (courseId) {
+        allProjects = allProjects.filter((p) => String(p.courseId) === String(courseId))
       }
 
       // USER role: only assigned projects if jury of event
@@ -252,7 +266,8 @@ export const projectsHandlers = [
         state: data.state || "UNDER_REVIEW",
         createdAt: Date.now(),
         documents: data.documents ?? [],
-        participants: participants,
+        reason: data.reason,
+        participants: data.participants ?? [],
         jurorAssignments: data.jurorAssignments ?? [],
       });
       await persistDb("project");
@@ -431,6 +446,64 @@ export const projectsHandlers = [
   ),
 
   http.patch(
+    `${env.API_URL}/projects/:projectId/status`,
+    async({ cookies, request, params }) => {
+      await networkDelay();
+      try {
+        const { error } = requireAuth(cookies);
+        if (error) {
+          return HttpResponse.json({ message: error }, { status: 401 });
+        }
+
+        const projectId = params.projectId as string;
+        const { state, reason } = await request.json() as UpdateProjectStatusBody;
+
+        const allowedStates = ["PENDING","REJECTED", "APPROVED", "REQUEST_CHANGES"];
+
+        if (!allowedStates.includes(state)) {
+          return HttpResponse.json(
+            {message: "Invalid state"},
+            {status: 400}
+          );
+        }
+
+        if ((state === "REJECTED" || state === "REQUEST_CHANGES") && (!reason || reason.trim() === "")){
+          return HttpResponse.json(
+            {message: "reason is required for this state."},
+            {status: 400}
+          );
+        }
+
+        const project = db.project.update({
+          where: { id: { equals: projectId } },
+          data: {
+            state,
+            ... (reason !== undefined && { reason }),
+          },
+        });
+
+        if (!project) {
+          return HttpResponse.json(
+            {message: "Project not found"},
+            {status: 404}
+          );
+        }
+        await persistDb("project");
+        return HttpResponse.json({
+          success: true,
+          message: "Project status updated",
+        });
+
+      } catch (error: any) {
+        return HttpResponse.json(
+          { message: error?.message || "Server Error" },
+          { status: 500 }
+        );
+      }
+    }
+  ),
+
+  http.patch(
     `${env.API_URL}/projects/:projectId`,
     async ({ cookies, request, params }) => {
       await networkDelay();
@@ -462,6 +535,7 @@ export const projectsHandlers = [
         if (data.participants) updateData.participants = data.participants;
         if (data.jurorAssignments)
           updateData.jurorAssignments = data.jurorAssignments;
+        if (data.reason !== undefined) updateData.reason = data.reason;
 
         const project = db.project.update({
           where: { id: { equals: projectId } },

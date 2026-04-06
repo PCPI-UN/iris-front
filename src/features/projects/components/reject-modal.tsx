@@ -8,20 +8,36 @@ import { useNotifications } from "@/components/ui/notifications";
 import { useState } from "react";
 import { useRejectProject } from "../api/reject-project";
 
-export const RejectProjectModal = ({ projectId }: { projectId: number }) => {
-  const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
+export const RejectProjectModal = ({ projectId, isOpenTable, onOpenChangeTable }: { projectId: number, isOpenTable?: boolean; onOpenChangeTable?: (open: boolean) => void; }) => {
+  const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const { addNotification } = useNotifications();
   const rejectMutation = useRejectProject();
 
   const [reason, setReason] = useState("");
+  const controlled = isOpenTable !== undefined;
+
+  const handleOpenChange = (open: boolean) => {
+  if (!open) {
+    setReason("");
+  }
+
+  if (controlled) {
+    onOpenChangeTable?.(open);
+  } else {
+    onOpenChange();
+  }
+};
 
   return (
     <>
-      <Button size="sm" color="danger" onPress={onOpen}>
-        Rechazar
-      </Button>
-
-      <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="md">
+      {
+        !controlled && (
+          <Button size="sm" color="warning" onPress={onOpen} className="bg-transparent border border-[#ffffff30] py-5 text-white hover:bg-red-500/40">
+            Rechazar
+          </Button>
+        )
+      }
+      <Modal isOpen={controlled ? isOpenTable : isOpen} onOpenChange={handleOpenChange} size="md">
         <ModalContent>
           {(onCloseModal) => (
             <>
@@ -33,14 +49,17 @@ export const RejectProjectModal = ({ projectId }: { projectId: number }) => {
                   onChange={(e) => setReason(e.target.value)}
                   placeholder="Escribe el motivo del rechazo aquí..."
                   rows={4}
+                  isDisabled={ rejectMutation.isPending }
                 />
               </ModalBody>
               <ModalFooter className="space-x-2">
-                <Button variant="light" onPress={onCloseModal}>
+                <Button variant="light" onPress={() => {setReason(""); onCloseModal()}}>
                   Cancelar
                 </Button>
                 <Button
                   color="danger"
+                  isLoading={ rejectMutation.isPending }
+                  isDisabled={ rejectMutation.isPending }
                   onPress={() => {
                     if (!reason.trim()) {
                       addNotification({
