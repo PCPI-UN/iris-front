@@ -1,5 +1,7 @@
 import { Event } from "@/types/api";
 
+const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
 const normalizeEventId = (value: unknown): number => {
   if (typeof value === "number" && Number.isFinite(value)) {
     return value;
@@ -34,6 +36,32 @@ const normalizeTimestamp = (value: unknown): number => {
   }
 
   return Date.now();
+};
+
+const normalizeEventDate = (value: unknown): string => {
+  if (typeof value !== "string") {
+    return "";
+  }
+
+  const normalized = value.trim();
+
+  if (!normalized) {
+    return "";
+  }
+
+  const dateOnly = normalized.slice(0, 10);
+  if (DATE_ONLY_PATTERN.test(dateOnly)) {
+    return dateOnly;
+  }
+
+  const parsed = new Date(normalized);
+  if (Number.isNaN(parsed.getTime())) {
+    return normalized;
+  }
+
+  const pad = (segment: number) => String(segment).padStart(2, "0");
+
+  return `${parsed.getFullYear()}-${pad(parsed.getMonth() + 1)}-${pad(parsed.getDate())}`;
 };
 
 export const normalizeEvent = (raw: any): Event => {
@@ -72,9 +100,9 @@ export const normalizeEvent = (raw: any): Event => {
     id: normalizeEventId(raw?.id),
     name: raw?.name ?? "",
     description: raw?.description ?? "",
-    startDate: raw?.startDate ?? "",
-    endDate: raw?.endDate ?? "",
-    inscriptionDeadline: raw?.inscriptionDeadline ?? "",
+    startDate: normalizeEventDate(raw?.startDate),
+    endDate: normalizeEventDate(raw?.endDate),
+    inscriptionDeadline: normalizeEventDate(raw?.inscriptionDeadline),
     accessCode: raw?.accessCode ?? "",
     isPubliclyJoinable:
       typeof raw?.isPubliclyJoinable === "boolean"
