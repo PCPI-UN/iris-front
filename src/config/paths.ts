@@ -105,7 +105,21 @@ export const paths = {
       getHref: (id: string) => `/public/discussions/${id}`,
     },
     project: {
-      getHref: (eventId: string | number) => `/public/projects/${eventId}`,
+      getHref: (
+        event:
+          | string
+          | number
+          | { id: string | number; name?: string | null | undefined },
+      ) => {
+        if (typeof event === 'object') {
+          const projectSlug = event.name ? slugify(event.name) : '';
+          return projectSlug
+            ? `/public/projects/${projectSlug}-${String(event.id)}`
+            : `/public/projects/${String(event.id)}`;
+        }
+
+        return `/public/projects/${String(event)}`;
+      },
     },
     event: {
       getHref: (

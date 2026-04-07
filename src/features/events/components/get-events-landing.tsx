@@ -89,7 +89,14 @@ export const GetEventsLanding = () => {
 
                 {!isInscriptionClosed && (
                   <Button
-                    onPress={() => router.push(paths.public.project.getHref(event.id))}
+                    onPress={() =>
+                      router.push(
+                        paths.public.project.getHref({
+                          id: event.id,
+                          name: event.name,
+                        }),
+                      )
+                    }
                   >
                     Registrarse
                   </Button>

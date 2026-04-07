@@ -43,6 +43,48 @@ const wait = (ms: number): Promise<void> => {
   return new Promise((resolve) => setTimeout(resolve, ms));
 };
 
+export const extractEventIdFromSlug = (
+  value: string | number,
+): { eventId: string; eventSlug: string | null } => {
+  const normalizedValue = String(value ?? '').trim();
+  const slugMatch = normalizedValue.match(/^(.*?)-(\d+)$/);
+
+  if (slugMatch) {
+    return {
+      eventId: slugMatch[2],
+      eventSlug: slugMatch[1],
+    };
+  }
+
+  return {
+    eventId: normalizedValue,
+    eventSlug: null,
+  };
+};
+
+const buildProjectHref = (
+  eventId: string | number,
+  eventName?: string | null,
+) => {
+  const { eventId: normalizedEventId, eventSlug } = extractEventIdFromSlug(eventId);
+
+  if (eventName?.trim()) {
+    return paths.public.project.getHref({
+      id: normalizedEventId,
+      name: eventName,
+    });
+  }
+
+  if (eventSlug) {
+    return paths.public.project.getHref({
+      id: normalizedEventId,
+      name: eventSlug,
+    });
+  }
+
+  return paths.public.project.getHref(normalizedEventId);
+};
+
 export const isUserRegisteredInEvent = async (
   eventId: string | number,
 ): Promise<boolean> => {
@@ -96,13 +138,15 @@ export const isUserRegisteredInEvent = async (
 
 export const resolveJoinTarget = async ({
   eventId,
+  eventName,
   user,
 }: {
   eventId: string | number;
+  eventName?: string | null;
   user?: JoinUser | null;
 }): Promise<string> => {
-  const normalizedEventId = String(eventId);
-  const joinHref = paths.public.project.getHref(normalizedEventId);
+  const { eventId: normalizedEventId } = extractEventIdFromSlug(eventId);
+  const joinHref = buildProjectHref(eventId, eventName);
 
   if (!user?.id) {
     return paths.auth.login.getHref(joinHref);

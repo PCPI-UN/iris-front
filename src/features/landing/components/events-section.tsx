@@ -195,13 +195,17 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
     });
   }, [eventsQuery.isLoading, eventsQuery.data?.data?.length, cardsPerView]);
 
-  const handleJoin = async (eventId: string | number) => {
+  const handleJoin = async (
+    eventId: string | number,
+    eventName?: string,
+  ) => {
     if (isUserStatusResolving) {
       return;
     }
 
     const targetHref = await resolveJoinTarget({
       eventId,
+      eventName,
       user,
     });
 
@@ -523,7 +527,7 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
                                 {!isInscriptionClosed && (
                                   <Button
                                     onPress={() => {
-                                      void handleJoin(event.id);
+                                      void handleJoin(event.id, event.name);
                                     }}
                                     isDisabled={isUserStatusResolving}
                                     className="w-full group-hover:scale-102 transition-transform event-button"

@@ -12,14 +12,17 @@ import { ProjectWizard } from "@/features/projects-public/components/project-wiz
 import { PublicLayout } from "@/components/layouts/public-layout";
 import { getCoursesDropdownQueryOptions } from "@/features/courses/api/get-courses-dropdown";
 import { getPublicEventDetailQueryOptions } from "@/features/events/api/get-public-event-detail";
-import { isUserRegisteredInEvent } from "@/features/events/utils/resolve-join-target";
+import {
+  extractEventIdFromSlug,
+  isUserRegisteredInEvent,
+} from "@/features/events/utils/resolve-join-target";
 import { toPublicEventType } from "@/features/events/utils/normalize-event-type";
 import { useUser } from "@/lib/auth";
 
 const PublicProjectPage = ({
   params,
 }: {
-  params: Promise<{ eventId: number }>;
+  params: Promise<{ eventId: string | number }>;
 }) => {
   const router = useRouter();
   const user = useUser();
@@ -37,19 +40,28 @@ const PublicProjectPage = ({
     const loadData = async () => {
       try {
         const resolvedParams = await params;
-        setEventId(resolvedParams.eventId);
+        const { eventId: extractedEventId } = extractEventIdFromSlug(
+          resolvedParams.eventId,
+        );
+        const parsedEventId = Number(extractedEventId);
+
+        if (!Number.isFinite(parsedEventId)) {
+          throw new Error("No se pudo leer el evento desde la URL");
+        }
+
+        setEventId(parsedEventId);
 
         const queryClient = new QueryClient();
 
         // Fetch event details
         const eventDetailResult = await queryClient.fetchQuery(
-          getPublicEventDetailQueryOptions(resolvedParams.eventId),
+          getPublicEventDetailQueryOptions(parsedEventId),
         );
 
         setEventType(toPublicEventType(eventDetailResult.data.eventType));
 
         await queryClient.prefetchQuery(
-          getCoursesDropdownQueryOptions(resolvedParams.eventId),
+          getCoursesDropdownQueryOptions(parsedEventId),
         );
 
         setDehydratedState(dehydrate(queryClient));

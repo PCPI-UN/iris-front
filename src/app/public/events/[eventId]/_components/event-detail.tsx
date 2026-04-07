@@ -212,6 +212,7 @@ if (isUserStatusResolving) return;
 
 const targetHref = await resolveJoinTarget({
     eventId: event.id,
+    eventName: event.name,
     user,
 });
 
