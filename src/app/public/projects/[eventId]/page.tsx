@@ -18,6 +18,7 @@ import {
 } from "@/features/events/utils/resolve-join-target";
 import { toPublicEventType } from "@/features/events/utils/normalize-event-type";
 import { useUser } from "@/lib/auth";
+import "@/features/landing/index.css";
 
 const PublicProjectPage = ({
   params,
