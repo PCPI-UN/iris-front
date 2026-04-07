@@ -24,10 +24,10 @@ export const StudentDashboard = ({ eventId }: StudentDashboardProps = {}) => {
     },
   });
 
-  const project = projectQuery.data?.data?.project;
-  const event = projectQuery.data?.data?.event;
+  const project = projectQuery.data?.project;
+  const event = projectQuery.data?.event;
 
-  const isEditMode = (project?.state as string) === "CHANGES_REQUIRED";
+  const isEditMode = (project?.state as string) === "REQUEST_CHANGES";
   const posterDocument = project?.documents?.find((doc) =>
     doc.type?.toLowerCase().includes("poster"),
   );

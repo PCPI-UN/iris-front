@@ -13,11 +13,12 @@ export type GetProjectInput = z.infer<typeof getProjectInputSchema>;
 
 export const getProject = async ({
   eventId,
-}: GetProjectInput): Promise<{ data: { project: Project; event: Event } }> => {
+}: GetProjectInput): Promise<{ project: Project; event: Event }> => {
   const validatedInput = getProjectInputSchema.parse({ eventId });
-  const response = await api.get<{ data: { project: Project; event: Event } }>(
+  const response = await api.get<{ project: Project; event: Event }>(
     `/events/${validatedInput.eventId}/my-project`,
   );
+
   return response;
 };
 
