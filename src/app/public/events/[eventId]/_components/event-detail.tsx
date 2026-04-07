@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
 Rocket,
 Calendar,
@@ -18,10 +18,14 @@ import { Chip } from '@heroui/chip';
 
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
+import { paths } from '@/config/paths';
 import { usePublicEventDetail } from '@/features/events/api/get-public-event-detail';
 import { normalizeEventType } from '@/features/events/utils/normalize-event-type';
 import { hasInscriptionDeadlinePassed } from '@/features/events/utils/inscription-deadline';
-import { resolveJoinTarget } from '@/features/events/utils/resolve-join-target';
+import {
+    isUserRegisteredInEvent,
+    resolveJoinTarget,
+} from '@/features/events/utils/resolve-join-target';
 import { useUser } from '@/lib/auth';
 import { Footer } from '@/features/landing/components/cta-footer';
 
@@ -121,9 +125,34 @@ if (!event?.participants?.length) return [];
 return event.participants;
 }, [event?.participants]);
 
+const [isRegisteredByMembership, setIsRegisteredByMembership] = useState(false);
+
+useEffect(() => {
+let isCancelled = false;
+
+const checkMembership = async () => {
+    if (!user?.id || !event?.id) {
+    setIsRegisteredByMembership(false);
+    return;
+    }
+
+    const isRegistered = await isUserRegisteredInEvent(event.id);
+
+    if (!isCancelled) {
+    setIsRegisteredByMembership(isRegistered);
+    }
+};
+
+void checkMembership();
+
+return () => {
+    isCancelled = true;
+};
+}, [event?.id, user?.id]);
+
 const isAlreadyRegistered = useMemo(() => {
 if (!user?.id || !participants.length) {
-    return false;
+    return isRegisteredByMembership;
 }
 
 const normalize = (value?: string | null) =>
@@ -140,8 +169,15 @@ return participants.some((participant) => {
     normalizedParticipant === fullName ||
     normalizedParticipant === email
     );
-});
-}, [participants, user?.email, user?.firstName, user?.id, user?.lastName]);
+}) || isRegisteredByMembership;
+}, [
+participants,
+isRegisteredByMembership,
+user?.email,
+user?.firstName,
+user?.id,
+user?.lastName,
+]);
 
 const isInscriptionClosed = useMemo(
 () => hasInscriptionDeadlinePassed(event?.inscriptionDeadline),
@@ -176,9 +212,10 @@ if (isUserStatusResolving) return;
 
 const targetHref = await resolveJoinTarget({
     eventId: event.id,
+    eventName: event.name,
     user,
-    participants,
 });
+
 router.push(targetHref);
 };
 
@@ -327,7 +364,7 @@ return (
                 startContent={<Rocket className="h-5 w-5" />}
                 endContent={<ChevronRight className="h-5 w-5" />}
                 >
-                Inscríbete ya
+                {isAlreadyRegistered ? 'Ir al dashboard' : 'Inscríbete ya'}
                 </Button>
                 )}
                 {!isInscriptionClosed && (
@@ -648,7 +685,7 @@ return (
         className="event-button event-glow font-black tracking-wider uppercase shrink-0 min-w-44"
         startContent={<Rocket className="h-5 w-5" />}
         >
-        Inscríbete
+        {isAlreadyRegistered ? 'Ir al dashboard' : 'Inscríbete'}
         </Button>
         )}
     </div>
