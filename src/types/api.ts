@@ -77,7 +77,7 @@ export type role = Entity<{
   scope: string;
 }>;
 
-enum EventType {
+export enum EventType {
   Exposition,
   Competition
 }
