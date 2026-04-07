@@ -8,10 +8,11 @@ import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { paths } from '@/config/paths';
+import { User } from '@/types/api';
 import { useLogin, loginInputSchema } from '@/lib/auth';
 
 type LoginFormProps = {
-  onSuccess: () => void;
+  onSuccess: (user?: User) => void;
 };
 
 export const LoginForm = ({ onSuccess }: LoginFormProps) => {
@@ -135,7 +136,7 @@ export const LoginForm = ({ onSuccess }: LoginFormProps) => {
         Iniciar sesión con Outlook
       </Button>
 
-                       <div className="w-full flex items-center justify-center mt-4">
+        <div className="w-full flex items-center justify-center mt-4">
         <div className="text-sm">
           ¿Eres nuevo?
           <NextLink

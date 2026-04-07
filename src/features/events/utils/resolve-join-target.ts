@@ -8,110 +8,152 @@ type JoinUser = {
   email?: string | null;
 };
 
-type JoinParticipant = {
-  firstName?: unknown;
-  lastName?: unknown;
-  name?: unknown;
-  email?: unknown;
+type MyEvent = {
+  id?: number | string;
+  name?: string;
+  [key: string]: any;
 };
 
-const normalize = (value?: string | null) =>
-  String(value ?? '')
-    .trim()
-    .toLowerCase();
+type MyEventsResponse = {
+  events?: MyEvent[];
+  data?: MyEvent[];
+  meta?: {
+    total?: number;
+    itemsOnCurrentPage?: number;
+    itemsPerPage?: number;
+    currentPage?: number;
+    totalPages?: number;
+  };
+  totalPages?: number;
+};
 
-const toParticipants = (value: unknown): string[] => {
-  if (!Array.isArray(value)) {
-    return [];
+const normalizeId = (value: unknown): string => String(value ?? '').trim();
+
+const extractEvents = (response: MyEventsResponse): MyEvent[] => {
+  const rawEvents = response?.events ?? response?.data ?? [];
+  return Array.isArray(rawEvents) ? rawEvents : [];
+};
+
+const extractTotalPages = (response: MyEventsResponse): number => {
+  const totalPages = response?.meta?.totalPages ?? response?.totalPages ?? 1;
+  return Number.isFinite(totalPages) && totalPages > 0 ? totalPages : 1;
+};
+
+const wait = (ms: number): Promise<void> => {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+};
+
+export const extractEventIdFromSlug = (
+  value: string | number,
+): { eventId: string; eventSlug: string | null } => {
+  const normalizedValue = String(value ?? '').trim();
+  const slugMatch = normalizedValue.match(/^(.*?)-(\d+)$/);
+
+  if (slugMatch) {
+    return {
+      eventId: slugMatch[2],
+      eventSlug: slugMatch[1],
+    };
   }
 
-  return value
-    .map((participant) => {
-      if (typeof participant === 'string') {
-        return participant;
-      }
+  return {
+    eventId: normalizedValue,
+    eventSlug: null,
+  };
+};
 
-      if (participant && typeof participant === 'object') {
-        const participantData = participant as JoinParticipant;
+const buildProjectHref = (
+  eventId: string | number,
+  eventName?: string | null,
+) => {
+  const { eventId: normalizedEventId, eventSlug } = extractEventIdFromSlug(eventId);
 
-        const fullName = `${String(participantData.firstName ?? '')} ${String(participantData.lastName ?? '')}`.trim();
+  if (eventName?.trim()) {
+    return paths.public.project.getHref({
+      id: normalizedEventId,
+      name: eventName,
+    });
+  }
 
-        return (
-          fullName ||
-          String(participantData.name ?? '').trim() ||
-          String(participantData.email ?? '').trim()
+  if (eventSlug) {
+    return paths.public.project.getHref({
+      id: normalizedEventId,
+      name: eventSlug,
+    });
+  }
+
+  return paths.public.project.getHref(normalizedEventId);
+};
+
+export const isUserRegisteredInEvent = async (
+  eventId: string | number,
+): Promise<boolean> => {
+  const maxAttempts = 2;
+  let lastError: Error | null = null;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const targetEventId = normalizeId(eventId);
+      let currentPage = 1;
+      let totalPages = 1;
+
+      do {
+        const response = await api.get<MyEventsResponse>(`/events/my-events`, {
+          params: { page: currentPage },
+          suppressErrorNotification: true,
+        });
+
+        const parsedResponse =
+          response && typeof response === 'object' ? response : {};
+        const events = extractEvents(parsedResponse as MyEventsResponse);
+
+        const hasEvent = events.some(
+          (event) => normalizeId(event?.id) === targetEventId,
         );
+
+        if (hasEvent) {
+          return true;
+        }
+
+        totalPages = extractTotalPages(parsedResponse as MyEventsResponse);
+        currentPage += 1;
+      } while (currentPage <= totalPages);
+
+      return false;
+    } catch (error) {
+      lastError = error as Error;
+      // If not the last attempt, wait before retrying
+      if (attempt < maxAttempts) {
+        await wait(250);
       }
-
-      return '';
-    })
-    .filter(Boolean);
-};
-
-const getEventParticipants = async (eventId: string): Promise<string[]> => {
-  try {
-    const response = await api.get<unknown>(`/events/public/${eventId}`, {
-      suppressErrorNotification: true,
-    });
-    const eventData =
-      response && typeof response === 'object' && response !== null
-        ? (response as { data?: unknown; event?: unknown }).data ??
-          (response as { data?: unknown; event?: unknown }).event ??
-          response
-        : response;
-
-    return toParticipants(
-      eventData && typeof eventData === 'object'
-        ? (eventData as { participants?: unknown }).participants
-        : undefined,
-    );
-  } catch {
-    const response = await api.get<unknown>(`/events/${eventId}`, {
-      suppressErrorNotification: true,
-    });
-    const eventData =
-      response && typeof response === 'object' && response !== null
-        ? (response as { data?: unknown; event?: unknown }).data ??
-          (response as { data?: unknown; event?: unknown }).event ??
-          response
-        : response;
-
-    return toParticipants(
-      eventData && typeof eventData === 'object'
-        ? (eventData as { participants?: unknown }).participants
-        : undefined,
-    );
+    }
   }
+
+  // All attempts failed, log the last error and return false
+  if (lastError) {
+    console.error('Failed to check event registration after retries:', lastError);
+  }
+  return false;
 };
 
 export const resolveJoinTarget = async ({
   eventId,
+  eventName,
   user,
-  participants: providedParticipants,
 }: {
   eventId: string | number;
+  eventName?: string | null;
   user?: JoinUser | null;
-  participants?: unknown;
 }): Promise<string> => {
-  const normalizedEventId = String(eventId);
-  const joinHref = paths.public.project.getHref(normalizedEventId);
+  const { eventId: normalizedEventId } = extractEventIdFromSlug(eventId);
+  const joinHref = buildProjectHref(eventId, eventName);
 
   if (!user?.id) {
     return paths.auth.login.getHref(joinHref);
   }
 
   try {
-    const participants =
-      providedParticipants === undefined
-        ? await getEventParticipants(normalizedEventId)
-        : toParticipants(providedParticipants);
-    const fullName = normalize(`${user.firstName} ${user.lastName}`);
-    const email = normalize(user.email);
-
-    const isAlreadyRegistered = participants.some((participant) => {
-      const normalizedParticipant = normalize(participant);
-      return normalizedParticipant === fullName || normalizedParticipant === email;
-    });
+    const isAlreadyRegistered = await isUserRegisteredInEvent(normalizedEventId);
 
     if (isAlreadyRegistered) {
       return paths.app.dashboard.getHref();

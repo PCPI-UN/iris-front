@@ -14,6 +14,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { GlassCard } from './glass-card';
 import { Button } from '@/components/ui/button';
 import { useEventsPublic } from '@/features/events/api/get-event-public';
+import { useMyEvents } from '@/features/events/api/get-my-events';
 import { Spinner } from '@/components/ui/spinner';
 import { useUser } from '@/lib/auth';
 import { resolveJoinTarget } from '@/features/events/utils/resolve-join-target';
@@ -149,6 +150,12 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
     isLoading: isUserLoading,
     isFetching: isUserFetching,
   } = useUser();
+  const myEventsQuery = useMyEvents({
+    page: 1,
+    queryConfig: {
+      enabled: Boolean(user?.id),
+    },
+  });
 
   const isUserStatusResolving = isUserLoading || isUserFetching;
   const [currentPage, setCurrentPage] = useState(0);
@@ -188,13 +195,17 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
     });
   }, [eventsQuery.isLoading, eventsQuery.data?.data?.length, cardsPerView]);
 
-  const handleJoin = async (eventId: string | number) => {
+  const handleJoin = async (
+    eventId: string | number,
+    eventName?: string,
+  ) => {
     if (isUserStatusResolving) {
       return;
     }
 
     const targetHref = await resolveJoinTarget({
       eventId,
+      eventName,
       user,
     });
 
@@ -239,6 +250,11 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
 
   const eventsToRender = sortedEvents;
   const totalPages = Math.ceil(eventsToRender.length / cardsPerView);
+  const registeredEventIds = useMemo(() => {
+    return new Set(
+      (myEventsQuery.data?.data ?? []).map((event) => String(event.id)),
+    );
+  }, [myEventsQuery.data?.data]);
 
   const pages = useMemo(() => {
     return Array.from({ length: totalPages }, (_, pageIndex) => {
@@ -511,7 +527,7 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
                                 {!isInscriptionClosed && (
                                   <Button
                                     onPress={() => {
-                                      void handleJoin(event.id);
+                                      void handleJoin(event.id, event.name);
                                     }}
                                     isDisabled={isUserStatusResolving}
                                     className="w-full group-hover:scale-102 transition-transform event-button"
@@ -523,7 +539,9 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
                                       } as CSSProperties
                                     }
                                   >
-                                    Inscribirse
+                                      {registeredEventIds.has(String(event.id))
+                                        ? 'Ir al dashboard'
+                                        : 'Inscribirse'}
                                     <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                                   </Button>
                                 )}

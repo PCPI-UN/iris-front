@@ -1,7 +1,7 @@
 // Navigation bar component
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dropdown,
@@ -39,12 +39,14 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
   const isLandingPage = pathname === '/';
   const isDevelopersPage = pathname === paths.public.developers.getHref();
   const isPublicEventDetail = /^\/public\/events\/[^/]+$/.test(pathname);
+  const isPublicProjectPage = /^\/public\/projects\/[^/]+$/.test(pathname);
   const isLoginPage = pathname === paths.auth.login.getHref();
   const isSignupPage = pathname === paths.auth.signup.getHref();
   const shouldShowNavLinks = showNavLinks && (isLandingPage || isDevelopersPage);
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobileUserMenuOpen, setIsMobileUserMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const navLinkClassName = 'text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer';
   const mobileNavLinkClassName =
     'text-sm px-6 py-4 text-muted-foreground hover:text-foreground transition-all cursor-pointer';
@@ -119,9 +121,30 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
     }
   };
 
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 8);
+    };
+
+    handleScroll();
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+
+  const navbarSurfaceClassName = isScrolled
+    ? isPublicProjectPage
+      ? 'glass-effect-strong border-white/15 shadow-[0_12px_40px_rgba(0,0,0,0.28)]'
+      : 'glass-effect border-border/30'
+    : 'bg-transparent border-white/15 shadow-none';
+
   return (
     <>
-      <nav className={`${navbarFont.className} fixed top-0 left-0 right-0 z-40 px-4 sm:px-6 py-3 sm:py-4 md:px-12 glass-effect border-b border-border/30`}>
+      <nav
+        className={`${navbarFont.className} fixed top-0 left-0 right-0 z-40 px-4 sm:px-6 py-3 sm:py-4 md:px-12 border-b transition-all duration-300 ${navbarSurfaceClassName}`}
+      >
         <div className="max-w-7xl mx-auto relative flex items-center justify-between">
           <div className="flex items-center gap-2">
 
@@ -185,61 +208,59 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
           <div className="flex items-center gap-3">
             {showLoginButton && !isUserLoading &&
               (user?.id ? (
-                <div className="hidden md:block">
-                  <Dropdown placement="bottom-end" shouldBlockScroll={false}>
-                    <DropdownTrigger>
-                      <Button
-                        size="sm"
-                        className="glass-effect border border-primary/40 transition-all hover:border-primary/60 hover:shadow-[0_0_18px_oklch(0.75_0.15_195/0.45)]"
-                        title={profileLabel}
-                        endContent={<ChevronDown size={14} />}
-                      >
-                        <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-black/15 text-xs font-black uppercase">
-                          {user.firstName?.[0] ?? user.email?.[0] ?? 'U'}
-                        </span>
-                        <span className="truncate text-foreground">{profileLabel}</span>
-                      </Button>
-                    </DropdownTrigger>
-                    <DropdownMenu
-                      aria-label="Menú de cuenta"
-                      className="min-w-[180px] rounded-lg border-none bg-transparent p-1 shadow-none glass-effect backdrop-blur-md"
-                      onAction={(key) => {
-                        if (key === 'dashboard') {
-                          handleDashboard();
-                        }
-                        if (key === 'profile') {
-                          handleProfile();
-                        }
-                        if (key === 'logout') {
-                          handleLogout();
-                        }
-                      }}
+                <Dropdown placement="bottom-end" shouldBlockScroll={false}>
+                  <DropdownTrigger>
+                    <Button
+                      size="sm"
+                      className="glass-effect border border-primary/40 transition-all hover:border-primary/60 hover:shadow-[0_0_18px_oklch(0.75_0.15_195/0.45)] max-w-[160px] sm:max-w-none"
+                      title={profileLabel}
+                      endContent={<ChevronDown size={14} />}
                     >
-                      <DropdownItem
-                        key="dashboard"
-                        startContent={<LayoutDashboard size={14} />}
-                        className="rounded-md px-2.5 py-2 text-[11px] text-muted-foreground data-[hover=true]:bg-primary/10 data-[hover=true]:text-foreground"
-                      >
-                        Dashboard
-                      </DropdownItem>
-                      <DropdownItem
-                        key="profile"
-                        startContent={<UserCircle2 size={14} />}
-                        className="rounded-md px-2.5 py-2 text-[11px] text-muted-foreground data-[hover=true]:bg-primary/10 data-[hover=true]:text-foreground"
-                      >
-                        Ver cuenta
-                      </DropdownItem>
-                      <DropdownItem
-                        key="logout"
-                        startContent={<LogOut size={14} />}
-                        color="danger"
-                        className="rounded-md px-2.5 py-2 text-[11px] data-[hover=true]:bg-danger/10"
-                      >
-                        {isLoggingOut ? 'Cerrando sesión...' : 'Cerrar sesión'}
-                      </DropdownItem>
-                    </DropdownMenu>
-                  </Dropdown>
-                </div>
+                      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-black/15 text-xs font-black uppercase">
+                        {user.firstName?.[0] ?? user.email?.[0] ?? 'U'}
+                      </span>
+                      <span className="truncate text-foreground">{profileLabel}</span>
+                    </Button>
+                  </DropdownTrigger>
+                  <DropdownMenu
+                    aria-label="Menú de cuenta"
+                    className="min-w-[180px] rounded-lg border-none bg-transparent p-1 shadow-none glass-effect backdrop-blur-md"
+                    onAction={(key) => {
+                      if (key === 'dashboard') {
+                        handleDashboard();
+                      }
+                      if (key === 'profile') {
+                        handleProfile();
+                      }
+                      if (key === 'logout') {
+                        handleLogout();
+                      }
+                    }}
+                  >
+                    <DropdownItem
+                      key="dashboard"
+                      startContent={<LayoutDashboard size={14} />}
+                      className="rounded-md px-2.5 py-2 text-[11px] text-muted-foreground data-[hover=true]:bg-primary/10 data-[hover=true]:text-foreground"
+                    >
+                      Dashboard
+                    </DropdownItem>
+                    <DropdownItem
+                      key="profile"
+                      startContent={<UserCircle2 size={14} />}
+                      className="rounded-md px-2.5 py-2 text-[11px] text-muted-foreground data-[hover=true]:bg-primary/10 data-[hover=true]:text-foreground"
+                    >
+                      Ver cuenta
+                    </DropdownItem>
+                    <DropdownItem
+                      key="logout"
+                      startContent={<LogOut size={14} />}
+                      color="danger"
+                      className="rounded-md px-2.5 py-2 text-[11px] data-[hover=true]:bg-danger/10"
+                    >
+                      {isLoggingOut ? 'Cerrando sesión...' : 'Cerrar sesión'}
+                    </DropdownItem>
+                  </DropdownMenu>
+                </Dropdown>
               ) : (
                 <Button
                   size="sm"

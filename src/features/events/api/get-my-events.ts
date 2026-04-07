@@ -18,7 +18,7 @@ export const getMyEvents = async (
 
 export const getMyEventsQueryOptions = ({ page = 1 }: { page?: number } = {}) => {
   return queryOptions({
-    queryKey: ["events", { page }],
+    queryKey: ["events", "my-events", { page }],
     queryFn: () => getMyEvents({ page }),
   });
 };
