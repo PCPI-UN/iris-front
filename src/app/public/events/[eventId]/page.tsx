@@ -23,7 +23,7 @@ const PublicEventDetailPage = async ({
   params: Promise<{ eventId: number }>;
 }) => {
   const { eventId } = await params;
-  const resolvedEventId = extractEventId(eventId);
+  const resolvedEventId = eventId;
 
   const queryClient = new QueryClient();
 

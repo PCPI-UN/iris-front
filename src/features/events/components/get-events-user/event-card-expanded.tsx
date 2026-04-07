@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { Button } from "@heroui/button";
 import { motion, AnimatePresence } from "framer-motion";
-import { Event } from "@/types/api";
+import { Event, EventType } from "@/types/api";
 
 import {
   RoleName,
@@ -92,7 +92,7 @@ export const EventCardExpanded = ({
           <div className="lg:col-span-2 space-y-4">
             <div className="rounded-lg border border-default-200 p-4 bg-content1/30">
               <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                {event.eventType === "Competition" ? (
+                {event.eventType === EventType.Competition ? (
                   <>
                     {getEventKindIcon(event.eventType)}
                     Mi equipo

@@ -1,3 +1,4 @@
+import { EventType } from "@/types/api";
 import dayjs from "dayjs";
 import {
   Calendar,
@@ -35,14 +36,14 @@ export const getRoleLabel = (role?: RoleName) => {
   return "Sin rol";
 };
 
-export const getEventKindLabel = (eventType?: string) => {
-  if (eventType === "Competition") return "Competencia";
-  if (eventType === "Exposition") return "Presentacion";
+export const getEventKindLabel = (eventType?: number) => {
+  if (eventType === EventType.Competition) return "Competencia";
+  if (eventType === EventType.Exposition) return "Presentacion";
   return "Evento";
 };
 
-export const getEventKindIcon = (eventType?: string) => {
-  if (eventType === "Competition") {
+export const getEventKindIcon = (eventType?: number) => {
+  if (eventType === EventType.Competition) {
     return <Code2 className="h-4 w-4" />;
   }
 
@@ -70,7 +71,7 @@ export const getStatusLabel = (active: boolean) => {
 };
 
 export const getCollapsedMetaItems = (event: {
-  eventType?: string;
+  eventType?: number
   startDate: string;
   location?: string;
   locationDetails?: string;
