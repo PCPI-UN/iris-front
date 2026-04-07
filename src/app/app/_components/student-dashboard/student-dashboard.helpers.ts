@@ -2,7 +2,7 @@ export const getProjectStateLabel = (state?: string) => {
   if (state === "UNDER_REVIEW") return "En revision";
   if (state === "APPROVED") return "Aprobado";
   if (state === "REJECTED") return "Rechazado";
-  if (state === "CHANGES_REQUIRED") return "Requiere cambios";
+  if (state === "REQUEST_CHANGES") return "Requiere cambios";
   return state || "Sin estado";
 };
 
@@ -13,7 +13,7 @@ export const getStateColor = (state?: string) => {
     return "bg-green-500/20 text-green-600 dark:text-green-400";
   if (state === "REJECTED")
     return "bg-red-500/20 text-red-600 dark:text-red-400";
-  if (state === "CHANGES_REQUIRED")
+  if (state === "REQUEST_CHANGES")
     return "bg-yellow-500/20 text-yellow-600 dark:text-yellow-400";
   return "bg-gray-500/20 text-gray-600 dark:text-gray-400";
 };
