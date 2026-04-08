@@ -20,7 +20,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 import { paths } from "@/config/paths"
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useLogout } from "@/lib/auth";
 
 export function NavUser({
@@ -31,10 +31,11 @@ export function NavUser({
     email: string
   }
 }) {
-  const pathname = usePathname();
   const router = useRouter();
   const logout = useLogout({
-    onSuccess: () => router.push(paths.auth.login.getHref(pathname)),
+    onSuccess: () => {
+      window.location.href = paths.home.getHref();
+    },
   });
   return (
     <SidebarMenu>

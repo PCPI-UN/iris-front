@@ -1,6 +1,6 @@
 import { ProjectWizard } from "@/features/projects-public/components/project-wizard";
 
-const Project = ({ eventId }: { eventId: number }) => {
+const Project = ({ eventId, eventType }: { eventId: number; eventType: "Competition" | "Exposition" }) => {
 
     return (
         <div className="container mx-auto max-w-4xl py-12">
@@ -10,7 +10,7 @@ const Project = ({ eventId }: { eventId: number }) => {
                     Complete el formulario para registrar su proyecto académico
                 </p>
             </div>
-            <ProjectWizard eventId={eventId} />
+            <ProjectWizard eventId={eventId} eventType={eventType} />
         </div>
     );
 };

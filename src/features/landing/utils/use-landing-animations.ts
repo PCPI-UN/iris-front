@@ -28,6 +28,8 @@ export function useLandingAnimations(
   }
 ) {
   useEffect(() => {
+    let delayedRefreshTimer: ReturnType<typeof setTimeout> | null = null;
+
     // Kill all existing ScrollTriggers to prevent duplicates
     ScrollTrigger.getAll().forEach(trigger => trigger.kill());
     
@@ -237,31 +239,45 @@ export function useLandingAnimations(
         );
       }
 
-      // Horizontal scroll section inspired by Tech Redux
+     // Horizontal scroll section inspired by Tech Redux
       if (refs.horizontalSectionRef.current && refs.horizontalContentRef.current) {
-        const panels = gsap.utils.toArray<HTMLElement>('.horizontal-panel');
+        const horizontalSection = refs.horizontalSectionRef.current;
+        const horizontalContent = refs.horizontalContentRef.current;
+        const panels = Array.from(
+          horizontalContent.querySelectorAll<HTMLElement>('.horizontal-panel')
+        );
 
-        gsap.to(panels, {
-          xPercent: -100 * (panels.length - 1),
+        const getHorizontalDistance = () =>
+          Math.max((horizontalContent.scrollWidth - horizontalSection.clientWidth), 0);
+
+        gsap.set(horizontalContent, {
+          x: 0,
+          force3D: false,
+          willChange: 'transform',
+        });
+
+        gsap.set(panels, {
+          backfaceVisibility: 'hidden',
+        });
+
+        gsap.to(horizontalContent, {
+          x: () => -getHorizontalDistance(),
           ease: 'none',
+          autoRound: true,
           scrollTrigger: {
-            trigger: refs.horizontalSectionRef.current,
+            trigger: horizontalSection,
             start: 'top top',
             pin: true,
-            scrub: 1,
-            snap: 1 / (panels.length - 1),
-            end: () => '+=' + refs.horizontalContentRef.current!.offsetWidth,
+            pinSpacing: true,
+            scrub: 0.8,
+            end: () => '+=' + getHorizontalDistance(),
             anticipatePin: 1,
-            // Cuando el scroll horizontal termina, libera el pin para permitir scroll vertical normal
-            onLeave: () => {
-              if (refs.horizontalSectionRef.current) {
-                refs.horizontalSectionRef.current.style.overflow = 'visible';
-              }
-            },
-            onEnterBack: () => {
-              if (refs.horizontalSectionRef.current) {
-                refs.horizontalSectionRef.current.style.overflow = 'hidden';
-              }
+            invalidateOnRefresh: true,
+            fastScrollEnd: false,
+            refreshPriority: 1,
+            onRefresh: (self) => {
+              const distance = getHorizontalDistance();
+              gsap.set(horizontalContent, { x: -distance * self.progress });
             },
           },
         });
@@ -355,7 +371,7 @@ export function useLandingAnimations(
         });
       }
 
-      // Events section animation - con retry para cards asíncronas
+      // Events section animation 
       if (refs.eventsSectionRef.current) {
         const setupEventCardsAnimation = () => {
           if (!refs.eventsSectionRef.current) return;
@@ -385,20 +401,26 @@ export function useLandingAnimations(
               }
             );
           } else {
-            // Si no hay cards aún, intentar de nuevo en 100ms
+            // If there are no event cards found, we can set a timeout to check again after a short delay
             setTimeout(setupEventCardsAnimation, 100);
           }
         };
         
-        // Iniciar setup con un pequeño delay
+        // Handle delay
         setTimeout(setupEventCardsAnimation, 100);
       }
 
       // Refresh ScrollTrigger after all animations are set up
       ScrollTrigger.refresh();
+      delayedRefreshTimer = setTimeout(() => {
+        ScrollTrigger.refresh();
+      }, 140);
     });
 
     return () => {
+      if (delayedRefreshTimer) {
+        clearTimeout(delayedRefreshTimer);
+      }
       ctx.revert();
       ScrollTrigger.getAll().forEach(trigger => trigger.kill());
     };

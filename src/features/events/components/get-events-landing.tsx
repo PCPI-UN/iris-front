@@ -1,6 +1,5 @@
 "use client";
 
-import { useQueryClient } from "@tanstack/react-query";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Calendar } from "lucide-react";
 import { Card, CardBody } from "@/components/ui/card";
@@ -10,6 +9,7 @@ import { Pagination } from "@/components/ui/pagination";
 import { useEvents } from "../api/get-events";
 import { Button } from "@heroui/button";
 import { paths } from '@/config/paths';
+import { hasInscriptionDeadlinePassed } from '../utils/inscription-deadline';
 
 export const GetEventsLanding = () => {
   const searchParams = useSearchParams();
@@ -40,9 +40,12 @@ export const GetEventsLanding = () => {
   return (
     <div className="space-y-4">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {events.map((event) => (
-          <Card shadow="sm" key={event.id}>
-            <CardBody className="p-6 space-y-4">
+        {events.map((event) => {
+          const isInscriptionClosed = hasInscriptionDeadlinePassed(event.inscriptionDeadline);
+
+          return (
+            <Card shadow="sm" key={event.id}>
+              <CardBody className="p-6 space-y-4">
               <div className="space-y-2">
                 <h3 className="text-xl font-semibold">{event.name}</h3>
                 <p className="text-sm text-default-500">{event.description}</p>
@@ -68,15 +71,41 @@ export const GetEventsLanding = () => {
                 </div>
               </div>
 
-              <Button
-                id={event.id}
-                onPress={() => router.push(paths.public.project.getHref(event.accessCode))}
-              >
-                Registrarse
-              </Button>
-            </CardBody>
-          </Card>
-        ))}
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <Button
+                  id={event.id}
+                  variant="bordered"
+                  onPress={() =>
+                    router.push(
+                      paths.public.event.getHref({
+                        id: event.id,
+                        name: event.name,
+                      }),
+                    )
+                  }
+                >
+                  Ver más
+                </Button>
+
+                {!isInscriptionClosed && (
+                  <Button
+                    onPress={() =>
+                      router.push(
+                        paths.public.project.getHref({
+                          id: event.id,
+                          name: event.name,
+                        }),
+                      )
+                    }
+                  >
+                    Registrarse
+                  </Button>
+                )}
+              </div>
+              </CardBody>
+            </Card>
+          );
+        })}
       </div>
 
       {meta && meta.totalPages > 1 && (

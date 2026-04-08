@@ -1,17 +1,14 @@
 'use client';
 
-import { useRef, useEffect, useState } from 'react';
+import { useRef } from 'react';
 import { HeroSection } from './hero-section';
 import { EventsSection } from './events-section';
 import { StorySections } from './story-sections';
 import { HorizontalScrollSection } from './horizontal-scroll-section';
-import { EngineeringSection } from './engineering-section';
-import { WinnersSection } from './winners-section';
 import { DevelopersCarousel } from './developers-carousel';
 import { Footer } from './cta-footer';
 import { Navbar } from '@/components/layouts/navbar';
 import { useLandingAnimations } from '../utils/use-landing-animations';
-import { engineeringFields } from '../constants';
 import '../index.css';
 
 export function LandingPage() {
@@ -32,9 +29,6 @@ export function LandingPage() {
   const revealSectionRef = useRef<HTMLElement>(null);
   const eventsSectionRef = useRef<HTMLElement>(null);
   const developersRef = useRef<HTMLElement>(null);
-  const winnersSectionRef = useRef<HTMLElement>(null);
-
-  const [activeEngineering, setActiveEngineering] = useState(0);
 
   // Initialize animations
   useLandingAnimations({
@@ -54,19 +48,8 @@ export function LandingPage() {
     scrollIndicatorRef,
   });
 
-  useEffect(() => {
-    // Cycle through engineering fields
-    const interval = setInterval(() => {
-      setActiveEngineering((prev) => (prev + 1) % engineeringFields.length);
-    }, 3000);
-
-    return () => {
-      clearInterval(interval);
-    };
-  }, []);
-
   return (
-    <main className="landing-page min-h-screen bg-background relative overflow-hidden">
+    <main className="landing-page min-h-screen bg-background relative overflow-x-hidden">
       {/* Animated Background Gradient */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
         <div
@@ -91,15 +74,22 @@ export function LandingPage() {
         scrollIndicatorRef={scrollIndicatorRef}
       />
 
-
-      {/* Story Sections */}
+      {/* Story Section 1 */}
       <StorySections
         storySection1Ref={storySection1Ref}
         storySection2Ref={storySection2Ref}
         storySection3Ref={storySection3Ref}
         zoomTextRef={zoomTextRef}
         layeredTextRef={layeredTextRef}
+        blocks={['section1']}
       />
+
+      {/* Events Section */}
+      <EventsSection
+        eventsSectionRef={eventsSectionRef}
+      />
+
+
 
       {/* Horizontal Scroll Section */}
       <HorizontalScrollSection
@@ -107,21 +97,14 @@ export function LandingPage() {
         horizontalContentRef={horizontalContentRef}
       />
 
-      {/* Engineering Section */}
-      <EngineeringSection
-        engineeringSectionRef={engineeringSectionRef}
-        maskTextRef={maskTextRef}
-        engineeringFields={engineeringFields}
-        activeEngineering={activeEngineering}
-      />
-
-      {/* Events Section */}
-      <EventsSection
-        eventsSectionRef={eventsSectionRef}
-      />
-      {/* Winners Section */}
-      <WinnersSection
-        winnersSectionRef={winnersSectionRef}
+      {/* Story Section 3 */}
+      <StorySections
+        storySection1Ref={storySection1Ref}
+        storySection2Ref={storySection2Ref}
+        storySection3Ref={storySection3Ref}
+        zoomTextRef={zoomTextRef}
+        layeredTextRef={layeredTextRef}
+        blocks={['section2']}
       />
 
       {/* Developers Carousel */}

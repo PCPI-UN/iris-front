@@ -13,14 +13,63 @@ import { api } from './api-client';
 // api call definitions for auth (types, schemas, requests):
 // these are not part of features as this is a module shared across features
 
-export const getUser = async (): Promise<User> => {
-  const user = await api.get<User>('/auth/me');
-
-  if (!user || !user.id) {
-    throw new Error('Invalid user data received from server');
+const isUser = (value: unknown): value is User => {
+  if (!value || typeof value !== 'object') {
+    return false;
   }
 
-  return user;
+  const candidate = value as Partial<User>;
+  return (
+    (typeof candidate.id === 'string' || typeof candidate.id === 'number') &&
+    typeof candidate.firstName === 'string' &&
+    typeof candidate.lastName === 'string' &&
+    typeof candidate.email === 'string' &&
+    typeof candidate.active === 'boolean' &&
+    typeof candidate.status === 'string' &&
+    Array.isArray(candidate.platformRoles) &&
+    Array.isArray(candidate.platformPermissions)
+  );
+};
+
+export const getUser = async (): Promise<User | null> => {
+  try {
+    const response = await api.get<User | { data?: User }>('/auth/me', {
+      suppressErrorNotification: true,
+    });
+    const userCandidate: unknown =
+      response && typeof response === 'object' && 'data' in response
+        ? response.data
+        : response;
+
+    if (!isUser(userCandidate)) {
+      return null;
+    }
+
+    const user = userCandidate;
+
+    const userWithLegacyRole = user as
+      | (User & { role?: string })
+      | undefined;
+
+    if (
+      userWithLegacyRole &&
+      (!userWithLegacyRole.platformRoles ||
+        userWithLegacyRole.platformRoles.length === 0) &&
+      userWithLegacyRole.role
+    ) {
+      userWithLegacyRole.platformRoles = [
+        {
+          id: 0,
+          name: userWithLegacyRole.role === 'ADMIN' ? 'Admin' : 'User',
+          scope: 'platform',
+        },
+      ];
+    }
+
+    return user;
+  } catch {
+    return null;
+  }
 };
 
 const userQueryKey = ['user'];
@@ -36,7 +85,7 @@ export const useUser = () => {
   const result = useQuery(getUserQueryOptions());
   return result;
 };
-export const useLogin = ({ onSuccess }: { onSuccess?: () => void }) => {
+export const useLogin = ({ onSuccess }: { onSuccess?: (user: User) => void }) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: loginWithEmailAndPassword,
@@ -44,7 +93,7 @@ export const useLogin = ({ onSuccess }: { onSuccess?: () => void }) => {
       // Limpiar todo el cache antes de establecer el nuevo usuario
       queryClient.clear();
       queryClient.setQueryData(userQueryKey, user);
-      onSuccess?.();
+      onSuccess?.(user);
     },
   });
 };
@@ -53,10 +102,9 @@ export const useRegister = ({ onSuccess }: { onSuccess?: () => void }) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: registerWithEmailAndPassword,
-    onSuccess: (user) => {
-      // Limpiar todo el cache antes de establecer el nuevo usuario
+    onSuccess: () => {
+      // Limpiar todo el cache tras registro exitoso
       queryClient.clear();
-      queryClient.setQueryData(userQueryKey, user);
       onSuccess?.();
     },
   });
@@ -91,42 +139,28 @@ const loginWithEmailAndPassword = async (data: LoginInput): Promise<User> => {
   // 2. Obtener el usuario autenticado con la cookie
   const user = await getUser();
 
+  if (!user) {
+    throw new Error('No se pudo obtener el usuario autenticado');
+  }
+
   return user;
 };
 
-export const registerInputSchema = z
-  .object({
-    email: z.string().min(1, 'Required'),
-    firstName: z.string().min(1, 'Required'),
-    lastName: z.string().min(1, 'Required'),
-    password: z.string().min(5, 'Required'),
-  })
-  .and(
-    z
-      .object({
-        teamId: z.string().min(1, 'Required'),
-        teamName: z.null().default(null),
-      })
-      .or(
-        z.object({
-          teamName: z.string().min(1, 'Required'),
-          teamId: z.null().default(null),
-        }),
-      ),
-  );
+export const registerInputSchema = z.object({
+  email: z.string().min(1, 'Required').email('Invalid email'),
+  firstName: z.string().min(1, 'Required'),
+  lastName: z.string().min(1, 'Required'),
+  password: z.string().min(5, 'Required'),
+});
 
 export type RegisterInput = z.infer<typeof registerInputSchema>;
 
 const registerWithEmailAndPassword = async (
   data: RegisterInput,
-): Promise<User> => {
-  // 1. Register - setea la cookie en el backend
-  await api.post<AuthResponse>('/auth/register', data);
+): Promise<AuthResponse> => {
+  return api.post<AuthResponse>('/auth/signup', data);
 
-  // 2. Obtener el usuario autenticado con la cookie
-  const user = await getUser();
-
-  return user;
+  // return user;
 };
 
 export const refreshToken = (): Promise<AuthResponse> => {

@@ -7,6 +7,12 @@ export type ApproveResponse = {
 };
 
 export const ApproveProject = async (projectId: number): Promise<ApproveResponse> => {
+  //MOCKAPI
+  //return api.patch(`/projects/${projectId}/approve`, {
+  //  state: "APPROVED",
+  //});
+  
+  //Back
   return api.patch(`/projects/${projectId}/approve`);
 };
 

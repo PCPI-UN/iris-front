@@ -3,12 +3,11 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      target: ${NODE_ENV}
       args:
-        NODE_ENV: ${NODE_ENV}
         API_URL: ${API_URL}
         NEXT_PUBLIC_ENABLE_API_MOCKING: ${NEXT_PUBLIC_ENABLE_API_MOCKING}
-        NEXT_PUBLIC_URL: ${NEXT_PUBLIC_URL}ss
+        NEXT_PUBLIC_URL: ${NEXT_PUBLIC_URL}
+        NEXT_PUBLIC_MOCK_API_PORT: ${NEXT_PUBLIC_MOCK_API_PORT}
     
     container_name: iris-frontend
     
@@ -16,11 +15,8 @@ services:
       - "${PORT}:${PORT}"
     
     environment:
-      NODE_ENV: ${NODE_ENV}
+      NODE_ENV: 'production'
       PORT: ${PORT}
-      API_URL: ${API_URL}
-      NEXT_PUBLIC_ENABLE_API_MOCKING: ${NEXT_PUBLIC_ENABLE_API_MOCKING}
-      NEXT_PUBLIC_URL: ${NEXT_PUBLIC_URL}
     
     restart: unless-stopped
     

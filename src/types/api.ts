@@ -2,9 +2,6 @@
 // ideally, we want to keep these api related types in sync
 // with the backend instead of manually writing them out
 
-import { user } from "@heroui/theme";
-import { User } from "lucide-react";
-
 export type BaseEntity = {
   id: string;
   createdAt: number;
@@ -23,7 +20,6 @@ export type CourseCategory = {
   }[];
 };
 
-
 export type Meta = {
   page: number;
   total: number;
@@ -36,7 +32,9 @@ export type PlatformRole = {
   scope: string;
 };
 
-export type User = Entity<{
+export type User = {
+  id: string | number;
+  createdAt?: number;
   firstName: string;
   lastName: string;
   email: string;
@@ -45,7 +43,7 @@ export type User = Entity<{
   status: string;
   platformRoles: PlatformRole[];
   platformPermissions: string[];
-}>;
+};
 
 export type AuthResponse = {
   message: string;
@@ -79,6 +77,11 @@ export type role = Entity<{
   scope: string;
 }>;
 
+export enum EventType {
+  Exposition,
+  Competition
+}
+
 export type Event = Entity<{
   id: number;
   name: string;
@@ -91,6 +94,25 @@ export type Event = Entity<{
   evaluationsOpened: boolean;
   statusName: string;
   location?: string;
+  locationDetails?: string;
+  inscriptionCost?: number;
+  inscriptionRequirements?: string;
+  aboutOurAllies?: string;
+  evaluationType?: "ZERO_TO_FIVE" | "ZERO_TO_HUNDRED";
+  eventType: EventType;
+  minimumTeamSize?: number;
+  specificInscriptionDetails?: { title: string; description: string }[];
+  categories?: { id: number; name: string; active?: boolean }[];
+  organizers?: string[];
+  collaborators?: string[];
+  awards?: {
+    title: string;
+    description?: string;
+    value?: number;
+    position: number;
+    categoryId?: number;
+  }[];
+  participants?: string[];
   status?: number;
   active: boolean;
   role: role;
@@ -105,11 +127,12 @@ export type Project = Entity<{
   name: string;
   description?: string;
   eventNumber?: string;
-  state: "UNDER_REVIEW" | "APPROVED" | "REJECTED";
+  state: "UNDER_REVIEW" | "APPROVED" | "REJECTED" | "REQUEST_CHANGES";
   participants: ProjectParticipant[];
   documents: ProjectDocument[];
   jurorAssignments: ProjectAssignment[];
   pendingParticipants: ProjectParticipant[];
+  reason: string;
   evaluated: boolean;
   createdAt: number;
   updatedAt: number;
@@ -227,3 +250,14 @@ export type CriterionCourse = Entity<{
   courseId: number;
   criterionId: number;
 }>;
+
+export type DeveloperProfile = Entity<{
+  name: string;
+  role: string;
+  version: string;
+}>;
+
+export type DevelopersResponse = {
+  data: DeveloperProfile[];
+  meta?: Meta;
+};

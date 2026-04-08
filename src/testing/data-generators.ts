@@ -78,13 +78,27 @@ export const createComment = <
 
 const generateEvent = () => ({
   id: randUuid(),
-  title: randCatchPhrase(),
+  name: randCatchPhrase(),
   description: randParagraph(),
-  startDate: Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000, // Last 30 days
-  endDate: Date.now() + Math.random() * 30 * 24 * 60 * 60 * 1000, // Next 30 days
+  startDate: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
+  endDate: new Date(Date.now() + Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
+  inscriptionDeadline: new Date(Date.now() + Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
   accessCode: `EVT${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
-  isPublic: Math.random() > 0.5,
-  evaluationsStatus: Math.random() > 0.5 ? "open" : "closed",
+  isPubliclyJoinable: Math.random() > 0.5,
+  evaluationsOpened: Math.random() > 0.5,
+  location: randCompanyName(),
+  locationDetails: randParagraph(),
+  eventType: Math.random() > 0.5 ? "Competition" : "Exposition",
+  evaluationType: Math.random() > 0.5 ? "ZERO_TO_FIVE" : "ZERO_TO_HUNDRED",
+  inscriptionRequirements: randParagraph(),
+  inscriptionCost: Math.floor(Math.random() * 1000),
+  minimumTeamSize: Math.floor(Math.random() * 5) + 1,
+  specificInscriptionDetails: [],
+  aboutOurAllies: randParagraph(),
+  organizers: [],
+  collaborators: [],
+  awards: [],
+  active: true,
   createdAt: Date.now(),
 });
 

@@ -1,4 +1,3 @@
-import Cookies from 'js-cookie';
 import { HttpResponse, http } from 'msw';
 
 import { env } from '@/config/env';
@@ -8,8 +7,8 @@ import {
   authenticate,
   hash,
   requireAuth,
-  AUTH_COOKIE,
   networkDelay,
+  AUTH_COOKIE,
 } from '../utils';
 
 type RegisterBody = {
@@ -17,8 +16,6 @@ type RegisterBody = {
   lastName: string;
   email: string;
   password: string;
-  teamId?: string;
-  teamName?: string;
 };
 
 type LoginBody = {
@@ -27,7 +24,7 @@ type LoginBody = {
 };
 
 export const authHandlers = [
-  http.post(`${env.API_URL}/auth/register`, async ({ request }) => {
+  http.post(`${env.API_URL}/auth/signup`, async ({ request }) => {
     await networkDelay();
     try {
       const userObject = (await request.json()) as RegisterBody;
@@ -47,43 +44,31 @@ export const authHandlers = [
         );
       }
 
-      let teamId;
-      let role;
-
-      if (!userObject.teamId) {
-        const team = db.team.create({
-          name: userObject.teamName ?? `${userObject.firstName} Team`,
-        });
-        await persistDb('team');
-        teamId = team.id;
-        role = 'ADMIN';
-      } else {
-        const existingTeam = db.team.findFirst({
-          where: {
-            id: {
-              equals: userObject.teamId,
-            },
-          },
-        });
-
-        if (!existingTeam) {
-          return HttpResponse.json(
-            {
-              message: 'The team you are trying to join does not exist!',
-            },
-            { status: 400 },
-          );
-        }
-        teamId = userObject.teamId;
-        role = 'USER';
-      }
+      // Create default team for user
+      const team = db.team.create({
+        name: `${userObject.firstName} Team`,
+      });
+      await persistDb('team');
+      
+      const teamId = team.id;
+      const role = 'ADMIN';
 
       db.user.create({
         ...userObject,
         role,
+        active: true,
+        status: 'ACTIVE',
+        platformRoles: [
+          {
+            id: role === 'ADMIN' ? 1 : 2,
+            name: role === 'ADMIN' ? 'Admin' : 'User',
+            scope: 'platform',
+          },
+        ],
+        platformPermissions: role === 'ADMIN' ? ['*'] : [],
         password: hash(userObject.password),
         teamId,
-      });
+      } as any);
 
       await persistDb('user');
 
@@ -91,9 +76,6 @@ export const authHandlers = [
         email: userObject.email,
         password: userObject.password,
       });
-
-      // todo: remove once tests in Github Actions are fixed
-      Cookies.set(AUTH_COOKIE, result.jwt, { path: '/' });
 
       return HttpResponse.json(result, {
         headers: {
@@ -116,9 +98,6 @@ export const authHandlers = [
       const credentials = (await request.json()) as LoginBody;
       const result = authenticate(credentials);
 
-      // todo: remove once tests in Github Actions are fixed
-      Cookies.set(AUTH_COOKIE, result.jwt, { path: '/' });
-
       return HttpResponse.json(result, {
         headers: {
           // with a real API servier, the token cookie should also be Secure and HttpOnly
@@ -136,9 +115,6 @@ export const authHandlers = [
   http.post(`${env.API_URL}/auth/logout`, async () => {
     await networkDelay();
 
-    // todo: remove once tests in Github Actions are fixed
-    Cookies.remove(AUTH_COOKIE);
-
     return HttpResponse.json(
       { message: 'Logged out' },
       {
@@ -153,7 +129,15 @@ export const authHandlers = [
     await networkDelay();
 
     try {
-      const { user } = requireAuth(cookies);
+      const { user, error } = requireAuth(cookies);
+
+      if (error || !user) {
+        return HttpResponse.json(
+          { message: error ?? 'Unauthorized' },
+          { status: 401 },
+        );
+      }
+
       return HttpResponse.json({ data: user });
     } catch (error: any) {
       return HttpResponse.json(

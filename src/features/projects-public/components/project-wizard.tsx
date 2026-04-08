@@ -1,21 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@heroui/button";
 import { ParticipantsStep } from "./wizard-steps/participants-step";
 import { ProjectDetailsStep } from "./wizard-steps/project-details-step";
 import { DocumentsStep } from "./wizard-steps/documents-step";
 import { ReviewStep } from "./wizard-steps/review-step";
+import { useCoursesDropdown } from "@/features/courses/api/get-courses-dropdown";
 import { CheckCircle2, FileText, Users, Upload } from "lucide-react";
 import { cn } from "@/utils/cn";
-import { set, z } from "zod";
+import { z } from "zod";
 import {
-  participantSchema,
+  participantSchemaCompetition,
+  participantSchemaExposition,
   projectSchema,
   documentsSchema,
 } from "../schemas/wizard-schema";
 import {
+  createCompetitionInputSchema,
   createProjectInputSchema,
   useCreateProject,
 } from "../api/create-project";
@@ -34,6 +37,8 @@ export type Participant = {
   lastName: string;
   email: string;
   studentCode: string;
+  semester: string;
+  career: string;
 };
 
 export type ProjectData = {
@@ -53,22 +58,67 @@ export type WizardData = {
   documents: DocumentsData;
 };
 
-const steps = [
-  { id: 1, name: "Participantes", icon: Users },
-  { id: 2, name: "Proyecto", icon: FileText },
-  { id: 3, name: "Documentos", icon: Upload },
-  { id: 4, name: "Revisión", icon: CheckCircle2 },
-];
-
 type ProjectWizardProps = {
   eventId: number;
+  eventType: "Competition" | "Exposition";
 };
 
-export function ProjectWizard({ eventId }: ProjectWizardProps) {
+const CONFLICT_MESSAGE_KEYS = [
+  "Conflicting active submissions found for emails",
+  "already have an existing project in this event",
+];
+
+const normalizeBackendErrorMessage = (rawMessage: unknown): string => {
+  const fallback = "Error al crear el proyecto. Por favor intente nuevamente.";
+
+  const message = Array.isArray(rawMessage)
+    ? rawMessage.join("\n")
+    : typeof rawMessage === "string"
+      ? rawMessage
+      : fallback;
+
+  const isConflictMessage = CONFLICT_MESSAGE_KEYS.some((key) =>
+    message.toLowerCase().includes(key.toLowerCase()),
+  );
+
+  if (!isConflictMessage) {
+    return message;
+  }
+
+  const emails = message.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi) || [];
+
+  if (emails.length === 0) {
+    return "Uno o más participantes ya tienen un proyecto registrado en este evento.";
+  }
+
+  return `Uno o más participantes ya tienen un proyecto registrado en este evento: ${emails.join(", ")}`;
+};
+
+export function ProjectWizard({ eventId, eventType}: ProjectWizardProps) {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
+  const isCompetitionEvent = eventType === "Competition";
+  const getSteps = () => {
+    if (isCompetitionEvent) {
+      return [
+        { id: 1, name: "Participantes", icon: Users },
+        { id: 2, name: "Revisión", icon: CheckCircle2 },
+      ];
+    }
+    return [
+      { id: 1, name: "Participantes", icon: Users },
+      { id: 2, name: "Proyecto", icon: FileText },
+      { id: 3, name: "Documentos", icon: Upload },
+      { id: 4, name: "Revisión", icon: CheckCircle2 },
+    ];
+  };
+
+  const steps = getSteps();
   const [stepErrors, setStepErrors] = useState<string[]>([]);
+  const [isSubmitError, setIsSubmitError] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  
+
   const [wizardData, setWizardData] = useState<WizardData>({
     participants: [],
     project: {
@@ -81,16 +131,47 @@ export function ProjectWizard({ eventId }: ProjectWizardProps) {
       additionalDocuments: [],
     },
   });
+
+  const competitionCoursesQuery = useCoursesDropdown({
+    eventId,
+    queryConfig: { enabled: isCompetitionEvent && !!eventId },
+  });
+
+  const autoAssignedCourseId = competitionCoursesQuery.data?.data?.[0]?.id;
+
+  useEffect(() => {
+    if (!isCompetitionEvent || !autoAssignedCourseId) {
+      return;
+    }
+
+    setWizardData((prev) => {
+      if (prev.project.courseId === autoAssignedCourseId) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        project: {
+          ...prev.project,
+          courseId: autoAssignedCourseId,
+        },
+      };
+    });
+  }, [isCompetitionEvent, autoAssignedCourseId]);
+
   const createProjectMutation = useCreateProject({
     mutationConfig: {
       onSuccess: () => {
+        setIsSubmitError(false);
         setShowSuccessModal(true);
       },
       onError: (error: any) => {
-        const errorMessage =
+        setIsSubmitError(true);
+        const rawMessage =
           error?.response?.data?.message ||
           error?.message ||
           "Error al crear el proyecto. Por favor intente nuevamente.";
+        const errorMessage = normalizeBackendErrorMessage(rawMessage);
         setStepErrors([errorMessage]);
       },
     },
@@ -109,21 +190,30 @@ export function ProjectWizard({ eventId }: ProjectWizardProps) {
   };
 
 const validateStep = (step: number): boolean => {
+  setIsSubmitError(false);
   setStepErrors([]);
 
   try {
     switch (step) {
       case 1: // Participantes
-        z.array(participantSchema)
+        const participantSchemaToUse = eventType === "Competition"
+          ? z.array(participantSchemaCompetition)
+          : z.array(participantSchemaExposition);
+        
+        participantSchemaToUse
           .min(1, "Debe agregar al menos un participante")
           .parse(wizardData.participants);
         return true;
 
-      case 2: // Proyecto
-        projectSchema.parse(wizardData.project);
+      case 2:
+        // Para Exposition, paso 2 es Proyecto
+        if (eventType === "Exposition") {
+          projectSchema.parse(wizardData.project);
+        }
+        // Para Competition, paso 2 es Review (no valida, solo muestra)
         return true;
 
-      case 3: // Documentos
+      case 3: // Documentos (solo Exposition)
         documentsSchema.parse(wizardData.documents);
         return true;
 
@@ -150,19 +240,76 @@ const validateStep = (step: number): boolean => {
 
   const handleBack = () => {
     if (currentStep > 1) {
+      setIsSubmitError(false);
       setStepErrors([]);
       setCurrentStep(currentStep - 1);
     }
   };
 
 const handleSubmit = () => {
+  setIsSubmitError(true);
   setStepErrors([]);
 
   try {
+    // Para Competition, solo envía participantes
+    if (isCompetitionEvent) {
+      // Validar participantes
+      z.array(participantSchemaCompetition)
+        .min(1, "Debe agregar al menos un participante")
+        .parse(wizardData.participants);
+
+      if (!wizardData.project.courseId) {
+        setStepErrors(["No se pudo asignar automáticamente un curso para este evento. Intente nuevamente más tarde."]);
+        return;
+      }
+
+      // Validar schema de competencia
+      const payloadData = {
+        eventId: String(eventId),
+        eventType: "Competition",
+        courseId: String(wizardData.project.courseId),
+        participants: JSON.stringify(
+          wizardData.participants.map(p => ({
+            firstName: p.firstName,
+            lastName: p.lastName,
+            email: p.email,
+            studentCode: p.studentCode,
+            semester: p.semester,
+            career: p.career,
+          }))
+        ),
+      };
+
+      createCompetitionInputSchema.parse(payloadData);
+
+      const formData = new FormData();
+      formData.append("eventId", payloadData.eventId);
+      formData.append("eventType", payloadData.eventType);
+      formData.append("courseId", payloadData.courseId);
+      formData.append("participants", payloadData.participants);
+      formData.append("name", `Equipo de ${wizardData.participants.map(p => p.firstName).join("-")}`);
+
+      createProjectMutation.mutate({ data: formData });
+      return;
+    }
+
+    // Para Exposition, envía todo como está
+    // Validar participantes
+    z.array(participantSchemaExposition)
+      .min(1, "Debe agregar al menos un participante")
+      .parse(wizardData.participants);
+
+    // Validar proyecto
+    projectSchema.parse(wizardData.project);
+
+    // Validar documentos
+    documentsSchema.parse(wizardData.documents);
+
     const payloadData = {
       name: wizardData.project.name,
       description: wizardData.project.description,
       eventId: String(eventId),
+      eventType: "Exposition",
       courseId: String(wizardData.project.courseId),
       participants: JSON.stringify(
         wizardData.participants.map(p => ({
@@ -170,6 +317,8 @@ const handleSubmit = () => {
           lastName: p.lastName,
           email: p.email,
           studentCode: p.studentCode,
+          semester: p.semester || "",
+          career: p.career || "",
         }))
       ),
       documents: JSON.stringify([
@@ -188,6 +337,7 @@ const handleSubmit = () => {
     formData.append("name", payloadData.name);
     if (payloadData.description) formData.append("description", payloadData.description);
     formData.append("eventId", payloadData.eventId);
+    formData.append("eventType", payloadData.eventType);
     formData.append("courseId", payloadData.courseId);
     formData.append("participants", payloadData.participants);
     formData.append("documents", payloadData.documents);
@@ -223,7 +373,7 @@ const handleSubmit = () => {
                 {stepIdx !== steps.length - 1 && (
                   <div
                     className={cn(
-                      "absolute top-4 sm:top-5 h-0.5 left-[50%] right-0 translate-x-[16px] sm:translate-x-[20px] -mr-[32px] sm:-mr-[56px]",
+                      "absolute top-4 sm:top-5 h-0.5 left-1/2 w-full",
                       isCompleted ? "bg-primary" : "bg-border/30"
                     )}
                     aria-hidden="true"
@@ -265,10 +415,11 @@ const handleSubmit = () => {
               {steps[currentStep - 1].name}
             </h2>
             <p className="text-muted-foreground text-xs sm:text-sm">
-              {currentStep === 1 && "Agregue los participantes del proyecto"}
-              {currentStep === 2 && "Ingrese los detalles del proyecto"}
-              {currentStep === 3 && "Suba los documentos requeridos"}
-              {currentStep === 4 && "Revise la información antes de enviar"}
+              {currentStep === 1 && "Agregue los participantes"}
+              {currentStep === 2 && eventType === "Exposition" && "Ingrese los detalles del proyecto"}
+              {currentStep === 3 && eventType === "Exposition" && "Suba los documentos requeridos"}
+              {currentStep === 2 && eventType === "Competition" && "Revise la información antes de enviar"}
+              {currentStep === 4 && eventType === "Exposition" && "Revise la información antes de enviar"}
             </p>
           </div>
         </div>
@@ -278,28 +429,36 @@ const handleSubmit = () => {
             <ParticipantsStep
               participants={wizardData.participants}
               onUpdate={updateParticipants}
+              eventType={eventType}  // ← AÑADE ESTO
             />
           )}
-          {currentStep === 2 && (
+          {currentStep === 2 && eventType === "Exposition" && (
             <ProjectDetailsStep
               eventId={eventId}
               project={wizardData.project}
               onUpdate={updateProject}
             />
           )}
-          {currentStep === 3 && (
+          {currentStep === 3 && eventType === "Exposition" && (
             <DocumentsStep
               documents={wizardData.documents}
               onUpdate={updateDocuments}
             />
           )}
-          {currentStep === 4 && <ReviewStep data={wizardData} />}
+          {currentStep === 4 && eventType === "Exposition" && (
+            <ReviewStep data={wizardData} eventType={eventType} />
+          )}
+          {currentStep === 2 && eventType === "Competition" && (
+            <ReviewStep data={wizardData} eventType={eventType} />
+          )}
 
           {/* Mostrar errores de validación */}
           {stepErrors.length > 0 && (
             <div className="mt-4 p-3 sm:p-4 glass-card border-2 border-red-500/50 rounded-lg">
               <p className="text-red-400 font-semibold mb-2 text-sm sm:text-base">
-                Errores de validación:
+                {isSubmitError
+                  ? "¡Ups! No pudimos completar tu registro"
+                  : "¡Ups! Algo salió mal"}
               </p>
               <ul className="list-disc list-inside space-y-1">
                 {stepErrors.map((error, idx) => (
@@ -339,7 +498,13 @@ const handleSubmit = () => {
             isDisabled={createProjectMutation.isPending}
             className="shadow-lg shadow-success/30 hover:shadow-xl hover:shadow-success/40 transition-all w-full sm:w-auto order-1 sm:order-2"
           >
-            {createProjectMutation.isPending ? "Creando..." : "Enviar Proyecto"}
+            {createProjectMutation.isPending 
+              ? eventType === "Competition" 
+                ? "Inscribiendo..." 
+                : "Creando..."
+              : eventType === "Competition"
+              ? "Inscribir Equipo"
+              : "Enviar Proyecto"}
           </Button>
         )}
       </div>
@@ -364,21 +529,22 @@ const handleSubmit = () => {
               </ModalHeader>
               <ModalBody className="text-center pb-6">
                 <h3 className="text-2xl font-bold text-foreground mb-2">
-                  ¡Proyecto Enviado Exitosamente!
+                  {eventType === "Competition"
+                    ? "¡Equipo Inscrito Exitosamente!"
+                    : "¡Proyecto Enviado Exitosamente!"}
                 </h3>
                 <p className="text-muted-foreground">
-                  Tu proyecto{" "}
-                  <span className="font-semibold text-foreground">
-                    {wizardData.project.name}
-                  </span>{" "}
-                  ha sido registrado correctamente.
+                  {eventType === "Competition"
+                    ? "Tu participación ha sido recibida correctamente."
+                    : `Tu proyecto "${wizardData.project.name}" ha sido registrado correctamente.`}
                 </p>
                 <p className="text-sm text-muted-foreground mt-4">
-                  Recibirás una notificación cuando sea revisado por el equipo
-                  administrativo.
+                  Te notificaremos sobre el estado de tu{" "}
+                  {eventType === "Competition" ? "participación" : "proyecto"}{" "}
+                  a través de tu correo electrónico.
                 </p>
               </ModalBody>
-              <ModalFooter className="justify-center">
+              <ModalFooter className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Button
                   color="primary"
                   onPress={() => {
@@ -387,7 +553,18 @@ const handleSubmit = () => {
                   }}
                   className="w-full sm:w-auto shadow-lg shadow-primary/30"
                 >
-                  Volver al Inicio
+                  Ir al Inicio
+                </Button>
+                <Button
+                  color="primary"
+                  variant="bordered"
+                  onPress={() => {
+                    setShowSuccessModal(false);
+                    router.push(paths.app.dashboard.getHref());
+                  }}
+                  className="w-full sm:w-auto shadow-lg shadow-primary/30"
+                >
+                  Ir al Dashboard
                 </Button>
               </ModalFooter>
             </>

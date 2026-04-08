@@ -4,28 +4,20 @@ import { api } from "@/lib/api-client";
 import { QueryConfig } from "@/lib/react-query";
 import { Meta, Event } from "@/types/api";
 
+import { normalizeEventsResponse } from "./normalize-events-response";
+
 export const getEventsPublic = async (
   { page }: { page?: number } = { page: 1 }
 ): Promise<{ data: Event[]; meta: Meta }> => {
-  const response = await api.get<{
-    events: Event[];
-    meta: {
-      total: number;
-      itemsOnCurrentPage: number;
-      itemsPerPage: number;
-      currentPage: number;
-      totalPages: number;
-    };
-  }>(`/events/public`, { params: { page } });
-    
-  return {
-    data: response.events || [],
-    meta: {
-      page: response.meta.currentPage,
-      total: response.meta.total,
-      totalPages: response.meta.totalPages,
-    },
-  };
+  const response = await api.get<Record<string, any>>(
+    "/events/public",
+    {
+      params: { page },
+      suppressErrorNotification: true,
+    }
+  );
+
+  return normalizeEventsResponse(response);
 };
 
 export const getEventsQueryOptions = ({ page = 1 }: { page?: number } = {}) => {

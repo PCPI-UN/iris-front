@@ -47,6 +47,7 @@ export const events: Event[] = [
     description: 'Presentaciones de proyectos de infraestructura sostenible',
     slug: '/evento/simposio-civil-2025',
   },
+
 ];
 
 export const engineeringFields: EngineeringField[] = [
