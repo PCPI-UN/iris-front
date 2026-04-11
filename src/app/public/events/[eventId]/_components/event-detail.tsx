@@ -284,7 +284,7 @@ collaborators.some((collaborator) =>
 ) || event.name.toLowerCase().includes('grip shipping');
 
 return (
-<div className="event-detail-page min-h-screen w-full" data-theme={eventTheme}>
+<div className="event-detail-page event-detail-page-offset min-h-screen w-full" data-theme={eventTheme}>
     {/* HERO */}
     <section className="relative w-full overflow-hidden">
     <div className="event-detail-blob pointer-events-none absolute -top-40 -left-40 h-[500px] w-[500px] rounded-full blur-3xl opacity-20" />
