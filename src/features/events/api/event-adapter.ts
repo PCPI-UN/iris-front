@@ -50,8 +50,8 @@ const normalizeEventDate = (value: unknown): string => {
   }
 
   const dateOnly = normalized.slice(0, 10);
-  if (DATE_ONLY_PATTERN.test(dateOnly)) {
-    return dateOnly;
+  if (DATE_ONLY_PATTERN.test(normalized)) {
+    return `${normalized}T00:00:00`;
   }
 
   // Backend timestamps are stored with Bogotá offset applied
@@ -74,7 +74,14 @@ const normalizeEventDate = (value: unknown): string => {
 
   const pad = (segment: number) => String(segment).padStart(2, "0");
 
-  return `${localDate.getUTCFullYear()}-${pad(localDate.getUTCMonth() + 1)}-${pad(localDate.getUTCDate())}`;
+  const year = localDate.getUTCFullYear();
+  const month = pad(localDate.getUTCMonth() + 1);
+  const day = pad(localDate.getUTCDate());
+  const hour = pad(localDate.getUTCHours());
+  const minute = pad(localDate.getUTCMinutes());
+  const second = pad(localDate.getUTCSeconds());
+
+  return `${year}-${month}-${day}T${hour}:${minute}:${second}`;
 };
 
 export const normalizeEvent = (raw: any): Event => {
