@@ -1217,6 +1217,30 @@ section[class*="story"]::before {
     linear-gradient(180deg, oklch(0.12 0.01 264) 0%, oklch(0.11 0.01 264) 100%);
 }
 
+/* Keep the event background behind the fixed navbar and tune top spacing by viewport. */
+.event-detail-page-offset {
+  margin-top: -73px;
+  padding-top: 64px;
+}
+
+@media (min-width: 640px) {
+  .event-detail-page-offset {
+    padding-top: 71px;
+  }
+}
+
+@media (min-width: 700px) and (max-width: 1023px) {
+  .event-detail-page-offset {
+    padding-top: 69px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .event-detail-page-offset {
+    padding-top: 69px;
+  }
+}
+
 .event-detail-page[data-theme="pink"] {
   --event-color: oklch(0.82 0.18 330);
   --button-bg: oklch(0.82 0.18 330);
