@@ -38,7 +38,7 @@ const normalizeTimestamp = (value: unknown): number => {
   return Date.now();
 };
 
-const normalizeEventDate = (value: unknown): string => {
+const normalizeEventDateTime = (value: unknown): string => {
   if (typeof value !== "string") {
     return "";
   }
@@ -84,6 +84,41 @@ const normalizeEventDate = (value: unknown): string => {
   return `${year}-${month}-${day}T${hour}:${minute}:${second}`;
 };
 
+const normalizeEventDateOnly = (value: unknown): string => {
+  if (typeof value !== "string") {
+    return "";
+  }
+
+  const normalized = value.trim();
+
+  if (!normalized) {
+    return "";
+  }
+
+  const dateOnly = normalized.slice(0, 10);
+  if (DATE_ONLY_PATTERN.test(normalized)) {
+    return dateOnly;
+  }
+
+  let dateUTC: Date;
+  if (normalized.includes("Z") || normalized.includes("+") || /\-\d{2}:\d{2}$/.test(normalized)) {
+    dateUTC = new Date(normalized);
+  } else {
+    dateUTC = new Date(normalized + "Z");
+  }
+
+  if (Number.isNaN(dateUTC.getTime())) {
+    return normalized;
+  }
+
+  const BOGOTA_OFFSET_MS = 5 * 60 * 60 * 1000;
+  const localDate = new Date(dateUTC.getTime() - BOGOTA_OFFSET_MS);
+
+  const pad = (segment: number) => String(segment).padStart(2, "0");
+
+  return `${localDate.getUTCFullYear()}-${pad(localDate.getUTCMonth() + 1)}-${pad(localDate.getUTCDate())}`;
+};
+
 export const normalizeEvent = (raw: any): Event => {
   const evaluationsOpened =
     typeof raw?.evaluationsOpened === "boolean"
@@ -120,9 +155,9 @@ export const normalizeEvent = (raw: any): Event => {
     id: normalizeEventId(raw?.id),
     name: raw?.name ?? "",
     description: raw?.description ?? "",
-    startDate: normalizeEventDate(raw?.startDate),
-    endDate: normalizeEventDate(raw?.endDate),
-    inscriptionDeadline: normalizeEventDate(raw?.inscriptionDeadline),
+    startDate: normalizeEventDateTime(raw?.startDate),
+    endDate: normalizeEventDateTime(raw?.endDate),
+    inscriptionDeadline: normalizeEventDateOnly(raw?.inscriptionDeadline),
     accessCode: raw?.accessCode ?? "",
     isPubliclyJoinable:
       typeof raw?.isPubliclyJoinable === "boolean"

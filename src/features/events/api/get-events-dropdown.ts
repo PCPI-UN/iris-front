@@ -5,7 +5,7 @@ import { QueryConfig } from "@/lib/react-query";
 import { Event } from "@/types/api";
 
 export const getEventsDropdown = async (): Promise<{ data: Event[] }> => {
-  const response = await api.get<Record<string, any>>(`/events-dropdown`, {
+  const response = await api.get<Record<string, any>>(`/events/dropdown`, {
     params: { page: 1, limit: 100, onlyActive: true },
   });
 

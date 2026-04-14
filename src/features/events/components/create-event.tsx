@@ -32,6 +32,7 @@ import { DatePicker} from "@/components/ui/date-picker";
 import { Select, SelectItem } from "@/components/ui/select";
 import {
   compareDateTimes,
+  getDatePart,
   ensureDateTimeValue,
 } from "../utils/event-date-time";
 
@@ -165,7 +166,7 @@ export const CreateEvent = () => {
 
     if (targetStep === 2 || targetStep === 3) {
       if (!formData.inscriptionDeadline) {
-        nextErrors.inscriptionDeadline = "La fecha y hora límite de inscripción es requerida.";
+        nextErrors.inscriptionDeadline = "La fecha límite de inscripción es requerida.";
       }
 
       if (formData.inscriptionDeadline && formData.startDate) {
@@ -175,7 +176,7 @@ export const CreateEvent = () => {
         );
         if (deadlineVsStart !== null && deadlineVsStart > 0) {
           nextErrors.inscriptionDeadline =
-            "La fecha y hora límite de inscripción no pueden ser posteriores a la fecha y hora de inicio.";
+            "La fecha límite de inscripción no puede ser posterior a la fecha y hora de inicio.";
         }
       }
 
@@ -186,7 +187,7 @@ export const CreateEvent = () => {
         );
         if (deadlineVsEnd !== null && deadlineVsEnd > 0) {
           nextErrors.inscriptionDeadline =
-            "La fecha y hora límite de inscripción no pueden ser posteriores a la fecha y hora de finalización.";
+            "La fecha límite de inscripción no puede ser posterior a la fecha y hora de finalización.";
         }
       }
     }
@@ -228,7 +229,7 @@ export const CreateEvent = () => {
         ...formData,
         startDate: ensureDateTimeValue(formData.startDate),
         endDate: ensureDateTimeValue(formData.endDate),
-        inscriptionDeadline: ensureDateTimeValue(formData.inscriptionDeadline),
+        inscriptionDeadline: formData.inscriptionDeadline,
         evaluationsOpened: Boolean(formData.evaluationsOpened),
         isPubliclyJoinable: Boolean(formData.isPubliclyJoinable),
         active: Boolean(formData.active)??true,
@@ -280,7 +281,7 @@ export const CreateEvent = () => {
               <ModalHeader className="flex flex-col gap-1 text-2xl font-semibold shrink-0">
                 Crear Evento {step > 1 ? `- Step ${step}` : ''}
               </ModalHeader>
-              <ModalBody className="w-full flex-1 min-h-0 overflow-y-auto pr-2">
+              <ModalBody className="w-full flex-1 min-h-0 overflow-y-auto pl-6">
 
                 {/* STEP 1: General Info */}
                 {step === 1 && (
@@ -451,13 +452,17 @@ export const CreateEvent = () => {
                       onChange={(e) => setFormData({ ...formData, inscriptionRequirements: e.target.value })}
                     />
 
+                 
                     <div className="flex flex-col sm:flex-row gap-4">
                       <DatePicker
-                        label="Fecha Límite de Inscripción"
+                        label="Fecha Limite de Inscripción"
                         name="inscriptionDeadline"
                         isRequired
-                        granularity="minute"
-                        value={toDateTimePickerValue(formData.inscriptionDeadline)}
+                        value={
+                          getDatePart(formData.inscriptionDeadline)
+                            ? parseDate(getDatePart(formData.inscriptionDeadline))
+                            : undefined
+                        }
                         onChange={(date) => {
                           setFormData((prev: any) => ({
                             ...prev,
@@ -468,8 +473,6 @@ export const CreateEvent = () => {
                             inscriptionDeadline: undefined,
                           }));
                         }}
-                        isInvalid={Boolean(dateFieldErrors.inscriptionDeadline)}
-                        errorMessage={dateFieldErrors.inscriptionDeadline}
                         className="flex-1"
                         minValue={today(getLocalTimeZone())}
                       />

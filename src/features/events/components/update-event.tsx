@@ -35,6 +35,7 @@ import { useEvent } from "../api/get-event";
 import { updateEventInputSchema, useUpdateEvent } from "../api/update-event";
 import {
   compareDateTimes,
+  getDatePart,
   ensureDateTimeValue,
 } from "../utils/event-date-time";
 
@@ -240,7 +241,7 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
         }))
         : [{ title: "", description: "", value: "", position: 1, categoryId: "" }]
     );
-      setDateFieldErrors({});
+    setDateFieldErrors({});
   }, [isOpen, eventQuery.data]);
 
   if (!canUpdateEvent(user?.data)) {
@@ -272,7 +273,7 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
 
     if (targetStep === 2 || targetStep === 3) {
       if (!formData.inscriptionDeadline) {
-        nextErrors.inscriptionDeadline = "La fecha y hora límite de inscripción son requeridas.";
+        nextErrors.inscriptionDeadline = "La fecha límite de inscripción es requerida.";
       }
 
       if (formData.inscriptionDeadline && formData.startDate) {
@@ -282,7 +283,7 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
         );
         if (deadlineVsStart !== null && deadlineVsStart > 0) {
           nextErrors.inscriptionDeadline =
-            "La fecha y hora límite de inscripción no pueden ser posteriores a la fecha y hora de inicio.";
+            "La fecha límite de inscripción no puede ser posterior a la fecha y hora de inicio.";
         }
       }
 
@@ -293,7 +294,7 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
         );
         if (deadlineVsEnd !== null && deadlineVsEnd > 0) {
           nextErrors.inscriptionDeadline =
-            "La fecha y hora límite de inscripción no pueden ser posteriores a la fecha y hora de finalización.";
+            "La fecha límite de inscripción no puede ser posterior a la fecha y hora de finalización.";
         }
       }
     }
@@ -335,7 +336,7 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
         isPubliclyJoinable: formData.isPubliclyJoinable ?? event?.isPubliclyJoinable,
         startDate: ensureDateTimeValue(formData.startDate),
         endDate: ensureDateTimeValue(formData.endDate),
-        inscriptionDeadline: ensureDateTimeValue(formData.inscriptionDeadline),
+        inscriptionDeadline: formData.inscriptionDeadline,
         evaluationsOpened: formData.evaluationsOpened,
         active: formData.active,
         location: formData.location || undefined,
@@ -437,13 +438,13 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                   Update Event {step > 1 ? `- Step ${step}` : ""}
                 </ModalHeader>
 
-                <ModalBody className="w-full flex-1 min-h-0 overflow-y-auto pr-2">
+                <ModalBody className="w-full flex-1 min-h-0 overflow-y-auto pl-6">
                   {step === 1 && (
                     <div className="space-y-6 w-full fade-in">
                       <Input
                         label="Name"
                         name="name"
-                        placeholder="Nombre del evento. Ej: Hackathon de Logística Empresarial (mínimo 2 caracteres)"      
+                        placeholder="Nombre del evento. Ej: Hackathon de Logística Empresarial (mínimo 2 caracteres)"
                         isRequired
                         value={formData.name}
                         onChange={(e) =>
@@ -590,7 +591,7 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                             isSelected={formData.isPubliclyJoinable}
                             onValueChange={(isSelected) =>
                               setFormData((prev) => ({
-                                ...prev,isPubliclyJoinable: isSelected,
+                                ...prev, isPubliclyJoinable: isSelected,
                               }))
                             }
                             color="success"
@@ -621,24 +622,21 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                       />
 
                       <div className="flex flex-col sm:flex-row gap-4">
-                        <DatePicker
+                         <DatePicker
                           label="Inscription Deadline"
                           name="inscriptionDeadline"
                           isRequired
-                          granularity="minute"
-                          value={toDateTimePickerValue(formData.inscriptionDeadline)}
-                          onChange={(date) => {
+                          value={
+                            getDatePart(formData.inscriptionDeadline)
+                              ? parseDate(getDatePart(formData.inscriptionDeadline))
+                              : undefined
+                          }
+                          onChange={(date) =>
                             setFormData((prev) => ({
                               ...prev,
                               inscriptionDeadline: date ? date.toString() : "",
-                            }));
-                            setDateFieldErrors((prev) => ({
-                              ...prev,
-                              inscriptionDeadline: undefined,
-                            }));
-                          }}
-                          isInvalid={Boolean(dateFieldErrors.inscriptionDeadline)}
-                          errorMessage={dateFieldErrors.inscriptionDeadline}
+                            }))
+                          }
                           className="flex-1"
                         />
                         <Input
@@ -713,7 +711,7 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                                 className="flex-1"
                               />
                               <Input
-                                label="Description"
+                                label="Descripción de detalle específico"
                                 placeholder="Informacion Precisa. Ej: 3 a 5 estudiantes."
                                 value={detail.description}
                                 onChange={(e) => {
