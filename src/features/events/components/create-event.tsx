@@ -1,7 +1,15 @@
 "use client";
 import { useState } from "react";
 import { Plus, Minus } from "lucide-react";
-import { today, getLocalTimeZone, parseDate } from "@internationalized/date";
+import {
+  today,
+  getLocalTimeZone,
+  parseDate,
+  parseDateTime,
+  parseZonedDateTime,
+  parseAbsoluteToLocal,
+  type DateValue,
+} from "@internationalized/date";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
@@ -20,8 +28,13 @@ import { canCreateEvent } from "@/lib/authorization";
 import { createEventInputSchema, useCreateEvent } from "../api/create-events";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { DatePicker } from "@/components/ui/date-picker";
+import { DatePicker} from "@/components/ui/date-picker";
 import { Select, SelectItem } from "@/components/ui/select";
+import {
+  compareDateTimes,
+  getDatePart,
+  ensureDateTimeValue,
+} from "../utils/event-date-time";
 
 type Award = {
   title: string;
@@ -32,6 +45,41 @@ type Award = {
 
 const isWholeNumberInput = (value: string) => value === "" || /^(0|[1-9]\d*)$/.test(value);
 const isDecimalNumberInput = (value: string) => value === "" || /^(0|[1-9]\d*)(\.\d{0,2})?$/.test(value);
+const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+const toDateTimePickerValue = (value?: string): DateValue | undefined => {
+  const normalizedValue = ensureDateTimeValue(value);
+
+  if (!normalizedValue) {
+    return undefined;
+  }
+
+  if (DATE_ONLY_PATTERN.test(normalizedValue)) {
+    return parseDateTime(`${normalizedValue}T00:00:00`);
+  }
+
+  try {
+    return parseDateTime(normalizedValue);
+  } catch {
+    // Continue with other parsers for zoned/absolute values.
+  }
+
+  try {
+    return parseZonedDateTime(normalizedValue);
+  } catch {
+    try {
+      return parseAbsoluteToLocal(normalizedValue);
+    } catch {
+      return undefined;
+    }
+  }
+};
+
+type DateFieldErrors = {
+  startDate?: string;
+  endDate?: string;
+  inscriptionDeadline?: string;
+};
 
 export const CreateEvent = () => {
   const { addNotification } = useNotifications();
@@ -49,6 +97,7 @@ export const CreateEvent = () => {
   const [specificDetails, setSpecificDetails] = useState([{ title: "", description: "" }]);
   const [organizers, setOrganizers] = useState([""]);
   const [collaborators, setCollaborators] = useState([""]);
+  const [dateFieldErrors, setDateFieldErrors] = useState<DateFieldErrors>({});
   const [awards, setAwards] = useState<Award[]>([
     { title: "", description: "", value: "", position: 1 },
   ]);
@@ -91,17 +140,75 @@ export const CreateEvent = () => {
     setSpecificDetails([{ title: "", description: "" }]);
     setOrganizers([""]);
     setCollaborators([""]);
+    setDateFieldErrors({});
     setAwards([{ title: "", description: "", value: "", position: 1 }]);
+  };
+
+  const validateDateFields = (targetStep: 1 | 2 | 3) => {
+    const nextErrors: DateFieldErrors = {};
+
+    if (targetStep === 1 || targetStep === 3) {
+      if (!formData.startDate) {
+        nextErrors.startDate = "La fecha y hora de inicio es requerida.";
+      }
+
+      if (!formData.endDate) {
+        nextErrors.endDate = "La fecha y hora de finalización es requerida.";
+      }
+
+      if (formData.startDate && formData.endDate) {
+        const endVsStart = compareDateTimes(formData.endDate, formData.startDate);
+        if (endVsStart !== null && endVsStart < 0) {
+          nextErrors.endDate = "Fecha y hora no pueden ser anteriores a la fecha y hora de inicio.";
+        }
+      }
+    }
+
+    if (targetStep === 2 || targetStep === 3) {
+      if (!formData.inscriptionDeadline) {
+        nextErrors.inscriptionDeadline = "La fecha límite de inscripción es requerida.";
+      }
+
+      if (formData.inscriptionDeadline && formData.startDate) {
+        const deadlineVsStart = compareDateTimes(
+          formData.inscriptionDeadline,
+          formData.startDate
+        );
+        if (deadlineVsStart !== null && deadlineVsStart > 0) {
+          nextErrors.inscriptionDeadline =
+            "La fecha límite de inscripción no puede ser posterior a la fecha y hora de inicio.";
+        }
+      }
+
+      if (formData.inscriptionDeadline && formData.endDate) {
+        const deadlineVsEnd = compareDateTimes(
+          formData.inscriptionDeadline,
+          formData.endDate
+        );
+        if (deadlineVsEnd !== null && deadlineVsEnd > 0) {
+          nextErrors.inscriptionDeadline =
+            "La fecha límite de inscripción no puede ser posterior a la fecha y hora de finalización.";
+        }
+      }
+    }
+
+    setDateFieldErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
   };
 
   const handleNextStep = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const form = e.target as HTMLFormElement;
-    const currentFormData = new FormData(form);
-    const rawData = Object.fromEntries(currentFormData);
-    const updatedForm = { ...formData, ...rawData, isPubliclyJoinable: formData.isPubliclyJoinable, active: formData.active };
 
-    setFormData(updatedForm);
+    if (step === 1 && !validateDateFields(1)) {
+      return;
+    }
+
+    if (step === 2 && !validateDateFields(2)) {
+      return;
+    }
+
+    // formData ya se mantiene actualizado por los onChange de cada campo.
+    // Evitamos FormData porque DatePicker no se serializa como input nativo.
     setStep((prev) => prev + 1);
   };
 
@@ -109,8 +216,19 @@ export const CreateEvent = () => {
     e.preventDefault();
 
     try {
+      if (!validateDateFields(3)) {
+        addNotification({
+          type: "error",
+          title: "Fechas del evento inválidas",
+          message: "Corrige los campos de fecha y hora resaltados.",
+        });
+        return;
+      }
+
       const dataToSubmit = {
         ...formData,
+        startDate: ensureDateTimeValue(formData.startDate),
+        endDate: ensureDateTimeValue(formData.endDate),
         inscriptionDeadline: formData.inscriptionDeadline,
         evaluationsOpened: Boolean(formData.evaluationsOpened),
         isPubliclyJoinable: Boolean(formData.isPubliclyJoinable),
@@ -150,7 +268,7 @@ export const CreateEvent = () => {
     <>
       <Button size="sm" onPress={() => { resetForm(); onOpen(); }}>
         <Plus size={16} />
-        Create Event
+        Crear Evento
       </Button>
       <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="2xl" scrollBehavior="inside">
         <ModalContent className="max-h-[80vh] flex flex-col">
@@ -161,17 +279,17 @@ export const CreateEvent = () => {
               onSubmit={step === 3 ? handleCreateSubmit : handleNextStep}
             >
               <ModalHeader className="flex flex-col gap-1 text-2xl font-semibold shrink-0">
-                Create Event {step > 1 ? `- Step ${step}` : ''}
+                Crear Evento {step > 1 ? `- Step ${step}` : ''}
               </ModalHeader>
-              <ModalBody className="w-full flex-1 min-h-0 overflow-y-auto pr-2">
+              <ModalBody className="w-full flex-1 min-h-0 overflow-y-auto pl-6">
 
                 {/* STEP 1: General Info */}
                 {step === 1 && (
                   <div className="space-y-6 w-full fade-in">
                     <Input
-                      label="Title"
+                      label="Nombre del Evento"
                       name="name"
-                      placeholder="Nombre del evento. Ej: Hackathon de Logística Empresarial (mínimo 2 caracteres)"
+                      placeholder="Ej: Hackathon de Logística Empresarial (mínimo 2 caracteres)"
                       isRequired
                       value={formData.name || ""}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -179,7 +297,7 @@ export const CreateEvent = () => {
 
                     <div className="flex flex-col sm:flex-row gap-4">
                       <Input
-                        label="Location"
+                        label="Ubicación"
                         name="location"
                         placeholder="Ej: Universidad del Norte, Bloque, Salón."
                         isRequired
@@ -188,7 +306,7 @@ export const CreateEvent = () => {
                         className="flex-1"
                       />
                       <Input
-                        label="Location detail (Optional)"
+                        label="Detalles de la Ubicación (Opcional)"
                         name="locationDetails"
                         placeholder="Ej: Km 5 vía Puerto Colombia, Barranquilla "
                         value={formData.locationDetails || ""}
@@ -198,35 +316,77 @@ export const CreateEvent = () => {
                     </div>
 
                     <div className="flex flex-col sm:flex-row gap-4">
-                      <DatePicker label="Start Date" name="startDate" isRequired defaultValue={formData.startDate ? parseDate(formData.startDate) : undefined} className="flex-1" minValue={today(getLocalTimeZone())} />
-                      <DatePicker label="End Date" name="endDate" isRequired defaultValue={formData.endDate ? parseDate(formData.endDate) : undefined} className="flex-1" minValue={today(getLocalTimeZone())} />
+                      <DatePicker
+                        label="Fecha y Hora de Inicio"
+                        name="startDate"
+                        isRequired
+                        granularity="minute"
+                        value={toDateTimePickerValue(formData.startDate)}
+                        onChange={(date) => {
+                          setFormData((prev: any) => ({
+                            ...prev,
+                            startDate: date ? date.toString() : "",
+                          }));
+                          setDateFieldErrors((prev) => ({
+                            ...prev,
+                            startDate: undefined,
+                            endDate: undefined,
+                            inscriptionDeadline: undefined,
+                          }));
+                        }}
+                        isInvalid={Boolean(dateFieldErrors.startDate)}
+                        errorMessage={dateFieldErrors.startDate}
+                        className="flex-1"
+                        minValue={today(getLocalTimeZone())}
+                      />
+                      <DatePicker
+                        label="Fecha y Hora de Finalización"
+                        name="endDate"
+                        isRequired
+                        granularity="minute"
+                        value={toDateTimePickerValue(formData.endDate)}
+                        onChange={(date) => {
+                          setFormData((prev: any) => ({
+                            ...prev,
+                            endDate: date ? date.toString() : "",
+                          }));
+                          setDateFieldErrors((prev) => ({
+                            ...prev,
+                            endDate: undefined,
+                          }));
+                        }}
+                        isInvalid={Boolean(dateFieldErrors.endDate)}
+                        errorMessage={dateFieldErrors.endDate}
+                        className="flex-1"
+                        minValue={today(getLocalTimeZone())}
+                      />
                     </div>
 
                     <div className="flex flex-col sm:flex-row gap-4 items-end">
                       <Input
-                        label="Access Code"
+                        label="Código de Acceso"
                         name="accessCode"
-                        placeholder="Enter Event Access Code"
+                        placeholder="Ingrese el código de acceso al evento"
                         isRequired
                         value={formData.accessCode || ""}
                         onChange={(e) => setFormData({ ...formData, accessCode: e.target.value })}
                         className="flex-1"
                       />
                       <Select
-                        label="Event Type"
+                        label="Tipo de Evento"
                         name="eventType"
                         defaultSelectedKeys={[formData.eventType]}
                         onChange={(e) => setFormData({ ...formData, eventType: e.target.value })}
                         isRequired
                         className="flex-1"
                       >
-                        <SelectItem key="Exposition">Exposition</SelectItem>
-                        <SelectItem key="Competition">Competition</SelectItem>
+                        <SelectItem key="Exposition">Exposición</SelectItem>
+                        <SelectItem key="Competition">Competencia</SelectItem>
                       </Select>
                     </div>
 
                     <Select
-                      label="Evaluation Type"
+                      label="Tipo de Evaluación"
                       name="evaluationType"
                       defaultSelectedKeys={[formData.evaluationType]}
                       onChange={(e) => setFormData({ ...formData, evaluationType: e.target.value })}
@@ -237,9 +397,9 @@ export const CreateEvent = () => {
                     </Select>
 
                     <div className="pt-2 border-t border-default-200">
-                      <p className="text-sm font-semibold mb-2">Event Details</p>
+                      <p className="text-sm font-semibold mb-2">Detalles del Evento</p>
                       <Textarea
-                        label="Description"
+                        label="Descripción del Evento"
                         name="description"
                         placeholder="Describe de qué trata el evento. Ej: Un desafío tipo hackathon de 48 horas enfocado en optimización logística..."
                         isRequired
@@ -281,10 +441,10 @@ export const CreateEvent = () => {
                 {/* STEP 2: Inscription Details */}
                 {step === 2 && (
                   <div className="space-y-6 w-full fade-in">
-                    <p className="border-b border-default-200 pb-2 font-semibold">Inscription Details</p>
+                    <p className="border-b border-default-200 pb-2 font-semibold">Detalles de Inscripción</p>
 
                     <Textarea
-                      label="Inscription Requirements"
+                      label="Requisitos de Inscripción"
                       name="inscriptionRequirements"
                       isRequired
                       placeholder="Describa los requisitos para inscribirse en el evento. Ej: Equipos de 3 a 5 personas, con al menos un estudiante de ingeniería..."
@@ -292,17 +452,32 @@ export const CreateEvent = () => {
                       onChange={(e) => setFormData({ ...formData, inscriptionRequirements: e.target.value })}
                     />
 
+                 
                     <div className="flex flex-col sm:flex-row gap-4">
                       <DatePicker
-                        label="Inscription Deadline"
+                        label="Fecha Limite de Inscripción"
                         name="inscriptionDeadline"
                         isRequired
-                        defaultValue={formData.inscriptionDeadline ? parseDate(formData.inscriptionDeadline) : undefined}
+                        value={
+                          getDatePart(formData.inscriptionDeadline)
+                            ? parseDate(getDatePart(formData.inscriptionDeadline))
+                            : undefined
+                        }
+                        onChange={(date) => {
+                          setFormData((prev: any) => ({
+                            ...prev,
+                            inscriptionDeadline: date ? date.toString() : "",
+                          }));
+                          setDateFieldErrors((prev) => ({
+                            ...prev,
+                            inscriptionDeadline: undefined,
+                          }));
+                        }}
                         className="flex-1"
                         minValue={today(getLocalTimeZone())}
                       />
                       <Input
-                        label="Inscription Cost"
+                        label="Costo de Inscripción"
                         name="inscriptionCost"
                         type="text"
                         placeholder="Ej: 0 o 50000"
@@ -319,7 +494,7 @@ export const CreateEvent = () => {
                         className="flex-1"
                       />
                       <Input
-                        label="Minimum Team Size"
+                        label="Mínimo Integrantes"
                         name="minimumTeamSize"
                         type="number"
                         placeholder="Ej: 3"
@@ -340,7 +515,7 @@ export const CreateEvent = () => {
                     {/* Specific Inscription Details List */}
                     <div className="pt-4 border-t border-default-200">
                       <div className="flex justify-between items-center mb-4">
-                        <p className="text-sm font-semibold">Specific Inscription Details</p>
+                        <p className="text-sm font-semibold">Detalles Específicos de Inscripción</p>
                         <Button
                           isIconOnly
                           size="sm"
@@ -355,7 +530,7 @@ export const CreateEvent = () => {
                         {specificDetails.map((detail, index) => (
                           <div key={index} className="flex gap-2 items-start bg-default-50 p-3 rounded-md relative">
                             <Input
-                              label="Title"
+                              label="Título"
                               placeholder="Ej: Tamaño del equipo"
                               value={detail.title}
                               onChange={(e) => {
@@ -366,7 +541,7 @@ export const CreateEvent = () => {
                               className="flex-1"
                             />
                             <Input
-                              label="Description"
+                              label="Descripción"
                               placeholder="Informacion Precisa. Ej: 3 a 5 estudiantes."
                               value={detail.description}
                               onChange={(e) => {
@@ -396,7 +571,7 @@ export const CreateEvent = () => {
                 {/* STEP 3: Public Information */}
                 {step === 3 && (
                   <div className="space-y-6 w-full fade-in">
-                    <p className="border-b border-default-200 pb-2 font-semibold">Public Information</p>
+                    <p className="border-b border-default-200 pb-2 font-semibold">Información Pública</p>
 
                     <Textarea
                       label="About Our Allies"
@@ -410,7 +585,7 @@ export const CreateEvent = () => {
                       {/* Organizations */}
                       <div>
                         <div className="flex justify-between items-center mb-2">
-                          <p className="text-sm font-semibold">Organizations</p>
+                          <p className="text-sm font-semibold">Organizaciones</p>
                           <Button isIconOnly size="sm" variant="faded" onPress={() => setOrganizers([...organizers, ""])}>
                             <Plus size={16} />
                           </Button>
@@ -419,7 +594,7 @@ export const CreateEvent = () => {
                           {organizers.map((org, index) => (
                             <div key={index} className="flex gap-2">
                               <Input
-                                placeholder={`Organization ${index + 1}`}
+                                placeholder={`Organización ${index + 1}`}
                                 value={org}
                                 onChange={(e) => {
                                   const newArr = [...organizers];
@@ -438,7 +613,7 @@ export const CreateEvent = () => {
                       {/* Collaborators */}
                       <div>
                         <div className="flex justify-between items-center mb-2">
-                          <p className="text-sm font-semibold">Collaborators</p>
+                          <p className="text-sm font-semibold">Colaboradores</p>
                           <Button isIconOnly size="sm" variant="faded" onPress={() => setCollaborators([...collaborators, ""])}>
                             <Plus size={16} />
                           </Button>
@@ -447,7 +622,7 @@ export const CreateEvent = () => {
                           {collaborators.map((col, index) => (
                             <div key={index} className="flex gap-2">
                               <Input
-                                placeholder={`Collaborator ${index + 1}`}
+                                placeholder={`Colaborador ${index + 1}`}
                                 value={col}
                                 onChange={(e) => {
                                   const newArr = [...collaborators];
@@ -467,7 +642,7 @@ export const CreateEvent = () => {
                     {/* Awards */}
                     <div className="pt-4 border-t border-default-200">
                       <div className="flex justify-between items-center mb-4">
-                        <p className="text-sm font-semibold">Awards</p>
+                        <p className="text-sm font-semibold">Premios</p>
                         <Button
                           isIconOnly
                           size="sm"
@@ -516,7 +691,7 @@ export const CreateEvent = () => {
                               {/* LEFT: Position */}
                               <div className="flex flex-col items-center justify-center bg-default-100 rounded-md px-3 py-2 min-w-[80px]">
                                 <span className="text-sm text-default-500 font-semibold uppercase tracking-wider">
-                                  Position
+                                  Posición
                                 </span>
                                 <span className="text-4xl font-extrabold text-primary">
                                   {award.position}
@@ -529,7 +704,7 @@ export const CreateEvent = () => {
                                 {/* TOP ROW */}
                                 <div className="flex gap-3">
                                   <Input
-                                    label="Award Title"
+                                    label="Título del Premio"
                                     placeholder="Ej: TOP 1"
                                     value={award.title}
                                     onChange={(e) => {
@@ -543,7 +718,7 @@ export const CreateEvent = () => {
                                   />
 
                                   <Input
-                                    label="$"
+                                    label="$ (Opcional)"
                                     type="text"
                                     placeholder="Ej:2000000"
                                     value={award.value}
@@ -566,7 +741,7 @@ export const CreateEvent = () => {
 
                                 {/* BOTTOM ROW */}
                                 <Textarea
-                                  label="Award Description (Optional)"
+                                  label="Descripción del Premio"
                                   placeholder="Ej: Premio monetario de $2.000.000 COP"
                                   value={award.description}
                                   onChange={(e) => {
@@ -594,7 +769,7 @@ export const CreateEvent = () => {
                   variant="flat"
                   onPress={() => step > 1 ? setStep(step - 1) : onClose()}
                 >
-                  {step > 1 ? "Back" : "Cancel"}
+                  {step > 1 ? "Atrás" : "Cancelar"}
                 </Button>
 
                 <Button
@@ -604,7 +779,7 @@ export const CreateEvent = () => {
                   isLoading={createEventMutation.isPending}
                   disabled={createEventMutation.isPending}
                 >
-                  {step === 3 ? "Create Event" : "Next"}
+                  {step === 3 ? "Crear Evento" : "Siguiente"}
                 </Button>
               </ModalFooter>
             </Form>

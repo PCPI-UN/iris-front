@@ -1,6 +1,12 @@
 "use client";
 
-import { parseDate } from "@internationalized/date";
+import {
+  parseDate,
+  parseDateTime,
+  parseZonedDateTime,
+  parseAbsoluteToLocal,
+  type DateValue,
+} from "@internationalized/date";
 import { Minus, Plus, SquarePen } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -27,6 +33,11 @@ import { useCoursesDropdown } from "@/features/courses/api/get-courses-dropdown"
 
 import { useEvent } from "../api/get-event";
 import { updateEventInputSchema, useUpdateEvent } from "../api/update-event";
+import {
+  compareDateTimes,
+  getDatePart,
+  ensureDateTimeValue,
+} from "../utils/event-date-time";
 
 type UpdateEventProps = {
   eventId: number;
@@ -42,6 +53,41 @@ type Award = {
 };
 const isWholeNumberInput = (value: string) => value === "" || /^(0|[1-9]\d*)$/.test(value);
 const isDecimalNumberInput = (value: string) => value === "" || /^(0|[1-9]\d*)(\.\d{0,2})?$/.test(value);
+const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+const toDateTimePickerValue = (value?: string): DateValue | undefined => {
+  const normalizedValue = ensureDateTimeValue(value);
+
+  if (!normalizedValue) {
+    return undefined;
+  }
+
+  if (DATE_ONLY_PATTERN.test(normalizedValue)) {
+    return parseDateTime(`${normalizedValue}T00:00:00`);
+  }
+
+  try {
+    return parseDateTime(normalizedValue);
+  } catch {
+    // Continue with other parsers for zoned/absolute values.
+  }
+
+  try {
+    return parseZonedDateTime(normalizedValue);
+  } catch {
+    try {
+      return parseAbsoluteToLocal(normalizedValue);
+    } catch {
+      return undefined;
+    }
+  }
+};
+
+type DateFieldErrors = {
+  startDate?: string;
+  endDate?: string;
+  inscriptionDeadline?: string;
+};
 type InscriptionDetail = {
   title: string;
   description: string;
@@ -94,6 +140,7 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
   const [specificDetails, setSpecificDetails] = useState<InscriptionDetail[]>([
     { title: "", description: "" },
   ]);
+  const [dateFieldErrors, setDateFieldErrors] = useState<DateFieldErrors>({});
   const [organizers, setOrganizers] = useState<string[]>([""]);
   const [collaborators, setCollaborators] = useState<string[]>([""]);
   const [awards, setAwards] = useState<Award[]>([
@@ -109,6 +156,7 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
           type: "success",
           title: "Event Updated",
         });
+        setDateFieldErrors({});
         setStep(1);
         onClose();
       },
@@ -132,11 +180,9 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
       name: event.name ?? "",
       description: event.description ?? "",
       accessCode: event.accessCode ?? "",
-      startDate: event.startDate ? event.startDate.split("T")[0] : "",
-      endDate: event.endDate ? event.endDate.split("T")[0] : "",
-      inscriptionDeadline: event.inscriptionDeadline
-        ? event.inscriptionDeadline.split("T")[0]
-        : "",
+      startDate: ensureDateTimeValue(event.startDate),
+      endDate: ensureDateTimeValue(event.endDate),
+      inscriptionDeadline: ensureDateTimeValue(event.inscriptionDeadline),
       location: event.location ?? "",
       locationDetails: event.locationDetails ?? "",
       evaluationsOpened: Boolean(event.evaluationsOpened),
@@ -195,6 +241,7 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
         }))
         : [{ title: "", description: "", value: "", position: 1, categoryId: "" }]
     );
+    setDateFieldErrors({});
   }, [isOpen, eventQuery.data]);
 
   if (!canUpdateEvent(user?.data)) {
@@ -204,21 +251,91 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
   const event = eventQuery.data?.data;
   const eventCourses = coursesDropdownQuery.data?.data ?? [];
 
+  const validateDateFields = (targetStep: 1 | 2 | 3) => {
+    const nextErrors: DateFieldErrors = {};
+
+    if (targetStep === 1 || targetStep === 3) {
+      if (!formData.startDate) {
+        nextErrors.startDate = "La fecha y hora de inicio son requeridas.";
+      }
+
+      if (!formData.endDate) {
+        nextErrors.endDate = "La fecha y hora de finalización son requeridas.";
+      }
+
+      if (formData.startDate && formData.endDate) {
+        const endVsStart = compareDateTimes(formData.endDate, formData.startDate);
+        if (endVsStart !== null && endVsStart < 0) {
+          nextErrors.endDate = "La fecha y hora de finalización no pueden ser anteriores a la fecha y hora de inicio.";
+        }
+      }
+    }
+
+    if (targetStep === 2 || targetStep === 3) {
+      if (!formData.inscriptionDeadline) {
+        nextErrors.inscriptionDeadline = "La fecha límite de inscripción es requerida.";
+      }
+
+      if (formData.inscriptionDeadline && formData.startDate) {
+        const deadlineVsStart = compareDateTimes(
+          formData.inscriptionDeadline,
+          formData.startDate
+        );
+        if (deadlineVsStart !== null && deadlineVsStart > 0) {
+          nextErrors.inscriptionDeadline =
+            "La fecha límite de inscripción no puede ser posterior a la fecha y hora de inicio.";
+        }
+      }
+
+      if (formData.inscriptionDeadline && formData.endDate) {
+        const deadlineVsEnd = compareDateTimes(
+          formData.inscriptionDeadline,
+          formData.endDate
+        );
+        if (deadlineVsEnd !== null && deadlineVsEnd > 0) {
+          nextErrors.inscriptionDeadline =
+            "La fecha límite de inscripción no puede ser posterior a la fecha y hora de finalización.";
+        }
+      }
+    }
+
+    setDateFieldErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
+
   const handleNextStep = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    if (step === 1 && !validateDateFields(1)) {
+      return;
+    }
+
+    if (step === 2 && !validateDateFields(2)) {
+      return;
+    }
+
     setStep((prev) => Math.min(prev + 1, 3));
   };
 
   const submitUpdate = async () => {
     try {
+      if (!validateDateFields(3)) {
+        addNotification({
+          type: "error",
+          title: "Fechas del evento inválidas",
+          message: "Corrige los campos de fecha y hora resaltados.",
+        });
+        return;
+      }
+
       const dataToSubmit = {
         id: Number(eventId),
         name: formData.name,
         description: formData.description,
         accessCode: formData.accessCode || undefined,
         isPubliclyJoinable: formData.isPubliclyJoinable ?? event?.isPubliclyJoinable,
-        startDate: formData.startDate,
-        endDate: formData.endDate,
+        startDate: ensureDateTimeValue(formData.startDate),
+        endDate: ensureDateTimeValue(formData.endDate),
         inscriptionDeadline: formData.inscriptionDeadline,
         evaluationsOpened: formData.evaluationsOpened,
         active: formData.active,
@@ -321,13 +438,13 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                   Update Event {step > 1 ? `- Step ${step}` : ""}
                 </ModalHeader>
 
-                <ModalBody className="w-full flex-1 min-h-0 overflow-y-auto pr-2">
+                <ModalBody className="w-full flex-1 min-h-0 overflow-y-auto pl-6">
                   {step === 1 && (
                     <div className="space-y-6 w-full fade-in">
                       <Input
                         label="Name"
                         name="name"
-                        placeholder="Nombre del evento. Ej: Hackathon de Logística Empresarial (mínimo 2 caracteres)"      
+                        placeholder="Nombre del evento. Ej: Hackathon de Logística Empresarial (mínimo 2 caracteres)"
                         isRequired
                         value={formData.name}
                         onChange={(e) =>
@@ -361,29 +478,45 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
 
                       <div className="flex flex-col sm:flex-row gap-4">
                         <DatePicker
-                          label="Start Date"
+                          label="Start DateTime"
                           name="startDate"
                           isRequired
-                          value={formData.startDate ? parseDate(formData.startDate) : undefined}
-                          onChange={(date) =>
+                          granularity="minute"
+                          value={toDateTimePickerValue(formData.startDate)}
+                          onChange={(date) => {
                             setFormData((prev) => ({
                               ...prev,
                               startDate: date ? date.toString() : "",
-                            }))
-                          }
+                            }));
+                            setDateFieldErrors((prev) => ({
+                              ...prev,
+                              startDate: undefined,
+                              endDate: undefined,
+                              inscriptionDeadline: undefined,
+                            }));
+                          }}
+                          isInvalid={Boolean(dateFieldErrors.startDate)}
+                          errorMessage={dateFieldErrors.startDate}
                           className="flex-1"
                         />
                         <DatePicker
-                          label="End Date"
+                          label="End DateTime"
                           name="endDate"
                           isRequired
-                          value={formData.endDate ? parseDate(formData.endDate) : undefined}
-                          onChange={(date) =>
+                          granularity="minute"
+                          value={toDateTimePickerValue(formData.endDate)}
+                          onChange={(date) => {
                             setFormData((prev) => ({
                               ...prev,
                               endDate: date ? date.toString() : "",
-                            }))
-                          }
+                            }));
+                            setDateFieldErrors((prev) => ({
+                              ...prev,
+                              endDate: undefined,
+                            }));
+                          }}
+                          isInvalid={Boolean(dateFieldErrors.endDate)}
+                          errorMessage={dateFieldErrors.endDate}
                           className="flex-1"
                         />
                       </div>
@@ -458,7 +591,7 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                             isSelected={formData.isPubliclyJoinable}
                             onValueChange={(isSelected) =>
                               setFormData((prev) => ({
-                                ...prev,isPubliclyJoinable: isSelected,
+                                ...prev, isPubliclyJoinable: isSelected,
                               }))
                             }
                             color="success"
@@ -489,13 +622,13 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                       />
 
                       <div className="flex flex-col sm:flex-row gap-4">
-                        <DatePicker
+                         <DatePicker
                           label="Inscription Deadline"
                           name="inscriptionDeadline"
                           isRequired
                           value={
-                            formData.inscriptionDeadline
-                              ? parseDate(formData.inscriptionDeadline)
+                            getDatePart(formData.inscriptionDeadline)
+                              ? parseDate(getDatePart(formData.inscriptionDeadline))
                               : undefined
                           }
                           onChange={(date) =>
@@ -578,7 +711,7 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                                 className="flex-1"
                               />
                               <Input
-                                label="Description"
+                                label="Descripción de detalle específico"
                                 placeholder="Informacion Precisa. Ej: 3 a 5 estudiantes."
                                 value={detail.description}
                                 onChange={(e) => {

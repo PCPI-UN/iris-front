@@ -1,21 +1,17 @@
-type DateBoundary = 'start' | 'end';
-
 const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
-const extractDateOnly = (value?: string | null) => {
+const normalizeDateValue = (value?: string | null) => {
   const normalized = String(value ?? '').trim();
 
   if (!normalized) {
     return '';
   }
 
-  const dateOnly = normalized.slice(0, 10);
-  return DATE_ONLY_PATTERN.test(dateOnly) ? dateOnly : '';
-};
+  if (DATE_ONLY_PATTERN.test(normalized)) {
+    return normalized;
+  }
 
-const toPayloadDate = (value: string) => {
-  const dateOnly = extractDateOnly(value);
-  return dateOnly || value;
+  return value;
 };
 
 export const normalizeEventDatesForPayload = <T extends {
@@ -25,8 +21,8 @@ export const normalizeEventDatesForPayload = <T extends {
 }>(data: T): T => {
   return {
     ...data,
-    startDate: toPayloadDate(data.startDate),
-    endDate: toPayloadDate(data.endDate),
-    inscriptionDeadline: toPayloadDate(data.inscriptionDeadline),
+    startDate: normalizeDateValue(data.startDate),
+    endDate: normalizeDateValue(data.endDate),
+    inscriptionDeadline: normalizeDateValue(data.inscriptionDeadline),
   };
 };
