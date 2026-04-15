@@ -52,13 +52,13 @@ export const contributors: ContributorCard[] = [
 
   { name: 'Daniel Romero', role: 'Software Architect', version: 'v2.0' },
   { name: 'Kevin Torregrosa', role: 'Backend Leader', version: 'v2.0' },
-  { name: 'Paula Núñez', role: 'Frontend Leader', version: 'v2.0' },
+  { name: 'Paula Núñez', role: 'Frontend Developer', version: 'v2.0' },
   { name: 'Andrés Monserrat', role: 'Frontend Developer', version: 'v2.0' },
+  { name: 'Judith Pérez', role: 'Frontend Leader - Full Stack Developer', version: 'v2.0' },
   { name: 'Isabella Arrieta', role: 'Full Stack Developer', version: 'v2.0' },
-  { name: 'Judith Pérez', role: 'Full Stack Developer', version: 'v2.0' },
   { name: 'Esteban Arnedo', role: 'Full Stack Developer', version: 'v2.0' },
   { name: 'Carlos Arango', role: 'Full Stack Developer', version: 'v2.0' },
   { name: 'Wilmer Santiago', role: 'Full Stack Developer', version: 'v2.0' },
-  { name: 'Camilo de la Rosa', role: 'DevOps Engineer', version: 'v2.0' },
+  { name: 'Camilo De La Rosa', role: 'DevOps Engineer', version: 'v2.0' },
   { name: 'Natalia Carpintero', role: 'Scrum Master - Frontend Developer', version: 'v2.0' },
 ];
