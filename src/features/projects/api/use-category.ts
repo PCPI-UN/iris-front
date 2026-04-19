@@ -1,7 +1,7 @@
 import { api } from "@/lib/api-client";
 import { useQuery } from "@tanstack/react-query";
 
-export const getCoursesByEvent = async (eventId?: number) => {
+export const getCategoriesByEvent = async (eventId?: number) => {
   if (!eventId) return { courses: [] };
 
   return await api.get<{
@@ -10,10 +10,19 @@ export const getCoursesByEvent = async (eventId?: number) => {
   }>(`/events/courses/event/${eventId}`);
 };
 
-export const useCoursesByEvent = (eventId?: number) => {
+export const useCategoriesByEvent = (eventId?: number) => {
   return useQuery({
-    queryKey: ["courses", eventId],
-    queryFn: () => getCoursesByEvent(eventId),
+    queryKey: ["categories", eventId],
+    queryFn: async () => {
+      const response = await getCategoriesByEvent(eventId);
+      return {
+        ...response,
+        categories: response.courses || [],
+      };
+    },
     enabled: !!eventId,
   });
 };
+
+export const getCoursesByEvent = getCategoriesByEvent;
+export const useCoursesByEvent = useCategoriesByEvent;

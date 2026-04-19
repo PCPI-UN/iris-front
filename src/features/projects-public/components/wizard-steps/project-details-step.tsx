@@ -22,7 +22,7 @@ export function ProjectDetailsStep({
     queryConfig: { enabled: !!eventId },
   });
 
-  const courses = coursesQuery.data?.data ?? [];
+  const categories = coursesQuery.data?.data ?? [];
 
   const nameLength = project.name.length;
   const descLength = project.description.length;
@@ -64,22 +64,22 @@ export function ProjectDetailsStep({
         </p>
       </div>
 
-      {/* Select de cursos */}
+      {/* Select de categorías */}
       <Select
-        label="Curso al que Pertenece"
-        placeholder="Seleccione un curso"
-        selectedKeys={project.courseId ? [String(project.courseId)] : []}
+        label="Categoría"
+        placeholder="Seleccione una categoría"
+        selectedKeys={project.categoryId ? [String(project.categoryId)] : []}
         onSelectionChange={(keys) => {
           const selected = Array.from(keys)[0] as string;
-          onUpdate({ ...project, courseId: Number(selected) });
+          onUpdate({ ...project, categoryId: Number(selected) });
         }}
         isDisabled={!eventId || coursesQuery.isLoading}
         isLoading={!!eventId && coursesQuery.isLoading}
         isRequired
       >
-        {courses.length > 0 ? (
-          courses.map((course: any) => (
-            <SelectItem key={course.id}>{course.code}</SelectItem>
+        {categories.length > 0 ? (
+          categories.map((category: any) => (
+            <SelectItem key={category.id}>{category.code}</SelectItem>
           ))
         ) : (
           <SelectItem key="no-courses" isDisabled>

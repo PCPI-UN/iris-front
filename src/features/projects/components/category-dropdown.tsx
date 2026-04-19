@@ -3,11 +3,8 @@
 import React from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Select, SelectItem } from "@/components/ui/select";
-import { useCoursesByEvent } from "../api/use-category";
+import { useCategoriesByEvent } from "../api/use-category";
 import type { Key } from "@react-types/shared";
-
-//MOCKAPI -> category
-//BACK -> courseId
 
 export const CategoriesDropdown = () => {
   const router = useRouter();
@@ -18,11 +15,11 @@ export const CategoriesDropdown = () => {
     ? Number(searchParams.get("event"))
     : undefined;
 
-  const { data, isLoading } = useCoursesByEvent(eventId);
-  const courses = data?.courses || [];
+  const { data, isLoading } = useCategoriesByEvent(eventId);
+  const categories = data?.categories || [];
 
   const selectedKeys = React.useMemo<Set<Key>>(() => {
-    const cat = searchParams?.get("courseId");
+    const cat = searchParams?.get("categoryId") || searchParams?.get("courseId");
     return cat ? new Set([cat]) : new Set<Key>();
   }, [searchParams]);
 
@@ -32,12 +29,12 @@ export const CategoriesDropdown = () => {
 
     const params = new URLSearchParams();
     searchParams?.forEach((v, k) => {
-      if (k === "courseId") return;
+      if (k === "courseId" || k === "categoryId") return;
       params.set(k, v);
     });
 
-    if (value) params.set("courseId", value);
-    else params.delete("courseId");
+    if (value) params.set("categoryId", value);
+    else params.delete("categoryId");
 
     router.push(`${pathname}?${params.toString()}`);
   };
@@ -59,10 +56,10 @@ export const CategoriesDropdown = () => {
         isLoading={isLoading}
         isDisabled={!eventId}
       >
-        {courses.length > 0 ? (
-          courses.map((course) => (
-            <SelectItem key={String(course.id)}>
-              {course.code}
+        {categories.length > 0 ? (
+          categories.map((category) => (
+            <SelectItem key={String(category.id)}>
+              {category.code}
             </SelectItem>
           ))
         ) : (

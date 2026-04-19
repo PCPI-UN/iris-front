@@ -14,7 +14,7 @@ type ReviewStepProps = {
 
 export function ReviewStep({ data, eventType }: ReviewStepProps) {
 
-  const courseQuery = useCourse({ courseId: data.project.courseId })
+  const courseQuery = useCourse({ courseId: data.project.categoryId })
 
   const course = courseQuery.data?.data
 
@@ -88,7 +88,7 @@ export function ReviewStep({ data, eventType }: ReviewStepProps) {
                 <p className="mt-1 text-pretty leading-relaxed">{data.project.description || "No especificada"}</p>
               </div>
               <div>
-                <p className="text-sm font-medium text-default-500">Curso</p>
+                <p className="text-sm font-medium text-default-500">Categoría</p>
                 <p className="mt-1">{course?.code || "No especificado"}</p>
               </div>
             </div>
