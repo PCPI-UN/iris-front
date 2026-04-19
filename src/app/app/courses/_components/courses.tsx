@@ -5,7 +5,7 @@ import { EventsDropdown } from "@/features/projects/components/events-dropdown";
 import { CreateCourse } from "@/features/courses/components/create-course";
 import '@/features/landing/index.css';
 
-export const Courses = () => {
+export const Categories = () => {
   return (
     <ContentLayout title="Category Management">
       <p className="text-gray-300 mb-4 text-sm sm:text-base">Manage categories within events</p>
@@ -19,3 +19,5 @@ export const Courses = () => {
     </ContentLayout>
   );
 };
+
+export const Courses = Categories;

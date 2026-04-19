@@ -29,7 +29,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useDisclosure } from "@/hooks/use-disclosure";
 import { useUser } from "@/lib/auth";
 import { canUpdateEvent } from "@/lib/authorization";
-import { useCoursesDropdown } from "@/features/courses/api/get-courses-dropdown";
+import { useCategoriesDropdown } from "@/features/courses/api/get-courses-dropdown";
 
 import { useEvent } from "../api/get-event";
 import { updateEventInputSchema, useUpdateEvent } from "../api/update-event";
@@ -148,7 +148,7 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
   ]);
 
   const eventQuery = useEvent({ eventId });
-  const coursesDropdownQuery = useCoursesDropdown({ eventId });
+  const categoriesDropdownQuery = useCategoriesDropdown({ eventId });
   const updateEventMutation = useUpdateEvent({
     mutationConfig: {
       onSuccess: () => {
@@ -249,7 +249,7 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
   }
 
   const event = eventQuery.data?.data;
-  const eventCourses = coursesDropdownQuery.data?.data ?? [];
+  const eventCategories = categoriesDropdownQuery.data?.data ?? [];
 
   const validateDateFields = (targetStep: 1 | 2 | 3) => {
     const nextErrors: DateFieldErrors = {};

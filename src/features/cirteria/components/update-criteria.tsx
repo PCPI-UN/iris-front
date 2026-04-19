@@ -18,7 +18,7 @@ import { useUser } from "@/lib/auth";
 import { Select, SelectItem } from "@/components/ui/select";
 import { useEffect, useState } from "react";
 import { useEvents } from "@/features/events/api/get-events";
-import { useCourses } from "@/features/courses/api/get-courses";
+import { useCategories } from "@/features/courses/api/get-courses";
 import { useCriterion } from "../api/get-criterion";
 import {
   updateCriteriaInputSchema,
@@ -74,12 +74,12 @@ export const UpdateCriteria = ({ criterionId }: UpdateCriteriaProps) => {
   }, [isOpen, criterion]);
 
   const eventsQuery = useEvents({ page: 1 });
-  const coursesQuery = useCourses({
+  const categoriesQuery = useCategories({
     eventId: selectedEvent ? Number(selectedEvent) : undefined,
     page: 1,
   });
   const events = eventsQuery.data?.data ?? [];
-  const courses = coursesQuery.data?.data ?? [];
+  const categories = categoriesQuery.data?.data ?? [];
 
   return (
     <>
@@ -199,11 +199,11 @@ export const UpdateCriteria = ({ criterionId }: UpdateCriteriaProps) => {
                       setSelectedCategories(set as Set<string>);
                     }}
                     isDisabled={!selectedEvent}
-                    isLoading={!!selectedEvent && coursesQuery.isLoading}
+                    isLoading={!!selectedEvent && categoriesQuery.isLoading}
                   >
                     {selectedEvent ? (
-                      courses.length ? (
-                        courses.map((c) => (
+                      categories.length ? (
+                        categories.map((c) => (
                           <SelectItem key={String(c.id)}>{c.code}</SelectItem>
                         ))
                       ) : (

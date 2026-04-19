@@ -53,7 +53,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           { title: "Events", url: paths.app.events.getHref(), icon: Calendar },
           {
             title: "Categories",
-            url: paths.app.courses.getHref(),
+            url: paths.app.categories.getHref(),
             icon: ArrowDownAZ,
           },
           {

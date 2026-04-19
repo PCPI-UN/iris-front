@@ -19,7 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/utils/cn";
 
-import { useCourse } from "../api/get-course";
+import { useCategory } from "../api/get-course";
 import {
   updateCourseInputSchema,
   useUpdateCourse,
@@ -35,7 +35,7 @@ export const UpdateCourse = ({ courseId }: UpdateCourseProps) => {
   const { addNotification } = useNotifications();
   const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
 
-  const courseQuery = useCourse({ courseId });
+  const courseQuery = useCategory({ courseId });
   const updateCourseMutation = useUpdateCourse({
     mutationConfig: {
       onSuccess: () => {

@@ -11,7 +11,7 @@ import { Chip } from "@heroui/chip";
 import { UpdateCriteria } from "./update-criteria";
 import { DeleteCriteria } from "./delete-criteria";
 import { useEventsDropdown } from "@/features/events/api/get-events-dropdown";
-import { useCourses } from "@/features/courses/api/get-courses";
+import { useCategories } from "@/features/courses/api/get-courses";
 
 export const CriteriaList = () => {
   const searchParams = useSearchParams();
@@ -31,14 +31,14 @@ export const CriteriaList = () => {
   });
 
   const eventsQuery = useEventsDropdown();
-  const coursesQuery = useCourses({
+  const categoriesQuery = useCategories({
     page: 1,
     eventId: selectedEventKey ? Number(selectedEventKey) : undefined,
     queryConfig: { enabled: !!selectedEventKey },
   });
 
   const events = eventsQuery.data?.data ?? [];
-  const categories = coursesQuery.data?.data ?? [];
+  const categories = categoriesQuery.data?.data ?? [];
 
   const isLoading = criteriaQuery.isLoading || eventsQuery.isLoading;
 
@@ -95,7 +95,7 @@ export const CriteriaList = () => {
             selectedKeys={selectedCategoryKey ? [selectedCategoryKey] : []}
             onSelectionChange={handleCategoryChange}
             isDisabled={!selectedEventKey}
-            isLoading={!!selectedEventKey && coursesQuery.isLoading}
+            isLoading={!!selectedEventKey && categoriesQuery.isLoading}
           >
             {categories.length > 0 ? (
               categories.map((c) => (

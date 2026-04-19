@@ -6,7 +6,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { Spinner } from "@/components/ui/spinner";
 import { Card, CardBody } from "@/components/ui/card";
 import { Pagination } from "@/components/ui/pagination";
-import { useCourses } from "../api/get-courses";
+import { useCategories } from "../api/get-courses";
 import { Chip } from "@heroui/chip";
 
 import { DeleteCourse } from "./delete-course";
@@ -18,12 +18,12 @@ export const CoursesList = () => {
   const page = searchParams?.get("page") ? Number(searchParams.get("page")) : 1;
   const eventId = searchParams?.get("event") || undefined;
 
-  const coursesQuery = useCourses({
+  const categoriesQuery = useCategories({
     page: page,
     eventId: eventId ? Number(eventId) : undefined,
   });
 
-  if (coursesQuery.isLoading) {
+  if (categoriesQuery.isLoading) {
     return (
       <div className="flex h-48 w-full items-center justify-center">
         <Spinner size="lg" />
@@ -31,10 +31,10 @@ export const CoursesList = () => {
     );
   }
 
-  const courses = coursesQuery.data?.data;
-  const meta = coursesQuery.data?.meta;
+  const categories = categoriesQuery.data?.data;
+  const meta = categoriesQuery.data?.meta;
 
-  if (!courses) return null;
+  if (!categories) return null;
 
   const handlePageChange = (newPage: number) => {
     const params = new URLSearchParams();
@@ -46,7 +46,7 @@ export const CoursesList = () => {
   return (
     <div className="space-y-4">
       <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
-        {courses.map((course) => (
+        {categories.map((course) => (
           <Card shadow="sm" key={course.id} className="glass-card">
             <CardBody className="p-4 sm:p-6 space-y-3 sm:space-y-4">
               <div className="space-y-2">

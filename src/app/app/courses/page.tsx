@@ -1,41 +1,28 @@
-import {
-  dehydrate,
-  HydrationBoundary,
-  QueryClient,
-} from "@tanstack/react-query";
+import { redirect } from "next/navigation";
 
-import { Courses } from "./_components/courses";
-import { getCoursesQueryOptions } from "@/features/courses/api/get-courses";
-import { RoleGuard } from "@/components/auth/role-guard";
-
-export const metadata = {
-  title: "Categories",
-  description: "Category Management",
-};
+import { paths } from "@/config/paths";
 
 const CoursesPage = async ({
   searchParams,
 }: {
   searchParams: Promise<{ page: string | null; event: string | null }>;
 }) => {
-  const queryClient = new QueryClient();
-
   const resolvedSearchParams = await searchParams;
-  const page = resolvedSearchParams.page ? Number(resolvedSearchParams.page) : 1;
-  const eventId = resolvedSearchParams.event;
+  const query = new URLSearchParams();
 
-  await queryClient.prefetchQuery(
-    getCoursesQueryOptions({ page, eventId: Number(eventId) })
-  );
+  if (resolvedSearchParams.page) {
+    query.set("page", resolvedSearchParams.page);
+  }
 
-  const dehydratedState = dehydrate(queryClient);
-  return (
-    <RoleGuard roles={["Admin"]}>
-      <HydrationBoundary state={dehydratedState}>
-        <Courses />
-      </HydrationBoundary>
-    </RoleGuard>
-  );
+  if (resolvedSearchParams.event) {
+    query.set("event", resolvedSearchParams.event);
+  }
+
+  const destination = query.toString()
+    ? `${paths.app.categories.getHref()}?${query.toString()}`
+    : paths.app.categories.getHref();
+
+  redirect(destination);
 };
 
 export default CoursesPage;

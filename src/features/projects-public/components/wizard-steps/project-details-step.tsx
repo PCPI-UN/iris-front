@@ -4,7 +4,7 @@ import { Input } from "@heroui/react";
 import { Textarea } from "@heroui/input";
 import { Select, SelectItem } from "@heroui/select";
 import { ProjectData } from "../project-wizard";
-import { useCoursesDropdown } from "@/features/courses/api/get-courses-dropdown";
+import { useCategoriesDropdown } from "@/features/courses/api/get-courses-dropdown";
 
 type ProjectDetailsStepProps = {
   eventId: number;
@@ -17,12 +17,12 @@ export function ProjectDetailsStep({
   project,
   onUpdate,
 }: ProjectDetailsStepProps) {
-  const coursesQuery = useCoursesDropdown({
+  const categoriesQuery = useCategoriesDropdown({
     eventId,
     queryConfig: { enabled: !!eventId },
   });
 
-  const categories = coursesQuery.data?.data ?? [];
+  const categories = categoriesQuery.data?.data ?? [];
 
   const nameLength = project.name.length;
   const descLength = project.description.length;
@@ -73,8 +73,8 @@ export function ProjectDetailsStep({
           const selected = Array.from(keys)[0] as string;
           onUpdate({ ...project, categoryId: Number(selected) });
         }}
-        isDisabled={!eventId || coursesQuery.isLoading}
-        isLoading={!!eventId && coursesQuery.isLoading}
+        isDisabled={!eventId || categoriesQuery.isLoading}
+        isLoading={!!eventId && categoriesQuery.isLoading}
         isRequired
       >
         {categories.length > 0 ? (

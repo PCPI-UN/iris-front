@@ -18,7 +18,7 @@ import { useNotifications } from "@/components/ui/notifications";
 import { useUser } from "@/lib/auth";
 import { Select, SelectItem } from "@/components/ui/select";
 import { useEventsDropdown } from "@/features/events/api/get-events-dropdown";
-import { useCourses } from "@/features/courses/api/get-courses";
+import { useCategories } from "@/features/courses/api/get-courses";
 
 import {
   createCriteriaInputSchema,
@@ -59,12 +59,12 @@ export const CreateCriteria = () => {
 
   const eventsQuery = useEventsDropdown();
   const events = eventsQuery.data?.data ?? [];
-  const coursesQuery = useCourses({
+  const categoriesQuery = useCategories({
     page: 1,
     eventId: selectedEventKey ? Number(selectedEventKey) : undefined,
     queryConfig: { enabled: !!selectedEventKey },
   });
-  const categories = coursesQuery.data?.data ?? [];
+  const categories = categoriesQuery.data?.data ?? [];
 
   return (
     <>
@@ -161,7 +161,7 @@ export const CreateCriteria = () => {
                     setSelectedCategoryKeys(stringSet);
                   }}
                   isDisabled={!selectedEventKey}
-                  isLoading={!!selectedEventKey && coursesQuery.isLoading}
+                  isLoading={!!selectedEventKey && categoriesQuery.isLoading}
                 >
                   {categories.length > 0 ? (
                     categories.map((category) => (
