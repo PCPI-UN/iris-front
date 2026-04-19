@@ -249,7 +249,6 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
   }
 
   const event = eventQuery.data?.data;
-  const eventCategories = categoriesDropdownQuery.data?.data ?? [];
 
   const validateDateFields = (targetStep: 1 | 2 | 3) => {
     const nextErrors: DateFieldErrors = {};

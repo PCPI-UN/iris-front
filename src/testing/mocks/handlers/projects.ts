@@ -178,7 +178,7 @@ export const projectsHandlers = [
           (p) =>
             String((p as any).categoryId ?? (p as any).courseId) ===
             String(categoryId)
-        )
+        );
       }
 
       // USER role: only assigned projects if jury of event
