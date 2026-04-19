@@ -13,7 +13,8 @@ export const getCategory = async ({
   
   return {
     data: response.course,
-  };};
+  };
+};
 
 export const getCategoryQueryOptions = (categoryId: number) => {
   return queryOptions({
@@ -21,7 +22,8 @@ export const getCategoryQueryOptions = (categoryId: number) => {
     queryFn: async () => {
       const result = await getCategory({ categoryId });
       return result;
-    },  });
+    },
+  });
 };
 
 type UseCategoryOptions = {

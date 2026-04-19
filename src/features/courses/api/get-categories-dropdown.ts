@@ -16,10 +16,9 @@ export const getCategoriesDropdown = async (eventId?: number, page?: number): Pr
         page: page || 1,
         total: response.courses.length,
         totalPages: response.nextPageToken ? 2 : 1,
-      },  };
+      },
+  };
 };
-
-
 
 export const getCategoriesDropdownQueryOptions = (eventId?: number) => {
   return queryOptions({

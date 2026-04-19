@@ -44,7 +44,7 @@ export const getCategoriesQueryOptions = (
       const result = await getCategories({ page, eventId });
       return result;
     },
-    });
+  });
 };
 
 type UseCategoriesOptions = {

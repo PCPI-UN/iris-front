@@ -5,7 +5,7 @@ import { api } from "@/lib/api-client";
 import { MutationConfig } from "@/lib/react-query";
 import { Category } from "@/types/api";
 
-import { getCategoryQueryOptions } from "./get-course";
+import { getCategoryQueryOptions } from "./get-category";
 
 export const updateCategoryInputSchema = z.object({
   id: z.number().min(1, "ID is required"),
