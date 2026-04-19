@@ -5,6 +5,7 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Select, SelectItem } from "@/components/ui/select";
 import { useCategoriesByEvent } from "../api/use-category";
 import type { Key } from "@react-types/shared";
+import { readCategoryIdFromSearchParams } from "@/lib/compat/category-legacy";
 
 export const CategoriesDropdown = () => {
   const router = useRouter();
@@ -19,7 +20,7 @@ export const CategoriesDropdown = () => {
   const categories = data?.categories || [];
 
   const selectedKeys = React.useMemo<Set<Key>>(() => {
-    const cat = searchParams?.get("categoryId") || searchParams?.get("courseId");
+    const cat = readCategoryIdFromSearchParams(searchParams);
     return cat ? new Set([cat]) : new Set<Key>();
   }, [searchParams]);
 

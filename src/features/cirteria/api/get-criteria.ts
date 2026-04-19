@@ -1,6 +1,7 @@
 import { queryOptions, useQuery } from "@tanstack/react-query";
 
 import { api } from "@/lib/api-client";
+import { withLegacyCourseIdParam, normalizeCategoryIds } from "@/lib/compat/category-legacy";
 import { QueryConfig } from "@/lib/react-query";
 import { Criterion } from "@/types/api";
 
@@ -33,13 +34,13 @@ export const getCriteria = async ({
       page,
       limit,
       ...(eventId ? { eventId } : {}),
-      ...(categoryId ? { courseId: categoryId } : {}),
+      ...withLegacyCourseIdParam(categoryId),
     },
   });
 
   const criterions = (response.criterions || []).map((criterion) => ({
     ...criterion,
-    categoryIds: criterion.categoryIds ?? criterion.courseIds ?? [],
+    categoryIds: normalizeCategoryIds(criterion) as number[],
   }));
 
   return {

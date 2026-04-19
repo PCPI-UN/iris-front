@@ -14,6 +14,7 @@ import { useCategoryCriteria } from "@/features/cirteria/api/get-course-criterio
 import { useCreateEvaluation } from "@/features/evaluations/api/create-evaluation"
 import { useNotifications } from "@/components/ui/notifications"
 import { Spinner } from "@heroui/spinner"
+import { normalizeCategoryId } from "@/lib/compat/category-legacy"
 
 const SCORE_SCALE = [
   { value: 1, label: "Insuficiente" },
@@ -53,7 +54,7 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
   const { data: projectData, isLoading: isProjectLoading } = useProject({ projectId });
 
   const project = (projectData as any)?.data ?? projectData ?? null;
-  const projectCategoryId = project?.categoryId ?? project?.courseId ?? "";
+  const projectCategoryId = normalizeCategoryId(project ?? {}) ?? "";
 
   const {
     data: categoryCriteriaData,

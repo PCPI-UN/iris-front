@@ -17,6 +17,7 @@ import { ViewDetails } from "./view-details";
 import { DataTable } from "@/components/data-table";
 import { columnsProject } from "./columns-project-table";
 import React from "react";
+import { readCategoryIdFromSearchParams } from "@/lib/compat/category-legacy";
 
 export const ProjectList = () => {
   const searchParams = useSearchParams();
@@ -25,7 +26,7 @@ export const ProjectList = () => {
   const page = searchParams?.get("page") ? Number(searchParams.get("page")) : 1;
   const eventId = searchParams?.get("event") ? Number(searchParams.get("event")) : undefined;
   const state = searchParams?.get("state") || "UNDER_REVIEW";
-  const categoryParam = searchParams?.get("categoryId") || searchParams?.get("courseId");
+  const categoryParam = readCategoryIdFromSearchParams(searchParams);
   const categoryId = categoryParam ? Number(categoryParam) : undefined;
 
   const projectsQuery = useProjects({ page, eventId, state, categoryId });

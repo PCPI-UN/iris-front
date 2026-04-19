@@ -1,6 +1,7 @@
 import { useQuery, queryOptions } from "@tanstack/react-query";
 
 import { api } from "@/lib/api-client";
+import { normalizeCategoryIds } from "@/lib/compat/category-legacy";
 import { QueryConfig } from "@/lib/react-query";
 import { Criterion } from "@/types/api";
 
@@ -15,7 +16,7 @@ export const getCriterion = async ({
   return {
     data: {
       ...criterion,
-      categoryIds: criterion.categoryIds ?? criterion.courseIds ?? [],
+      categoryIds: normalizeCategoryIds(criterion) as number[],
     },
   };
 };

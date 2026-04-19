@@ -30,6 +30,7 @@ import {
   ModalFooter,
 } from "@/components/ui/modal";
 import { paths } from "@/config/paths";
+import { appendLegacyCourseIdToFormData } from "@/lib/compat/category-legacy";
 
 export type Participant = {
   id: string;
@@ -285,7 +286,7 @@ const handleSubmit = () => {
       const formData = new FormData();
       formData.append("eventId", payloadData.eventId);
       formData.append("eventType", payloadData.eventType);
-      formData.append("courseId", payloadData.categoryId);
+      appendLegacyCourseIdToFormData(formData, payloadData.categoryId);
       formData.append("participants", payloadData.participants);
       formData.append("name", `Equipo de ${wizardData.participants.map(p => p.firstName).join("-")}`);
 
@@ -338,7 +339,7 @@ const handleSubmit = () => {
     if (payloadData.description) formData.append("description", payloadData.description);
     formData.append("eventId", payloadData.eventId);
     formData.append("eventType", payloadData.eventType);
-    formData.append("courseId", payloadData.categoryId);
+    appendLegacyCourseIdToFormData(formData, payloadData.categoryId);
     formData.append("participants", payloadData.participants);
     formData.append("documents", payloadData.documents);
 

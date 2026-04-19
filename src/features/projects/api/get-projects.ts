@@ -1,6 +1,7 @@
 import { queryOptions, useQuery } from "@tanstack/react-query";
 
 import { api } from "@/lib/api-client";
+import { withLegacyCourseIdParam } from "@/lib/compat/category-legacy";
 import { QueryConfig } from "@/lib/react-query";
 import { Meta, Project } from "@/types/api";
 
@@ -22,7 +23,7 @@ export const getProjects = async (
     params: {
       page,
       state,
-      ...(categoryId ? { courseId: categoryId } : {}),
+      ...withLegacyCourseIdParam(categoryId),
     },
   });
   

@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 
 import { api } from "@/lib/api-client";
+import { withLegacyCourseIdsParam } from "@/lib/compat/category-legacy";
 import { MutationConfig } from "@/lib/react-query";
 import { Evaluation } from "@/types/api";
 
@@ -29,7 +30,7 @@ export const createCriteria = ({
 }): Promise<{ data: Evaluation }> => {
   const payload = {
     ...data,
-    courseIds: data.categoryIds,
+    ...withLegacyCourseIdsParam(data.categoryIds),
   };
   return api.post("/criterions", payload);
 };

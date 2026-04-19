@@ -2,6 +2,10 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 
 import { api } from "@/lib/api-client";
+import {
+  normalizeCategoryIds,
+  withLegacyCourseIdsParam,
+} from "@/lib/compat/category-legacy";
 import { MutationConfig } from "@/lib/react-query";
 import { Criterion } from "@/types/api";
 
@@ -29,17 +33,15 @@ export const updateCriteria = async ({
 }): Promise<{ data: Criterion }> => {
   const payload = {
     ...data,
-    ...(data.categoryIds ? { courseIds: data.categoryIds } : {}),
+    ...withLegacyCourseIdsParam(data.categoryIds),
   };
   const response = await api.put<Criterion>(`/criterions/${criterionId}`, payload);
+  const criterion = ((response as any).data || response) as Criterion;
 
   return {
     data: {
-      ...((response as any).data || response),
-      categoryIds:
-        ((response as any).data || response).categoryIds ??
-        ((response as any).data || response).courseIds ??
-        [],
+      ...criterion,
+      categoryIds: normalizeCategoryIds(criterion) as number[],
     },
   };
 };

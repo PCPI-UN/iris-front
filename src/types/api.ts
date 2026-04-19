@@ -177,6 +177,8 @@ export type Course = Entity<{
   createdAt: number;
 }>;
 
+export type Category = Course;
+
 export type EvaluationScoreInput = {
   criterion: string;
   score: number;
@@ -250,10 +252,12 @@ export type Criterion = Entity<{
   createdAt?: number;
 }>;
 
-export type CriterionCourse = Entity<{
-  courseId: number;
+export type CriterionCategory = Entity<{
+  categoryId: number;
   criterionId: number;
 }>;
+
+export type CriterionCourse = CriterionCategory;
 
 export type DeveloperProfile = Entity<{
   name: string;
