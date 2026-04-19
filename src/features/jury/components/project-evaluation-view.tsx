@@ -10,7 +10,7 @@ import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@/comp
 import { FileText, Users, Send, ArrowLeft, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react"
 import { useProject } from "@/features/projects/api/get-project"
 import { AvatarGroup } from "@/features/projects/components/avatar-icon"
-import { useCategoryCriteria } from "@/features/cirteria/api/get-category-criterion"
+import { useCategoryCriteria } from "@/features/criteria/api/get-category-criterion"
 import { useCreateEvaluation } from "@/features/evaluations/api/create-evaluation"
 import { useNotifications } from "@/components/ui/notifications"
 import { Spinner } from "@heroui/spinner"
