@@ -5,7 +5,7 @@ import { api } from "@/lib/api-client";
 import { MutationConfig } from "@/lib/react-query";
 import { Course } from "@/types/api";
 
-import { getCourseQueryOptions } from "./get-course";
+import { getCategoryQueryOptions } from "./get-course";
 
 export const updateCourseInputSchema = z.object({
   id: z.number().min(1, "ID is required"),
@@ -38,10 +38,13 @@ export const useUpdateCourse = ({
   return useMutation({
     onSuccess: (data, variables, ...args) => {
       queryClient.invalidateQueries({
+        queryKey: ["categories"],
+      });
+      queryClient.invalidateQueries({
         queryKey: ["courses"],
       });
       queryClient.refetchQueries({
-        queryKey: getCourseQueryOptions(data.data.id).queryKey,
+        queryKey: getCategoryQueryOptions(data.data.id).queryKey,
       });
       onSuccess?.(data, variables, ...args);
     },

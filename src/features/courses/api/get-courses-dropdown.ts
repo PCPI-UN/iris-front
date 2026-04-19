@@ -22,28 +22,31 @@ export const getCoursesDropdown = async (eventId?: number, page?: number): Promi
 
 
 export const getCoursesDropdownQueryOptions = (eventId?: number) => {
+  return getCategoriesDropdownQueryOptions(eventId);
+};
+
+export const getCategoriesDropdownQueryOptions = (eventId?: number) => {
   return queryOptions({
-    queryKey: eventId ? ["courses", "dropdown", eventId] : ["courses", "dropdown"],
+    queryKey: eventId ? ["categories", "dropdown", eventId] : ["categories", "dropdown"],
     queryFn: () => getCoursesDropdown(eventId),
   });
 };
 
 type UseCoursesDropdownOptions = {
   eventId?: number;
-  queryConfig?: QueryConfig<typeof getCoursesDropdownQueryOptions>;
+  queryConfig?: QueryConfig<typeof getCategoriesDropdownQueryOptions>;
 };
 
-export const useCoursesDropdown = ({ 
+export const useCategoriesDropdown = ({ 
   eventId, 
   queryConfig 
 }: UseCoursesDropdownOptions = {}) => {
   return useQuery({
-    ...getCoursesDropdownQueryOptions(eventId),
+    ...getCategoriesDropdownQueryOptions(eventId),
     enabled: !!eventId,
     ...queryConfig,
   });
 };
 
 export const getCategoriesDropdown = getCoursesDropdown;
-export const getCategoriesDropdownQueryOptions = getCoursesDropdownQueryOptions;
-export const useCategoriesDropdown = useCoursesDropdown;
+export const useCoursesDropdown = useCategoriesDropdown;

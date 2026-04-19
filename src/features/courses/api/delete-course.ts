@@ -4,8 +4,6 @@ import { api } from "@/lib/api-client";
 import { Course } from "@/types/api";
 import { MutationConfig } from "@/lib/react-query";
 
-import { getCoursesQueryOptions } from "./get-courses";
-
 export const deleteCourse = ({ courseId }: { courseId: number }): Promise<{ data: Course }> => {
   return api.delete(`/events/courses/delete`, { id: courseId });
 };
@@ -23,6 +21,9 @@ export const useDeleteCourse = ({
 
   return useMutation({
     onSuccess: (data, variables, ...args) => {
+      queryClient.invalidateQueries({
+        queryKey: ["categories"],
+      });
       queryClient.invalidateQueries({
         queryKey: ["courses"],
       });

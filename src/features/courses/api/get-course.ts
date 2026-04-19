@@ -4,38 +4,48 @@ import { api } from "@/lib/api-client";
 import { QueryConfig } from "@/lib/react-query";
 import { Course } from "@/types/api";
 
-export const getCourse = async ({
-  courseId,
+export const getCategory = async ({
+  categoryId,
 }: {
-  courseId: number;
+  categoryId: number;
 }): Promise<{ data: Course }> => {
-  const response = await api.get<{ course: Course }>(`/events/courses/${courseId}`);
+  const response = await api.get<{ course: Course }>(`/events/courses/${categoryId}`);
   
   return {
     data: response.course,
   };};
 
-export const getCourseQueryOptions = (courseId: number) => {
+export const getCategoryQueryOptions = (categoryId: number) => {
   return queryOptions({
-    queryKey: ["courses", courseId],
+    queryKey: ["categories", categoryId],
     queryFn: async () => {
-      const result = await getCourse({ courseId });
+      const result = await getCategory({ categoryId });
       return result;
     },  });
 };
 
-type UseCourseOptions = {
-  courseId: number;
-  queryConfig?: QueryConfig<typeof getCourseQueryOptions>;
+type UseCategoryOptions = {
+  categoryId: number;
+  queryConfig?: QueryConfig<typeof getCategoryQueryOptions>;
 };
 
-export const useCourse = ({ courseId, queryConfig }: UseCourseOptions) => {
+export const useCategory = ({ categoryId, queryConfig }: UseCategoryOptions) => {
   return useQuery({
-    ...getCourseQueryOptions(courseId),
+    ...getCategoryQueryOptions(categoryId),
     ...queryConfig,
   });
 };
 
-export const getCategory = getCourse;
-export const getCategoryQueryOptions = getCourseQueryOptions;
-export const useCategory = useCourse;
+export const getCourse = ({ courseId }: { courseId: number }) =>
+  getCategory({ categoryId: courseId });
+
+export const getCourseQueryOptions = (courseId: number) =>
+  getCategoryQueryOptions(courseId);
+
+type UseCourseOptions = {
+  courseId: number;
+  queryConfig?: QueryConfig<typeof getCategoryQueryOptions>;
+};
+
+export const useCourse = ({ courseId, queryConfig }: UseCourseOptions) =>
+  useCategory({ categoryId: courseId, queryConfig });

@@ -35,7 +35,7 @@ export const UpdateCourse = ({ courseId }: UpdateCourseProps) => {
   const { addNotification } = useNotifications();
   const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
 
-  const courseQuery = useCategory({ courseId });
+  const courseQuery = useCategory({ categoryId: courseId });
   const updateCourseMutation = useUpdateCourse({
     mutationConfig: {
       onSuccess: () => {

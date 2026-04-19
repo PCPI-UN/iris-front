@@ -14,7 +14,7 @@ type ReviewStepProps = {
 
 export function ReviewStep({ data, eventType }: ReviewStepProps) {
 
-  const categoryQuery = useCategory({ courseId: data.project.categoryId })
+  const categoryQuery = useCategory({ categoryId: data.project.categoryId })
 
   const category = categoryQuery.data?.data
 

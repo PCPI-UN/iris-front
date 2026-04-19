@@ -9,6 +9,11 @@ type GetCoursesResponse = {
   nextPageToken?: string;
 };
 
+type GetCategoriesOptions = {
+  page?: number;
+  eventId?: number;
+};
+
 export const getCourses = async (
   { page, eventId }: { page?: number; eventId?: number } = { page: 1 }
 ): Promise<{ data: Course[]; meta: Meta }> => {
@@ -30,11 +35,11 @@ export const getCourses = async (
   };
 };
 
-export const getCoursesQueryOptions = (
-  { page = 1, eventId }: { page?: number; eventId?: number } = {}
+export const getCategoriesQueryOptions = (
+  { page = 1, eventId }: GetCategoriesOptions = {}
 ) => {
   return queryOptions({
-    queryKey: ["courses", { page, eventId: eventId ?? null }],
+    queryKey: ["categories", { page, eventId: eventId ?? null }],
     queryFn: async () => {
       const result = await getCourses({ page, eventId });
       return result;
@@ -42,19 +47,20 @@ export const getCoursesQueryOptions = (
     });
 };
 
+export const getCoursesQueryOptions = getCategoriesQueryOptions;
+
 type UseCoursesOptions = {
   page?: number;
   eventId?: number;
-  queryConfig?: QueryConfig<typeof getCoursesQueryOptions>;
+  queryConfig?: QueryConfig<typeof getCategoriesQueryOptions>;
 };
 
-export const useCourses = ({ queryConfig, page, eventId }: UseCoursesOptions) => {
+export const useCategories = ({ queryConfig, page, eventId }: UseCoursesOptions) => {
   return useQuery({
-    ...getCoursesQueryOptions({ page, eventId }),
+    ...getCategoriesQueryOptions({ page, eventId }),
     ...queryConfig,
   });
 };
 
 export const getCategories = getCourses;
-export const getCategoriesQueryOptions = getCoursesQueryOptions;
-export const useCategories = useCourses;
+export const useCourses = useCategories;

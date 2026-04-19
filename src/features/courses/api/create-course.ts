@@ -5,8 +5,6 @@ import { api } from "@/lib/api-client";
 import { MutationConfig } from "@/lib/react-query";
 import { Course } from "@/types/api";
 
-import { getCoursesQueryOptions } from "./get-courses";
-
 export const createCourseInputSchema = z.object({
   code: z.string().min(1, "Required"),
   description: z.string().min(1, "Required"),
@@ -37,6 +35,9 @@ export const useCreateCourse = ({
 
   return useMutation({
     onSuccess: (data, variables, ...args) => {
+      queryClient.invalidateQueries({
+        queryKey: ["categories"],
+      });
       queryClient.invalidateQueries({
         queryKey: ["courses"],
       });
