@@ -18,11 +18,11 @@ import { Select, SelectItem } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 
-import { useCategory } from "../api/get-course";
+import { useCategory } from "../api/get-category";
 import {
   updateCategoryInputSchema,
   useUpdateCategory,
-} from "../api/update-course";
+} from "../api/update-category";
 
 import { useEvents } from "@/features/events/api/get-events";
 

@@ -6,11 +6,11 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { Spinner } from "@/components/ui/spinner";
 import { Card, CardBody } from "@/components/ui/card";
 import { Pagination } from "@/components/ui/pagination";
-import { useCategories } from "../api/get-courses";
+import { useCategories } from "../api/get-categories";
 import { Chip } from "@heroui/chip";
 
-import { DeleteCategory } from "./delete-course";
-import { UpdateCategory } from "./update-course";
+import { DeleteCategory } from "./delete-category";
+import { UpdateCategory } from "./update-category";
 
 export const CategoriesList = () => {
   const searchParams = useSearchParams();

@@ -21,7 +21,7 @@ import { useEvents } from "@/features/events/api/get-events";
 import {
   createCategoryInputSchema,
   useCreateCategory,
-} from "../api/create-course";
+} from "../api/create-category";
 import { Input } from "@/components/ui/input";
 
 export const CreateCategory = () => {

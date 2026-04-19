@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/modal";
 import { useNotifications } from "@/components/ui/notifications";
 
-import { useDeleteCategory } from "../api/delete-course";
+import { useDeleteCategory } from "../api/delete-category";
 import { useDisclosure } from '@/hooks/use-disclosure';
 
 type DeleteCategoryProps = {
