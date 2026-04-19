@@ -19,5 +19,3 @@ export const Categories = () => {
     </ContentLayout>
   );
 };
-
-export const Courses = Categories;
