@@ -3,35 +3,30 @@ import { z } from "zod";
 
 import { api } from "@/lib/api-client";
 import { MutationConfig } from "@/lib/react-query";
-import { Course } from "@/types/api";
+import { Category } from "@/types/api";
 
 import { getCategoryQueryOptions } from "./get-course";
 
-export const updateCourseInputSchema = z.object({
+export const updateCategoryInputSchema = z.object({
   id: z.number().min(1, "ID is required"),
   code: z.string().min(1, "Required"),
   description: z.string().min(1, "Required"),
   active: z.boolean(),
 });
 
-export const updateCategoryInputSchema = updateCourseInputSchema;
-
-export type UpdateCourseInput = z.infer<typeof updateCourseInputSchema>;
-export type UpdateCategoryInput = UpdateCourseInput;
+export type UpdateCategoryInput = z.infer<typeof updateCategoryInputSchema>;
 
 export const updateCategory = ({
   data
 }: {
-  data: UpdateCourseInput;
-}): Promise<{ data: Course }> => {
+  data: UpdateCategoryInput;
+}): Promise<{ data: Category }> => {
   return api.patch(`/events/courses/update`, data);
 };
 
-type UseUpdateCourseOptions = {
+type UseUpdateCategoryOptions = {
   mutationConfig?: MutationConfig<typeof updateCategory>;
 };
-
-type UseUpdateCategoryOptions = UseUpdateCourseOptions;
 
 export const useUpdateCategory = ({
   mutationConfig,
@@ -44,9 +39,6 @@ export const useUpdateCategory = ({
     onSuccess: (data, variables, ...args) => {
       queryClient.invalidateQueries({
         queryKey: ["categories"],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["courses"],
       });
       queryClient.refetchQueries({
         queryKey: getCategoryQueryOptions(data.data.id).queryKey,

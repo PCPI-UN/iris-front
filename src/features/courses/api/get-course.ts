@@ -2,14 +2,14 @@ import { useQuery, queryOptions } from "@tanstack/react-query";
 
 import { api } from "@/lib/api-client";
 import { QueryConfig } from "@/lib/react-query";
-import { Course } from "@/types/api";
+import { Category } from "@/types/api";
 
 export const getCategory = async ({
   categoryId,
 }: {
   categoryId: number;
-}): Promise<{ data: Course }> => {
-  const response = await api.get<{ course: Course }>(`/events/courses/${categoryId}`);
+}): Promise<{ data: Category }> => {
+  const response = await api.get<{ course: Category }>(`/events/courses/${categoryId}`);
   
   return {
     data: response.course,

@@ -15,7 +15,6 @@ import {
 } from "@/components/ui/modal";
 import { useDisclosure } from '@/hooks/use-disclosure';
 import { useNotifications } from "@/components/ui/notifications";
-import { useUser } from "@/lib/auth";
 import { Select, SelectItem } from "@/components/ui/select";
 import { useEvents } from "@/features/events/api/get-events";
 
@@ -57,7 +56,7 @@ export const CreateCategory = () => {
         <ModalContent>
           {(onClose) => (
             <Form
-              id="create-course"
+              id="create-category"
               onSubmit={async (e) => {
                 e.preventDefault();
                 const form = e.target as HTMLFormElement;

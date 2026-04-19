@@ -2,10 +2,10 @@ import { queryOptions, useQuery } from "@tanstack/react-query";
 
 import { api } from "@/lib/api-client";
 import { QueryConfig } from "@/lib/react-query";
-import { Meta, Course } from "@/types/api";
+import { Meta, Category } from "@/types/api";
 
-type GetCoursesResponse = {
-  courses: Course[];
+type GetCategoriesResponse = {
+  courses: Category[];
   nextPageToken?: string;
 };
 
@@ -14,11 +14,11 @@ type GetCategoriesOptions = {
   eventId?: number;
 };
 
-export const getCourses = async (
+export const getCategories = async (
   { page, eventId }: { page?: number; eventId?: number } = { page: 1 }
-): Promise<{ data: Course[]; meta: Meta }> => {
+): Promise<{ data: Category[]; meta: Meta }> => {
   
-  const response = await api.get<GetCoursesResponse>(`/events/courses/all`, {
+  const response = await api.get<GetCategoriesResponse>(`/events/courses/all`, {
     params: {
       page,
       ...(eventId ? { eventId } : {})
@@ -41,26 +41,21 @@ export const getCategoriesQueryOptions = (
   return queryOptions({
     queryKey: ["categories", { page, eventId: eventId ?? null }],
     queryFn: async () => {
-      const result = await getCourses({ page, eventId });
+      const result = await getCategories({ page, eventId });
       return result;
     },
     });
 };
 
-export const getCoursesQueryOptions = getCategoriesQueryOptions;
-
-type UseCoursesOptions = {
+type UseCategoriesOptions = {
   page?: number;
   eventId?: number;
   queryConfig?: QueryConfig<typeof getCategoriesQueryOptions>;
 };
 
-export const useCategories = ({ queryConfig, page, eventId }: UseCoursesOptions) => {
+export const useCategories = ({ queryConfig, page, eventId }: UseCategoriesOptions) => {
   return useQuery({
     ...getCategoriesQueryOptions({ page, eventId }),
     ...queryConfig,
   });
 };
-
-export const getCategories = getCourses;
-export const useCourses = useCategories;

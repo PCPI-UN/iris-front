@@ -166,7 +166,7 @@ export type ProjectAssignment = Entity<{
   project: Project;
 }>;
 
-export type Course = Entity<{
+export type Category = Entity<{
   id: number;
   eventId: number;
   code: string;
@@ -176,7 +176,7 @@ export type Course = Entity<{
   createdAt: number;
 }>;
 
-export type Category = Course;
+export type Course = Category;
 
 export type EvaluationScoreInput = {
   criterion: string;

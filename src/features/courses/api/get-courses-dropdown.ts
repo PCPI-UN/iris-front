@@ -2,11 +2,11 @@ import { queryOptions, useQuery } from "@tanstack/react-query";
 
 import { api } from "@/lib/api-client";
 import { QueryConfig } from "@/lib/react-query";
-import { Course, Meta } from "@/types/api";
+import { Category, Meta } from "@/types/api";
 
-export const getCoursesDropdown = async (eventId?: number, page?: number): Promise<{ data: Course[]; meta: Meta }> => {
+export const getCategoriesDropdown = async (eventId?: number, page?: number): Promise<{ data: Category[]; meta: Meta }> => {
     const response = await api.get<{
-        courses: Course[];
+        courses: Category[];
         nextPageToken: string;
       }>(`/events/courses/event/${eventId}`, { params: { eventId: eventId, page } });
 
@@ -21,18 +21,14 @@ export const getCoursesDropdown = async (eventId?: number, page?: number): Promi
 
 
 
-export const getCoursesDropdownQueryOptions = (eventId?: number) => {
-  return getCategoriesDropdownQueryOptions(eventId);
-};
-
 export const getCategoriesDropdownQueryOptions = (eventId?: number) => {
   return queryOptions({
     queryKey: eventId ? ["categories", "dropdown", eventId] : ["categories", "dropdown"],
-    queryFn: () => getCoursesDropdown(eventId),
+    queryFn: () => getCategoriesDropdown(eventId),
   });
 };
 
-type UseCoursesDropdownOptions = {
+type UseCategoriesDropdownOptions = {
   eventId?: number;
   queryConfig?: QueryConfig<typeof getCategoriesDropdownQueryOptions>;
 };
@@ -40,13 +36,10 @@ type UseCoursesDropdownOptions = {
 export const useCategoriesDropdown = ({ 
   eventId, 
   queryConfig 
-}: UseCoursesDropdownOptions = {}) => {
+}: UseCategoriesDropdownOptions = {}) => {
   return useQuery({
     ...getCategoriesDropdownQueryOptions(eventId),
     enabled: !!eventId,
     ...queryConfig,
   });
 };
-
-export const getCategoriesDropdown = getCoursesDropdown;
-export const useCoursesDropdown = useCategoriesDropdown;

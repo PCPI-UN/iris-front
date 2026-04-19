@@ -17,7 +17,6 @@ import { useNotifications } from "@/components/ui/notifications";
 import { Select, SelectItem } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { cn } from "@/utils/cn";
 
 import { useCategory } from "../api/get-course";
 import {
@@ -99,7 +98,7 @@ export const UpdateCategory = ({ categoryId }: UpdateCategoryProps) => {
             return (
             <Form
               key={`update-category-${categoryId}-${category?.id}`}
-              id="update-course"
+              id="update-category"
               onSubmit={async (e) => {
                 e.preventDefault();
                 const form = e.target as HTMLFormElement;

@@ -1,18 +1,16 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { api } from "@/lib/api-client";
-import { Course } from "@/types/api";
+import { Category } from "@/types/api";
 import { MutationConfig } from "@/lib/react-query";
 
-export const deleteCategory = ({ categoryId }: { categoryId: number }): Promise<{ data: Course }> => {
+export const deleteCategory = ({ categoryId }: { categoryId: number }): Promise<{ data: Category }> => {
   return api.delete(`/events/courses/delete`, { id: categoryId });
 };
 
-type UseDeleteCourseOptions = {
+type UseDeleteCategoryOptions = {
   mutationConfig?: MutationConfig<typeof deleteCategory>;
 };
-
-type UseDeleteCategoryOptions = UseDeleteCourseOptions;
 
 export const useDeleteCategory = ({
   mutationConfig,
@@ -25,9 +23,6 @@ export const useDeleteCategory = ({
     onSuccess: (data, variables, ...args) => {
       queryClient.invalidateQueries({
         queryKey: ["categories"],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["courses"],
       });
       onSuccess?.(data, variables, ...args);
     },
