@@ -59,6 +59,6 @@ export const contributors: ContributorCard[] = [
   { name: 'Esteban Arnedo', role: 'Full Stack Developer', version: 'v2.0' },
   { name: 'Carlos Arango', role: 'Full Stack Developer', version: 'v2.0' },
   { name: 'Wilmer Santiago', role: 'Full Stack Developer', version: 'v2.0' },
-  { name: 'Camilo De La Rosa', role: 'DevOps Engineer', version: 'v2.0' },
+  { name: 'Camilo De la Rosa', role: 'DevOps Engineer', version: 'v2.0' },
   { name: 'Natalia Carpintero', role: 'Scrum Master - Frontend Developer', version: 'v2.0' },
 ];
