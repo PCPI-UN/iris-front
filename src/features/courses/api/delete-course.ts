@@ -8,9 +8,6 @@ export const deleteCategory = ({ categoryId }: { categoryId: number }): Promise<
   return api.delete(`/events/courses/delete`, { id: categoryId });
 };
 
-export const deleteCourse = ({ courseId }: { courseId: number }) =>
-  deleteCategory({ categoryId: courseId });
-
 type UseDeleteCourseOptions = {
   mutationConfig?: MutationConfig<typeof deleteCategory>;
 };
@@ -38,5 +35,3 @@ export const useDeleteCategory = ({
     mutationFn: deleteCategory,
   });
 };
-
-export const useDeleteCourse = useDeleteCategory;

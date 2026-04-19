@@ -12,6 +12,14 @@ type SearchParamsLike = {
   get: (key: string) => string | null;
 };
 
+export const categoryQueryParamKeys = ["categoryId", "courseId"] as const;
+
+export const isCategoryQueryParamKey = (key: string) => {
+  return categoryQueryParamKeys.includes(
+    key as (typeof categoryQueryParamKeys)[number]
+  );
+};
+
 export const withLegacyCourseIdParam = (categoryId?: number | string) => {
   return categoryId ? { courseId: categoryId } : {};
 };

@@ -35,17 +35,3 @@ export const useCategory = ({ categoryId, queryConfig }: UseCategoryOptions) => 
     ...queryConfig,
   });
 };
-
-export const getCourse = ({ courseId }: { courseId: number }) =>
-  getCategory({ categoryId: courseId });
-
-export const getCourseQueryOptions = (courseId: number) =>
-  getCategoryQueryOptions(courseId);
-
-type UseCourseOptions = {
-  courseId: number;
-  queryConfig?: QueryConfig<typeof getCategoryQueryOptions>;
-};
-
-export const useCourse = ({ courseId, queryConfig }: UseCourseOptions) =>
-  useCategory({ categoryId: courseId, queryConfig });

@@ -187,7 +187,3 @@ export const UpdateCategory = ({ categoryId }: UpdateCategoryProps) => {
     </>
   );
 };
-
-export const UpdateCourse = ({ courseId }: { courseId: number }) => (
-  <UpdateCategory categoryId={courseId} />
-);

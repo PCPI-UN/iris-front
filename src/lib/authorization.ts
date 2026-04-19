@@ -64,12 +64,6 @@ export const canViewCategories = (user: User | null | undefined) => {
   return Boolean(user);
 };
 
-// Legacy aliases for backward compatibility
-export const canCreateCourse = canCreateCategory;
-export const canDeleteCourse = canDeleteCategory;
-export const canUpdateCourse = canUpdateCategory;
-export const canViewCourses = canViewCategories;
-
 export const canDeleteComment = (
   user: User | null | undefined,
   comment: Comment

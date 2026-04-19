@@ -27,8 +27,6 @@ export const updateCategory = ({
   return api.patch(`/events/courses/update`, data);
 };
 
-export const updateCourse = updateCategory;
-
 type UseUpdateCourseOptions = {
   mutationConfig?: MutationConfig<typeof updateCategory>;
 };
@@ -59,5 +57,3 @@ export const useUpdateCategory = ({
     mutationFn: updateCategory,
   });
 };
-
-export const useUpdateCourse = useUpdateCategory;

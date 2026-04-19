@@ -158,5 +158,3 @@ export const CreateCategory = () => {
     </>
   );
 };
-
-export const CreateCourse = CreateCategory;

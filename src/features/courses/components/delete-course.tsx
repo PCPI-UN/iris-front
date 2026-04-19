@@ -79,5 +79,3 @@ export const DeleteCategory = ({ id }: DeleteCategoryProps) => {
     </>
   );
 };
-
-export const DeleteCourse = DeleteCategory;

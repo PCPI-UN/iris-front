@@ -101,5 +101,3 @@ export const CategoriesList = () => {
     </div>
   );
 };
-
-export const CoursesList = CategoriesList;

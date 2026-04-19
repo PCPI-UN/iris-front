@@ -5,7 +5,10 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Select, SelectItem } from "@/components/ui/select";
 import { useCategoriesByEvent } from "../api/use-category";
 import type { Key } from "@react-types/shared";
-import { readCategoryIdFromSearchParams } from "@/lib/compat/category-legacy";
+import {
+  isCategoryQueryParamKey,
+  readCategoryIdFromSearchParams,
+} from "@/lib/compat/category-legacy";
 
 export const CategoriesDropdown = () => {
   const router = useRouter();
@@ -30,7 +33,7 @@ export const CategoriesDropdown = () => {
 
     const params = new URLSearchParams();
     searchParams?.forEach((v, k) => {
-      if (k === "courseId" || k === "categoryId") return;
+      if (isCategoryQueryParamKey(k)) return;
       params.set(k, v);
     });
 

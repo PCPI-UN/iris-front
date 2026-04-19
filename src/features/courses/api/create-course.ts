@@ -25,8 +25,6 @@ export const createCategory = ({
   return api.post("/events/courses", data);
 };
 
-export const createCourse = createCategory;
-
 type UseCreateCourseOptions = {
   mutationConfig?: MutationConfig<typeof createCategory>;
 };
@@ -54,5 +52,3 @@ export const useCreateCategory = ({
     mutationFn: createCategory,
   });
 };
-
-export const useCreateCourse = useCreateCategory;

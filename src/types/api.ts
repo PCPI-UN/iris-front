@@ -126,7 +126,6 @@ export type Project = Entity<{
   id: number;
   eventId: number;
   categoryId?: number;
-  courseId?: number;
   name: string;
   description?: string;
   eventNumber?: string;
@@ -248,7 +247,6 @@ export type Criterion = Entity<{
   weight: number;
   active: boolean;
   categoryIds: number[];
-  courseIds?: number[];
   createdAt?: number;
 }>;
 
@@ -256,8 +254,6 @@ export type CriterionCategory = Entity<{
   categoryId: number;
   criterionId: number;
 }>;
-
-export type CriterionCourse = CriterionCategory;
 
 export type DeveloperProfile = Entity<{
   name: string;
