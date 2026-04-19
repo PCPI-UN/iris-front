@@ -10,10 +10,13 @@ export const getCriterion = async ({
   criterionId: number;
 }): Promise<{ data: Criterion }> => {
   const response = await api.get<Criterion>(`/criterions/${criterionId}`);
+  const criterion = (response as any).data || response;
 
-  // If the response has a 'data' property, use it; otherwise wrap the response
   return {
-    data: (response as any).data || response,
+    data: {
+      ...criterion,
+      categoryIds: criterion.categoryIds ?? criterion.courseIds ?? [],
+    },
   };
 };
 

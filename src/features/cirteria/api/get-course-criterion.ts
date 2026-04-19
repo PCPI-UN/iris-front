@@ -2,30 +2,56 @@ import { queryOptions, useQuery } from "@tanstack/react-query";
 
 import { api } from "@/lib/api-client";
 import { QueryConfig } from "@/lib/react-query";
-import { CourseCategory } from "@/types/api";
+import { CategoryCriteriaGroup } from "@/types/api";
 
-export const getCourseCriteria = async ({
-  courseId,
+export const getCategoryCriteria = async ({
+  categoryId,
 }: {
-  courseId: string;
-}): Promise<CourseCategory[]> => {
-  const response = await api.get<{ categories: CourseCategory[] }>(
-    `/criterions/course/${courseId}`
+  categoryId: string;
+}): Promise<CategoryCriteriaGroup[]> => {
+  const response = await api.get<{ categories: CategoryCriteriaGroup[] }>(
+    `/criterions/course/${categoryId}`
   );
   return response.categories || [];
 };
 
+export const getCategoryCriterionQueryOptions = ({
+  categoryId,
+}: {
+  categoryId: string;
+}) => {
+  return queryOptions({
+    queryKey: ["criterions", "category", categoryId],
+    queryFn: () => getCategoryCriteria({ categoryId }),
+  });
+};
+
+type UseCategoryCriteriaOptions = {
+  categoryId: string;
+  queryConfig?: QueryConfig<typeof getCategoryCriterionQueryOptions>;
+};
+
+export const useCategoryCriteria = ({
+  categoryId,
+  queryConfig,
+}: UseCategoryCriteriaOptions) => {
+  return useQuery({
+    ...getCategoryCriterionQueryOptions({ categoryId }),
+    ...queryConfig,
+  });
+};
+
+export const getCourseCriteria = ({
+  courseId,
+}: {
+  courseId: string;
+}) => getCategoryCriteria({ categoryId: courseId });
 
 export const getCourseCriterionQueryOptions = ({
   courseId,
 }: {
   courseId: string;
-}) => {
-  return queryOptions({
-    queryKey: ["criterions", "course", courseId],
-    queryFn: () => getCourseCriteria({ courseId }),
-  });
-};
+}) => getCategoryCriterionQueryOptions({ categoryId: courseId });
 
 type UseCourseCriteriaOptions = {
   courseId: string;
@@ -36,8 +62,8 @@ export const useCourseCriteria = ({
   courseId,
   queryConfig,
 }: UseCourseCriteriaOptions) => {
-  return useQuery({
-    ...getCourseCriterionQueryOptions({ courseId }),
-    ...queryConfig,
+  return useCategoryCriteria({
+    categoryId: courseId,
+    queryConfig,
   });
 };

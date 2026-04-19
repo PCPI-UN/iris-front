@@ -8,7 +8,7 @@ type GetCriteriaParams = {
   page?: number;
   limit?: number;
   eventId?: number;
-  courseId?: number;
+  categoryId?: number;
 };
 
 type GetCriteriaResponse = {
@@ -26,19 +26,24 @@ export const getCriteria = async ({
   page = 1,
   limit = 100,
   eventId,
-  courseId,
+  categoryId,
 }: GetCriteriaParams = {}): Promise<GetCriteriaResponse> => {
   const response = await api.get<GetCriteriaResponse>(`/criterions`, {
     params: {
       page,
       limit,
       ...(eventId ? { eventId } : {}),
-      ...(courseId ? { courseId } : {}),
+      ...(categoryId ? { courseId: categoryId } : {}),
     },
   });
 
+  const criterions = (response.criterions || []).map((criterion) => ({
+    ...criterion,
+    categoryIds: criterion.categoryIds ?? criterion.courseIds ?? [],
+  }));
+
   return {
-    criterions: response.criterions || [],
+    criterions,
     meta: response.meta,
   };
 };

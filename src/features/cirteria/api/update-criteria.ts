@@ -15,7 +15,7 @@ export const updateCriteriaInputSchema = z.object({
     .min(0, "Weight must be greater than or equal to 0")
     .optional(),
   eventId: z.number().min(1, "Event is required").optional(),
-  courseIds: z.array(z.number().min(1, "Course is required")).optional(),
+  categoryIds: z.array(z.number().min(1, "Category is required")).optional(),
 });
 
 export type UpdateCriteriaInput = z.infer<typeof updateCriteriaInputSchema>;
@@ -27,11 +27,20 @@ export const updateCriteria = async ({
   data: UpdateCriteriaInput;
   criterionId: number;
 }): Promise<{ data: Criterion }> => {
-  const response = await api.put<Criterion>(`/criterions/${criterionId}`, data);
+  const payload = {
+    ...data,
+    ...(data.categoryIds ? { courseIds: data.categoryIds } : {}),
+  };
+  const response = await api.put<Criterion>(`/criterions/${criterionId}`, payload);
 
-  // If the response has a 'data' property, use it; otherwise wrap the response
   return {
-    data: (response as any).data || response,
+    data: {
+      ...((response as any).data || response),
+      categoryIds:
+        ((response as any).data || response).categoryIds ??
+        ((response as any).data || response).courseIds ??
+        [],
+    },
   };
 };
 
