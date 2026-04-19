@@ -29,7 +29,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useDisclosure } from "@/hooks/use-disclosure";
 import { useUser } from "@/lib/auth";
 import { canUpdateEvent } from "@/lib/authorization";
-import { useCategoriesDropdown } from "@/features/courses/api/get-courses-dropdown";
+import { useCategoriesDropdown } from "@/features/courses/api/get-categories-dropdown";
 
 import { useEvent } from "../api/get-event";
 import { updateEventInputSchema, useUpdateEvent } from "../api/update-event";

@@ -4,7 +4,7 @@ import { Card, CardBody, CardHeader } from "@heroui/react"
 import { Chip } from "@heroui/react"
 import { Users, FileText, Upload, CheckCircle2, AlertCircle } from "lucide-react"
 import { WizardData } from "../project-wizard"
-import { useCategory } from "@/features/courses/api/get-course"
+import { useCategory } from "@/features/courses/api/get-category"
 import { getSemesterLabel, getCareerLabel } from "./constants-carrers-semesters"
 
 type ReviewStepProps = {

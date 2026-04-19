@@ -7,7 +7,7 @@ import { ParticipantsStep } from "./wizard-steps/participants-step";
 import { ProjectDetailsStep } from "./wizard-steps/project-details-step";
 import { DocumentsStep } from "./wizard-steps/documents-step";
 import { ReviewStep } from "./wizard-steps/review-step";
-import { useCategoriesDropdown } from "@/features/courses/api/get-courses-dropdown";
+import { useCategoriesDropdown } from "@/features/courses/api/get-categories-dropdown";
 import { CheckCircle2, FileText, Users, Upload } from "lucide-react";
 import { cn } from "@/utils/cn";
 import { z } from "zod";

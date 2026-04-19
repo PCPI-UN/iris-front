@@ -18,7 +18,7 @@ import { useUser } from "@/lib/auth";
 import { Select, SelectItem } from "@/components/ui/select";
 import { useEffect, useState } from "react";
 import { useEvents } from "@/features/events/api/get-events";
-import { useCategories } from "@/features/courses/api/get-courses";
+import { useCategories } from "@/features/courses/api/get-categories";
 import { useCriterion } from "../api/get-criterion";
 import {
   updateCriteriaInputSchema,

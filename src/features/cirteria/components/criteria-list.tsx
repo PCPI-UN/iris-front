@@ -11,7 +11,7 @@ import { Chip } from "@heroui/chip";
 import { UpdateCriteria } from "./update-criteria";
 import { DeleteCriteria } from "./delete-criteria";
 import { useEventsDropdown } from "@/features/events/api/get-events-dropdown";
-import { useCategories } from "@/features/courses/api/get-courses";
+import { useCategories } from "@/features/courses/api/get-categories";
 
 export const CriteriaList = () => {
   const searchParams = useSearchParams();

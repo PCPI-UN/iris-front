@@ -1,8 +1,8 @@
 "use client";
 import { ContentLayout } from "@/components/layouts/content-layout";
-import { CategoriesList } from "@/features/courses/components/courses-list";
+import { CategoriesList } from "@/features/courses/components/categories-list";
 import { EventsDropdown } from "@/features/projects/components/events-dropdown";
-import { CreateCategory } from "@/features/courses/components/create-course";
+import { CreateCategory } from "@/features/courses/components/create-category";
 import '@/features/landing/index.css';
 
 export const Categories = () => {

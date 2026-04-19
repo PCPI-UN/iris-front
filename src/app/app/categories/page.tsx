@@ -5,7 +5,7 @@ import {
 } from "@tanstack/react-query";
 
 import { Categories } from "../courses/_components/courses";
-import { getCategoriesQueryOptions } from "@/features/courses/api/get-courses";
+import { getCategoriesQueryOptions } from "@/features/courses/api/get-categories";
 import { RoleGuard } from "@/components/auth/role-guard";
 
 export const metadata = {

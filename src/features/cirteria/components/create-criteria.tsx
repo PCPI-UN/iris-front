@@ -18,7 +18,7 @@ import { useNotifications } from "@/components/ui/notifications";
 import { useUser } from "@/lib/auth";
 import { Select, SelectItem } from "@/components/ui/select";
 import { useEventsDropdown } from "@/features/events/api/get-events-dropdown";
-import { useCategories } from "@/features/courses/api/get-courses";
+import { useCategories } from "@/features/courses/api/get-categories";
 
 import {
   createCriteriaInputSchema,

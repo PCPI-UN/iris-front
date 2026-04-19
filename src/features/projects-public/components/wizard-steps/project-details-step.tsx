@@ -4,7 +4,7 @@ import { Input } from "@heroui/react";
 import { Textarea } from "@heroui/input";
 import { Select, SelectItem } from "@heroui/select";
 import { ProjectData } from "../project-wizard";
-import { useCategoriesDropdown } from "@/features/courses/api/get-courses-dropdown";
+import { useCategoriesDropdown } from "@/features/courses/api/get-categories-dropdown";
 
 type ProjectDetailsStepProps = {
   eventId: number;
