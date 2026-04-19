@@ -148,7 +148,7 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
   ]);
 
   const eventQuery = useEvent({ eventId });
-  const categoriesDropdownQuery = useCategoriesDropdown({ eventId });
+  useCategoriesDropdown({ eventId });
   const updateEventMutation = useUpdateEvent({
     mutationConfig: {
       onSuccess: () => {
