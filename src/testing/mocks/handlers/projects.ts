@@ -71,6 +71,7 @@ type ProjectDTO = {
   logo: string;
   state: string;
   eventId: string;
+  categoryId?: string;
   eventNumber?: string;
   createdAt: number;
   documents: Array<{ type: string; url: string }>;
@@ -91,6 +92,7 @@ const mapProjectToDTO = (project: any): ProjectDTO => {
     logo: project.logo,
     state: project.state,
     eventId: project.eventId,
+    categoryId: project.categoryId ?? project.courseId,
     eventNumber: project.eventNumber || "",
     createdAt: project.createdAt,
     documents: project.documents ?? [],
@@ -159,7 +161,7 @@ export const projectsHandlers = [
       const page = Number(url.searchParams.get("page") || 1);
       const state = url.searchParams.get("state");
       const rawCategoryId = url.searchParams.get("categoryId") || url.searchParams.get("courseId");
-      const courseId = rawCategoryId ? toInternalPrefixedId(rawCategoryId, "course") : undefined;
+      const categoryId = rawCategoryId ? toInternalPrefixedId(rawCategoryId, "course") : undefined;
       const pageSize = PAGE_SIZE;
       const validPage = validatePage(page);
 
@@ -171,8 +173,12 @@ export const projectsHandlers = [
         allProjects = allProjects.filter((p) => String(p.state) === String(state));
       }
 
-      if (courseId) {
-        allProjects = allProjects.filter((p) => String(p.courseId) === String(courseId))
+      if (categoryId) {
+        allProjects = allProjects.filter(
+          (p) =>
+            String((p as any).categoryId ?? (p as any).courseId) ===
+            String(categoryId)
+        )
       }
 
       // USER role: only assigned projects if jury of event
@@ -260,6 +266,7 @@ export const projectsHandlers = [
 
       const result = db.project.create({
         eventId: toInternalPrefixedId(String(data.eventId), "event"),
+        categoryId: selectedCategoryId ? toInternalPrefixedId(String(selectedCategoryId), "course") : "no-course",
         courseId: selectedCategoryId ? toInternalPrefixedId(String(selectedCategoryId), "course") : "no-course",
         name: data.name || (isCompetition ? "Competition Entry" : ""),
         logo: data.logo || "",
@@ -589,8 +596,14 @@ export const projectsHandlers = [
 
         const updateData: Partial<ProjectBody> = {};
         if (data.eventId) updateData.eventId = data.eventId;
-        if (data.categoryId) updateData.courseId = data.categoryId;
-        if (data.courseId) updateData.courseId = data.courseId;
+        if (data.categoryId) {
+          updateData.categoryId = data.categoryId;
+          updateData.courseId = data.categoryId;
+        }
+        if (data.courseId) {
+          updateData.categoryId = data.courseId;
+          updateData.courseId = data.courseId;
+        }
         if (data.name) updateData.name = data.name;
         if (data.logo) updateData.logo = data.logo;
         if (data.description !== undefined)

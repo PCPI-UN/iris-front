@@ -21,22 +21,22 @@ import { cn } from "@/utils/cn";
 
 import { useCategory } from "../api/get-course";
 import {
-  updateCourseInputSchema,
+  updateCategoryInputSchema,
   useUpdateCategory,
 } from "../api/update-course";
 
 import { useEvents } from "@/features/events/api/get-events";
 
-type UpdateCourseProps = {
-  courseId: number;
+type UpdateCategoryProps = {
+  categoryId: number;
 };
 
-export const UpdateCourse = ({ courseId }: UpdateCourseProps) => {
+export const UpdateCategory = ({ categoryId }: UpdateCategoryProps) => {
   const { addNotification } = useNotifications();
   const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
 
-  const courseQuery = useCategory({ categoryId: courseId });
-  const updateCourseMutation = useUpdateCategory({
+  const categoryQuery = useCategory({ categoryId });
+  const updateCategoryMutation = useUpdateCategory({
     mutationConfig: {
       onSuccess: () => {
         addNotification({
@@ -50,7 +50,7 @@ export const UpdateCourse = ({ courseId }: UpdateCourseProps) => {
 
   const eventsQuery = useEvents({ page: 1 });
 
-  const course = courseQuery.data?.data;
+  const category = categoryQuery.data?.data;
   const events = eventsQuery.data?.data || [];
 
   return (
@@ -60,7 +60,7 @@ export const UpdateCourse = ({ courseId }: UpdateCourseProps) => {
         className="w-full"
         size="sm"
         onPress={() => {
-          courseQuery.refetch();
+          categoryQuery.refetch();
           onOpen();
         }}
         startContent={<SquarePen size={16} />}
@@ -71,7 +71,7 @@ export const UpdateCourse = ({ courseId }: UpdateCourseProps) => {
       <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="2xl">
         <ModalContent>
           {(onClose) => {
-            if (courseQuery.isLoading) {
+            if (categoryQuery.isLoading) {
               return (
                 <>
                   <ModalHeader>Update Category</ModalHeader>
@@ -82,7 +82,7 @@ export const UpdateCourse = ({ courseId }: UpdateCourseProps) => {
               );
             }
 
-            if (!course) {
+            if (!category) {
               return (
                 <>
                   <ModalHeader>Update Category</ModalHeader>
@@ -98,7 +98,7 @@ export const UpdateCourse = ({ courseId }: UpdateCourseProps) => {
 
             return (
             <Form
-              key={`update-course-${courseId}-${course?.id}`}
+              key={`update-category-${categoryId}-${category?.id}`}
               id="update-course"
               onSubmit={async (e) => {
                 e.preventDefault();
@@ -108,14 +108,14 @@ export const UpdateCourse = ({ courseId }: UpdateCourseProps) => {
                 const rawData = Object.fromEntries(formData);
 
                 const data = {
-                  id: course.id,
+                  id: category.id,
                   code: rawData.code,
                   description: rawData.description,
                   active: rawData.active === "true",
                 };
 
-                const values = await updateCourseInputSchema.parseAsync(data);
-                await updateCourseMutation.mutateAsync({
+                const values = await updateCategoryInputSchema.parseAsync(data);
+                await updateCategoryMutation.mutateAsync({
                   data: values,
                 });
                 // Notificación y cierre ahora se manejan en onSuccess
@@ -132,7 +132,7 @@ export const UpdateCourse = ({ courseId }: UpdateCourseProps) => {
                   name="eventId"
                   placeholder="Select an event"
                   defaultSelectedKeys={
-                    course?.eventId ? [String(course.eventId)] : []
+                    category?.eventId ? [String(category.eventId)] : []
                   }
                   isLoading={eventsQuery.isLoading}
                 >
@@ -144,21 +144,21 @@ export const UpdateCourse = ({ courseId }: UpdateCourseProps) => {
                 <Input
                   label="Category code"
                   name="code"
-                  defaultValue={course?.code ?? ""}
+                  defaultValue={category?.code ?? ""}
                   isRequired
                 />
 
                 <Textarea
                   label="Description"
                   name="description"
-                  defaultValue={course?.description ?? ""}
+                  defaultValue={category?.description ?? ""}
                   isRequired
                 />
 
                 <Switch
                   name="active"
                   value="true"
-                  defaultSelected={course?.active}
+                  defaultSelected={category?.active}
                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2`}
                 >
                   <div className="flex flex-col gap-1">
@@ -173,8 +173,8 @@ export const UpdateCourse = ({ courseId }: UpdateCourseProps) => {
                 </Button>
                 <Button
                   type="submit"
-                  isLoading={updateCourseMutation.isPending}
-                  disabled={updateCourseMutation.isPending}
+                  isLoading={updateCategoryMutation.isPending}
+                  disabled={updateCategoryMutation.isPending}
                 >
                   Save Changes
                 </Button>
@@ -187,3 +187,7 @@ export const UpdateCourse = ({ courseId }: UpdateCourseProps) => {
     </>
   );
 };
+
+export const UpdateCourse = ({ courseId }: { courseId: number }) => (
+  <UpdateCategory categoryId={courseId} />
+);

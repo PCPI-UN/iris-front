@@ -15,9 +15,11 @@ type UseDeleteCourseOptions = {
   mutationConfig?: MutationConfig<typeof deleteCategory>;
 };
 
+type UseDeleteCategoryOptions = UseDeleteCourseOptions;
+
 export const useDeleteCategory = ({
   mutationConfig,
-}: UseDeleteCourseOptions = {}) => {
+}: UseDeleteCategoryOptions = {}) => {
   const queryClient = useQueryClient();
 
   const { onSuccess, ...restConfig } = mutationConfig || {};

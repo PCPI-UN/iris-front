@@ -15,14 +15,14 @@ import { useNotifications } from "@/components/ui/notifications";
 import { useDeleteCategory } from "../api/delete-course";
 import { useDisclosure } from '@/hooks/use-disclosure';
 
-type DeleteCourseProps = {
+type DeleteCategoryProps = {
   id: number;
 };
 
-export const DeleteCourse = ({ id }: DeleteCourseProps) => {
+export const DeleteCategory = ({ id }: DeleteCategoryProps) => {
   const { addNotification } = useNotifications();
   const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
-  const deleteCourseMutation = useDeleteCategory({
+  const deleteCategoryMutation = useDeleteCategory({
     mutationConfig: {
       onSuccess: () => {
         addNotification({
@@ -65,8 +65,8 @@ export const DeleteCourse = ({ id }: DeleteCourseProps) => {
                 </Button>
                 <Button
                   color="primary"
-                  isLoading={deleteCourseMutation.isPending}
-                  onPress={() => deleteCourseMutation.mutate({ categoryId: id })}
+                  isLoading={deleteCategoryMutation.isPending}
+                  onPress={() => deleteCategoryMutation.mutate({ categoryId: id })}
                   startContent={<Trash className="size-4" />}
                 >
                   Delete Category
@@ -79,3 +79,5 @@ export const DeleteCourse = ({ id }: DeleteCourseProps) => {
     </>
   );
 };
+
+export const DeleteCourse = DeleteCategory;

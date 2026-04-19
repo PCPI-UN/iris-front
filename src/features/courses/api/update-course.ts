@@ -14,7 +14,10 @@ export const updateCourseInputSchema = z.object({
   active: z.boolean(),
 });
 
+export const updateCategoryInputSchema = updateCourseInputSchema;
+
 export type UpdateCourseInput = z.infer<typeof updateCourseInputSchema>;
+export type UpdateCategoryInput = UpdateCourseInput;
 
 export const updateCategory = ({
   data
@@ -30,9 +33,11 @@ type UseUpdateCourseOptions = {
   mutationConfig?: MutationConfig<typeof updateCategory>;
 };
 
+type UseUpdateCategoryOptions = UseUpdateCourseOptions;
+
 export const useUpdateCategory = ({
   mutationConfig,
-}: UseUpdateCourseOptions = {}) => {
+}: UseUpdateCategoryOptions = {}) => {
   const queryClient = useQueryClient();
 
   const { onSuccess, ...restConfig } = mutationConfig || {};

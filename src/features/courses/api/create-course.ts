@@ -12,7 +12,10 @@ export const createCourseInputSchema = z.object({
   status: z.enum(["active", "inactive"]).optional(),
 });
 
+export const createCategoryInputSchema = createCourseInputSchema;
+
 export type CreateCourseInput = z.infer<typeof createCourseInputSchema>;
+export type CreateCategoryInput = CreateCourseInput;
 
 export const createCategory = ({
   data,
@@ -28,9 +31,11 @@ type UseCreateCourseOptions = {
   mutationConfig?: MutationConfig<typeof createCategory>;
 };
 
+type UseCreateCategoryOptions = UseCreateCourseOptions;
+
 export const useCreateCategory = ({
   mutationConfig,
-}: UseCreateCourseOptions = {}) => {
+}: UseCreateCategoryOptions = {}) => {
   const queryClient = useQueryClient();
 
   const { onSuccess, ...restConfig } = mutationConfig || {};

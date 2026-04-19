@@ -20,17 +20,17 @@ import { Select, SelectItem } from "@/components/ui/select";
 import { useEvents } from "@/features/events/api/get-events";
 
 import {
-  createCourseInputSchema,
+  createCategoryInputSchema,
   useCreateCategory,
 } from "../api/create-course";
 import { Input } from "@/components/ui/input";
 
-export const CreateCourse = () => {
+export const CreateCategory = () => {
   const { addNotification } = useNotifications();
   const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
   const [selectedEvent, setSelectedEvent] = useState<string>("");
 
-  const createCourseMutation = useCreateCategory({
+  const createCategoryMutation = useCreateCategory({
     mutationConfig: {
       onSuccess: () => {
         addNotification({
@@ -91,8 +91,8 @@ export const CreateCourse = () => {
                   return;
                 }
                 
-                const values = await createCourseInputSchema.parseAsync(data);
-                await createCourseMutation.mutateAsync({ data: values });
+                const values = await createCategoryInputSchema.parseAsync(data);
+                await createCategoryMutation.mutateAsync({ data: values });
               }}
             >
               <ModalHeader className="flex flex-col gap-1">
@@ -145,8 +145,8 @@ export const CreateCourse = () => {
                 <Button
                   type="submit"
                   color="primary"
-                  isLoading={createCourseMutation.isPending}
-                  disabled={createCourseMutation.isPending || !selectedEvent}
+                  isLoading={createCategoryMutation.isPending}
+                  disabled={createCategoryMutation.isPending || !selectedEvent}
                 >
                   Create category
                 </Button>
@@ -158,3 +158,5 @@ export const CreateCourse = () => {
     </>
   );
 };
+
+export const CreateCourse = CreateCategory;
