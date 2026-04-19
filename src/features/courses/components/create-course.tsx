@@ -35,7 +35,7 @@ export const CreateCourse = () => {
       onSuccess: () => {
         addNotification({
           type: "success",
-          title: "Course Created",
+          title: "Category Created",
         });
         setSelectedEvent("");
         onClose();
@@ -51,7 +51,7 @@ export const CreateCourse = () => {
     <>
       <Button size="sm" onPress={() => onOpen()}>
         <Plus size={16} />
-        Create course
+        Create category
       </Button>
       <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="2xl">
         <ModalContent>
@@ -96,9 +96,9 @@ export const CreateCourse = () => {
               }}
             >
               <ModalHeader className="flex flex-col gap-1">
-                Create new course
+                Create new category
                 <p className="text-sm font-normal text-gray-500">
-                  Add a new course to an event
+                  Add a new category to an event
                 </p>
               </ModalHeader>
               <ModalBody className="space-y-4 w-full">
@@ -121,7 +121,7 @@ export const CreateCourse = () => {
                 </Select>
                 
                 <Input 
-                  label="Course code" 
+                  label="Category code" 
                   name="code" 
                   placeholder="2354"
                   isRequired 
@@ -130,7 +130,7 @@ export const CreateCourse = () => {
                 <Textarea 
                   label="Description" 
                   name="description" 
-                  placeholder="Brief description of the course"
+                  placeholder="Brief description of the category"
                   isRequired 
                 />
               </ModalBody>
@@ -148,7 +148,7 @@ export const CreateCourse = () => {
                   isLoading={createCourseMutation.isPending}
                   disabled={createCourseMutation.isPending || !selectedEvent}
                 >
-                  Create course
+                  Create category
                 </Button>
               </ModalFooter>
             </Form>

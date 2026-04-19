@@ -102,7 +102,7 @@ export const CriteriaList = () => {
                 <SelectItem key={String(c.id)}>{c.code}</SelectItem>
               ))
             ) : (
-              <SelectItem key="no-courses" isDisabled>
+              <SelectItem key="no-categories" isDisabled>
                 {selectedEventKey
                   ? "No hay categorías disponibles"
                   : "Selecciona un evento primero"}

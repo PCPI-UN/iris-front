@@ -207,8 +207,8 @@ export const UpdateCriteria = ({ criterionId }: UpdateCriteriaProps) => {
                           <SelectItem key={String(c.id)}>{c.code}</SelectItem>
                         ))
                       ) : (
-                        <SelectItem key="no-courses" isDisabled>
-                          No courses
+                        <SelectItem key="no-categories" isDisabled>
+                          No categories
                         </SelectItem>
                       )
                     ) : (

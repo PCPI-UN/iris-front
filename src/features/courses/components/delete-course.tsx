@@ -27,7 +27,7 @@ export const DeleteCourse = ({ id }: DeleteCourseProps) => {
       onSuccess: () => {
         addNotification({
           type: "success",
-          title: "Course Deleted",
+          title: "Category Deleted",
         });
         onClose();
       },
@@ -45,18 +45,18 @@ export const DeleteCourse = ({ id }: DeleteCourseProps) => {
         onPress={() => onOpen()}
       >
         <Trash size={16} />
-        Delete Course
+        Delete Category
       </Button>
       <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="2xl">
         <ModalContent>
           {(onClose) => (
             <>
               <ModalHeader className="flex flex-col gap-1">
-                <h2 className="text-lg font-bold">Delete Course</h2>
+                <h2 className="text-lg font-bold">Delete Category</h2>
               </ModalHeader>
               <ModalBody>
                 <p className="text-sm text-gray-500">
-                  Are you sure you want to delete this course? This action cannot be undone.
+                  Are you sure you want to delete this category? This action cannot be undone.
                 </p>
               </ModalBody>
               <ModalFooter>
@@ -69,7 +69,7 @@ export const DeleteCourse = ({ id }: DeleteCourseProps) => {
                   onPress={() => deleteCourseMutation.mutate({ courseId: id })}
                   startContent={<Trash className="size-4" />}
                 >
-                  Delete Course
+                  Delete Category
                 </Button>
               </ModalFooter>
             </>

@@ -82,8 +82,8 @@ export function ProjectDetailsStep({
             <SelectItem key={category.id}>{category.code}</SelectItem>
           ))
         ) : (
-          <SelectItem key="no-courses" isDisabled>
-            {eventId ? "No courses available" : "Event required"}
+          <SelectItem key="no-categories" isDisabled>
+            {eventId ? "No categories available" : "Event required"}
           </SelectItem>
         )}
       </Select>

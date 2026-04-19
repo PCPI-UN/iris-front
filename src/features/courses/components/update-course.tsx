@@ -41,7 +41,7 @@ export const UpdateCourse = ({ courseId }: UpdateCourseProps) => {
       onSuccess: () => {
         addNotification({
           type: "success",
-          title: "Course Updated",
+          title: "Category Updated",
         });
         onClose();
       },
@@ -65,7 +65,7 @@ export const UpdateCourse = ({ courseId }: UpdateCourseProps) => {
         }}
         startContent={<SquarePen size={16} />}
       >
-        Edit course
+        Edit category
       </Button>
 
       <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="2xl">
@@ -74,7 +74,7 @@ export const UpdateCourse = ({ courseId }: UpdateCourseProps) => {
             if (courseQuery.isLoading) {
               return (
                 <>
-                  <ModalHeader>Update Course</ModalHeader>
+                  <ModalHeader>Update Category</ModalHeader>
                   <ModalBody className="flex items-center justify-center py-12">
                     <div>Loading...</div>
                   </ModalBody>
@@ -85,9 +85,9 @@ export const UpdateCourse = ({ courseId }: UpdateCourseProps) => {
             if (!course) {
               return (
                 <>
-                  <ModalHeader>Update Course</ModalHeader>
+                  <ModalHeader>Update Category</ModalHeader>
                   <ModalBody>
-                    <p>Course not found</p>
+                    <p>Category not found</p>
                   </ModalBody>
                   <ModalFooter>
                     <Button onPress={onClose}>Close</Button>
@@ -122,7 +122,7 @@ export const UpdateCourse = ({ courseId }: UpdateCourseProps) => {
               }}
             >
               <ModalHeader className="flex flex-col gap-1">
-                Update Course
+                Update Category
               </ModalHeader>
 
               <ModalBody className="space-y-4 w-full">
@@ -142,7 +142,7 @@ export const UpdateCourse = ({ courseId }: UpdateCourseProps) => {
                 </Select>
 
                 <Input
-                  label="Course code"
+                  label="Category code"
                   name="code"
                   defaultValue={course?.code ?? ""}
                   isRequired

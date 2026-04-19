@@ -7,8 +7,8 @@ import '@/features/landing/index.css';
 
 export const Courses = () => {
   return (
-    <ContentLayout title="Course Management">
-      <p className="text-gray-300 mb-4 text-sm sm:text-base">Manage courses within events</p>
+    <ContentLayout title="Category Management">
+      <p className="text-gray-300 mb-4 text-sm sm:text-base">Manage categories within events</p>
       <div className="flex flex-col sm:flex-row justify-between gap-3">
         <EventsDropdown />
         <CreateCourse />

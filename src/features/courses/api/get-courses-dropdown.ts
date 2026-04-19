@@ -43,3 +43,7 @@ export const useCoursesDropdown = ({
     ...queryConfig,
   });
 };
+
+export const getCategoriesDropdown = getCoursesDropdown;
+export const getCategoriesDropdownQueryOptions = getCoursesDropdownQueryOptions;
+export const useCategoriesDropdown = useCoursesDropdown;

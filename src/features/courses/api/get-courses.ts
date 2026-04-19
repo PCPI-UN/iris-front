@@ -54,3 +54,7 @@ export const useCourses = ({ queryConfig, page, eventId }: UseCoursesOptions) =>
     ...queryConfig,
   });
 };
+
+export const getCategories = getCourses;
+export const getCategoriesQueryOptions = getCoursesQueryOptions;
+export const useCategories = useCourses;

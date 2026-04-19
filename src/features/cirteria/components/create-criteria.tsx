@@ -170,7 +170,7 @@ export const CreateCriteria = () => {
                       </SelectItem>
                     ))
                   ) : (
-                    <SelectItem key="no-courses" isDisabled>
+                    <SelectItem key="no-categories" isDisabled>
                       {selectedEventKey
                         ? "No hay categorías"
                         : "Selecciona un evento primero"}

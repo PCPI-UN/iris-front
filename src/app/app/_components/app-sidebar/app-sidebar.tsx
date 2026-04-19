@@ -52,7 +52,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           { title: "Dashboard", url: paths.app.root.getHref(), icon: Home },
           { title: "Events", url: paths.app.events.getHref(), icon: Calendar },
           {
-            title: "Courses",
+            title: "Categories",
             url: paths.app.courses.getHref(),
             icon: ArrowDownAZ,
           },

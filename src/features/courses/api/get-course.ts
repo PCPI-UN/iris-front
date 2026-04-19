@@ -35,3 +35,7 @@ export const useCourse = ({ courseId, queryConfig }: UseCourseOptions) => {
     ...queryConfig,
   });
 };
+
+export const getCategory = getCourse;
+export const getCategoryQueryOptions = getCourseQueryOptions;
+export const useCategory = useCourse;

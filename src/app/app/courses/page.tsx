@@ -9,8 +9,8 @@ import { getCoursesQueryOptions } from "@/features/courses/api/get-courses";
 import { RoleGuard } from "@/components/auth/role-guard";
 
 export const metadata = {
-  title: "Courses",
-  description: "Course Management",
+  title: "Categories",
+  description: "Category Management",
 };
 
 const CoursesPage = async ({
