@@ -22,7 +22,7 @@ import { cn } from "@/utils/cn";
 import { useCategory } from "../api/get-course";
 import {
   updateCourseInputSchema,
-  useUpdateCourse,
+  useUpdateCategory,
 } from "../api/update-course";
 
 import { useEvents } from "@/features/events/api/get-events";
@@ -36,7 +36,7 @@ export const UpdateCourse = ({ courseId }: UpdateCourseProps) => {
   const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
 
   const courseQuery = useCategory({ categoryId: courseId });
-  const updateCourseMutation = useUpdateCourse({
+  const updateCourseMutation = useUpdateCategory({
     mutationConfig: {
       onSuccess: () => {
         addNotification({

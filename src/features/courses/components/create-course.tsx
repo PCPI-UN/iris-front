@@ -21,7 +21,7 @@ import { useEvents } from "@/features/events/api/get-events";
 
 import {
   createCourseInputSchema,
-  useCreateCourse,
+  useCreateCategory,
 } from "../api/create-course";
 import { Input } from "@/components/ui/input";
 
@@ -30,7 +30,7 @@ export const CreateCourse = () => {
   const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
   const [selectedEvent, setSelectedEvent] = useState<string>("");
 
-  const createCourseMutation = useCreateCourse({
+  const createCourseMutation = useCreateCategory({
     mutationConfig: {
       onSuccess: () => {
         addNotification({

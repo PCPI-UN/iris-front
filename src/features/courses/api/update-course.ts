@@ -16,7 +16,7 @@ export const updateCourseInputSchema = z.object({
 
 export type UpdateCourseInput = z.infer<typeof updateCourseInputSchema>;
 
-export const updateCourse = ({
+export const updateCategory = ({
   data
 }: {
   data: UpdateCourseInput;
@@ -24,11 +24,13 @@ export const updateCourse = ({
   return api.patch(`/events/courses/update`, data);
 };
 
+export const updateCourse = updateCategory;
+
 type UseUpdateCourseOptions = {
-  mutationConfig?: MutationConfig<typeof updateCourse>;
+  mutationConfig?: MutationConfig<typeof updateCategory>;
 };
 
-export const useUpdateCourse = ({
+export const useUpdateCategory = ({
   mutationConfig,
 }: UseUpdateCourseOptions = {}) => {
   const queryClient = useQueryClient();
@@ -49,6 +51,8 @@ export const useUpdateCourse = ({
       onSuccess?.(data, variables, ...args);
     },
     ...restConfig,
-    mutationFn: updateCourse,
+    mutationFn: updateCategory,
   });
 };
+
+export const useUpdateCourse = useUpdateCategory;

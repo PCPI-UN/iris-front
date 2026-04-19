@@ -4,15 +4,18 @@ import { api } from "@/lib/api-client";
 import { Course } from "@/types/api";
 import { MutationConfig } from "@/lib/react-query";
 
-export const deleteCourse = ({ courseId }: { courseId: number }): Promise<{ data: Course }> => {
-  return api.delete(`/events/courses/delete`, { id: courseId });
+export const deleteCategory = ({ categoryId }: { categoryId: number }): Promise<{ data: Course }> => {
+  return api.delete(`/events/courses/delete`, { id: categoryId });
 };
+
+export const deleteCourse = ({ courseId }: { courseId: number }) =>
+  deleteCategory({ categoryId: courseId });
 
 type UseDeleteCourseOptions = {
-  mutationConfig?: MutationConfig<typeof deleteCourse>;
+  mutationConfig?: MutationConfig<typeof deleteCategory>;
 };
 
-export const useDeleteCourse = ({
+export const useDeleteCategory = ({
   mutationConfig,
 }: UseDeleteCourseOptions = {}) => {
   const queryClient = useQueryClient();
@@ -30,6 +33,8 @@ export const useDeleteCourse = ({
       onSuccess?.(data, variables, ...args);
     },
     ...restConfig,
-    mutationFn: deleteCourse,
+    mutationFn: deleteCategory,
   });
 };
+
+export const useDeleteCourse = useDeleteCategory;

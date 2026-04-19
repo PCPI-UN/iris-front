@@ -14,7 +14,7 @@ export const createCourseInputSchema = z.object({
 
 export type CreateCourseInput = z.infer<typeof createCourseInputSchema>;
 
-export const createCourse = ({
+export const createCategory = ({
   data,
 }: {
   data: CreateCourseInput;
@@ -22,11 +22,13 @@ export const createCourse = ({
   return api.post("/events/courses", data);
 };
 
+export const createCourse = createCategory;
+
 type UseCreateCourseOptions = {
-  mutationConfig?: MutationConfig<typeof createCourse>;
+  mutationConfig?: MutationConfig<typeof createCategory>;
 };
 
-export const useCreateCourse = ({
+export const useCreateCategory = ({
   mutationConfig,
 }: UseCreateCourseOptions = {}) => {
   const queryClient = useQueryClient();
@@ -44,6 +46,8 @@ export const useCreateCourse = ({
       onSuccess?.(data, variables, ...args);
     },
     ...restConfig,
-    mutationFn: createCourse,
+    mutationFn: createCategory,
   });
 };
+
+export const useCreateCourse = useCreateCategory;
