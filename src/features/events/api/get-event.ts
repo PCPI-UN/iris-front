@@ -11,7 +11,11 @@ export const getEvent = async ({
   eventId: number;
 }): Promise<{ data: Event }> => {
   const response = await api.get<Record<string, any>>(`/events/${eventId}`);
-  const rawEvent = response?.data?.data ?? response?.event ?? response?.data;
+  const rawEvent =
+    response?.event ??
+    response?.data?.event ??
+    response?.data?.data ??
+    response?.data;
 
   return {
     data: normalizeEvent(rawEvent),

@@ -186,17 +186,17 @@ const isInscriptionClosed = useMemo(
 
 const program = useMemo(() => {
 const items: { label: string; date: string }[] = [];
+if (event?.inscriptionDeadline) {
+items.push({
+label: 'Cierre de inscripciones',
+date: formatDateShort(event.inscriptionDeadline),
+});
+}
 if (event?.startDate) {
     items.push({ label: 'Inicio del evento', date: formatDateShort(event.startDate) });
 }
-if (event?.inscriptionDeadline) {
-    items.push({
-    label: 'Cierre de inscripción',
-    date: formatDateShort(event.inscriptionDeadline),
-    });
-}
 if (event?.endDate) {
-    items.push({ label: 'Finalización', date: formatDateShort(event.endDate) });
+    items.push({ label: 'Fin del evento', date: formatDateShort(event.endDate) });
 }
 return items;
 }, [event?.endDate, event?.inscriptionDeadline, event?.startDate]);
@@ -284,7 +284,7 @@ collaborators.some((collaborator) =>
 ) || event.name.toLowerCase().includes('grip shipping');
 
 return (
-<div className="event-detail-page min-h-screen w-full" data-theme={eventTheme}>
+<div className="event-detail-page event-detail-page-offset min-h-screen w-full" data-theme={eventTheme}>
     {/* HERO */}
     <section className="relative w-full overflow-hidden">
     <div className="event-detail-blob pointer-events-none absolute -top-40 -left-40 h-[500px] w-[500px] rounded-full blur-3xl opacity-20" />

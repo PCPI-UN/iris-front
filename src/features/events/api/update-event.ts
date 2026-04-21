@@ -9,6 +9,7 @@ import { normalizeEvent } from "./event-adapter";
 import { getEventQueryOptions } from "./get-event";
 import { getEventsQueryOptions } from "./get-events";
 import { normalizeEventDatesForPayload } from '../utils/event-date-payload';
+import { toEventTypeCode, toEvaluationTypeCode } from "../utils/event-enums";
 
 export const updateEventInputSchema = z.object({
   id: z.number().positive(),
@@ -16,13 +17,14 @@ export const updateEventInputSchema = z.object({
   description: z.string().max(3000),
   accessCode: z.string().optional(),
   isPubliclyJoinable: z.boolean().optional(),
-  startDate: z.string().min(10).max(10),
-  endDate: z.string().min(10).max(10),
-  inscriptionDeadline: z.string().min(10).max(10),
+  startDate: z.string().min(10).max(32),
+  endDate: z.string().min(10).max(32),
+  inscriptionDeadline: z.string().min(10).max(32),
   evaluationsOpened: z.boolean(),
   active: z.boolean().optional(),
   location: z.string().optional(),
   locationDetails: z.string().optional(),
+  eventType: z.union([z.literal(1), z.literal(2), z.enum(["Exposition", "Competition"])]).optional(),
   inscriptionCost: z.coerce.number().int('Must be an integer').min(0, 'Must be >= 0').optional(),
   inscriptionRequirements: z.string().optional(),
   minimumTeamSize: z.coerce.number().int('Must be an integer').min(0, 'Must be >= 0').optional(),
@@ -33,14 +35,19 @@ export const updateEventInputSchema = z.object({
   specificInscriptionDetails: z
     .array(
       z.object({
+        id: z.coerce.number().optional(),
+        eventId: z.coerce.number().optional(),
         title: z.string().min(1, "Required"),
         description: z.string().min(1, "Required"),
+        value: z.coerce.number().optional(),
+        isRequired: z.boolean().optional(),
       })
     )
     .optional(),
   awards: z
     .array(
       z.object({
+        id: z.coerce.number().optional(),
         title: z.string().min(1, "Required"),
         description: z.string().optional(),
         value: z.coerce.number().int('Must be an integer').min(0, 'Must be >= 0').optional(),
@@ -49,7 +56,14 @@ export const updateEventInputSchema = z.object({
       })
     )
     .optional(),
-  evaluationType: z.enum(["ZERO_TO_FIVE", "ZERO_TO_HUNDRED"]).optional(),
+  evaluationType: z
+    .union([
+      z.literal(1),
+      z.literal(2),
+      z.enum(["ZERO_TO_FIVE", "ZERO_TO_HUNDRED"]),
+      z.enum(["0-5", "0-100"]),
+    ])
+    .optional(),
 });
 
 export type UpdateEventInput = z.infer<typeof updateEventInputSchema>;
@@ -59,10 +73,22 @@ export const updateEvent = ({
 }: {
   data: UpdateEventInput;
 }): Promise<Event> => {
+  const normalizedPayload = normalizeEventDatesForPayload(data);
+
   return api
-    .patch<Record<string, any>>(`/events/${data.id}`, normalizeEventDatesForPayload(data))
+    .patch<Record<string, any>>(`/events/${data.id}`, {
+      ...normalizedPayload,
+      eventType:
+        normalizedPayload.eventType === undefined
+          ? undefined
+          : toEventTypeCode(normalizedPayload.eventType),
+      evaluationType:
+        normalizedPayload.evaluationType === undefined
+          ? undefined
+          : toEvaluationTypeCode(normalizedPayload.evaluationType),
+    })
     .then((response) =>
-      normalizeEvent(response?.data?.data ?? response?.event ?? response?.data ?? response)
+      normalizeEvent(response?.event ?? response?.data?.event ?? response?.data?.data ?? response?.data ?? response)
     );
 };
 
