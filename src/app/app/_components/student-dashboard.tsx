@@ -9,15 +9,19 @@ import { StudentDashboardProjectInfoSection } from "./student-dashboard/student-
 import { StudentDashboardStatusSection } from "./student-dashboard/student-dashboard-status-section";
 import { StudentDashboardTeamSection } from "./student-dashboard/student-dashboard-team-section";
 
-type StudentDashboardProps = {
-  eventId?: string;
-};
+interface StudentDashboardProps {
+  eventId?: number;
+}
 
-export const StudentDashboard = ({ eventId }: StudentDashboardProps = {}) => {
+/* type StudentDashboardProps = {
+  eventId?: string;
+}; */
+
+export const StudentDashboard = ({ eventId }: StudentDashboardProps) => {
   const user = useUser();
   const router = useRouter();
   const projectQuery = useMyProjectByEvent({
-    eventId: eventId ?? "",
+    eventId: eventId?.toString() ?? "",
     queryConfig: {
       enabled: !!eventId,
       retry: false,

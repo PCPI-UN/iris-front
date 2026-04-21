@@ -11,15 +11,30 @@ export const getProjectInputSchema = z.object({
 
 export type GetProjectInput = z.infer<typeof getProjectInputSchema>;
 
+type ProjectByEventPayload = {
+  project: Project;
+  event: Event;
+};
+
+type ProjectByEventResponse =
+  | { data: ProjectByEventPayload }
+  | ProjectByEventPayload;
+
 export const getProject = async ({
   eventId,
-}: GetProjectInput): Promise<{ project: Project; event: Event }> => {
+}: GetProjectInput): Promise<ProjectByEventPayload> => {
   const validatedInput = getProjectInputSchema.parse({ eventId });
-  const response = await api.get<{ project: Project; event: Event }>(
+  const response = await api.get<ProjectByEventResponse>(
     `/events/${validatedInput.eventId}/my-project`,
   );
 
-  return response;
+  const payload = "data" in response ? response.data : response;
+
+  if (!payload?.project || !payload?.event) {
+    throw new Error("Invalid project response");
+  }
+
+  return payload;
 };
 
 export const getProjectQueryOptions = (eventId: string) => {

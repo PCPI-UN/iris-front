@@ -51,7 +51,7 @@ export const UpdateProject = ({ projectId }: UpdateProjectProps) => {
     return null;
   }
 
-  const project = projectQuery.data?.data;
+  const project = projectQuery.data;
 
   return (
     <>

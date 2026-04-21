@@ -65,7 +65,7 @@ export const GetEventsUser = () => {
     <section className="space-y-2 p-0 ">
       <h2 className="text-white text-xl">Mis eventos</h2>
 
-      <div className="grid gap-6 md:grid-cols-2 md:grid-rows-1 lg:grid-cols-3 p-0">
+      <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 p-0">
         {events.map((event) => {
           const eventId = String(event.id);
           const isExpanded = expandedEventId === eventId;
