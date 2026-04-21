@@ -19,7 +19,7 @@ type EventBody = {
   isPubliclyJoinable?: boolean;
   location: string;
   locationDetails?: string;
-  eventType: 1 | 2 | "Competition" | "Exposition";
+  eventType: "Competition" | "Exposition";
   evaluationType?: 1 | 2 | "ZERO_TO_FIVE" | "ZERO_TO_HUNDRED" | "0-5" | "0-100";
   inscriptionRequirements?: string;
   inscriptionCost?: number;
@@ -43,6 +43,10 @@ type EventBody = {
     position: number;
     categoryId?: number;
   }[];
+};
+
+const isValidEventTypeLabel = (value: unknown): value is "Competition" | "Exposition" => {
+  return value === "Competition" || value === "Exposition";
 };
 
 const PAGE_SIZE = 10;
@@ -730,6 +734,19 @@ export const eventsHandlers = [
       const data = (await request.json()) as EventBody;
       // requireAdmin(user);
 
+      if (!isValidEventTypeLabel(data.eventType)) {
+        return HttpResponse.json(
+          {
+            message: "Validation Error",
+            errors: [
+              "eventType should not be empty",
+              "eventType must be a string",
+            ],
+          },
+          { status: 400 },
+        );
+      }
+
       const normalizedStartDate = addFiveHoursToMockDate(data.startDate) ?? data.startDate;
       const normalizedEndDate = addFiveHoursToMockDate(data.endDate) ?? data.endDate;
       const normalizedInscriptionDeadline =
@@ -791,6 +808,19 @@ export const eventsHandlers = [
       const data = (await request.json()) as Partial<EventBody>;
       const hasField = <K extends keyof EventBody>(key: K) =>
         Object.prototype.hasOwnProperty.call(data, key);
+
+      if (hasField("eventType") && !isValidEventTypeLabel(data.eventType)) {
+        return HttpResponse.json(
+          {
+            message: "Validation Error",
+            errors: [
+              "eventType should not be empty",
+              "eventType must be a string",
+            ],
+          },
+          { status: 400 },
+        );
+      }
 
       const normalizedStartDate = hasField("startDate")
         ? addFiveHoursToMockDate(data.startDate)
