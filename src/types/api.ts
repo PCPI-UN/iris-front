@@ -78,8 +78,13 @@ export type role = Entity<{
 }>;
 
 export enum EventType {
-  Exposition,
-  Competition
+  Exposition = 1,
+  Competition = 2,
+}
+
+export enum EvaluationType {
+  ZERO_TO_FIVE = 1,
+  ZERO_TO_HUNDRED = 2,
 }
 
 export type Event = Entity<{
@@ -98,14 +103,28 @@ export type Event = Entity<{
   inscriptionCost?: number;
   inscriptionRequirements?: string;
   aboutOurAllies?: string;
-  evaluationType?: "ZERO_TO_FIVE" | "ZERO_TO_HUNDRED";
+  evaluationType?: EvaluationType | "ZERO_TO_FIVE" | "ZERO_TO_HUNDRED";
   eventType: EventType;
   minimumTeamSize?: number;
-  specificInscriptionDetails?: { title: string; description: string }[];
-  categories?: { id: number; name: string; active?: boolean }[];
+  specificInscriptionDetails?: {
+    id?: number;
+    eventId?: number;
+    title: string;
+    description: string;
+    value?: number;
+    isRequired?: boolean;
+  }[];
+  categories?: {
+    id: number;
+    eventId?: number;
+    name: string;
+    description?: string;
+    active?: boolean;
+  }[];
   organizers?: string[];
   collaborators?: string[];
   awards?: {
+    id?: number;
     title: string;
     description?: string;
     value?: number;
@@ -115,7 +134,7 @@ export type Event = Entity<{
   participants?: string[];
   status?: number;
   active: boolean;
-  role: role;
+  role?: role;
   createdAt: number;
   updatedAt: number;
 }>;
