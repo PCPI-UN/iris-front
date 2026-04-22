@@ -19,8 +19,8 @@ export const DashboardInfo = () => {
 
   // For regular users, display the list of events
   return (
-    <div className="dashboard-page space-y-4 md:space-y-6">
-      <div className="pt-5 md:space-y-2">
+    <div className="dashboard-page space-y-4 md:space-y-6 ">
+      <div className="pt-5 md:space-y-2 flex flex-col gap-4">
         <h1 className="text-2xl md:text-3xl font-bold">
           Bienvenido a tus Eventos especiales, {`${user.data?.firstName} ${user.data?.lastName}`}
         </h1>

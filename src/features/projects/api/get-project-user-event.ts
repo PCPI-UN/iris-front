@@ -33,7 +33,6 @@ export const getProject = async ({
   if (!payload?.project || !payload?.event) {
     throw new Error("Invalid project response");
   }
-
   return payload;
 };
 

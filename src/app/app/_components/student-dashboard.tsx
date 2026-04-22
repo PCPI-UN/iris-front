@@ -1,5 +1,8 @@
 "use client";
 
+import { ChevronLeft, ClipboardList, FileText } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
 import { useUser } from "@/lib/auth";
 import { useProject as useMyProjectByEvent } from "@/features/projects/api/get-project-user-event";
 import { useRouter } from "next/navigation";
@@ -13,9 +16,6 @@ interface StudentDashboardProps {
   eventId?: number;
 }
 
-/* type StudentDashboardProps = {
-  eventId?: string;
-}; */
 
 export const StudentDashboard = ({ eventId }: StudentDashboardProps) => {
   const user = useUser();
@@ -51,10 +51,20 @@ export const StudentDashboard = ({ eventId }: StudentDashboardProps) => {
       aria-label="Dashboard del estudiante"
     >
       {/* Encabezado de bienvenida */}
-      <header className="relative overflow-hidden rounded-2xl to-primary/5 p-8">
+
+      <header className="flex gap-10 items-center px-7">
+        <Button
+          isIconOnly
+          size="sm"
+          variant="flat"
+          aria-label="Volver a proyectos"
+          onPress={() => router.push("/app/projects")}
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
         <div className="relative space-y-2">
-          <h1 className="text-indigo-200 text-3xl font-bold tracking-tight">
-            Bienvenido, {`${user.data?.firstName} ${user.data?.lastName}`}
+          <h1 className="text-white text-3xl font-bold tracking-tight">
+            Bienvenido a tu Proyecto, {`${user.data?.firstName} ${user.data?.lastName}`}
           </h1>
           {event && (
             <p className="text-sm md:text-lg text-default-500">
@@ -67,14 +77,14 @@ export const StudentDashboard = ({ eventId }: StudentDashboardProps) => {
 
       {/* Sin evento */}
       {!eventId && (
-        <p className="text-center py-12 text-muted-foreground">
+        <p className="text-center py-12 text-3xl text-muted-foreground">
           No se encontró el evento seleccionado.
         </p>
       )}
 
       {/* Error al cargar proyecto */}
       {eventId && projectQuery.isError && (
-        <p className="text-center py-12 text-muted-foreground">
+        <p className="text-center py-12 text-3xl text-muted-foreground">
           No encontramos tu proyecto para este evento.
         </p>
       )}
@@ -98,7 +108,7 @@ export const StudentDashboard = ({ eventId }: StudentDashboardProps) => {
               <StudentDashboardDocumentsSection
                 primaryDocument={primaryDocument}
                 canEdit={isEditMode}
-                onEdit={() => router.push("/app/projects")}
+                projectId={project.id}
               />
 
               <StudentDashboardStatusSection

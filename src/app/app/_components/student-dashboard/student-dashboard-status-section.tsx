@@ -20,7 +20,7 @@ export const StudentDashboardStatusSection = ({
       icon={ClipboardList}
       className="space-y-5"
     >
-      <div className="space-y-1.5">
+      <div className="space-y-1.5 ">
         <div
           id="project-state"
           role="status"
@@ -45,11 +45,10 @@ export const StudentDashboardStatusSection = ({
         {canEdit && (
           <p
             role="alert"
-            className="mt-2 flex items-center gap-1.5 text-sm text-yellow-600 dark:text-yellow-400"
+            className="mt-2 flex items-center gap-4 text-sm text-yellow-600 dark:text-yellow-400"
           >
-            <Edit2 className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-            Tu proyecto requiere cambios. Puedes editar la informacion y volver
-            a enviarlo.
+            <Edit2 className="size-4 shrink-0" aria-hidden="true" />
+            <span className="font-semibold"> Tu proyecto requiere cambios. Puedes editar la informacion y volver a enviarlo.</span>
           </p>
         )}
       </div>

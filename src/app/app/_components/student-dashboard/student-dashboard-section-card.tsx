@@ -22,12 +22,12 @@ export const StudentDashboardSectionCard = ({
   return (
     <section
       className={cn(
-        "rounded-2xl border border-default-200/50 bg-background/70 p-5 backdrop-blur-sm md:p-6",
+        "rounded-2xl border border-default-200/50 text-left p-5 bg-default-50/65 backdrop-blur-sm",
         className,
       )}
       aria-label={ariaLabel ?? title}
     >
-      <div className="mb-5 flex items-center justify-between gap-3">
+      <div className="mb-5 flex items-center justify-between gap-2">
         <div className="flex items-center gap-3">
           <div
             className="rounded-lg bg-primary/10 p-2 text-primary"
@@ -36,6 +36,7 @@ export const StudentDashboardSectionCard = ({
             <Icon className="h-5 w-5" />
           </div>
           <h2 className="text-xl font-semibold">{title}</h2>
+          
         </div>
         {action}
       </div>

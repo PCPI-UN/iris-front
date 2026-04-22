@@ -25,7 +25,7 @@ export const StudentDashboardProjectInfoSection = ({
           <Button
             size="sm"
             variant="flat"
-            className="gap-1"
+            className="mt-2 flex items-center gap-1.5 text-sm text-yellow-600 dark:text-yellow-400"
             onClick={onEdit}
             aria-label="Editar nombre y descripcion del proyecto"
           >
