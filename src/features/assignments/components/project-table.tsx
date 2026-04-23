@@ -1,57 +1,58 @@
 "use client";
 
+import { DataTable } from "@/components/data-table";
 import { Button } from "@/components/ui/button";
+import { columnsProject } from "./columns-project-table";
+import { useSearchParams, useRouter } from "next/navigation";
+import { useProjects } from "@/features/projects/api/get-projects";
+import { Pagination } from "@heroui/pagination";
 
 export const ProjectsTable = ({
   onSelectProject,
+  onViewProject,
 }: {
   onSelectProject: (project: any) => void;
+  onViewProject: (project: any) => void;
 }) => {
-  // 🔥 reemplazar con tu hook real
-  const projects = [
-    { id: 1, name: "Proyecto A", assigned: 1 },
-    { id: 2, name: "Proyecto B", assigned: 3 },
-    { id: 3, name: "Proyecto C", assigned: 0 },
-  ];
+
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  
+  const page = searchParams?.get("page") ? Number(searchParams.get("page")) : 1;
+  const eventId = searchParams?.get("event") ? Number(searchParams.get("event")) : undefined;
+  const state = "APPROVED";
+  const courseId = searchParams?.get("courseId") ? Number(searchParams.get("courseId")) : undefined;
+
+  const projectsQuery = useProjects({ page, eventId, state, courseId });
+  const projects = projectsQuery.data?.data;
+  const meta = projectsQuery.data?.meta;
+  
+  const handlePageChange = (newPage: number) => {
+    const params = new URLSearchParams();
+    params.set("page", String(newPage));
+    if (eventId) params.set("event", String(eventId));
+    if (state) params.set("state", state);
+    router.push(`?${params.toString()}`);
+  };
+  
+
+  const columns = columnsProject({onSelectProject, onViewProject})
+  console.log('Estos son los proyectos: ', projects)
 
   return (
-    <div className="p-4">
-      <table className="w-full text-sm">
-        <thead className="text-left text-muted-foreground border-b border-white/10">
-          <tr>
-            <th className="py-2">Proyecto</th>
-            <th>Jurados</th>
-            <th></th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {projects.map((p) => (
-            <tr
-              key={p.id}
-              className="border-b border-white/5 hover:bg-white/5 transition"
-            >
-              <td className="py-3 font-medium">{p.name}</td>
-
-              <td>
-                <span className="text-xs text-muted-foreground">
-                  {p.assigned} asignados
-                </span>
-              </td>
-
-              <td className="text-right">
-                <Button
-                  size="sm"
-                  variant="light"
-                  onPress={() => onSelectProject({ id: 1, name: "Proyecto A", assigned: 1 })}
-                >
-                  Ver
-                </Button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="flex justify-between mr-5">
+      <DataTable data={projects ? projects : []} columns={columns} />
+      {meta && meta.totalPages > 1 && (
+        <div className="flex justify-center mt-6">
+          <Pagination
+            total={meta.totalPages}
+            page={page}
+            onChange={handlePageChange}
+            showControls
+          />
+        </div>
+      )}
     </div>
+    
   );
 };

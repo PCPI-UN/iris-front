@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useNotifications } from "@/components/ui/notifications";
+import { GlassCard } from "@/features/landing/components/glass-card";
 
 interface Judge {
   id: number;
@@ -64,10 +65,11 @@ export const AssignJudgesPanel = ({
   };
 
   return (
-    <div className="h-full flex flex-col">
+    <GlassCard className="flex flex-col h-full" style={{backgroundColor:"#4582ff30"}}>
+      
 
       {/* Header */}
-      <div className="p-4 border-b border-white/10">
+      <div className="p-4">
         <h2 className="text-lg font-semibold">{project.name}</h2>
         <p className="text-sm text-muted-foreground">
           Asignar jurados
@@ -76,10 +78,12 @@ export const AssignJudgesPanel = ({
 
       {/* Search */}
       <div className="p-4">
-        <Input
+        <input
           placeholder="Buscar jurado..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
+          className="flex w-full p-3 bg-[#ffffff20] rounded-xl text-sm"
+
         />
       </div>
 
@@ -137,6 +141,6 @@ export const AssignJudgesPanel = ({
           Guardar
         </Button>
       </div>
-    </div>
+    </GlassCard>
   );
 };
