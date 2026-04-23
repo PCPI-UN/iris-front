@@ -16,7 +16,6 @@ interface StudentDashboardProps {
   eventId?: number;
 }
 
-
 export const StudentDashboard = ({ eventId }: StudentDashboardProps) => {
   const user = useUser();
   const router = useRouter();
@@ -30,7 +29,7 @@ export const StudentDashboard = ({ eventId }: StudentDashboardProps) => {
 
   const project = projectQuery.data?.project;
   const event = projectQuery.data?.event;
-
+  console.log("event type:", event?.eventType);
   const isEditMode = (project?.state as string) === "REQUEST_CHANGES";
   const posterDocument = project?.documents?.find((doc) =>
     doc.type?.toLowerCase().includes("poster"),
@@ -63,8 +62,9 @@ export const StudentDashboard = ({ eventId }: StudentDashboardProps) => {
           <ChevronLeft className="h-4 w-4" />
         </Button>
         <div className="relative space-y-2">
-          <h1 className="text-white text-3xl font-bold tracking-tight">
-            Bienvenido a tu Proyecto, {`${user.data?.firstName} ${user.data?.lastName}`}
+          <h1 className="text-white text-3xl font-bold tracking-tight sm:text-sm">
+            Bienvenido a tu Proyecto,{" "}
+            {`${user.data?.firstName} ${user.data?.lastName}`}
           </h1>
           {event && (
             <p className="text-sm md:text-lg text-default-500">
@@ -104,12 +104,14 @@ export const StudentDashboard = ({ eventId }: StudentDashboardProps) => {
             noValidate
           >
             {/* Seccion 2: Estado del proyecto */}
-            <section className="grid grid-cols-1 justify-between gap-7 md:grid-cols-2">
-              <StudentDashboardDocumentsSection
-                primaryDocument={primaryDocument}
-                canEdit={isEditMode}
-                projectId={project.id}
-              />
+            <section className={'grid grid-cols-1 justify-between gap-7 ' + (event.eventType === 2 ? "" : "md:grid-cols-2")}>
+              {event.eventType === 2 ? null : (
+                <StudentDashboardDocumentsSection
+                  docsProject={project.documents || []}
+                  canEdit={isEditMode}
+                  projectId={project.id}
+                />
+              )}
 
               <StudentDashboardStatusSection
                 state={project.state}
@@ -118,12 +120,14 @@ export const StudentDashboard = ({ eventId }: StudentDashboardProps) => {
             </section>
 
             {/* Seccion 1: Nombre y descripcion del proyecto */}
-            <StudentDashboardProjectInfoSection
-              projectName={project.name}
-              projectDescription={project.description}
-              canEdit={isEditMode}
-              onEdit={() => router.push("/app/projects")}
-            />
+            {event.eventType === 2 ? null : (
+              <StudentDashboardProjectInfoSection
+                projectName={project.name}
+                projectDescription={project.description}
+                canEdit={isEditMode}
+                onEdit={() => router.push("/app/projects")}
+              />
+            )}
 
             {/* Seccion 3: Miembros del equipo */}
             <StudentDashboardTeamSection
