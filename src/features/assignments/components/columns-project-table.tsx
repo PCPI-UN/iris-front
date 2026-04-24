@@ -33,11 +33,11 @@ export const columnsProject = ({onSelectProject, onViewProject}: { onSelectProje
       field: "assigned",
       Cell: ({entry}) => (
           <>
-              {entry.assigned && (
-            <p className="text-sm text-muted-foreground line-clamp-2">
-              {entry.assigned}
-            </p>
-          )}
+              <p className="text-sm text-muted-foreground line-clamp-2">
+                {Array.isArray(entry.jurors)
+                  ? `${entry.jurors.length} jurado${entry.jurors.length === 1 ? "" : "s"}`
+                  : entry.assigned || "Sin jurados"}
+              </p>
           </>
       )
     },

@@ -1,17 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useNotifications } from "@/components/ui/notifications";
 import { GlassCard } from "@/features/landing/components/glass-card";
 
-interface Judge {
-  id: number;
-  firstName: string;
-  lastName: string;
-  assignedProjects?: number;
-}
+type ProjectJuror = {
+  id?: string | number;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+};
 
 export const ProjectPanel = ({
   project,
@@ -20,19 +17,16 @@ export const ProjectPanel = ({
   project: any;
   onClose: () => void;
 }) => {
-
-  // 🔥 reemplazar con API
-  const judges: Judge[] = [
-    { id: 1, firstName: "Ana", lastName: "García", assignedProjects: 2 },
-    { id: 2, firstName: "Luis", lastName: "Pérez", assignedProjects: 1 },
-    { id: 3, firstName: "Sofía", lastName: "Ramírez", assignedProjects: 3 },
-  ];
+  const jurors: ProjectJuror[] = project?.jurors ?? project?.jurorAssignments ?? [];
 
     return (
         <GlassCard className="flex flex-col h-full" style={{backgroundColor:"#dd82ff20"}}>
             {/* Header */}
             <div className="p-4">
                 <h2 className="text-lg font-semibold">{project.name}</h2>
+                <p className="text-sm text-muted-foreground">
+                  {jurors.length} jurado{jurors.length === 1 ? "" : "s"} asignado{jurors.length === 1 ? "" : "s"}
+                </p>
             </div>
             
             {/* List */}
@@ -41,8 +35,38 @@ export const ProjectPanel = ({
                     <h3>Descripción</h3>
                     <p>{ project.description }</p>
                 </section>
-                <section>
-                
+                <section className="space-y-3 pt-3">
+                  <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                    Jurados asignados
+                  </h3>
+
+                  {jurors.length > 0 ? (
+                    <div className="space-y-2">
+                      {jurors.map((juror, index) => {
+                        const fullName = `${juror.firstName ?? ""} ${juror.lastName ?? ""}`.trim();
+
+                        return (
+                          <div
+                            key={juror.id ?? `${juror.email ?? "juror"}-${index}`}
+                            className="rounded-lg border border-white/10 bg-white/5 p-3"
+                          >
+                            <p className="text-sm font-medium">
+                              {fullName || juror.email || "Jurado sin nombre"}
+                            </p>
+                            {juror.email && (
+                              <p className="text-xs text-muted-foreground">
+                                {juror.email}
+                              </p>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      Este proyecto no tiene jurados asignados.
+                    </p>
+                  )}
                 </section>
             </div>
 
