@@ -5,6 +5,7 @@
 import { RefObject, useEffect, useRef } from 'react';
 import { Plus } from 'lucide-react';
 import Link from 'next/link';
+import { getContributorFullName } from '@/features/developers/data/contributors';
 import { landingContent } from '../content';
 import { paths } from '@/config/paths';
 // Types and utility functions for handling developer versions and sorting
@@ -95,9 +96,9 @@ function VersionCarousel({ developers, version }: VersionCarouselProps) {
         }}
       >
         {duplicatedDevelopers.map((dev, index) => (
-          <div key={`${version}-${dev.name}-${index}`} className="flex-shrink-0 flex items-center">
+          <div key={`${version}-${getContributorFullName(dev)}-${index}`} className="flex-shrink-0 flex items-center">
             <div className="flex flex-col items-center text-center whitespace-nowrap px-2">
-              <h3 className="text-sm md:text-base font-semibold text-foreground/95">{dev.name}</h3>
+              <h3 className="text-sm md:text-base font-semibold text-foreground/95">{getContributorFullName(dev)}</h3>
               <p className="mt-1 text-[11px] md:text-xs font-mono text-muted-foreground uppercase tracking-wider">
                 {dev.role}
               </p>
@@ -131,8 +132,8 @@ export function DevelopersCarousel({ developersRef }: DevelopersCarouselProps) {
   const PRIORITY_NAME = 'daniel romero';
 
 const latestDevelopersOrdered = [...latestDevelopers].sort((a, b) => {
-  const aIsPriority = a.name.trim().toLowerCase() === PRIORITY_NAME;
-  const bIsPriority = b.name.trim().toLowerCase() === PRIORITY_NAME;
+  const aIsPriority = getContributorFullName(a).trim().toLowerCase() === PRIORITY_NAME;
+  const bIsPriority = getContributorFullName(b).trim().toLowerCase() === PRIORITY_NAME;
 
   if (aIsPriority && !bIsPriority) return -1;
   if (!aIsPriority && bIsPriority) return 1;

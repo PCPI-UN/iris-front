@@ -2,6 +2,7 @@
 import {
   ContributorCard,
   ContributorRoleGroup,
+  getContributorFullName,
   getContributorRoleLabels,
   getContributorRoleGroup,
 } from '@/features/developers/data/contributors';
@@ -35,7 +36,12 @@ const matchVersion = (version: string, selectedVersion: string) =>
   normalize(version) === normalize(selectedVersion);
 
 export type ContributorSummary = {
-  name: string;
+  firstNames: string;
+  lastName1: string;
+  lastName2: string;
+  fullName: string;
+  github: string;
+  email: string;
   versions: string[];
   roleGroups: ContributorRoleGroup[];
   roleLabels: string[];
@@ -56,7 +62,12 @@ export const summarizeContributors = (contributors: ContributorCard[]): Contribu
   const contributorsMap = new Map<
     string,
     {
-      name: string;
+      firstNames: string;
+      lastName1: string;
+      lastName2: string;
+      fullName: string;
+      github: string;
+      email: string;
       versions: Set<string>;
       roleGroups: Set<ContributorRoleGroup>;
       roleLabels: Set<string>;
@@ -64,12 +75,18 @@ export const summarizeContributors = (contributors: ContributorCard[]): Contribu
   >();
 
   contributors.forEach((contributor) => {
-    const normalizedName = normalize(contributor.name);
+    const fullName = getContributorFullName(contributor);
+    const normalizedName = normalize(fullName);
     const roleLabels = getContributorRoleLabels(contributor.role);
 
     if (!contributorsMap.has(normalizedName)) {
       contributorsMap.set(normalizedName, {
-        name: contributor.name,
+        firstNames: contributor.firstNames,
+        lastName1: contributor.lastName1,
+        lastName2: contributor.lastName2,
+        fullName,
+        github: contributor.github ?? '',
+        email: contributor.email ?? '',
         versions: new Set<string>(),
         roleGroups: new Set<ContributorRoleGroup>(),
         roleLabels: new Set<string>(),
@@ -81,20 +98,24 @@ export const summarizeContributors = (contributors: ContributorCard[]): Contribu
 
     summary.versions.add(contributor.version);
     roleLabels.forEach((roleLabel) => {
-  summary.roleGroups.add(getContributorRoleGroup(roleLabel));
-  summary.roleLabels.add(roleLabel);
-});
-
+      summary.roleGroups.add(getContributorRoleGroup(roleLabel));
+      summary.roleLabels.add(roleLabel);
+    });
   });
 // Convert sets to arrays and sort them before returning the final list of summaries
   return Array.from(contributorsMap.values())
     .map((summary) => ({
-      name: summary.name,
+      firstNames: summary.firstNames,
+      lastName1: summary.lastName1,
+      lastName2: summary.lastName2,
+      fullName: summary.fullName,
+      github: summary.github,
+      email: summary.email,
       versions: Array.from(summary.versions).sort(compareVersionsDesc),
       roleGroups: Array.from(summary.roleGroups),
       roleLabels: Array.from(summary.roleLabels).sort((a, b) => a.localeCompare(b, 'es')),
     }))
-    .sort((a, b) => a.name.localeCompare(b.name, 'es'));
+    .sort((a, b) => a.fullName.localeCompare(b.fullName, 'es'));
 };
 // Get unique version filters from the contributors list, sorted by version
 export const getVersionFilters = (contributors: ContributorCard[]) => {
@@ -153,5 +174,5 @@ export const filterContributors = (
 
     if (versionComparison !== 0) return versionComparison;
 
-    return a.name.localeCompare(b.name, 'es');
+    return a.fullName.localeCompare(b.fullName, 'es');
   });

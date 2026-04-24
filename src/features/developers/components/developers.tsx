@@ -7,7 +7,7 @@ import {
   contributors,
 } from '@/features/developers/data/contributors';
 // Utility functions for handling contributor data and filtering
-import { Code2, Layers3, Sparkles, Users } from 'lucide-react';
+import { Code2, Github, Layers3, Mail, Sparkles, Users } from 'lucide-react';
 import {
   buildRoleStats,
   compareVersions,
@@ -248,7 +248,7 @@ export function Developers() {
       <div id="contributors-grid" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {filtered.map((developer) => (
           <div
-            key={developer.name}
+            key={developer.fullName}
             className="relative rounded-[1.5rem] overflow-hidden transition-all hover:-translate-y-1 hover:shadow-[0_0_26px_oklch(0.82_0.18_330_/_0.35)]"
           >
             <div className="absolute inset-0 rounded-[1.5rem] p-[1.5px] pointer-events-none" style={rainbowOutlineStyle} />
@@ -261,8 +261,8 @@ export function Developers() {
                 }}
               />
 
-              <h3 className="text-lg sm:text-xl font-semibold text-white">{developer.name}</h3>
-              <p className="mt-3 inline-flex max-w-full rounded-full border border-white/45 bg-transparent px-3 py-1 text-sm text-white justify-center text-center break-words">
+              <h3 className="text-lg sm:text-xl font-semibold text-white">{developer.fullName}</h3>
+              <p className="mt-3 inline-flex max-w-full rounded-full border border-white/45 bg-transparent px-3 py-1 text-sm italic text-white justify-center text-center break-words">
                 {developer.roleLabels.join(' • ')}
               </p>
 
@@ -271,7 +271,7 @@ export function Developers() {
                   const accent = getVersionAccent(version);
                   return (
                     <span
-                      key={`${developer.name}-${version}`}
+                      key={`${developer.fullName}-${version}`}
                       className={`inline-flex items-center gap-1.5 text-sm ${accent.textClass}`}
                     >
                       <span className={`h-2.5 w-2.5 rounded-sm ${accent.dotClass}`} />
@@ -279,6 +279,50 @@ export function Developers() {
                     </span>
                   );
                 })}
+              </div>
+
+              <div className="mt-4 flex w-full flex-col items-center gap-3 text-center text-[13px] sm:text-sm">
+                {developer.github ? (
+                  <a
+                    href={developer.github}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex min-w-0 max-w-full items-center justify-center gap-2.5 text-white transition-opacity hover:opacity-80"
+                  >
+                    <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/25 bg-white/10">
+                      <Github className="h-4 w-4" />
+                    </span>
+                    <span className="max-w-[8.5rem] truncate text-white/85 sm:max-w-[10rem]">
+                      {developer.github.replace(/^https?:\/\/(www\.)?github\.com\//, '').replace(/\/$/, '')}
+                    </span>
+                  </a>
+                ) : (
+                  <span className="flex min-w-0 max-w-full items-center justify-center gap-2.5 text-white/45">
+                    <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.04]">
+                      <Github className="h-4 w-4" />
+                    </span>
+                    <span className="max-w-[8.5rem] truncate sm:max-w-[10rem]">Pendiente</span>
+                  </span>
+                )}
+
+                {developer.email ? (
+                  <a
+                    href={`mailto:${developer.email}`}
+                    className="flex min-w-0 max-w-full items-center justify-center gap-2.5 text-white transition-opacity hover:opacity-80"
+                  >
+                    <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/25 bg-white/10">
+                      <Mail className="h-4 w-4" />
+                    </span>
+                    <span className="max-w-[13rem] break-all text-white/85 sm:max-w-[15rem]">{developer.email}</span>
+                  </a>
+                ) : (
+                  <span className="flex min-w-0 max-w-full items-center justify-center gap-2.5 text-white/45">
+                    <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.04]">
+                      <Mail className="h-4 w-4" />
+                    </span>
+                    <span className="max-w-[9.5rem] truncate sm:max-w-[11rem]">Pendiente</span>
+                  </span>
+                )}
               </div>
             </article>
           </div>
