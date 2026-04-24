@@ -36,12 +36,12 @@ const matchVersion = (version: string, selectedVersion: string) =>
   normalize(version) === normalize(selectedVersion);
 
 export type ContributorSummary = {
-  firstNames: string;
+  firstName: string;
+  middleName: string;
   lastName1: string;
   lastName2: string;
   fullName: string;
   github: string;
-  email: string;
   versions: string[];
   roleGroups: ContributorRoleGroup[];
   roleLabels: string[];
@@ -62,12 +62,12 @@ export const summarizeContributors = (contributors: ContributorCard[]): Contribu
   const contributorsMap = new Map<
     string,
     {
-      firstNames: string;
+      firstName: string;
+      middleName: string;
       lastName1: string;
       lastName2: string;
       fullName: string;
       github: string;
-      email: string;
       versions: Set<string>;
       roleGroups: Set<ContributorRoleGroup>;
       roleLabels: Set<string>;
@@ -81,12 +81,12 @@ export const summarizeContributors = (contributors: ContributorCard[]): Contribu
 
     if (!contributorsMap.has(normalizedName)) {
       contributorsMap.set(normalizedName, {
-        firstNames: contributor.firstNames,
+        firstName: contributor.firstName,
+        middleName: contributor.middleName ?? '',
         lastName1: contributor.lastName1,
         lastName2: contributor.lastName2,
         fullName,
         github: contributor.github ?? '',
-        email: contributor.email ?? '',
         versions: new Set<string>(),
         roleGroups: new Set<ContributorRoleGroup>(),
         roleLabels: new Set<string>(),
@@ -105,12 +105,12 @@ export const summarizeContributors = (contributors: ContributorCard[]): Contribu
 // Convert sets to arrays and sort them before returning the final list of summaries
   return Array.from(contributorsMap.values())
     .map((summary) => ({
-      firstNames: summary.firstNames,
+      firstName: summary.firstName,
+      middleName: summary.middleName,
       lastName1: summary.lastName1,
       lastName2: summary.lastName2,
       fullName: summary.fullName,
       github: summary.github,
-      email: summary.email,
       versions: Array.from(summary.versions).sort(compareVersionsDesc),
       roleGroups: Array.from(summary.roleGroups),
       roleLabels: Array.from(summary.roleLabels).sort((a, b) => a.localeCompare(b, 'es')),

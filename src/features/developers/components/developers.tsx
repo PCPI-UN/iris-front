@@ -7,7 +7,7 @@ import {
   contributors,
 } from '@/features/developers/data/contributors';
 // Utility functions for handling contributor data and filtering
-import { Code2, Github, Layers3, Mail, Sparkles, Users } from 'lucide-react';
+import { Code2, Github, Layers3, Sparkles, Users } from 'lucide-react';
 import {
   buildRoleStats,
   compareVersions,
@@ -262,9 +262,30 @@ export function Developers() {
               />
 
               <h3 className="text-lg sm:text-xl font-semibold text-white">{developer.fullName}</h3>
-              <p className="mt-3 inline-flex max-w-full rounded-full border border-white/45 bg-transparent px-3 py-1 text-sm italic text-white justify-center text-center break-words">
-                {developer.roleLabels.join(' • ')}
-              </p>
+              <div className="mt-3 flex w-full flex-wrap items-center justify-center gap-2">
+                <p className="inline-flex min-h-8 max-w-full items-center rounded-full border border-white/45 bg-transparent px-3 text-sm italic text-white justify-center text-center break-words">
+                  {developer.roleLabels.join(' • ')}
+                </p>
+
+                {developer.github ? (
+                  <a
+                    href={developer.github}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/25 bg-white/10 text-white transition-opacity hover:opacity-80"
+                    aria-label={`GitHub de ${developer.fullName}`}
+                  >
+                    <Github className="h-4 w-4" />
+                  </a>
+                ) : (
+                  <span
+                    className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-white/45"
+                    aria-label="GitHub pendiente"
+                  >
+                    <Github className="h-4 w-4" />
+                  </span>
+                )}
+              </div>
 
               <div className="mt-3 flex flex-wrap justify-center gap-x-3 gap-y-1">
                 {developer.versions.map((version) => {
@@ -281,49 +302,6 @@ export function Developers() {
                 })}
               </div>
 
-              <div className="mt-4 flex w-full flex-col items-center gap-3 text-center text-[13px] sm:text-sm">
-                {developer.github ? (
-                  <a
-                    href={developer.github}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex min-w-0 max-w-full items-center justify-center gap-2.5 text-white transition-opacity hover:opacity-80"
-                  >
-                    <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/25 bg-white/10">
-                      <Github className="h-4 w-4" />
-                    </span>
-                    <span className="max-w-[8.5rem] truncate text-white/85 sm:max-w-[10rem]">
-                      {developer.github.replace(/^https?:\/\/(www\.)?github\.com\//, '').replace(/\/$/, '')}
-                    </span>
-                  </a>
-                ) : (
-                  <span className="flex min-w-0 max-w-full items-center justify-center gap-2.5 text-white/45">
-                    <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.04]">
-                      <Github className="h-4 w-4" />
-                    </span>
-                    <span className="max-w-[8.5rem] truncate sm:max-w-[10rem]">Pendiente</span>
-                  </span>
-                )}
-
-                {developer.email ? (
-                  <a
-                    href={`mailto:${developer.email}`}
-                    className="flex min-w-0 max-w-full items-center justify-center gap-2.5 text-white transition-opacity hover:opacity-80"
-                  >
-                    <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/25 bg-white/10">
-                      <Mail className="h-4 w-4" />
-                    </span>
-                    <span className="max-w-[13rem] break-all text-white/85 sm:max-w-[15rem]">{developer.email}</span>
-                  </a>
-                ) : (
-                  <span className="flex min-w-0 max-w-full items-center justify-center gap-2.5 text-white/45">
-                    <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.04]">
-                      <Mail className="h-4 w-4" />
-                    </span>
-                    <span className="max-w-[9.5rem] truncate sm:max-w-[11rem]">Pendiente</span>
-                  </span>
-                )}
-              </div>
             </article>
           </div>
         ))}

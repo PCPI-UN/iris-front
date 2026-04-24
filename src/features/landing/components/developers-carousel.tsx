@@ -98,7 +98,7 @@ function VersionCarousel({ developers, version }: VersionCarouselProps) {
         {duplicatedDevelopers.map((dev, index) => (
           <div key={`${version}-${getContributorFullName(dev)}-${index}`} className="flex-shrink-0 flex items-center">
             <div className="flex flex-col items-center text-center whitespace-nowrap px-2">
-              <h3 className="text-sm md:text-base font-semibold text-foreground/95">{getContributorFullName(dev)}</h3>
+              <h3 className="text-sm md:text-base font-semibold text-foreground/95">{`${dev.firstName} ${dev.lastName1}`.trim()}</h3>
               <p className="mt-1 text-[11px] md:text-xs font-mono text-muted-foreground uppercase tracking-wider">
                 {dev.role}
               </p>
