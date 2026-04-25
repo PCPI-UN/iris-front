@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronLeft, ClipboardList, FileText } from "lucide-react";
+import { ChevronLeft, ClipboardList, FileText, Save } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { useUser } from "@/lib/auth";
@@ -29,8 +29,10 @@ export const StudentDashboard = ({ eventId }: StudentDashboardProps) => {
 
   const project = projectQuery.data?.project;
   const event = projectQuery.data?.event;
-  console.log("event type:", event?.eventType);
-  const isEditMode = (project?.state as string) === "REQUEST_CHANGES";
+  console.log("Project data:", project?.id);
+  const isEditMode =
+    (project?.state as string) === "REQUEST_CHANGES" ? true : false;
+  console.log("Project state:", isEditMode);
   const posterDocument = project?.documents?.find((doc) =>
     doc.type?.toLowerCase().includes("poster"),
   );
@@ -46,33 +48,53 @@ export const StudentDashboard = ({ eventId }: StudentDashboardProps) => {
 
   return (
     <section
-      className="dashboard-page space-y-6 pb-10"
+      className="dashboard-page space-y-6 pb-10 "
       aria-label="Dashboard del estudiante"
     >
       {/* Encabezado de bienvenida */}
 
-      <header className="flex gap-10 items-center px-7">
-        <Button
-          isIconOnly
-          size="sm"
-          variant="flat"
-          aria-label="Volver a proyectos"
-          onPress={() => router.push("/app/projects")}
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
-        <div className="relative space-y-2">
-          <h1 className="text-white text-3xl font-bold tracking-tight sm:text-sm">
-            Bienvenido a tu Proyecto,{" "}
-            {`${user.data?.firstName} ${user.data?.lastName}`}
-          </h1>
-          {event && (
-            <p className="text-sm md:text-lg text-default-500">
-              {event.name}
-              {event.description ? ` · ${event.description}` : ""}
-            </p>
-          )}
-        </div>
+      <header className="flex flex-col items-start justify-between gap-4 md:flex-row px-8">
+        <aside className="flex items-center gap-4">
+          <Button
+            isIconOnly
+            size="sm"
+            variant="flat"
+            aria-label="Volver a proyectos"
+            onPress={() => router.push("/app/projects")}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <div className="relative space-y-2">
+            <h1 className="text-white text-3xl font-bold tracking-tight text-balance">
+              Bienvenido a tu Proyecto,{" "}
+              {`${user.data?.firstName} ${user.data?.lastName}`}
+            </h1>
+            {event && (
+              <p className="text-sm md:text-lg text-default-500 line-clamp-1">
+                {event.name}
+                {event.description ? ` · ${event.description}` : ""}
+              </p>
+            )}
+          </div>
+        </aside>
+
+        <aside className="p-4">
+          {isEditMode ? (
+            <Button
+              isIconOnly
+              variant="flat"
+              aria-label="Guardar cambios"
+              className="w-full flex items-center gap-2 text-sm text-green-400 px-4 shadow-sm hover:bg-green-700/10 hover:text-green-500 focus-visible:bg-green-400 focus-visible:text-green-50 disabled:pointer-events-none disabled:opacity-50 disabled:bg-transparent"
+              onPress={
+                () => router.push("/app/projects")
+                /* Aqui se aplica la logica para "guardar cambios" pero realmente se cambia el estado del proyecto */
+              }
+            >
+              <span className="p-2 font-bold">Guardar Cambios</span>
+              <Save className="size-5 " />
+            </Button>
+          ) : null}
+        </aside>
       </header>
 
       {/* Sin evento */}
@@ -104,7 +126,12 @@ export const StudentDashboard = ({ eventId }: StudentDashboardProps) => {
             noValidate
           >
             {/* Seccion 2: Estado del proyecto */}
-            <section className={'grid grid-cols-1 justify-between gap-7 ' + (event.eventType === 2 ? "" : "md:grid-cols-2")}>
+            <section
+              className={
+                "grid grid-cols-1 justify-between gap-7 " +
+                (event.eventType === 2 ? "" : "lg:grid-cols-2")
+              }
+            >
               {event.eventType === 2 ? null : (
                 <StudentDashboardDocumentsSection
                   docsProject={project.documents || []}
@@ -125,7 +152,7 @@ export const StudentDashboard = ({ eventId }: StudentDashboardProps) => {
                 projectName={project.name}
                 projectDescription={project.description}
                 canEdit={isEditMode}
-                onEdit={() => router.push("/app/projects")}
+                projectId={project.id}
               />
             )}
 
