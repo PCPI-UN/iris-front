@@ -12,6 +12,8 @@ import { StudentDashboardProjectInfoSection } from "./student-dashboard/student-
 import { StudentDashboardStatusSection } from "./student-dashboard/student-dashboard-status-section";
 import { StudentDashboardTeamSection } from "./student-dashboard/student-dashboard-team-section";
 
+import { ExpandableText } from "./expandable-text";
+
 interface StudentDashboardProps {
   eventId?: number;
 }
@@ -36,7 +38,7 @@ export const StudentDashboard = ({ eventId }: StudentDashboardProps) => {
   const posterDocument = project?.documents?.find((doc) =>
     doc.type?.toLowerCase().includes("poster"),
   );
-  const primaryDocument = posterDocument || project?.documents?.[0];
+
 
   if (user.isLoading || (eventId && projectQuery.isLoading)) {
     return (
@@ -72,7 +74,8 @@ export const StudentDashboard = ({ eventId }: StudentDashboardProps) => {
             {event && (
               <p className="text-sm md:text-lg text-default-500 line-clamp-1">
                 {event.name}
-                {event.description ? ` · ${event.description}` : ""}
+                {
+                event.description ? ` · ${event.description}` : ""}
               </p>
             )}
           </div>
