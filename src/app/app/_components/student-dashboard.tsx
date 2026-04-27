@@ -3,7 +3,9 @@
 import { ChevronLeft, ClipboardList, FileText, Save } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { useNotifications } from "@/components/ui/notifications";
 import { useUser } from "@/lib/auth";
+import { useChangeProjectToUnderReview } from "@/features/projects/api/change-project-to-under-review";
 import { useProject as useMyProjectByEvent } from "@/features/projects/api/get-project-user-event";
 import { useRouter } from "next/navigation";
 import { Spinner } from "@/components/ui/spinner";
@@ -21,6 +23,8 @@ interface StudentDashboardProps {
 export const StudentDashboard = ({ eventId }: StudentDashboardProps) => {
   const user = useUser();
   const router = useRouter();
+  const { addNotification } = useNotifications();
+  const changeProjectToUnderReviewMutation = useChangeProjectToUnderReview();
   const projectQuery = useMyProjectByEvent({
     eventId: eventId?.toString() ?? "",
     queryConfig: {
@@ -38,6 +42,31 @@ export const StudentDashboard = ({ eventId }: StudentDashboardProps) => {
   const posterDocument = project?.documents?.find((doc) =>
     doc.type?.toLowerCase().includes("poster"),
   );
+
+  const handleSaveChanges = async () => {
+    if (!project?.id) return;
+
+    try {
+      await changeProjectToUnderReviewMutation.mutateAsync({
+        projectId: project.id,
+      });
+
+      addNotification({
+        type: "success",
+        title: "Proyecto enviado a revision",
+        message: "El estado del proyecto cambio correctamente a under review.",
+      });
+
+      router.push("/app/projects");
+    } catch (error) {
+      console.error("Error changing project state to under review:", error);
+      addNotification({
+        type: "error",
+        title: "No se pudo guardar",
+        message: "Ocurrio un error al cambiar el estado del proyecto.",
+      });
+    }
+  };
 
 
   if (user.isLoading || (eventId && projectQuery.isLoading)) {
@@ -88,10 +117,9 @@ export const StudentDashboard = ({ eventId }: StudentDashboardProps) => {
               variant="flat"
               aria-label="Guardar cambios"
               className="w-full flex items-center gap-2 text-sm text-green-400 px-4 shadow-sm hover:bg-green-700/10 hover:text-green-500 focus-visible:bg-green-400 focus-visible:text-green-50 disabled:pointer-events-none disabled:opacity-50 disabled:bg-transparent"
-              onPress={
-                () => router.push("/app/projects")
-                /* Aqui se aplica la logica para "guardar cambios" pero realmente se cambia el estado del proyecto */
-              }
+              onPress={handleSaveChanges}
+              isLoading={changeProjectToUnderReviewMutation.isPending}
+              disabled={changeProjectToUnderReviewMutation.isPending}
             >
               <span className="p-2 font-bold">Guardar Cambios</span>
               <Save className="size-5 " />
