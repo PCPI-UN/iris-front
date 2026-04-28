@@ -1,16 +1,20 @@
 "use client";
 
-import { useState } from "react";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useNotifications } from "@/components/ui/notifications";
 import { GlassCard } from "@/features/landing/components/glass-card";
+import { useMemo, useState } from "react";
+
+import { useEventJuries } from "@/features/juries/api/get-event-juries";
+import { useAssignJurors } from "@/features/projects/api/assign-jurors";
 
 interface Judge {
   id: number;
-  firstName: string;
-  lastName: string;
-  assignedProjects?: number;
+  firstName?: string;
+  lastName?: string;
+  email: string;
+  status?: string;
+  projectIds?: Array<string | number>;
 }
 
 export const AssignJudgesPanel = ({
@@ -24,16 +28,42 @@ export const AssignJudgesPanel = ({
 
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<number[]>([]);
+  const assignJurorsMutation = useAssignJurors();
 
-  // 🔥 reemplazar con API
-  const judges: Judge[] = [
-    { id: 1, firstName: "Ana", lastName: "García", assignedProjects: 2 },
-    { id: 2, firstName: "Luis", lastName: "Pérez", assignedProjects: 1 },
-    { id: 3, firstName: "Sofía", lastName: "Ramírez", assignedProjects: 3 },
-  ];
+  const eventJuriesQuery = useEventJuries({
+    eventId: project?.eventId,
+  });
+
+  const assignedJurorKeys = useMemo(() => {
+    const jurors = project?.jurors ?? project?.jurorAssignments ?? [];
+
+    return new Set(
+      jurors.flatMap((juror: any) => [
+        juror?.id ? String(juror.id) : "",
+        juror?.memberUserId ? String(juror.memberUserId) : "",
+        juror?.email ? String(juror.email) : "",
+      ])
+    );
+  }, [project]);
+
+  const judges: Judge[] = useMemo(() => {
+    const juries = eventJuriesQuery.data?.data ?? [];
+
+    return juries
+      .filter((jury) => String(jury.status).toUpperCase() === "ACCEPTED")
+      .filter((jury) => !assignedJurorKeys.has(String(jury.id)) && !assignedJurorKeys.has(jury.email))
+      .map((jury) => ({
+        id: Number(jury.id),
+        firstName: jury.firstName,
+        lastName: jury.lastName,
+        email: jury.email,
+        status: jury.status,
+        projectIds: jury.projectIds,
+      }));
+  }, [assignedJurorKeys, eventJuriesQuery.data?.data]);
 
   const filtered = judges.filter((j) =>
-    `${j.firstName} ${j.lastName}`
+    `${j.firstName ?? ""} ${j.lastName ?? ""} ${j.email}`
       .toLowerCase()
       .includes(search.toLowerCase())
   );
@@ -46,7 +76,7 @@ export const AssignJudgesPanel = ({
     );
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (selected.length === 0) {
       addNotification({
         type: "error",
@@ -56,12 +86,41 @@ export const AssignJudgesPanel = ({
       return;
     }
 
-    addNotification({
-      type: "success",
-      title: "Asignación realizada",
-    });
+    const projectId = Number(project?.id);
 
-    onClose();
+    if (!Number.isFinite(projectId)) {
+      addNotification({
+        type: "error",
+        title: "Error",
+        message: "No se pudo identificar el proyecto",
+      });
+      return;
+    }
+
+    try {
+      await Promise.all(
+        selected.map((userId) =>
+          assignJurorsMutation.mutateAsync({
+            userId,
+            projectIds: [projectId],
+          })
+        )
+      );
+
+      addNotification({
+        type: "success",
+        title: "Asignación realizada",
+      });
+
+      setSelected([]);
+      onClose();
+    } catch (error: any) {
+      addNotification({
+        type: "error",
+        title: "Error al asignar jurados",
+        message: error?.message || "No se pudo completar la asignación",
+      });
+    }
   };
 
   return (
@@ -72,7 +131,9 @@ export const AssignJudgesPanel = ({
       <div className="p-4">
         <h2 className="text-lg font-semibold">{project.name}</h2>
         <p className="text-sm text-muted-foreground">
-          Asignar jurados
+          {eventJuriesQuery.isLoading
+            ? "Cargando jurados disponibles..."
+            : `${filtered.length} jurado${filtered.length === 1 ? "" : "s"} disponible${filtered.length === 1 ? "" : "s"} para asignar`}
         </p>
       </div>
 
@@ -89,6 +150,12 @@ export const AssignJudgesPanel = ({
 
       {/* List */}
       <div className="flex-1 overflow-y-auto px-4 space-y-2">
+        {!eventJuriesQuery.isLoading && filtered.length === 0 && (
+          <p className="text-sm text-muted-foreground">
+            No hay jurados disponibles para este proyecto.
+          </p>
+        )}
+
         {filtered.map((j) => {
           const active = selected.includes(j.id);
 
@@ -107,10 +174,10 @@ export const AssignJudgesPanel = ({
               <div className="flex justify-between items-center">
                 <div>
                   <p className="text-sm font-medium">
-                    {j.firstName} {j.lastName}
+                    {`${j.firstName ?? ""} ${j.lastName ?? ""}`.trim() || j.email}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {j.assignedProjects} proyectos
+                    {j.projectIds?.length ?? 0} proyecto{(j.projectIds?.length ?? 0) === 1 ? "" : "s"}
                   </p>
                 </div>
 
@@ -137,7 +204,13 @@ export const AssignJudgesPanel = ({
           Cancelar
         </Button>
 
-        <Button className="w-full" color="primary" onPress={handleSubmit}>
+        <Button
+          className="w-full"
+          color="primary"
+          onPress={handleSubmit}
+          isLoading={assignJurorsMutation.isPending}
+          disabled={assignJurorsMutation.isPending}
+        >
           Guardar
         </Button>
       </div>
