@@ -1,9 +1,10 @@
 import { Avatar } from "@heroui/avatar";
 import { Button } from "@heroui/button";
-import { Edit2, Hash, Mail, User, Users } from "lucide-react";
+import { Edit2, Hash, Mail, User, Users, Scale} from "lucide-react";
 import { ProjectParticipant } from "@/types/api";
-import { getInitials } from "./student-dashboard.helpers";
+import { getInitials } from "../../../../features/events/api/student-dashboard.helpers";
 import { StudentDashboardSectionCard } from "./student-dashboard-section-card";
+import { getSemesterFromParticipant } from "@/features/events/api/student-dashboard.helpers";
 
 type StudentDashboardTeamSectionProps = {
   participants: ProjectParticipant[];
@@ -46,7 +47,7 @@ export const StudentDashboardTeamSection = ({
                 className="group relative rounded-xl border border-default-200/60 bg-default-50/50 p-5 transition-colors hover:border-primary/40"
                 aria-label={`Participante: ${participant.firstName} ${participant.lastName}`}
               >
-                <div className="flex items-start gap-4">
+                <div className="flex items-start gap-4 ">
                   <Avatar
                     name={getInitials(participant.firstName, participant.lastName)}
                     className="bg-primary/20 font-semibold text-primary"
@@ -54,7 +55,7 @@ export const StudentDashboardTeamSection = ({
                     size="lg"
                     aria-hidden="true"
                   />
-                  <div className="grid min-w-0 flex-1 grid-cols-1 gap-4 md:grid-cols-3">
+                  <div className="min-w-0 w-full grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
                     <div className="space-y-1">
                       <label
                         htmlFor={`participant-name-${idx}`}
@@ -67,7 +68,7 @@ export const StudentDashboardTeamSection = ({
                       </label>
                       <div
                         id={`participant-name-${idx}`}
-                        className="truncate text-sm font-medium md:text-base"
+                        className="truncate text-sm w-fit font-medium md:text-base"
                       >
                         {participant.firstName} {participant.lastName}
                       </div>
@@ -85,9 +86,29 @@ export const StudentDashboardTeamSection = ({
                       </label>
                       <div
                         id={`participant-email-${idx}`}
-                        className="break-all text-sm"
+                        className="break-all text-sm w-fit"
                       >
                         {participant.email}
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label
+                        htmlFor={`participant-code-${idx}`}
+                        className="flex items-center gap-2 text-default-500"
+                      >
+                        <Scale className="h-4 w-4" aria-hidden="true" />
+                        <span className="text-xs font-semibold uppercase tracking-wide">
+                          Semestre
+                        </span>
+                      </label>
+                      <div
+                        id={`participant-code-${idx}`}
+                        className="text-sm italic text-default-500"
+                      >
+                        {
+                          getSemesterFromParticipant(participant.semester)
+                        }
                       </div>
                     </div>
 
