@@ -8,7 +8,7 @@ import { Event } from '@/types/api';
 import { getEventsQueryOptions } from './get-events';
 import { normalizeEventDatesForPayload } from '../utils/event-date-payload';
 import { normalizeEvent } from './event-adapter';
-import { toEventTypeCode, toEvaluationTypeCode } from '../utils/event-enums';
+import { toEventTypeLabel, toEvaluationTypeCode } from '../utils/event-enums';
 
 export const createEventInputSchema = z.object({
   name: z.string().min(1, 'Required'),
@@ -70,7 +70,7 @@ export const createEvent = ({
   return api
     .post<Record<string, any>>('/events', {
       ...normalizeEventDatesForPayload(data),
-      eventType: toEventTypeCode(data.eventType),
+      eventType: toEventTypeLabel(data.eventType),
       evaluationType:
         data.evaluationType === undefined
           ? undefined
