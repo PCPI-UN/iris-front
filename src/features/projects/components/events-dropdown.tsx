@@ -21,11 +21,7 @@ export const EventsDropdown = () => {
   useEffect(() => {
     const ev = searchParams?.get("event");
     if (ev) {
-      const ids = ev
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean);
-      setSelectedKeys(new Set(ids));
+      setSelectedKeys(new Set([ev]));
     } else {
       setSelectedKeys(new Set());
     }
@@ -35,7 +31,7 @@ export const EventsDropdown = () => {
     const nextSet = keys instanceof Set ? keys : new Set(Array.from(keys));
     setSelectedKeys(nextSet);
 
-    const csv = Array.from(nextSet).join(",");
+    const selected = Array.from(nextSet)[0];
 
     const params = new URLSearchParams();
     searchParams?.forEach((v, k) => {
@@ -43,7 +39,7 @@ export const EventsDropdown = () => {
       params.set(k, v);
     });
 
-    if (csv) params.set("event", csv);
+    if (selected) params.set("event", selected);
     else params.delete("event");
 
     const query = params.toString();
@@ -55,8 +51,7 @@ export const EventsDropdown = () => {
       <div className="w-full">
         <Select
         label="Eventos"
-        placeholder="Selecciona uno o más eventos"
-        selectionMode="multiple"
+        placeholder="Selecciona un evento"
         selectedKeys={selectedKeys}
         onSelectionChange={(keys) => handleSelectionChange(keys as Set<string>)}
         isLoading={eventsQuery.isLoading}

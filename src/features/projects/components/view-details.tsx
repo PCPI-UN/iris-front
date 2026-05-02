@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@/components/ui/modal";
 import { useDisclosure } from "@/hooks/use-disclosure";
 import { Project } from "@/types/api";
-import { AvatarGroup } from "./avatar-icon";
 import { Eye, FileText } from "lucide-react";
+import { ParticipantsDetails } from "./participants-details";
 
 export const ViewDetails = ({project} : {project: Project}) => {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
@@ -17,13 +17,13 @@ export const ViewDetails = ({project} : {project: Project}) => {
         <h2 className="md:hidden flex">Ver detalles</h2>
       </Button>
 
-      <Modal isOpen={isOpen} onOpenChange={onOpenChange} className="m-auto mx-5 lg:max-w-[50vw] max-h-[70vh] overflow-y-auto">
-        <ModalContent>
+      <Modal isOpen={isOpen} onOpenChange={onOpenChange} className="m-auto mx-5 lg:max-w-[50vw] max-h-[70vh]">
+        <ModalContent className="rounded-2xl overflow-hidden">
           {(onClose) => (
 
             <>
               <ModalHeader>Detalles del proyecto</ModalHeader>
-              <ModalBody className="space-y-5">
+              <ModalBody className="space-y-5 overflow-y-auto">
                 <h2 className="text-2xl font-bold">{project.name}</h2>
                 <section className="space-y-2">
                     <h2 className="font-medium bg-gradient-to-br from-white via-white/80 to-white bg-clip-text text-transparent inline-block">Description</h2>
@@ -31,42 +31,12 @@ export const ViewDetails = ({project} : {project: Project}) => {
                         {project.description}
                     </p>
                 </section>
-                <section className="space-y-2">
-                  <h2 className="font-medium bg-gradient-to-br from-white via-white/80 to-white bg-clip-text text-transparent inline-block">Equipo</h2>
-                  <div className="space-y-4">
-                  
-                    {/* Desktop: AvatarGroup */}
-                    <div className="hidden sm:block">
-                      <AvatarGroup
-                        participants={
-                          (project.pendingParticipants?.length ?? 0) > 0
-                            ? project.pendingParticipants.map(p => ({
-                                name: `${p.firstName} ${p.lastName}`.trim()
-                              }))
-                            : project.participants.map(p => ({
-                                name: `${p.firstName} ${p.lastName}`.trim()
-                              }))
-                        }
-                        size={35}
-                      />
-                    </div>
 
-                    {/* Mobile: Lista de nombres */}
-                    <div className="sm:hidden space-y-2">
-                      {((project.pendingParticipants?.length ?? 0) > 0
-                        ? project.pendingParticipants
-                        : project.participants
-                      ).map((participant, idx) => (
-                        <div key={idx} className="flex items-center gap-2 text-sm">
-                          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
-                            {participant.firstName[0]}
-                            {participant.lastName[0]}
-                          </div>
-                          <span>{participant.firstName} {participant.lastName}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                <section className="space-y-2">
+                  <ParticipantsDetails
+                    confirmedParticipants={project.participants}
+                    pendingParticipants={project.pendingParticipants}
+                  />
                 </section>
 
                 <section className="space-y-2">
@@ -118,31 +88,7 @@ export const ViewDetails = ({project} : {project: Project}) => {
                   )}
                 </section>
               </ModalBody>
-              <ModalFooter>
-                
-                  {/* ---------- Acciones por estado ---------- */}
-                
-                  {/*project.state === "APPROVED" && (
-                    <div className="grid grid-cols-2 gap-2 mb-2">
-                      <RejectProjectModal projectId={project.id} />
-                      <RequestProjectModal projectId={project.id}/>
-                    </div>
-                  )}
-
-                  {project.state === "REQUEST_CHANGES" && (
-                    <div className="grid grid-cols-2 gap-2 mb-2">
-                      <RejectProjectModal projectId={project.id}/>
-                      <ApproveProjectModal projectId={project.id}/>
-                    </div>
-                  )}
-                  {project.state === "REJECTED" && (
-                    <div className="grid grid-cols-2 gap-2 mb-2">
-                      <RequestProjectModal projectId={project.id}/>
-                      <ApproveProjectModal projectId={project.id}/>
-                    </div>
-                  )*/}
-                
-              </ModalFooter>
+              <ModalFooter />
             </>
           )}
         </ModalContent>
