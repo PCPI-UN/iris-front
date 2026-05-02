@@ -2,13 +2,14 @@ import { queryOptions, useQuery } from "@tanstack/react-query";
 
 import { api } from "@/lib/api-client";
 import { QueryConfig } from "@/lib/react-query";
-import { InvitationsMeta, Jury } from "@/types/api";
+import { InvitationsMeta } from "@/types/api";
 
-export type EventJuror = Jury & {
-  firstName?: string;
-  lastName?: string;
-  status?: string;
-  displayName?: string;
+export type EventJuror = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  assignedProjects?: Array<{ id: number; evaluated: boolean }>;
 };
 
 type GetEventJuriesParams = {
@@ -32,11 +33,13 @@ export const getEventJuries = async ({
     `/events/${eventId}/jurors`
   );
 
+  console.log(JSON.stringify(response, null, 2));
+
   return {
-    data: response.jurors || response.data || [],
+    data: response.jurors,
     meta: response.meta ?? {
-      total: response.jurors?.length ?? response.data?.length ?? 0,
-      itemsOnCurrentPage: response.jurors?.length ?? response.data?.length ?? 0,
+      total: response.jurors?.length ?? 0,
+      itemsOnCurrentPage: response.jurors?.length ?? 0,
       itemsPerPage: limit,
       currentPage: page,
       totalPages: 1,

@@ -10,11 +10,11 @@ import { useAssignJurors } from "@/features/projects/api/assign-jurors";
 
 interface Judge {
   id: number;
-  firstName?: string;
-  lastName?: string;
+  firstName: string;
+  lastName: string;
   email: string;
-  status?: string;
-  projectIds?: Array<string | number>;
+  isAssigned: boolean;
+  assignedProjects: Array<{ id: number; evaluated: boolean }>;
 }
 
 export const AssignJudgesPanel = ({
@@ -49,17 +49,15 @@ export const AssignJudgesPanel = ({
   const judges: Judge[] = useMemo(() => {
     const juries = eventJuriesQuery.data?.data ?? [];
 
-    return juries
-      .filter((jury) => String(jury.status).toUpperCase() === "ACCEPTED")
-      .filter((jury) => !assignedJurorKeys.has(String(jury.id)) && !assignedJurorKeys.has(jury.email))
-      .map((jury) => ({
-        id: Number(jury.id),
-        firstName: jury.firstName,
-        lastName: jury.lastName,
-        email: jury.email,
-        status: jury.status,
-        projectIds: jury.projectIds,
-      }));
+    return juries.map((jury) => ({
+      id: Number(jury.id),
+      firstName: jury.firstName,
+      lastName: jury.lastName,
+      email: jury.email,
+      isAssigned:
+        assignedJurorKeys.has(String(jury.id)) || assignedJurorKeys.has(jury.email),
+      assignedProjects: jury.assignedProjects || [],
+    }));
   }, [assignedJurorKeys, eventJuriesQuery.data?.data]);
 
   const filtered = judges.filter((j) =>
@@ -158,14 +156,21 @@ export const AssignJudgesPanel = ({
 
         {filtered.map((j) => {
           const active = selected.includes(j.id);
+          const blocked = j.isAssigned;
 
           return (
             <div
               key={j.id}
-              onClick={() => toggle(j.id)}
+              onClick={() => {
+                if (!blocked) {
+                  toggle(j.id);
+                }
+              }}
               className={`p-3 rounded-lg border cursor-pointer transition
                 ${
-                  active
+                  blocked
+                    ? "border-emerald-400/40 bg-emerald-500/10 cursor-not-allowed opacity-80"
+                    : active
                     ? "bg-cyan-500/10 border-cyan-400"
                     : "border-white/10 hover:bg-white/5"
                 }
@@ -177,21 +182,25 @@ export const AssignJudgesPanel = ({
                     {`${j.firstName ?? ""} ${j.lastName ?? ""}`.trim() || j.email}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {j.projectIds?.length ?? 0} proyecto{(j.projectIds?.length ?? 0) === 1 ? "" : "s"}
+                    {j.assignedProjects?.length ?? 0} proyecto{(j.assignedProjects?.length ?? 0) === 1 ? "" : "s"}
                   </p>
                 </div>
 
-                <div
-                  className={`h-5 w-5 rounded border flex items-center justify-center
-                    ${
+                {blocked ? (
+                  <span className="rounded-full border border-emerald-400/40 bg-emerald-500/15 px-2 py-1 text-[11px] font-medium text-emerald-200">
+                    Ya asignado
+                  </span>
+                ) : (
+                  <span
+                    className={`rounded-full border px-2 py-1 text-[11px] font-medium ${
                       active
-                        ? "bg-cyan-500 border-cyan-500"
-                        : "border-muted-foreground"
-                    }
-                  `}
-                >
-                  {active && <span className="text-white text-xs">✓</span>}
-                </div>
+                        ? "border-cyan-400 bg-cyan-500/15 text-cyan-100"
+                        : "border-muted-foreground/40 text-muted-foreground"
+                    }`}
+                  >
+                    {active ? "Seleccionado" : "Disponible"}
+                  </span>
+                )}
               </div>
             </div>
           );

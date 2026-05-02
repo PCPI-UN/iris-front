@@ -37,7 +37,6 @@ export const ProjectsTable = ({
   
 
   const columns = columnsProject({onSelectProject, onViewProject})
-  console.log('Estos son los proyectos: ', projects)
 
   return (
     <div className="flex justify-between mr-5">
