@@ -5,28 +5,18 @@ import { api } from "@/lib/api-client";
 import { MutationConfig } from "@/lib/react-query";
 import { Project } from "@/types/api";
 
-import { getProjectsQueryOptions } from "./get-projects";
-
 export const updateProjectInputSchema = z.object({
-  eventId: z.string().optional(),
-  courseId: z.string().optional(),
+  eventNumber: z.string().nullable().optional(),
+  courseId: z.coerce.number().int().optional(),
   name: z.string().max(255, "El nombre no puede exceder 255 caracteres").optional(),
-  logo: z.string().optional(),
-  description: z.string().max(3000, "La descripción no puede exceder 3000 caracteres").optional(),
-  state: z.string().optional(),
-  documents: z.array(z.object({
-    type: z.string(),
-    url: z.string(),
-  })).optional(),
-  participants: z.array(z.object({
-    firstName: z.string(),
-    lastName: z.string(),
-    email: z.string(),
-    studentCode: z.string().optional(),
-  })).optional(),
-  jurorAssignments: z.array(z.object({
-    memberUserId: z.string(),
-  })).optional(),
+  description: z
+    .string()
+    .max(3000, "La descripción no puede exceder 3000 caracteres")
+    .nullable()
+    .optional(),
+  state: z
+    .enum(["PENDING", "APPROVED", "REJECTED", "REQUEST_CHANGES"])
+    .optional(),
 });
 
 export type UpdateProjectInput = z.infer<typeof updateProjectInputSchema>;

@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronLeft, ClipboardList, FileText, Save } from "lucide-react";
+import { ChevronLeft, Save } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { useNotifications } from "@/components/ui/notifications";
@@ -13,8 +13,6 @@ import { StudentDashboardDocumentsSection } from "./student-dashboard/student-da
 import { StudentDashboardProjectInfoSection } from "./student-dashboard/student-dashboard-project-info-section";
 import { StudentDashboardStatusSection } from "./student-dashboard/student-dashboard-status-section";
 import { StudentDashboardTeamSection } from "./student-dashboard/student-dashboard-team-section";
-
-import { ExpandableText } from "./expandable-text";
 
 interface StudentDashboardProps {
   eventId?: number;
@@ -35,13 +33,7 @@ export const StudentDashboard = ({ eventId }: StudentDashboardProps) => {
 
   const project = projectQuery.data?.project;
   const event = projectQuery.data?.event;
-  console.log("Project data:", project?.id);
-  const isEditMode =
-    (project?.state as string) === "REQUEST_CHANGES" ? true : false;
-  console.log("Project state:", isEditMode);
-  const posterDocument = project?.documents?.find((doc) =>
-    doc.type?.toLowerCase().includes("poster"),
-  );
+  const isEditMode = (project?.state as string) === "REQUEST_CHANGES";
 
   const handleSaveChanges = async () => {
     if (!project?.id) return;
@@ -68,7 +60,6 @@ export const StudentDashboard = ({ eventId }: StudentDashboardProps) => {
     }
   };
 
-
   if (user.isLoading || (eventId && projectQuery.isLoading)) {
     return (
       <div className="flex h-48 w-full items-center justify-center">
@@ -79,13 +70,11 @@ export const StudentDashboard = ({ eventId }: StudentDashboardProps) => {
 
   return (
     <section
-      className="dashboard-page space-y-6 pb-10 "
+      className="dashboard-page space-y-6 pb-8 sm:pb-10"
       aria-label="Dashboard del estudiante"
     >
-      {/* Encabezado de bienvenida */}
-
-      <header className="flex flex-col items-start justify-between gap-4 md:flex-row px-8">
-        <aside className="flex items-center gap-4">
+      <header className="flex flex-col items-start justify-between gap-4 px-4 sm:px-6 lg:flex-row lg:px-8">
+        <aside className="flex w-full items-start gap-3 sm:items-center sm:gap-4 lg:w-auto">
           <Button
             isIconOnly
             size="sm"
@@ -95,104 +84,89 @@ export const StudentDashboard = ({ eventId }: StudentDashboardProps) => {
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <div className="relative space-y-2">
-            <h1 className="text-white text-3xl font-bold tracking-tight text-balance">
-              Bienvenido a tu Proyecto,{" "}
-              {`${user.data?.firstName} ${user.data?.lastName}`}
+
+          <div className="relative min-w-0 flex-1 space-y-2">
+            <h1 className="break-words text-balance text-2xl font-bold tracking-tight text-white sm:text-3xl lg:text-4xl">
+              Bienvenido a tu Proyecto, {`${user.data?.firstName} ${user.data?.lastName}`}
             </h1>
             {event && (
-              <p className="text-sm md:text-lg text-default-500 line-clamp-1">
+              <p className="line-clamp-2 text-sm text-default-500 sm:text-base lg:text-lg">
                 {event.name}
-                {
-                event.description ? ` · ${event.description}` : ""}
+                {event.description ? ` · ${event.description}` : ""}
               </p>
             )}
           </div>
         </aside>
 
-        <aside className="p-4">
+        <aside className="w-full px-4 sm:px-0 lg:w-auto">
           {isEditMode ? (
             <Button
               isIconOnly
               variant="flat"
               aria-label="Guardar cambios"
-              className="w-full flex items-center gap-2 text-sm text-green-400 px-4 shadow-sm hover:bg-green-700/10 hover:text-green-500 focus-visible:bg-green-400 focus-visible:text-green-50 disabled:pointer-events-none disabled:opacity-50 disabled:bg-transparent"
+              className="flex w-full items-center gap-2 px-3 py-2 text-xs font-semibold text-green-400 shadow-sm transition-colors hover:bg-green-700/10 hover:text-green-500 focus-visible:bg-green-400 focus-visible:text-green-50 disabled:pointer-events-none disabled:opacity-50 disabled:bg-transparent sm:w-auto sm:px-4 sm:text-sm"
               onPress={handleSaveChanges}
               isLoading={changeProjectToUnderReviewMutation.isPending}
               disabled={changeProjectToUnderReviewMutation.isPending}
             >
-              <span className="p-2 font-bold">Guardar Cambios</span>
-              <Save className="size-5 " />
+              <span className="px-1 sm:px-2">Guardar Cambios</span>
+              <Save className="size-4 sm:size-5" />
             </Button>
           ) : null}
         </aside>
       </header>
 
-      {/* Sin evento */}
       {!eventId && (
-        <p className="text-center py-12 text-3xl text-muted-foreground">
+        <p className="px-4 py-12 text-center text-xl text-muted-foreground sm:text-2xl lg:text-3xl">
           No se encontró el evento seleccionado.
         </p>
       )}
 
-      {/* Error al cargar proyecto */}
       {eventId && projectQuery.isError && (
-        <p className="text-center py-12 text-3xl text-muted-foreground">
+        <p className="px-4 py-12 text-center text-xl text-muted-foreground sm:text-2xl lg:text-3xl">
           No encontramos tu proyecto para este evento.
         </p>
       )}
 
-      {/* Contenido principal */}
       {project && event && (
-        <div className="space-y-6 m-8">
-          {/**
-           * FORMULARIO DEL PROYECTO
-           * Toda la informacion del proyecto se presenta como un formulario de solo lectura.
-           * Cuando el estado es REQUIRE_CHANGES, los campos se vuelven editables.
-           */}
+        <div className="mx-4 space-y-6 sm:mx-6 lg:mx-8">
           <form
             aria-label="Informacion del proyecto"
             onSubmit={(e) => e.preventDefault()}
-            className="space-y-6"
+            className="space-y-5 sm:space-y-6"
             noValidate
           >
-            {/* Seccion 2: Estado del proyecto */}
-            <section
-              className={
-                "grid grid-cols-1 justify-between gap-7 " +
-                (event.eventType === 2 ? "" : "lg:grid-cols-2")
-              }
-            >
-              {event.eventType === 2 ? null : (
-                <StudentDashboardDocumentsSection
-                  docsProject={project.documents || []}
-                  canEdit={isEditMode}
-                  projectId={project.id}
-                />
-              )}
-
+            <section className="grid grid-cols-1 gap-5 sm:gap-7">
               <StudentDashboardStatusSection
                 state={project.state}
                 canEdit={isEditMode}
               />
             </section>
 
-            {/* Seccion 1: Nombre y descripcion del proyecto */}
             {event.eventType === 2 ? null : (
-              <StudentDashboardProjectInfoSection
-                projectName={project.name}
-                projectDescription={project.description}
+              <StudentDashboardDocumentsSection
+                docsProject={project.documents || []}
                 canEdit={isEditMode}
                 projectId={project.id}
               />
             )}
 
-            {/* Seccion 3: Miembros del equipo */}
+            {event.eventType === 2 ? null : (
+              <StudentDashboardProjectInfoSection
+                projectName={project.name}
+                projectDescription={project.description}
+                canEdit={isEditMode}
+                projectId={String(project.id)}
+              />
+            )}
+
             <StudentDashboardTeamSection
               participants={project.participants || []}
               pendingParticipants={project.pendingParticipants || []}
               canEdit={isEditMode}
               onEdit={() => router.push("/app/projects")}
+              projectId={project.id}
+              projectState={project.state as string}
             />
           </form>
         </div>

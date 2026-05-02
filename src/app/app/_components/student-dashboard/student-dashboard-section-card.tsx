@@ -27,15 +27,15 @@ export const StudentDashboardSectionCard = ({
       )}
       aria-label={ariaLabel ?? title}
     >
-      <div className="mb-5 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-3">
+      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
+        <div className="flex min-w-0 items-center gap-3">
           <div
             className="rounded-lg bg-primary/10 p-2 text-primary"
             aria-hidden="true"
           >
-            <Icon className="h-5 w-5" />
+            <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
           </div>
-          <h2 className="text-xl font-semibold">{title}</h2>
+          <h2 className="text-lg font-semibold sm:text-xl">{title}</h2>
           
         </div>
         {action}

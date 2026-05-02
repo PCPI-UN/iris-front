@@ -18,6 +18,16 @@ export const getStateColor = (state?: string) => {
   return "bg-gray-500/20 text-gray-600 dark:text-gray-400";
 };
 
+export const normalizeCareer = (career: string): string => {
+  if (!career) return "Sin carrera";
+  return career
+    .replace(/[_*+\-{}]/g, " ") // Reemplaza caracteres especiales por espacio
+    .split(/\s+/) // Divide por espacios (uno o más)
+    .filter(word => word.length > 0) // Elimina palabras vacías
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
+};
+
 export const getInitials = (firstName?: string, lastName?: string) => {
   const first = firstName?.charAt(0) || "";
   const last = lastName?.charAt(0) || "";
