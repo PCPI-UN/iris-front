@@ -33,8 +33,6 @@ export const getEventJuries = async ({
     `/events/${eventId}/jurors`
   );
 
-  console.log(JSON.stringify(response, null, 2));
-
   return {
     data: response.jurors,
     meta: response.meta ?? {
