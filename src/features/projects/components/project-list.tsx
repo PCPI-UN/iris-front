@@ -26,7 +26,7 @@ export const ProjectList = () => {
   const router = useRouter();
 
   const page = searchParams?.get("page") ? Number(searchParams.get("page")) : 1;
-  const eventId = searchParams?.get("event") ? Number(searchParams.get("event")) : undefined;
+  const eventId = searchParams?.get("event") ? Number(searchParams.get("event")) : 0;
   const state = searchParams?.get("state") || "UNDER_REVIEW";
   const courseId = searchParams?.get("courseId") ? Number(searchParams.get("courseId")) : undefined;
 
@@ -109,12 +109,12 @@ export const ProjectList = () => {
         </Button>
       </div>
 
-      {/* ======================== EVENT VALIDATION ======================== */}
+      {/* ======================== EVENT VALIDATION ======================== 
       {!eventId && (
         <div className="text-center py-12 text-muted-foreground">
           Por favor selecciona un evento para ver los proyectos.
         </div>
-      )}
+      )} */}
 
       {/* ======================== LOADING ======================== */}
       {projectsQuery.isLoading && (
@@ -123,12 +123,12 @@ export const ProjectList = () => {
         </div>
       )}
 
-      {/* ======================== NO PROJECTS ======================== */}
+      {/* ======================== NO PROJECTS ======================== 
       {!projectsQuery.isLoading && projects?.length === 0 && (
         <div className="text-center py-12 text-muted-foreground">
           No hay proyectos con este estado.
         </div>
-      )}
+      )} */}
 
       {/* ======================== PROJECTS GRID ======================== */}
       {projects && projects.length > 0 && (
