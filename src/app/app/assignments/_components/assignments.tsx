@@ -9,6 +9,7 @@ import { AssignJudgesPanel } from "@/features/assignments/components/assign-judg
 import { useState } from "react";
 import { EventsDropdown } from "@/features/projects/components/events-dropdown";
 import { ProjectPanel } from "@/features/assignments/components/project-panel";
+import { ProjectsCard } from "@/features/assignments/components/project-card";
 
 
 export const Assignments = () => {
@@ -21,15 +22,13 @@ export const Assignments = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <EventsDropdown />
       </div>
-      <div className="flex h-[70vh] mt-5">
-        {/* 🧾 Tabla */}
+      <div className="hidden lg:flex h-[70vh] mt-5">
           <div className={`transition-all ${activePanel ? "w-[65%]" : "w-full"}`}>
             <ProjectsTable 
               onSelectProject={(project) => setActivePanel({ type: "assign", project })} 
               onViewProject={ (project) => setActivePanel({ type: 'view', project }) } />
           </div>
 
-        {/* 👉 Panel lateral */}
         {activePanel?.type === 'assign' && (
           <div className="h-[70vh] w-[35%] min-w-[380px] border-white/10">
             <AssignJudgesPanel
@@ -46,6 +45,9 @@ export const Assignments = () => {
             />
           </div>
         )}
+      </div>
+      <div className="flex flex-col">
+        <ProjectsCard/>
       </div>
     </ContentLayout>
   );
