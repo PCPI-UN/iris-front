@@ -109,13 +109,6 @@ export const ProjectList = () => {
         </Button>
       </div>
 
-      {/* ======================== EVENT VALIDATION ======================== 
-      {!eventId && (
-        <div className="text-center py-12 text-muted-foreground">
-          Por favor selecciona un evento para ver los proyectos.
-        </div>
-      )} */}
-
       {/* ======================== LOADING ======================== */}
       {projectsQuery.isLoading && (
         <div className="flex h-48 w-full items-center justify-center">
@@ -123,12 +116,6 @@ export const ProjectList = () => {
         </div>
       )}
 
-      {/* ======================== NO PROJECTS ======================== 
-      {!projectsQuery.isLoading && projects?.length === 0 && (
-        <div className="text-center py-12 text-muted-foreground">
-          No hay proyectos con este estado.
-        </div>
-      )} */}
 
       {/* ======================== PROJECTS GRID ======================== */}
       {projects && projects.length > 0 && (
