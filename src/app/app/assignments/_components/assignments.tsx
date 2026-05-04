@@ -19,9 +19,7 @@ export const Assignments = () => {
 
   return (
     <ContentLayout title="Assignments">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-        <EventsDropdown />
-      </div>
+      <EventsDropdown />
       <div className="hidden lg:flex h-[70vh] mt-5">
           <div className={`transition-all ${activePanel ? "w-[65%]" : "w-full"}`}>
             <ProjectsTable 
@@ -30,7 +28,7 @@ export const Assignments = () => {
           </div>
 
         {activePanel?.type === 'assign' && (
-          <div className="h-[70vh] w-[35%] min-w-[380px] border-white/10">
+          <div className="h-[70vh] w-[35%] border-white/10">
             <AssignJudgesPanel
               project={ activePanel.project }
               onClose={ () => setActivePanel(null) }
@@ -38,7 +36,7 @@ export const Assignments = () => {
           </div>
         )}
         {activePanel?.type === 'view' && (
-          <div className="h-[70vh] w-[35%] min-w-[380px] border-white/10">
+          <div className="h-[70vh] w-[35%] border-white/10">
             <ProjectPanel
               project = { activePanel.project }
               onClose = { () => setActivePanel(null) }
@@ -46,7 +44,7 @@ export const Assignments = () => {
           </div>
         )}
       </div>
-      <div className="flex flex-col">
+      <div className="flex flex-col lg:hidden">
         <ProjectsCard/>
       </div>
     </ContentLayout>

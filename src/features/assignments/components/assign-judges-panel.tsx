@@ -122,7 +122,7 @@ export const AssignJudgesPanel = ({
   };
 
   return (
-    <GlassCard className="flex flex-col h-full" style={{backgroundColor:"#4582ff30"}}>
+    <GlassCard className="flex flex-col h-full w-auto" style={{backgroundColor:"#4582ff30"}}>
       
 
       {/* Header */}

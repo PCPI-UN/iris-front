@@ -19,9 +19,9 @@ export const ProjectsTable = ({
   const router = useRouter();
   
   const page = searchParams?.get("page") ? Number(searchParams.get("page")) : 1;
-  const eventId = searchParams?.get("event") ? Number(searchParams.get("event")) : undefined;
+  const eventId = searchParams?.get("event") ? Number(searchParams.get("event")) : 0;
   const state = "APPROVED";
-  const courseId = searchParams?.get("courseId") ? Number(searchParams.get("courseId")) : undefined;
+  const courseId = searchParams?.get("courseId") ? Number(searchParams.get("courseId")) : 0;
 
   const projectsQuery = useProjects({ page, eventId, state, courseId });
   const projects = projectsQuery.data?.data;

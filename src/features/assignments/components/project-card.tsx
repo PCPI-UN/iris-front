@@ -20,9 +20,9 @@ export const ProjectsCard = () => {
   const router = useRouter();
   
   const page = searchParams?.get("page") ? Number(searchParams.get("page")) : 1;
-  const eventId = searchParams?.get("event") ? Number(searchParams.get("event")) : undefined;
+  const eventId = searchParams?.get("event") ? Number(searchParams.get("event")) : 0;
   const state = "APPROVED";
-  const courseId = searchParams?.get("courseId") ? Number(searchParams.get("courseId")) : undefined;
+  const courseId = searchParams?.get("courseId") ? Number(searchParams.get("courseId")) : 0;
 
   const projectsQuery = useProjects({ page, eventId, state, courseId });
   const projects = projectsQuery.data?.data;
@@ -78,23 +78,22 @@ export const ProjectsCard = () => {
                 </div>
 
                 {/*Footer*/}
-                <div className="mt-4 flex justify-end">
+                <div className="mt-5 flex justify-between space-x-2">
                     <Button
                         size="sm"
-                        color="primary"
-                        onPress={() => setSelectedProject(project)}
-                    >
-                        Asignar jurados
-                    </Button>
-                    
-                    <Button
-                        size="sm"
-                        color="primary"
                         onPress={() => setSelectedProjectView(project)}
+                        className="w-full py-5 bg-white/10"
                     >
                         Ver asignaciones
                     </Button>
 
+                    <Button
+                        size="sm"
+                        onPress={() => setSelectedProject(project)}
+                        className="w-full py-5 bg-cyan-500/30"
+                    >
+                        Asignar jurados
+                    </Button>
                 </div>
             </GlassCard>
         ))}

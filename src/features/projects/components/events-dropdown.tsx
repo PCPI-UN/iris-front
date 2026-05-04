@@ -54,28 +54,25 @@ export const EventsDropdown = () => {
     <div className="grid grid-cols-2 gap-2 w-full">
       <div className="w-full">
         <Select
-        label="Eventos"
-        placeholder="Selecciona uno o más eventos"
-        selectionMode="multiple"
-        selectedKeys={selectedKeys}
-        onSelectionChange={(keys) => handleSelectionChange(keys as Set<string>)}
-        isLoading={eventsQuery.isLoading}
-      >
-        {events.length > 0 ? (
-          events.map((event) => (
-            <SelectItem key={event.id}>{event.name}</SelectItem>
-          ))
-        ) : (
-          <SelectItem key="no-events" isDisabled>
-            No hay eventos
-          </SelectItem>
-        )}
-      </Select>
+          label="Eventos"
+          placeholder="Selecciona uno o más eventos"
+          selectionMode="single"
+          selectedKeys={selectedKeys}
+          onSelectionChange={(keys) => handleSelectionChange(keys as Set<string>)}
+          isLoading={eventsQuery.isLoading}
+        >
+          {events.length > 0 ? (
+            events.map((event) => (
+              <SelectItem key={event.id}>{event.name}</SelectItem>
+            ))
+          ) : (
+            <SelectItem key="no-events" isDisabled>
+              No hay eventos
+            </SelectItem>
+          )}
+        </Select>
       </div>
-      
-        <CategoriesDropdown/>
-      
-      
+      <CategoriesDropdown/>
     </div>
   );
 };
