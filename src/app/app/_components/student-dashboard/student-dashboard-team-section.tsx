@@ -40,38 +40,46 @@ export const StudentDashboardTeamSection = ({
     >
       {participants.length > 0 ? (
         <ol className="space-y-4" aria-label="Lista de participantes">
-          {participants.map((participant, idx) => (
-            <li key={idx}>
-              <article
-                className="group relative rounded-xl border border-default-200/60 bg-default-50/50 p-5 transition-colors hover:border-primary/40"
-                aria-label={`Participante: ${participant.firstName} ${participant.lastName}`}
-              >
-                <div className="flex items-start gap-4">
-                  <Avatar
-                    name={getInitials(participant.firstName, participant.lastName)}
-                    className="bg-primary/20 font-semibold text-primary"
-                    radius="full"
-                    size="lg"
-                    aria-hidden="true"
-                  />
-                  <div className="grid min-w-0 flex-1 grid-cols-1 gap-4 md:grid-cols-3">
-                    <div className="space-y-1">
-                      <label
-                        htmlFor={`participant-name-${idx}`}
-                        className="flex items-center gap-2 text-default-500"
-                      >
-                        <User className="h-4 w-4" aria-hidden="true" />
-                        <span className="text-xs font-semibold uppercase tracking-wide">
-                          Nombre
-                        </span>
-                      </label>
-                      <div
-                        id={`participant-name-${idx}`}
-                        className="truncate text-sm font-medium md:text-base"
-                      >
-                        {participant.firstName} {participant.lastName}
-                      </div>
-                    </div>
+          {participants
+            .filter((p) => p?.firstName && p?.lastName)
+            .map((participant, idx) => {
+              const firstName = String(participant.firstName ?? "").trim();
+              const lastName = String(participant.lastName ?? "").trim();
+              
+              if (!firstName || !lastName) return null;
+              
+              return (
+                <li key={idx}>
+                  <article
+                    className="group relative rounded-xl border border-default-200/60 bg-default-50/50 p-5 transition-colors hover:border-primary/40"
+                    aria-label={`Participante: ${firstName} ${lastName}`}
+                  >
+                    <div className="flex items-start gap-4">
+                      <Avatar
+                        name={getInitials(firstName, lastName)}
+                        className="bg-primary/20 font-semibold text-primary"
+                        radius="full"
+                        size="lg"
+                        aria-hidden="true"
+                      />
+                      <div className="grid min-w-0 flex-1 grid-cols-1 gap-4 md:grid-cols-3">
+                        <div className="space-y-1">
+                          <label
+                            htmlFor={`participant-name-${idx}`}
+                            className="flex items-center gap-2 text-default-500"
+                          >
+                            <User className="h-4 w-4" aria-hidden="true" />
+                            <span className="text-xs font-semibold uppercase tracking-wide">
+                              Nombre
+                            </span>
+                          </label>
+                          <div
+                            id={`participant-name-${idx}`}
+                            className="truncate text-sm font-medium md:text-base"
+                          >
+                            {firstName} {lastName}
+                          </div>
+                        </div>
 
                     <div className="space-y-1">
                       <label
@@ -111,8 +119,10 @@ export const StudentDashboardTeamSection = ({
                   </div>
                 </div>
               </article>
-            </li>
-          ))}
+                </li>
+              );
+            })
+            .filter(Boolean)}
         </ol>
       ) : (
         <p className="rounded-xl border border-default-200 bg-background p-4 text-sm text-default-500">
@@ -129,18 +139,28 @@ export const StudentDashboardTeamSection = ({
             Participantes pendientes
           </p>
           <ul className="grid grid-cols-1 gap-3 md:grid-cols-2">
-            {pendingParticipants.map((participant, idx) => (
-              <li key={idx}>
-                <article className="space-y-2 rounded-xl border border-warning/30 bg-warning/10 p-4">
-                  <p className="text-sm font-medium">
-                    {participant.firstName} {participant.lastName}
-                  </p>
-                  <p className="break-all text-sm text-default-600">
-                    {participant.email}
-                  </p>
-                </article>
-              </li>
-            ))}
+            {pendingParticipants
+              .filter((p) => p?.firstName && p?.lastName)
+              .map((participant, idx) => {
+                const firstName = String(participant.firstName ?? "").trim();
+                const lastName = String(participant.lastName ?? "").trim();
+                
+                if (!firstName || !lastName) return null;
+                
+                return (
+                  <li key={idx}>
+                    <article className="space-y-2 rounded-xl border border-warning/30 bg-warning/10 p-4">
+                      <p className="text-sm font-medium">
+                        {firstName} {lastName}
+                      </p>
+                      <p className="break-all text-sm text-default-600">
+                        {participant.email}
+                      </p>
+                    </article>
+                  </li>
+                );
+              })
+              .filter(Boolean)}
           </ul>
         </aside>
       )}

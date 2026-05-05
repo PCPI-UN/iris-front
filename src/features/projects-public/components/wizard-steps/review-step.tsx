@@ -33,21 +33,29 @@ export function ReviewStep({ data, eventType }: ReviewStepProps) {
         </CardHeader>
         <CardBody>
           <div className="space-y-3">
-            {data.participants.map((participant) => (
-              <div key={participant.id} className="rounded-lg border border-default-200 bg-default-50 p-4">
-                <div className="space-y-2">
-                  <p className="font-medium text-base">
-                    {participant.firstName} {participant.lastName}
-                  </p>
-                  <p className="text-sm text-default-500">{participant.email}</p>
+            {data.participants
+              .filter((p) => p?.firstName && p?.lastName)
+              .map((participant) => {
+                const firstName = String(participant.firstName ?? "").trim();
+                const lastName = String(participant.lastName ?? "").trim();
+                
+                if (!firstName || !lastName) return null;
+                
+                return (
+                  <div key={participant.id} className="rounded-lg border border-default-200 bg-default-50 p-4">
+                    <div className="space-y-2">
+                      <p className="font-medium text-base">
+                        {firstName} {lastName}
+                      </p>
+                      <p className="text-sm text-default-500">{participant.email}</p>
 
-                  <div className="grid grid-cols-1 gap-4 pt-2 sm:grid-cols-2">
-                    {participant.studentCode && (
-                      <div>
-                        <p className="text-xs font-medium text-default-500 uppercase">Código</p>
-                        <p className="text-sm text-foreground">{participant.studentCode}</p>
-                      </div>
-                    )}
+                      <div className="grid grid-cols-1 gap-4 pt-2 sm:grid-cols-2">
+                        {participant.studentCode && (
+                          <div>
+                            <p className="text-xs font-medium text-default-500 uppercase">Código</p>
+                            <p className="text-sm text-foreground">{participant.studentCode}</p>
+                          </div>
+                        )}
                     <div>
                       <p className="text-xs font-medium text-default-500 uppercase">Semestre</p>
                       <p className="text-sm text-foreground">
@@ -66,10 +74,13 @@ export function ReviewStep({ data, eventType }: ReviewStepProps) {
                         <p className="text-sm text-default-500">El semestre no fue registrado.</p>
                       </div>
                     )}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-            ))}
+                );
+              })
+              .filter(Boolean)}
+
           </div>
         </CardBody>
       </Card>
