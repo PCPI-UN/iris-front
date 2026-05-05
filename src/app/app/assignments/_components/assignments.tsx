@@ -20,8 +20,8 @@ export const Assignments = () => {
   return (
     <ContentLayout title="Assignments">
       <EventsDropdown />
-      <div className="hidden lg:flex h-[70vh] mt-5">
-          <div className={`transition-all ${activePanel ? "w-[65%]" : "w-full"}`}>
+      <div className="hidden xl:flex h-[70vh] mt-5">
+          <div className={`transition-all ${activePanel ? "w-[65%]" : "w-full"} duration-400`}>
             <ProjectsTable 
               onSelectProject={(project) => setActivePanel({ type: "assign", project })} 
               onViewProject={ (project) => setActivePanel({ type: 'view', project }) } />
@@ -44,7 +44,7 @@ export const Assignments = () => {
           </div>
         )}
       </div>
-      <div className="flex flex-col lg:hidden">
+      <div className="flex flex-col xl:hidden">
         <ProjectsCard/>
       </div>
     </ContentLayout>

@@ -98,7 +98,7 @@ export const ProjectsCard = () => {
             </GlassCard>
         ))}
         {selectedProject && (
-            <div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-sm">
+            <div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-sm animate-appearance-in transition-all duration-400">
                 <div className="w-full sm:w-[400px] md:w-[450px] h-full">
                     <AssignJudgesPanel
                         project={selectedProject}
@@ -110,7 +110,7 @@ export const ProjectsCard = () => {
         )}
 
         {selectedProjectView && (
-            <div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-sm">
+            <div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-sm animate-appearance-in transition-all duration-400">
                 <div className="w-full sm:w-[400px] md:w-[450px] h-full">
                     <ProjectPanel
                         project={selectedProjectView}
