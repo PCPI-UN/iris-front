@@ -2,5 +2,5 @@
 import { redirect } from 'next/navigation'; 
 
 export default function ContributorsPage() {
-  redirect('/public/developers');
+  redirect('/public/contributors');
 }

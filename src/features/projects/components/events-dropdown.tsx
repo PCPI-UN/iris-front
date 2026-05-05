@@ -21,11 +21,7 @@ export const EventsDropdown = () => {
   useEffect(() => {
     const ev = searchParams?.get("event");
     if (ev) {
-      const ids = ev
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean);
-      setSelectedKeys(new Set(ids));
+      setSelectedKeys(new Set([ev]));
     } else {
       setSelectedKeys(new Set());
     }
@@ -35,7 +31,7 @@ export const EventsDropdown = () => {
     const nextSet = keys instanceof Set ? keys : new Set(Array.from(keys));
     setSelectedKeys(nextSet);
 
-    const csv = Array.from(nextSet).join(",");
+    const selected = Array.from(nextSet)[0];
 
     const params = new URLSearchParams();
     searchParams?.forEach((v, k) => {
@@ -43,7 +39,7 @@ export const EventsDropdown = () => {
       params.set(k, v);
     });
 
-    if (csv) params.set("event", csv);
+    if (selected) params.set("event", selected);
     else params.delete("event");
 
     const query = params.toString();
@@ -54,23 +50,22 @@ export const EventsDropdown = () => {
     <div className="grid grid-cols-2 gap-2 w-full">
       <div className="w-full">
         <Select
-          label="Eventos"
-          placeholder="Selecciona uno o más eventos"
-          selectionMode="single"
-          selectedKeys={selectedKeys}
-          onSelectionChange={(keys) => handleSelectionChange(keys as Set<string>)}
-          isLoading={eventsQuery.isLoading}
-        >
-          {events.length > 0 ? (
-            events.map((event) => (
-              <SelectItem key={event.id}>{event.name}</SelectItem>
-            ))
-          ) : (
-            <SelectItem key="no-events" isDisabled>
-              No hay eventos
-            </SelectItem>
-          )}
-        </Select>
+        label="Eventos"
+        placeholder="Selecciona un evento"
+        selectedKeys={selectedKeys}
+        onSelectionChange={(keys) => handleSelectionChange(keys as Set<string>)}
+        isLoading={eventsQuery.isLoading}
+      >
+        {events.length > 0 ? (
+          events.map((event) => (
+            <SelectItem key={event.id}>{event.name}</SelectItem>
+          ))
+        ) : (
+          <SelectItem key="no-events" isDisabled>
+            No hay eventos
+          </SelectItem>
+        )}
+      </Select>
       </div>
       <CategoriesDropdown/>
     </div>

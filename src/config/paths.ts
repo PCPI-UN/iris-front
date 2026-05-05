@@ -146,7 +146,7 @@ export const paths = {
       },
     },
     developers: {
-      getHref: () => '/public/developers',
+      getHref: () => '/public/contributors',
     },
   },
 } as const;

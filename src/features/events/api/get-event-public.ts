@@ -22,7 +22,7 @@ export const getEventsPublic = async (
 
 export const getEventsQueryOptions = ({ page = 1 }: { page?: number } = {}) => {
   return queryOptions({
-    queryKey: ["events", { page }],
+    queryKey: ["events", "public", { page }],
     queryFn: () => getEventsPublic({ page }),
   });
 };

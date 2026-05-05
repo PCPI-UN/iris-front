@@ -6,6 +6,7 @@ import {
   // requireAdmin,
   networkDelay,
 } from "../utils";
+import { toEventTypeCode, toEvaluationTypeCode } from "@/features/events/utils/event-enums";
 
 type EventBody = {
   name: string;
@@ -19,21 +20,33 @@ type EventBody = {
   location: string;
   locationDetails?: string;
   eventType: "Competition" | "Exposition";
-  evaluationType?: "ZERO_TO_FIVE" | "ZERO_TO_HUNDRED";
+  evaluationType?: 1 | 2 | "ZERO_TO_FIVE" | "ZERO_TO_HUNDRED" | "0-5" | "0-100";
   inscriptionRequirements?: string;
   inscriptionCost?: number;
   minimumTeamSize?: number;
-  specificInscriptionDetails?: { title: string; description: string }[];
+  specificInscriptionDetails?: {
+    id?: number;
+    eventId?: number;
+    title: string;
+    description: string;
+    value?: number;
+    isRequired?: boolean;
+  }[];
   aboutOurAllies?: string;
   organizers?: string[];
   collaborators?: string[];
   awards?: {
+    id?: number;
     title: string;
     description?: string;
     value?: number;
     position: number;
-    categoryId?: string;
+    categoryId?: number;
   }[];
+};
+
+const isValidEventTypeLabel = (value: unknown): value is "Competition" | "Exposition" => {
+  return value === "Competition" || value === "Exposition";
 };
 
 const PAGE_SIZE = 10;
@@ -105,30 +118,46 @@ type EventDTO = {
   evaluationsOpened: boolean;
   location: string;
   locationDetails?: string;
-  eventType: "Competition" | "Exposition";
-  evaluationType?: "ZERO_TO_FIVE" | "ZERO_TO_HUNDRED";
+  eventType: 1 | 2;
+  evaluationType?: 1 | 2;
   inscriptionRequirements?: string;
   inscriptionCost?: number;
   minimumTeamSize?: number;
   active: boolean;
-  specificInscriptionDetails?: { title: string; description: string }[];
+  specificInscriptionDetails?: {
+    id?: number;
+    eventId?: number;
+    title: string;
+    description: string;
+    value?: number;
+    isRequired?: boolean;
+  }[];
+  categories?: {
+    id: number;
+    eventId?: number;
+    name: string;
+    description?: string;
+    active?: boolean;
+  }[];
   aboutOurAllies?: string;
   organizers?: string[];
   collaborators?: string[];
   awards?: {
+    id?: number;
     title: string;
     description?: string;
     value?: number;
     position: number;
-    categoryId?: string;
+    categoryId?: number;
   }[];
-  organizations?: string[];
-  createdAt: string;
+  status?: number;
+  createdAt: string | number;
+  updatedAt: string | number;
   userEventRole?: "Participant" | "JURY";
 };
 
 type PublicEventDTO = {
-  id: string;
+  id: number;
   name: string;
   description: string;
   startDate: string;
@@ -142,11 +171,11 @@ type PublicEventDTO = {
   active: boolean;
   location?: string;
   locationDetails?: string;
-  eventType?: "Exposition" | "Competition";
+  eventType?: 1 | 2;
   inscriptionCost?: number;
   inscriptionRequirements?: string;
   aboutOurAllies?: string;
-  evaluationType?: "ZERO_TO_FIVE" | "ZERO_TO_HUNDRED";
+  evaluationType?: 1 | 2;
   minimumTeamSize?: number;
   specificInscriptionDetails?: Array<{
     title: string;
@@ -188,7 +217,6 @@ const mapEventToDTO = (event: any, membership?: any): EventDTO => {
       ? event.inscriptionCost
       : event.cost;
   const organizers = event.organizers ?? event.organizations ?? [];
-  const eventType = event.eventType === "Exhibition" ? "Exposition" : event.eventType;
 
   return {
     id: toPublicNumericId(String(event.id), "event"),
@@ -202,22 +230,19 @@ const mapEventToDTO = (event: any, membership?: any): EventDTO => {
     evaluationsOpened,
     location: event.location,
     locationDetails,
-    eventType,
-    evaluationType: event.evaluationType,
+    eventType: toEventTypeCode(event.eventType),
+    evaluationType: toEvaluationTypeCode(event.evaluationType),
     inscriptionRequirements: event.inscriptionRequirements,
     inscriptionCost,
     minimumTeamSize: event.minimumTeamSize,
     active,
     specificInscriptionDetails: event.specificInscriptionDetails,
+    categories: event.categories,
     aboutOurAllies: event.aboutOurAllies,
     organizers,
     collaborators: event.collaborators,
     awards: event.awards,
-    isPublic: isPubliclyJoinable,
-    evaluationsStatus: evaluationsOpened ? "open" : "closed",
-    locationDetail: locationDetails,
-    cost: inscriptionCost,
-    organizations: organizers,
+    status: event.status,
     createdAt: event.createdAt,
     updatedAt: event.updatedAt ?? event.createdAt,
     ...(membership && { userEventRole: membership.eventRole }),
@@ -271,7 +296,7 @@ const mapEventToPublicDTO = (event: any): PublicEventDTO => {
     : undefined;
 
   return {
-    id: event.id,
+    id: toPublicNumericId(String(event.id), "event"),
     name: event.name ?? event.title,
     description: event.description,
     startDate: event.startDate,
@@ -285,7 +310,7 @@ const mapEventToPublicDTO = (event: any): PublicEventDTO => {
     active,
     location,
     locationDetails,
-    eventType: event.eventType,
+    eventType: toEventTypeCode(event.eventType),
     inscriptionCost:
       event.inscriptionCost != null
         ? Number(event.inscriptionCost)
@@ -295,7 +320,7 @@ const mapEventToPublicDTO = (event: any): PublicEventDTO => {
     inscriptionRequirements:
       event.inscriptionRequirements ?? event.requirements?.description,
     aboutOurAllies: event.aboutOurAllies ?? event.sponsorInfo,
-    evaluationType: event.evaluationType,
+    evaluationType: toEvaluationTypeCode(event.evaluationType),
     minimumTeamSize:
       event.minimumTeamSize != null
         ? Number(event.minimumTeamSize)
@@ -639,6 +664,31 @@ export const eventsHandlers = [
     }
   }),
 
+  http.get(`${env.API_URL}/events/dropdown`, async ({ cookies }) => {
+    await networkDelay();
+
+    try {
+      const { error } = requireAuth(cookies);
+      if (error) {
+        return HttpResponse.json({ message: error }, { status: 401 });
+      }
+
+      const events = db.event.findMany({}).map((event) => {
+        return {
+          id: toPublicNumericId(String(event.id), "event"),
+          name: event.name,
+        };
+      });
+
+      return HttpResponse.json({ data: events });
+    } catch (error: any) {
+      return HttpResponse.json(
+        { message: error?.message || "Server Error" },
+        { status: 500 }
+      );
+    }
+  }),
+
   http.get(`${env.API_URL}/events/:eventId`, async ({ params, cookies }) => {
     await networkDelay();
 
@@ -684,6 +734,19 @@ export const eventsHandlers = [
       const data = (await request.json()) as EventBody;
       // requireAdmin(user);
 
+      if (!isValidEventTypeLabel(data.eventType)) {
+        return HttpResponse.json(
+          {
+            message: "Validation Error",
+            errors: [
+              "eventType should not be empty",
+              "eventType must be a string",
+            ],
+          },
+          { status: 400 },
+        );
+      }
+
       const normalizedStartDate = addFiveHoursToMockDate(data.startDate) ?? data.startDate;
       const normalizedEndDate = addFiveHoursToMockDate(data.endDate) ?? data.endDate;
       const normalizedInscriptionDeadline =
@@ -691,7 +754,7 @@ export const eventsHandlers = [
         data.inscriptionDeadline ??
         data.startDate;
 
-      const event = db.event.create({
+      const eventData: any = {
         id: getNextEventId(),
         name: data.name,
         description: data.description,
@@ -705,8 +768,11 @@ export const eventsHandlers = [
           data.evaluationsOpened ?? (data.evaluationsOpened === true),
         location: data.location,
         locationDetails: data.locationDetails,
-        eventType: data.eventType,
-        evaluationType: data.evaluationType,
+        eventType: toEventTypeCode(data.eventType) as any,
+        evaluationType:
+          data.evaluationType === undefined
+            ? undefined
+            : (toEvaluationTypeCode(data.evaluationType) as any),
         inscriptionRequirements: data.inscriptionRequirements,
         inscriptionCost: data.inscriptionCost,
         minimumTeamSize: data.minimumTeamSize,
@@ -715,7 +781,9 @@ export const eventsHandlers = [
         organizers: data.organizers || [],
         collaborators: data.collaborators || [],
         awards: data.awards || [],
-      });
+      };
+
+      const event = db.event.create(eventData as any);
 
       await persistDb("event");
 
@@ -741,6 +809,19 @@ export const eventsHandlers = [
       const hasField = <K extends keyof EventBody>(key: K) =>
         Object.prototype.hasOwnProperty.call(data, key);
 
+      if (hasField("eventType") && !isValidEventTypeLabel(data.eventType)) {
+        return HttpResponse.json(
+          {
+            message: "Validation Error",
+            errors: [
+              "eventType should not be empty",
+              "eventType must be a string",
+            ],
+          },
+          { status: 400 },
+        );
+      }
+
       const normalizedStartDate = hasField("startDate")
         ? addFiveHoursToMockDate(data.startDate)
         : undefined;
@@ -752,50 +833,57 @@ export const eventsHandlers = [
         : undefined;
 
       // requireAdmin(user);
+      const updateData: any = {
+        ...(hasField("name") && { name: data.name }),
+        ...(hasField("description") && { description: data.description }),
+        ...(hasField("startDate") && { startDate: normalizedStartDate ?? data.startDate }),
+        ...(hasField("endDate") && { endDate: normalizedEndDate ?? data.endDate }),
+        ...(hasField("inscriptionDeadline") && {
+          inscriptionDeadline: normalizedInscriptionDeadline ?? data.inscriptionDeadline,
+        }),
+        ...(hasField("active") && { active: data.active }),
+        ...(hasField("isPubliclyJoinable") && {
+          isPubliclyJoinable: data.isPubliclyJoinable,
+        }),
+
+        ...(hasField("evaluationsOpened") && {
+          evaluationsOpened: data.evaluationsOpened,
+        }),
+
+        ...(hasField("location") && { location: data.location }),
+        ...(hasField("locationDetails") && {
+          locationDetails: data.locationDetails,
+        }),
+        ...(hasField("eventType") && { eventType: toEventTypeCode(data.eventType) as any }),
+        ...(hasField("evaluationType") && {
+          evaluationType:
+            data.evaluationType === undefined
+              ? undefined
+              : (toEvaluationTypeCode(data.evaluationType) as any),
+        }),
+        ...(hasField("inscriptionRequirements") && {
+          inscriptionRequirements: data.inscriptionRequirements,
+        }),
+        ...(hasField("inscriptionCost") && {
+          inscriptionCost: data.inscriptionCost,
+        }),
+        ...(hasField("minimumTeamSize") && { minimumTeamSize: data.minimumTeamSize }),
+        ...(hasField("specificInscriptionDetails") && {
+          specificInscriptionDetails: data.specificInscriptionDetails,
+        }),
+        ...(hasField("aboutOurAllies") && { aboutOurAllies: data.aboutOurAllies }),
+        ...(hasField("organizers") && { organizers: data.organizers }),
+        ...(hasField("collaborators") && { collaborators: data.collaborators }),
+        ...(hasField("awards") && { awards: data.awards }),
+      };
+
       const event = db.event.update({
         where: {
           id: {
             equals: eventId,
           },
         },
-        data: {
-          ...(hasField("name") && { name: data.name }),
-          ...(hasField("description") && { description: data.description }),
-          ...(hasField("startDate") && { startDate: normalizedStartDate ?? data.startDate }),
-          ...(hasField("endDate") && { endDate: normalizedEndDate ?? data.endDate }),
-          ...(hasField("inscriptionDeadline") && {
-            inscriptionDeadline: normalizedInscriptionDeadline ?? data.inscriptionDeadline,
-          }),
-          ...(hasField("active") && { active: data.active }),
-          ...(hasField("isPubliclyJoinable") && {
-            isPubliclyJoinable: data.isPubliclyJoinable,
-          }),
-         
-          ...(hasField("evaluationsOpened") && {
-            evaluationsOpened: data.evaluationsOpened,
-          }),
-
-          ...(hasField("location") && { location: data.location }),
-          ...(hasField("locationDetails") && {
-            locationDetails: data.locationDetails,
-          }),
-          ...(hasField("eventType") && { eventType: data.eventType }),
-          ...(hasField("evaluationType") && { evaluationType: data.evaluationType }),
-          ...(hasField("inscriptionRequirements") && {
-            inscriptionRequirements: data.inscriptionRequirements,
-          }),
-          ...(hasField("inscriptionCost") && {
-            inscriptionCost: data.inscriptionCost,
-          }),
-          ...(hasField("minimumTeamSize") && { minimumTeamSize: data.minimumTeamSize }),
-          ...(hasField("specificInscriptionDetails") && {
-            specificInscriptionDetails: data.specificInscriptionDetails,
-          }),
-          ...(hasField("aboutOurAllies") && { aboutOurAllies: data.aboutOurAllies }),
-          ...(hasField("organizers") && { organizers: data.organizers }),
-          ...(hasField("collaborators") && { collaborators: data.collaborators }),
-          ...(hasField("awards") && { awards: data.awards }),
-        },
+        data: updateData as any,
       });
 
       if (!event) {

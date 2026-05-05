@@ -23,6 +23,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Select, SelectItem } from "@/components/ui/select";
 import { useEventsDropdown } from "@/features/events/api/get-events-dropdown";
+import { toEventTypeLabel } from "@/features/events/utils/event-enums";
 
 export const InviteModal = () => {
   const { addNotification } = useNotifications();
@@ -89,11 +90,25 @@ export const InviteModal = () => {
                   return;
                 }
 
+                const selectedEvent = events.find(
+                  (event) => String(event.id) === selectedEventKey
+                );
+
+                if (!selectedEvent) {
+                  addNotification({
+                    type: "error",
+                    title: "Error",
+                    message: "No se pudo determinar el evento seleccionado",
+                  });
+                  return;
+                }
+
                 const data = {
                   email: rawData.email as string,
                   firstName: rawData.firstName as string,
                   lastName: rawData.lastName as string,
                   eventId: Number(selectedEventKey),
+                  eventType: toEventTypeLabel(selectedEvent.eventType),
                 };
 
                 try {

@@ -66,7 +66,7 @@ export function ParticipantsStep({
       } catch {
         newErrors.email = "El email no es válido";
       }
-      // Validar que el email no esté repetido
+      // Check for duplicate email in existing participants
       if (participants.some((p) => p.email === currentParticipant.email)) {
         newErrors.email = "Este email ya está registrado";
       }
@@ -82,11 +82,13 @@ export function ParticipantsStep({
       newErrors.studentCode = "Este código estudiantil ya está registrado";
     }
 
-    // Para Competition: semester y career son obligatorios
-    // Para Exposition: semester y career son opcionales
+    // For a competition semester and career are mandatory
+    // for an exposition they are optional
     if (eventType === "Competition") {
       if (!currentParticipant.semester.trim()) {
         newErrors.semester = "El semestre es requerido";
+      } else if (!/^\d+$/.test(currentParticipant.semester)) {
+        newErrors.semester = "El semestre debe contener solo números";
       }
 
       if (!currentParticipant.career.trim()) {
