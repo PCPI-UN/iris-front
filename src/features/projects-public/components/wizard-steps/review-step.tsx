@@ -40,24 +40,30 @@ export function ReviewStep({ data, eventType }: ReviewStepProps) {
                     {participant.firstName} {participant.lastName}
                   </p>
                   <p className="text-sm text-default-500">{participant.email}</p>
-                  
-                  <div className="grid grid-cols-2 gap-4 pt-2">
+
+                  <div className="grid grid-cols-1 gap-4 pt-2 sm:grid-cols-2">
                     {participant.studentCode && (
                       <div>
                         <p className="text-xs font-medium text-default-500 uppercase">Código</p>
                         <p className="text-sm text-foreground">{participant.studentCode}</p>
                       </div>
                     )}
-                    {eventType === "Competition" && participant.semester && (
+                    <div>
+                      <p className="text-xs font-medium text-default-500 uppercase">Semestre</p>
+                      <p className="text-sm text-foreground">
+                        {participant.semester ? getSemesterLabel(participant.semester) : "No especificado"}
+                      </p>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <p className="text-xs font-medium text-default-500 uppercase">Carrera</p>
+                      <p className="text-sm text-foreground">
+                        {participant.career ? getCareerLabel(participant.career) : "No especificada"}
+                      </p>
+                    </div>
+                    {eventType === "Competition" && !participant.semester && (
                       <div>
-                        <p className="text-xs font-medium text-default-500 uppercase">Semestre</p>
-                        <p className="text-sm text-foreground">{getSemesterLabel(participant.semester)}</p>
-                      </div>
-                    )}
-                    {eventType === "Competition" && participant.career && (
-                      <div className="col-span-2">
-                        <p className="text-xs font-medium text-default-500 uppercase">Carrera</p>
-                        <p className="text-sm text-foreground">{getCareerLabel(participant.career)}</p>
+                        <p className="text-xs font-medium text-default-500 uppercase">Observación</p>
+                        <p className="text-sm text-default-500">El semestre no fue registrado.</p>
                       </div>
                     )}
                   </div>
@@ -82,6 +88,10 @@ export function ReviewStep({ data, eventType }: ReviewStepProps) {
               <div>
                 <p className="text-sm font-medium text-default-500">Nombre</p>
                 <p className="mt-1">{data.project.name || "No especificado"}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-default-500">Num. Asignado</p>
+                <p className="mt-1">{data.project.projectCode || "No especificado"}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-default-500">Descripción</p>

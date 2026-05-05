@@ -139,6 +139,7 @@ export type Project = Entity<{
   id: number;
   eventId: number;
   courseId: number;
+  projectCode?: string | null;
   name: string;
   description?: string;
   eventNumber?: string;
