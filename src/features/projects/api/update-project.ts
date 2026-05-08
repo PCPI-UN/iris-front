@@ -28,7 +28,7 @@ export const updateProject = ({
   data: UpdateProjectInput;
   projectId: string;
 }): Promise<{ data: Project }> => {
-  return api.patch(`/projects/${projectId}`, data);
+  return api.patch(`/projects/${projectId}/info`, data);
 };
 
 type UseUpdateProjectOptions = {
@@ -44,9 +44,9 @@ export const useUpdateProject = ({
 
   return useMutation({
     onSuccess: (data, variables, ...args) => {
-      queryClient.invalidateQueries({
-        queryKey: ["projects"],
-      });
+      // Invalidate project lists and the current user's project query so UI updates in-place
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["my-project"], exact: false });
       onSuccess?.(data, variables, ...args);
     },
     ...restConfig,
