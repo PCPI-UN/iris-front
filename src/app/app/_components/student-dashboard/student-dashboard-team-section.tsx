@@ -15,16 +15,13 @@ import { Input } from "@heroui/input";
 
 type StudentDashboardTeamSectionProps = {
   participants: ProjectParticipant[];
-  pendingParticipants: ProjectParticipant[];
   canEdit: boolean;
-  onEdit: () => void;
   projectId: number;
   projectState: string;
 };
 
 export const StudentDashboardTeamSection = ({
   participants,
-  pendingParticipants,
   canEdit,
   projectId,
   projectState,
