@@ -24,8 +24,12 @@ export const StudentDashboardDocumentsSection = ({
   const secondaryReplaceInputRef = useRef<HTMLInputElement>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSecondaryLoading, setIsSecondaryLoading] = useState(false);
-  const [replacingDocumentId, setReplacingDocumentId] = useState<string | null>(null);
-  const [deletingDocumentId, setDeletingDocumentId] = useState<string | null>(null);
+  const [replacingDocumentId, setReplacingDocumentId] = useState<string | null>(
+    null,
+  );
+  const [deletingDocumentId, setDeletingDocumentId] = useState<string | null>(
+    null,
+  );
   const { addNotification } = useNotifications();
   const primaryDocument =
     docsProject.find((doc) => doc.type === "POSTER") ?? docsProject[0];
@@ -72,7 +76,8 @@ export const StudentDashboardDocumentsSection = ({
       addNotification({
         type: "success",
         title: "Documento cargado",
-        message: "El documento será revisado, necesitará confirmar los cambios.",
+        message:
+          "El documento será revisado, necesitará confirmar los cambios.",
       });
 
       // Limpiar input para permitir subir el mismo archivo de nuevo
@@ -203,6 +208,17 @@ export const StudentDashboardDocumentsSection = ({
     }
   };
 
+  const organizeSecondaryDocuments = () => {
+    return [...secondaryDocuments].sort((a, b) => {
+      if (a.createdAt !== b.createdAt) {
+        return a.createdAt - b.createdAt;
+      }
+
+      return a.id.localeCompare(b.id);
+    });
+  };
+  const orderedSecondaryDocuments = organizeSecondaryDocuments();
+
   return (
     <StudentDashboardSectionCard
       title="Documentos del proyecto"
@@ -230,7 +246,11 @@ export const StudentDashboardDocumentsSection = ({
               disabled={isLoading}
             >
               <Upload className="h-3 w-3" />
-              {isLoading ? "Subiendo..." : primaryDocument ? "Editar Poster" : "Subir Poster"}
+              {isLoading
+                ? "Subiendo..."
+                : primaryDocument
+                  ? "Editar Poster"
+                  : "Subir Poster"}
             </Button>
             <input
               ref={secondaryFileInputRef}
@@ -240,6 +260,14 @@ export const StudentDashboardDocumentsSection = ({
               className="hidden"
               accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.png"
               aria-label="Seleccionar documentos secundarios"
+            />
+            <input
+              ref={secondaryReplaceInputRef}
+              type="file"
+              onChange={handleReplaceSecondaryFileChange}
+              className="hidden"
+              accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.png"
+              aria-label="Seleccionar archivo de reemplazo"
             />
             <Button
               size="sm"
@@ -258,7 +286,9 @@ export const StudentDashboardDocumentsSection = ({
       }
     >
       <div className="space-y-3">
-        <p className="text-sm font-semibold text-default-600">Documento principal</p>
+        <p className="text-sm font-semibold text-default-600">
+          Documento principal
+        </p>
         {primaryDocument ? (
           <a
             href={primaryDocument.url}
@@ -299,15 +329,18 @@ export const StudentDashboardDocumentsSection = ({
 
       <div className="space-y-3 border-t border-default-200/60 pt-4">
         <div className="flex items-center justify-between gap-3">
-          <p className="text-sm font-semibold text-default-600">Documentos secundarios</p>
+          <p className="text-sm font-semibold text-default-600">
+            Documentos secundarios
+          </p>
           <span className="text-xs text-default-500">
-            {secondaryDocuments.length} archivo{secondaryDocuments.length === 1 ? "" : "s"}
+            {orderedSecondaryDocuments.length} archivo
+            {orderedSecondaryDocuments.length === 1 ? "" : "s"}
           </span>
         </div>
 
-        {secondaryDocuments.length > 0 ? (
+        {orderedSecondaryDocuments.length > 0 ? (
           <ul className="space-y-3">
-            {secondaryDocuments.map((document) => (
+            {orderedSecondaryDocuments.map((document, idx) => (
               <li key={document.id}>
                 <article className="flex items-center justify-between gap-3 rounded-xl border border-default-200 bg-default-50/50 px-4 py-3 transition-colors hover:border-fuchsia-200/50 hover:bg-fuchsia-300/10">
                   <a
@@ -317,10 +350,9 @@ export const StudentDashboardDocumentsSection = ({
                     className="min-w-0 flex-1"
                     aria-label={`Abrir documento secundario ${document.type || document.id}`}
                   >
-                    <p className="truncate text-sm font-semibold text-default-800">
-                      {document.type || "Documento secundario"}
+                    <p className="truncate text-md font-semibold text-default-800">
+                      {`${document.type} - ${idx + 1}` || "Documento secundario"}
                     </p>
-                    <p className="truncate text-xs text-default-500">{document.url}</p>
                   </a>
 
                   {canEdit ? (
@@ -330,24 +362,19 @@ export const StudentDashboardDocumentsSection = ({
                         size="sm"
                         variant="flat"
                         aria-label={`Reemplazar documento secundario ${document.type || document.id}`}
-                        onPress={() => handleReplaceSecondaryFileClick(document.id)}
-                        isLoading={replacingDocumentId === document.id && isSecondaryLoading}
-                        disabled={replacingDocumentId === document.id && isSecondaryLoading}
+                        onPress={() =>
+                          handleReplaceSecondaryFileClick(document.id)
+                        }
+                        isLoading={
+                          replacingDocumentId === document.id &&
+                          isSecondaryLoading
+                        }
+                        disabled={
+                          replacingDocumentId === document.id &&
+                          isSecondaryLoading
+                        }
                       >
                         <Upload className="h-4 w-4" />
-                      </Button>
-
-                      <Button
-                        isIconOnly
-                        size="sm"
-                        variant="light"
-                        color="danger"
-                        aria-label={`Eliminar documento secundario ${document.type || document.id}`}
-                        onPress={() => handleDeleteSecondaryDocument(document.id)}
-                        isLoading={deletingDocumentId === document.id}
-                        disabled={deletingDocumentId === document.id}
-                      >
-                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   ) : null}
