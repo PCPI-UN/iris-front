@@ -34,8 +34,9 @@ export const StudentDashboard = ({ eventId }: StudentDashboardProps) => {
   const project = projectQuery.data?.project;
   const event = projectQuery.data?.event;
   const isEditMode = (project?.state as string) === "REQUEST_CHANGES";
-
-  const handleSaveChanges = async () => {
+  console.log("Project state:", project); 
+/*   console.log("Event data:", event);
+ */  const handleSaveChanges = async () => {
     if (!project?.id) return;
 
     try {
@@ -145,10 +146,10 @@ export const StudentDashboard = ({ eventId }: StudentDashboardProps) => {
             )}
 
             <StudentDashboardTeamSection
+              UserEmail={user.data?.email || undefined }
               participants={project.participants || []}
               canEdit={isEditMode}
               projectId={project.id}
-              projectState={project.state as string}
             />
           </form>
         </div>

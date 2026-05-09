@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@heroui/button";
 import { Edit2, FolderOpen, Check, X } from "lucide-react";
 import { useNotifications } from "@/components/ui/notifications";
@@ -58,6 +58,19 @@ export const StudentDashboardProjectInfoSection = ({
     }
   };
 
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+
+  const adjustTextareaHeight = () => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  };
+
+  useEffect(() => {
+    if (isEditing) adjustTextareaHeight();
+  }, [isEditing]);
+
   const handleCancel = () => {
     setEditedName(projectName || "Sin nombre");
     setEditedDescription(projectDescription || "Sin descripcion registrada");
@@ -86,7 +99,7 @@ export const StudentDashboardProjectInfoSection = ({
             <Button
               size="sm"
               variant="flat"
-              className="flex w-full items-center justify-center gap-1.5 text-sm text-green-600 dark:text-green-400 sm:w-auto"
+              className="flex w-full items-center justify-center gap-1.5 text-md text-sky-200 dark:text-sky-300 sm:w-auto"
               onPress={handleSave}
               isLoading={updateProjectMutation.isPending}
               disabled={updateProjectMutation.isPending}
@@ -97,7 +110,7 @@ export const StudentDashboardProjectInfoSection = ({
             <Button
               size="sm"
               variant="flat"
-              className="flex w-full items-center justify-center gap-1.5 text-sm text-red-600 dark:text-red-400 sm:w-auto"
+              className="flex w-full items-center justify-center gap-1.5 text-md text-red-600 dark:text-red-400 sm:w-auto"
               onPress={handleCancel}
               disabled={updateProjectMutation.isPending}
             >
@@ -144,15 +157,17 @@ export const StudentDashboardProjectInfoSection = ({
           {isEditing ? (
             <textarea
               id="project-description"
+              ref={textareaRef}
               value={editedDescription}
               onChange={(e) => setEditedDescription(e.target.value)}
-              className="w-full rounded-xl border border-default-200 bg-default-50/50 px-4 py-3 text-sm leading-relaxed text-default-600 focus:outline-none focus:ring-2 focus:white focus:ring-offset-1"
+              onInput={adjustTextareaHeight}
+              className="w-full rounded-xl border border-default-200 bg-default-50/50 px-4 py-3 text-md leading-relaxed text-default-600 focus:outline-none focus:ring-2 focus:white focus:ring-offset-1 overflow-hidde n resize-none"
               maxLength={3000}
-              rows={3}
+              rows={1}
             />
           ) : (
             <div
-              className="min-h-[72px] w-full rounded-xl border border-default-200 bg-default-50/50 px-4 py-3 text-sm leading-relaxed text-default-600"
+              className="min-h-[72px] w-full rounded-xl border border-default-200 bg-default-50/50 px-4 py-3 text-md leading-relaxed text-default-600"
             >
               {editedDescription || "Sin descripcion registrada"}
             </div>

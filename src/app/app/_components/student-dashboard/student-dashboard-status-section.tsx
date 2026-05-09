@@ -15,7 +15,7 @@ export const StudentDashboardStatusSection = ({
   canEdit,
 }: StudentDashboardStatusSectionProps) => {
   return (
-    <a href="#save-changes">
+    <a href="#save-changes" className="scrollbar-behavior-auto ">
       <StudentDashboardSectionCard
         title="Estado del proyecto"
         icon={ClipboardList}

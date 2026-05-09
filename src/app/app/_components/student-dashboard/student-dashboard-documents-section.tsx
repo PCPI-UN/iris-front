@@ -184,30 +184,6 @@ export const StudentDashboardDocumentsSection = ({
     }
   };
 
-  const handleDeleteSecondaryDocument = async (documentId: string) => {
-    setDeletingDocumentId(documentId);
-
-    try {
-      /* await api.delete(`/projects/${projectId}/documents/${documentId}`); */
-      console.log(`Eliminando archivo secundario: ${documentId}`);
-
-      addNotification({
-        type: "success",
-        title: "Documento eliminado",
-        message: "El documento secundario se eliminó correctamente.",
-      });
-    } catch (error) {
-      console.error("Error deleting secondary document:", error);
-      addNotification({
-        type: "error",
-        title: "Error al eliminar documento",
-        message: "No se pudo eliminar el documento. Intenta de nuevo.",
-      });
-    } finally {
-      setDeletingDocumentId(null);
-    }
-  };
-
   const organizeSecondaryDocuments = () => {
     return [...secondaryDocuments].sort((a, b) => {
       if (a.createdAt !== b.createdAt) {

@@ -40,13 +40,7 @@ export const EventCardCollapsed = ({
   onToggle,
 }: EventCardCollapsedProps) => {
   const roleName = event.role?.name as RoleName | undefined;
-  const metaItems = getCollapsedMetaItems({
-    eventType: event.eventType,
-    startDate: event.startDate,
-    location: event.location,
-    locationDetails: event.locationDetails,
-  });
-
+  
   return (
     <Card
       shadow="sm"

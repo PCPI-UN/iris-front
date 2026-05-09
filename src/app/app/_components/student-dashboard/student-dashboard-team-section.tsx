@@ -17,14 +17,14 @@ type StudentDashboardTeamSectionProps = {
   participants: ProjectParticipant[];
   canEdit: boolean;
   projectId: number;
-  projectState: string;
+  UserEmail?: string;
 };
 
 export const StudentDashboardTeamSection = ({
   participants,
   canEdit,
   projectId,
-  projectState,
+  UserEmail,
 }: StudentDashboardTeamSectionProps) => {
   const { addNotification } = useNotifications();
   const [isEditMode, setIsEditMode] = useState(false);
@@ -36,7 +36,7 @@ export const StudentDashboardTeamSection = ({
     lastName: string;
     email: string;
     ParticipantCode?: string;
-    semester?: number | string;
+    semester?: number | string;                                                                                                         
     career?: string;
   }>({ firstName: "", lastName: "", email: "", ParticipantCode: "", semester: "", career: "" });
 
@@ -45,7 +45,7 @@ export const StudentDashboardTeamSection = ({
       addNotification({
         type: "success",
         title: "Participante actualizado",
-        message: "Los cambios se guardaron correctamente.",
+        message: "Los cambios se guardaron correctamente, Procede a Enviar cambios.",
       });
       setDraftParticipant(null);
       setEditingParticipantEmail(null);
@@ -61,7 +61,7 @@ export const StudentDashboardTeamSection = ({
 
   const createInvitationMutation = useCreateInvitation({
     onSuccess: () => {
-      addNotification({
+      addNotification({                                       
         type: "success",
         title: "Invitación enviada",
         message: "La invitación se envió correctamente.",
@@ -76,7 +76,20 @@ export const StudentDashboardTeamSection = ({
     },
   });
 
+  const canEditParticipant = (participantEmail: string): boolean => {
+    return !!UserEmail && participantEmail === UserEmail;
+  };
+
   const startEditParticipant = (participant: ProjectParticipant) => {
+    // Only allow editing if the participant email matches the current user's email
+    if (!canEditParticipant(participant.email)) {
+      addNotification({
+        type: "error",
+        title: "Acceso denegado",
+        message: "Solo puedes editar tu información de participante.",
+      });
+      return;
+    }
     setEditingParticipantEmail(participant.email);
     setDraftParticipant({ ...participant });
   };
@@ -423,7 +436,7 @@ export const StudentDashboardTeamSection = ({
                       </div>
                     )}
 
-                    {isEditMode && !draftParticipant && (
+                    {isEditMode && !draftParticipant && canEditParticipant(participant.email) && (
                       <div className="col-span-full">
                         <Button
                           size="sm"
