@@ -12,6 +12,16 @@ type ProjectDetailsStepProps = {
   onUpdate: (project: ProjectData) => void;
 };
 
+const normalizeAssignedNumber = (value: string) => {
+  const digits = value.replace(/\D/g, "").slice(0, 2);
+
+  if (digits === "0") {
+    return "";
+  }
+
+  return digits.replace(/^0+/, "");
+};
+
 export function ProjectDetailsStep({
   eventId,
   project,
@@ -29,21 +39,37 @@ export function ProjectDetailsStep({
 
   return (
     <div className="space-y-6">
-      {/* Nombre del Proyecto */}
-      <div className="relative">
-        <Input
-          label="Nombre del Proyecto"
-          placeholder="Sistema de gestión de inventario inteligente"
-          value={project.name}
-          onValueChange={(value) => onUpdate({ ...project, name: value })}
-          isRequired
-          maxLength={255}
-        />
+      <div className="grid gap-4 md:grid-cols-[8rem_minmax(0,1fr)] md:items-start">
+        <div>
+          <Input
+            label="Num. Asignado"
+            placeholder="10"
+            value={project.projectCode}
+            onValueChange={(value) =>
+              onUpdate({ ...project, projectCode: normalizeAssignedNumber(value) })
+            }
+            inputMode="numeric"
+            type="text"
+            maxLength={2}
+          />
+        </div>
 
-        {/* Contador */}
-        <p className="text-xs text-default-400 absolute right-1 -bottom-5">
-          {nameLength}/255
-        </p>
+        {/* Nombre del Proyecto */}
+        <div className="relative">
+          <Input
+            label="Nombre del Proyecto"
+            placeholder="Sistema de gestión de inventario inteligente"
+            value={project.name}
+            onValueChange={(value) => onUpdate({ ...project, name: value })}
+            isRequired
+            maxLength={255}
+          />
+
+          {/* Contador */}
+          <p className="text-xs text-default-400 absolute right-1 -bottom-5">
+            {nameLength}/255
+          </p>
+        </div>
       </div>
 
       {/* Descripción */}

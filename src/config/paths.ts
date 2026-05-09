@@ -85,6 +85,9 @@ export const paths = {
     juries: {
       getHref: () => "/app/juries",
     },
+    assignments: {
+      getHref: () => "/app/assignments"
+    },
     administrators: {
       getHref: () => "/app/administrators",
     },

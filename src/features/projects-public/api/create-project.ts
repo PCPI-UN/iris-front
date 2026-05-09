@@ -15,6 +15,10 @@ export const createCompetitionInputSchema = z.object({
 
 // Schema para Exposition (proyecto completo)
 export const createProjectInputSchema = z.object({
+  projectCode: z.union([
+    z.string().regex(/^[1-9]\d?$/, 'El número asignado debe tener máximo 2 cifras y no puede iniciar en 0'),
+    z.literal(''),
+  ]).optional(),
   name: z.string().min(2).max(255),
   description: z.string().max(3000).optional(),
   eventId: z.string().min(1),

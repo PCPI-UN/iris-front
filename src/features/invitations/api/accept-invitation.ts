@@ -19,6 +19,8 @@ export const useAcceptInvitation = () => {
     onSuccess: () => {
       // Invalidar las queries de invitaciones para refrescar la lista
       queryClient.invalidateQueries({ queryKey: ["invitations"] });
+      // Invalidar las queries de eventos del usuario para que aparezca el evento aceptado en el dashboard
+      queryClient.invalidateQueries({ queryKey: ["events", "my-events"] });
     },
   });
 };

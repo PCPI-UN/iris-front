@@ -8,8 +8,6 @@ import { EventsDropdown } from "@/features/projects/components/events-dropdown";
 import '@/features/landing/index.css';
 
 export const Projects = () => {
-  const searchParams = useSearchParams();
-  const eventId = searchParams?.get("event");
 
   return (
     <ContentLayout title="Projects">

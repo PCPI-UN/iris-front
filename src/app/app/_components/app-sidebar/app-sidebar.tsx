@@ -14,6 +14,7 @@ import {
   SquareChartGantt,
   Mail,
   ChartNoAxesCombined,
+  PinIcon,
 } from "lucide-react";
 
 import { NavUser } from "./nav-user";
@@ -73,6 +74,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             icon: Presentation,
           },
           { title: "Juries", url: paths.app.juries.getHref(), icon: UsersIcon },
+          { title: "Assignments", url: paths.app.assignments.getHref(), icon: PinIcon },
           {
             title: "Administrators",
             url: paths.app.administrators.getHref(),
