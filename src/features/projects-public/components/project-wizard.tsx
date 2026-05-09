@@ -42,6 +42,7 @@ export type Participant = {
 };
 
 export type ProjectData = {
+  projectCode: string;
   name: string;
   description: string;
   courseId: number;
@@ -124,6 +125,7 @@ export function ProjectWizard({ eventId, eventType}: ProjectWizardProps) {
   const [wizardData, setWizardData] = useState<WizardData>({
     participants: [],
     project: {
+      projectCode: "",
       name: "",
       description: "",
       courseId: 0,
@@ -300,6 +302,7 @@ const handleSubmit = () => {
     documentsSchema.parse(wizardData.documents);
 
     const payloadData = {
+    projectCode: wizardData.project.projectCode.trim(),
       name: wizardData.project.name,
       description: wizardData.project.description,
       eventId: String(eventId),
@@ -328,6 +331,7 @@ const handleSubmit = () => {
     createProjectInputSchema.parse(payloadData);
 
     const formData = new FormData();
+    if (payloadData.projectCode) formData.append("projectCode", payloadData.projectCode);
     formData.append("name", payloadData.name);
     if (payloadData.description) formData.append("description", payloadData.description);
     formData.append("eventId", payloadData.eventId);

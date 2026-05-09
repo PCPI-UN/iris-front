@@ -39,33 +39,31 @@ export const ParticipantsDetails = ({
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
   const participants = useMemo<ParticipantRow[]>(() => {
-    const confirmed = confirmedParticipants.map((participant, index) => {
-      const displayName = `${participant.firstName} ${participant.lastName}`.trim();
+    // Helper function to validate and map participants
+    const mapParticipants = (items: ProjectParticipant[], status: "CONFIRMED" | "PENDING") =>
+      items
+        .filter((p) => {
+          // Filter out invalid participants
+          return p && String(p.firstName ?? "").trim() && String(p.lastName ?? "").trim();
+        })
+        .map((participant, index) => {
+          const firstName = String(participant.firstName ?? "").trim();
+          const lastName = String(participant.lastName ?? "").trim();
+          const displayName = `${firstName} ${lastName}`.trim();
 
-      return {
-        ...participant,
-        status: "CONFIRMED" as const,
-        displayName,
-        displaySemester: participant.semester || "—",
-        displayCareer: participant.career || "—",
-        displayEmail: participant.email || "—",
-        keyId: participant.studentCode || participant.email || `${displayName}-${index}`,
-      };
-    });
+          return {
+            ...participant,
+            status,
+            displayName: displayName || "N/A",
+            displaySemester: participant.semester || "—",
+            displayCareer: participant.career || "—",
+            displayEmail: participant.email || "—",
+            keyId: participant.studentCode || participant.email || `${displayName}-${index}`,
+          };
+        });
 
-    const pending = pendingParticipants.map((participant, index) => {
-      const displayName = `${participant.firstName} ${participant.lastName}`.trim();
-
-      return {
-        ...participant,
-        status: "PENDING" as const,
-        displayName,
-        displaySemester: participant.semester || "—",
-        displayCareer: participant.career || "—",
-        displayEmail: participant.email || "—",
-        keyId: `${participant.studentCode || participant.email || `${displayName}-${index}`}-pending`,
-      };
-    });
+    const confirmed = mapParticipants(confirmedParticipants, "CONFIRMED");
+    const pending = mapParticipants(pendingParticipants, "PENDING");
 
     return [...pending, ...confirmed];
   }, [confirmedParticipants, pendingParticipants]);

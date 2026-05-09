@@ -22,7 +22,13 @@ export const participantSchemaExposition = z.object({
 
 export const participantSchema = participantSchemaCompetition
 
+const assignedNumberSchema = z.union([
+  z.string().regex(/^[1-9]\d?$/, 'El número asignado debe tener máximo 2 cifras y no puede iniciar en 0'),
+  z.literal(''),
+]).optional()
+
 export const projectSchema = z.object({
+  projectCode: assignedNumberSchema,
   name: z.string().min(3, 'El nombre debe tener al menos 3 caracteres').max(255, 'El nombre no puede exceder 255 caracteres'),
   description: z.string().max(3000, 'La descripción no puede exceder 3000 caracteres').optional(),
   courseId: z.number().min(1, 'Debe seleccionar un curso'),
