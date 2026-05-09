@@ -34,6 +34,7 @@ export const StudentDashboard = ({ eventId }: StudentDashboardProps) => {
   const project = projectQuery.data?.project;
   const event = projectQuery.data?.event;
   const isEditMode = (project?.state as string) === "REQUEST_CHANGES";
+
   const handleSaveChanges = async () => {
     if (!project?.id) return;
 
@@ -111,7 +112,7 @@ export const StudentDashboard = ({ eventId }: StudentDashboardProps) => {
         </p>
       )}
 
-      {project && event && (
+      {project && event && project.projectCode && (
         <div className="mx-4 space-y-6 sm:mx-6 lg:mx-8">
           <form
             aria-label="Informacion del proyecto"
@@ -140,6 +141,7 @@ export const StudentDashboard = ({ eventId }: StudentDashboardProps) => {
                 projectDescription={project.description}
                 canEdit={isEditMode}
                 projectId={String(project.id)}
+                projectCode={project.projectCode}
               />
             )}
 

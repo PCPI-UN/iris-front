@@ -13,19 +13,8 @@ export const getStateColor = (state?: string) => {
     return "bg-green-500/20 text-green-600 dark:text-green-400";
   if (state === "REJECTED")
     return "bg-red-500/20 text-red-600 dark:text-red-400";
-  if (state === "REQUEST_CHANGES")
-    return "bg-sky-200/20 text-sky-300 ";
+  if (state === "REQUEST_CHANGES") return "bg-sky-200/20 text-sky-300 ";
   return "bg-gray-500/20 text-gray-600 dark:text-gray-400";
-};
-
-export const normalizeCareer = (career: string): string => {
-  if (!career) return "Sin carrera";
-  return career
-    .replace(/[_*+\-{}]/g, " ") // Reemplaza caracteres especiales por espacio
-    .split(/\s+/) // Divide por espacios (uno o más)
-    .filter(word => word.length > 0) // Elimina palabras vacías
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(" ");
 };
 
 export const getInitials = (firstName?: string, lastName?: string) => {
@@ -34,36 +23,28 @@ export const getInitials = (firstName?: string, lastName?: string) => {
   return `${first}${last}`.toUpperCase() || "?";
 };
 
-export function getSemesterFromParticipant(semestre: number | string) {
-  if (typeof semestre === "string") {
-    const parsedSemestre = parseInt(semestre);
-    if (!isNaN(parsedSemestre)) {
-      semestre = parsedSemestre;
-    }
-  }
+export const SEMESTER_OPTIONS = [
+  { label: "1°", value: "1" },
+  { label: "2°", value: "2" },
+  { label: "3°", value: "3" },
+  { label: "4°", value: "4" },
+  { label: "5°", value: "5" },
+  { label: "6°", value: "6" },
+  { label: "7°", value: "7" },
+  { label: "8°", value: "8" },
+  { label: "9°", value: "9" },
+  { label: "10°", value: "10" },
+  { label: "11°", value: "11" },
+  { label: "12°", value: "12" },
+];
 
-  switch (semestre) {
-    case 1:
-      return "1er semestre";
-    case 2:
-      return "2do semestre";
-    case 3:
-      return "3er semestre";
-    case 4:
-      return "4to semestre";
-    case 5:
-      return "5to semestre";
-    case 6:
-      return "6to semestre";
-    case 7:
-      return "7mo semestre";
-    case 8:
-      return "8vo semestre";
-    case 9:
-      return "9no semestre";
-    case 10:
-      return "10mo semestre";
-    default:
-      return "Semestre desconocido";
-  }
-}
+export const CAREER_OPTIONS = [
+  { label: "Ing Civil", value: "Ingeniería Civil" },
+  { label: "Ing de Sistemas", value: "Ingeniería de Sistemas y Computación" },
+  { label: "Ing Electrónica", value: "Ingeniería Electrónica" },
+  { label: "Ing Eléctrica", value: "Ingeniería Eléctrica" },
+  { label: "Ing Industrial", value: "Ingeniería Industrial" },
+  { label: "Ing Mecánica", value: "Ingeniería Mecánica" },
+  { label: "Ing Biomédica", value: "Ingeniería Biomédica" },
+  { label: "Ciencia de Datos", value: "Ciencia de Datos" },
+];

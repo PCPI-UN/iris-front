@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@heroui/button";
+import { Input } from "@heroui/input";
 import { Edit2, FolderOpen, Check, X } from "lucide-react";
 import { useNotifications } from "@/components/ui/notifications";
 import { useUpdateProject } from "@/features/projects/api/update-project";
@@ -12,6 +13,7 @@ type StudentDashboardProjectInfoSectionProps = {
   projectName?: string;
   projectDescription?: string;
   canEdit: boolean;
+  projectCode?: string;
 };
 
 export const StudentDashboardProjectInfoSection = ({
@@ -19,11 +21,12 @@ export const StudentDashboardProjectInfoSection = ({
   projectName,
   projectDescription,
   canEdit,
+  projectCode,
 }: StudentDashboardProjectInfoSectionProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedName, setEditedName] = useState(projectName || "Sin nombre");
   const [editedDescription, setEditedDescription] = useState(
-    projectDescription || "Sin descripcion registrada"
+    projectDescription || "Sin descripcion registrada",
   );
   const { addNotification } = useNotifications();
   const updateProjectMutation = useUpdateProject({
@@ -99,7 +102,7 @@ export const StudentDashboardProjectInfoSection = ({
             <Button
               size="sm"
               variant="flat"
-              className="flex w-full items-center justify-center gap-1.5 text-md text-sky-200 dark:text-sky-300 sm:w-auto"
+              className="flex w-full items-center justify-center gap-1.5 text-md bg-sky-200/20 text-sky-300 hover:bg-sky-300/20 dark:hover:text-sky-400 sm:w-auto"
               onPress={handleSave}
               isLoading={updateProjectMutation.isPending}
               disabled={updateProjectMutation.isPending}
@@ -110,11 +113,11 @@ export const StudentDashboardProjectInfoSection = ({
             <Button
               size="sm"
               variant="flat"
-              className="flex w-full items-center justify-center gap-1.5 text-md text-red-600 dark:text-red-400 sm:w-auto"
+              className="flex w-full items-center justify-center gap-1.5 text-md bg-red-400/20 text-red-300  dark:hover:text-red-400 sm:w-auto"
               onPress={handleCancel}
               disabled={updateProjectMutation.isPending}
             >
-              <X className="h-3 w-3" />
+              <X className="size-4" />
               Cancelar
             </Button>
           </div>
@@ -129,22 +132,44 @@ export const StudentDashboardProjectInfoSection = ({
           >
             Nombre del proyecto
           </label>
+
           {isEditing ? (
             <input
               id="project-name"
               type="text"
               value={editedName}
               onChange={(e) => setEditedName(e.target.value)}
-              className="w-full rounded-xl border border-default-200 bg-default-50/50 px-4 py-3 font-bold focus:outline-none focus:ring-2 focus:white focus:ring-offset-1 " 
+              className="w-full rounded-xl border border-default-200 bg-default-50/50 px-4 py-3 font-bold focus:outline-none focus:ring-2 focus:white focus:ring-offset-1 "
               maxLength={255}
             />
           ) : (
-            <div
-              className="w-full rounded-xl border border-default-200 bg-default-50/50 px-4 py-3 font-bold"
-            >
+            <div className="w-full rounded-xl border border-default-200 bg-default-50/50 px-4 py-3 font-bold">
               {editedName || "Sin nombre"}
             </div>
           )}
+        </div>
+
+        <div className="space-y-1.5">
+          <label
+            htmlFor="project-code"
+            className="text-xs font-semibold uppercase tracking-wide text-default-500"
+          >
+            Codigo del proyecto
+          </label>
+
+          <Input
+            id="project-code"
+            value={projectCode || ""}
+            placeholder="Sin codigo asignado"
+            isReadOnly
+            variant="bordered"
+            classNames={{
+              input: "font-semibold text-default-700",
+              inputWrapper:
+                "bg-default-50/50 border-default-200 data-[hover=true]:border-default-300 text-md",
+            }}
+          />
+
         </div>
 
         <div className="space-y-1.5">
@@ -166,9 +191,7 @@ export const StudentDashboardProjectInfoSection = ({
               rows={1}
             />
           ) : (
-            <div
-              className="min-h-[72px] w-full rounded-xl border border-default-200 bg-default-50/50 px-4 py-3 text-md leading-relaxed text-default-600"
-            >
+            <div className="min-h-[72px] w-full rounded-xl border border-default-200 bg-default-50/50 px-4 py-3 text-md leading-relaxed text-default-600">
               {editedDescription || "Sin descripcion registrada"}
             </div>
           )}

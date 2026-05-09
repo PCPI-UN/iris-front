@@ -18,8 +18,8 @@ import { ProjectParticipant } from "@/types/api";
 import { getInitials } from "../../../../features/events/api/student-dashboard.helpers";
 import { StudentDashboardSectionCard } from "./student-dashboard-section-card";
 import {
-  getSemesterFromParticipant,
-  normalizeCareer,
+  SEMESTER_OPTIONS,
+  CAREER_OPTIONS,
 } from "@/features/events/api/student-dashboard.helpers";
 import { useNotifications } from "@/components/ui/notifications";
 import {
@@ -27,6 +27,8 @@ import {
   useCreateInvitation,
 } from "@/features/projects/api/participant-mutations";
 import { Input } from "@heroui/input";
+import { Select, SelectItem } from "@heroui/select";
+
 
 type StudentDashboardTeamSectionProps = {
   participants: ProjectParticipant[];
@@ -268,18 +270,36 @@ export const StudentDashboardTeamSection = ({
                 setNewMember({ ...newMember, ParticipantCode: v })
               }
             />
-            <Input
+            <Select
               size="sm"
-              placeholder="Semestre"
-              value={String(newMember.semester ?? "")}
-              onValueChange={(v) => setNewMember({ ...newMember, semester: v })}
-            />
-            <Input
+              placeholder="Selecciona semestre"
+              selectedKeys={newMember.semester ? [String(newMember.semester)] : []}
+              onSelectionChange={(keys) => {
+                const selected = Array.from(keys)[0] as string;
+                setNewMember({ ...newMember, semester: selected });
+              }}
+            >
+              {SEMESTER_OPTIONS.map((option) => (
+                <SelectItem key={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </Select>
+            <Select
               size="sm"
-              placeholder="Carrera"
-              value={newMember.career}
-              onValueChange={(v) => setNewMember({ ...newMember, career: v })}
-            />
+              placeholder="Selecciona carrera"
+              selectedKeys={newMember.career ? [newMember.career] : []}
+              onSelectionChange={(keys) => {
+                const selected = Array.from(keys)[0] as string;
+                setNewMember({ ...newMember, career: selected });
+              }}
+            >
+              {CAREER_OPTIONS.map((option) => (
+                <SelectItem key={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </Select>
           </div>
           <div className="mt-3 flex gap-2">
             <Button
@@ -433,29 +453,33 @@ export const StudentDashboardTeamSection = ({
                       {isEditMode &&
                       editingParticipantEmail === participant.email &&
                       draftParticipant ? (
-                        <Input
+                        <Select
                           size="sm"
-                          value={String(draftParticipant.semester ?? "")}
-                          onValueChange={(value) => {
-                            const parsedSemester = Number(value);
+                          selectedKeys={draftParticipant.semester ? [String(draftParticipant.semester)] : []}
+                          onSelectionChange={(keys) => {
+                            const selected = Array.from(keys)[0] as string;
                             setDraftParticipant({
                               ...draftParticipant,
-                              semester: Number.isNaN(parsedSemester)
-                                ? draftParticipant.semester
-                                : parsedSemester,
+                              semester: Number(selected),
                             });
                           }}
-                          placeholder="Semestre"
+                          placeholder="Selecciona semestre"
                           className="text-sm"
-                        />
+                        >
+                          {SEMESTER_OPTIONS.map((option) => (
+                            <SelectItem key={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </Select>
                       ) : (
                         <div
                           id={`participant-semester-${idx}`}
                           className="text-sm italic text-default-500"
                         >
-                          {getSemesterFromParticipant(
-                            Number(participant.semester),
-                          )}
+                          {
+                            SEMESTER_OPTIONS.find((o) => o.value === String(participant.semester))?.label || "Sin semestre"
+                          }
                         </div>
                       )}
                     </div>
@@ -473,24 +497,31 @@ export const StudentDashboardTeamSection = ({
                       {isEditMode &&
                       editingParticipantEmail === participant.email &&
                       draftParticipant ? (
-                        <Input
+                        <Select
                           size="sm"
-                          value={draftParticipant.career}
-                          onValueChange={(value) =>
+                          selectedKeys={draftParticipant.career ? [draftParticipant.career] : []}
+                          onSelectionChange={(keys) => {
+                            const selected = Array.from(keys)[0] as string;
                             setDraftParticipant({
                               ...draftParticipant,
-                              career: value,
-                            })
-                          }
-                          placeholder="Carrera"
+                              career: selected,
+                            });
+                          }}
+                          placeholder="Selecciona carrera"
                           className="text-sm"
-                        />
+                        >
+                          {CAREER_OPTIONS.map((option) => (
+                            <SelectItem key={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </Select>
                       ) : (
                         <div
                           id={`participant-career-${idx}`}
                           className="text-sm italic text-default-500"
                         >
-                          {normalizeCareer(participant.career || "")}
+                          {CAREER_OPTIONS.find((o) => o.value === participant.career)?.label || "Sin carrera"}
                         </div>
                       )}
                     </div>

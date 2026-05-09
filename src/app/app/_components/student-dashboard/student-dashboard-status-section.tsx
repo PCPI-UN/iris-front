@@ -8,11 +8,13 @@ import { StudentDashboardSectionCard } from "./student-dashboard-section-card";
 type StudentDashboardStatusSectionProps = {
   state?: string;
   canEdit: boolean;
+  projectCode?: string;
 };
 
 export const StudentDashboardStatusSection = ({
   state,
   canEdit,
+  projectCode,
 }: StudentDashboardStatusSectionProps) => {
   return (
     <a href="#save-changes" className="scrollbar-behavior-auto ">
@@ -21,7 +23,11 @@ export const StudentDashboardStatusSection = ({
         icon={ClipboardList}
         className="space-y-5"
       >
-        <div className="space-y-1.5 ">
+        <div className="space-y-1.5">
+          <div className="flex w-full items-center justify-between">
+            <h3 className="text-md font-semibold text-default-700 px-2">Estado del proyecto</h3>
+          </div>
+
           <div
             id="project-state"
             role="status"
@@ -34,6 +40,7 @@ export const StudentDashboardStatusSection = ({
             >
               Estado actual:
             </label>
+
             <span
               className={`inline-flex w-full items-center justify-center gap-2 rounded-full p-1 text-sm font-semibold sm:w-auto sm:px-3 sm:py-1 ${getStateColor(state)}`}
               aria-label={`Estado: ${getProjectStateLabel(state)}`}
