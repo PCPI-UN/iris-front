@@ -13,6 +13,7 @@ import {
   ArrowDownAZ,
   SquareChartGantt,
   Mail,
+  ChartNoAxesCombined,
 } from "lucide-react";
 
 import { NavUser } from "./nav-user";
@@ -60,6 +61,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             title: "Projects",
             url: paths.app.projects.getHref(),
             icon: SquareChartGantt,
+          },
+          {
+            title: "Monitoreo",
+            url: paths.app.monitoring.getHref(),
+            icon: ChartNoAxesCombined,
           },
           {
             title: "Criteria",
