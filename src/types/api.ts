@@ -169,8 +169,6 @@ export type ProjectParticipant = Entity<{
   email: string;
   projectId: string;
   ParticipantCode?: string;
-  semester?: string;
-  career?: string;
   studentCode?: string;
   project: Project;
   semester: number;

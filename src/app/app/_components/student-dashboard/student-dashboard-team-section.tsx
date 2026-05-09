@@ -436,12 +436,15 @@ export const StudentDashboardTeamSection = ({
                         <Input
                           size="sm"
                           value={String(draftParticipant.semester ?? "")}
-                          onValueChange={(value) =>
+                          onValueChange={(value) => {
+                            const parsedSemester = Number(value);
                             setDraftParticipant({
                               ...draftParticipant,
-                              semester: value,
-                            })
-                          }
+                              semester: Number.isNaN(parsedSemester)
+                                ? draftParticipant.semester
+                                : parsedSemester,
+                            });
+                          }}
                           placeholder="Semestre"
                           className="text-sm"
                         />

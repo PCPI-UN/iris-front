@@ -55,7 +55,11 @@ export const ParticipantsDetails = ({
             ...participant,
             status,
             displayName: displayName || "N/A",
-            displaySemester: participant.semester || "—",
+            displaySemester:
+              participant.semester !== undefined &&
+              participant.semester !== null
+                ? String(participant.semester)
+                : "—",
             displayCareer: participant.career || "—",
             displayEmail: participant.email || "—",
             keyId: participant.studentCode || participant.email || `${displayName}-${index}`,
