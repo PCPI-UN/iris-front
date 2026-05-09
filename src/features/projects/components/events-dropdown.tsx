@@ -67,10 +67,7 @@ export const EventsDropdown = () => {
         )}
       </Select>
       </div>
-      
-        <CategoriesDropdown/>
-      
-      
+      <CategoriesDropdown/>
     </div>
   );
 };

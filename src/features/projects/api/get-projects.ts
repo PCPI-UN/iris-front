@@ -7,16 +7,27 @@ import { Meta, Project } from "@/types/api";
 //MOCKAPI -> category
 //BACK -> courseId
 
+export type ProjectJuror = {
+  id?: string | number;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+};
+
+export type ProjectWithJurors = Project & {
+  jurors?: ProjectJuror[];
+};
+
 export const getProjects = async (
   { page, eventId, state, courseId }: { page?: number; eventId?: number, state?: string, courseId?: number } = { page: 1 }
-): Promise<{ data: Project[]; meta: Meta }> => {
+): Promise<{ data: ProjectWithJurors[]; meta: Meta }> => {
   const response = await api.get<{
-    items: Project[];
+    items: ProjectWithJurors[];
     page: number;
     limit: number;
     total: number;
     totalPages: number;
-  }>(`/projects/by-event/${eventId}`, { params: { page, state, courseId } });
+  }>(`/projects/by-event/${eventId}/with-jurors`, { params: { page, state, courseId } });
   
   return {
     data: response.items || [],
