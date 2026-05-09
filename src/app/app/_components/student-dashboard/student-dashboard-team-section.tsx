@@ -3,15 +3,30 @@
 import { useState } from "react";
 import { Avatar } from "@heroui/avatar";
 import { Button } from "@heroui/button";
-import { Edit2, Hash, Mail, User, Users, Scale, BookOpen, Check, X } from "lucide-react";
+import {
+  Edit2,
+  Hash,
+  Mail,
+  User,
+  Users,
+  Scale,
+  BookOpen,
+  Check,
+  X,
+} from "lucide-react";
 import { ProjectParticipant } from "@/types/api";
 import { getInitials } from "../../../../features/events/api/student-dashboard.helpers";
 import { StudentDashboardSectionCard } from "./student-dashboard-section-card";
-import { getSemesterFromParticipant, normalizeCareer } from "@/features/events/api/student-dashboard.helpers";
+import {
+  getSemesterFromParticipant,
+  normalizeCareer,
+} from "@/features/events/api/student-dashboard.helpers";
 import { useNotifications } from "@/components/ui/notifications";
-import { useAddUpdateParticipant, useCreateInvitation } from "@/features/projects/api/participant-mutations";
+import {
+  useAddUpdateParticipant,
+  useCreateInvitation,
+} from "@/features/projects/api/participant-mutations";
 import { Input } from "@heroui/input";
-
 
 type StudentDashboardTeamSectionProps = {
   participants: ProjectParticipant[];
@@ -28,24 +43,35 @@ export const StudentDashboardTeamSection = ({
 }: StudentDashboardTeamSectionProps) => {
   const { addNotification } = useNotifications();
   const [isEditMode, setIsEditMode] = useState(false);
-  const [editingParticipantEmail, setEditingParticipantEmail] = useState<string | null>(null);
-  const [draftParticipant, setDraftParticipant] = useState<ProjectParticipant | null>(null);
+  const [editingParticipantEmail, setEditingParticipantEmail] = useState<
+    string | null
+  >(null);
+  const [draftParticipant, setDraftParticipant] =
+    useState<ProjectParticipant | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newMember, setNewMember] = useState<{
     firstName: string;
     lastName: string;
     email: string;
     ParticipantCode?: string;
-    semester?: number | string;                                                                                                         
+    semester?: number | string;
     career?: string;
-  }>({ firstName: "", lastName: "", email: "", ParticipantCode: "", semester: "", career: "" });
+  }>({
+    firstName: "",
+    lastName: "",
+    email: "",
+    ParticipantCode: "",
+    semester: "",
+    career: "",
+  });
 
   const addUpdateParticipantMutation = useAddUpdateParticipant({
     onSuccess: () => {
       addNotification({
         type: "success",
         title: "Participante actualizado",
-        message: "Los cambios se guardaron correctamente, Procede a Enviar cambios.",
+        message:
+          "Los cambios se guardaron correctamente, Procede a Enviar cambios.",
       });
       setDraftParticipant(null);
       setEditingParticipantEmail(null);
@@ -61,7 +87,7 @@ export const StudentDashboardTeamSection = ({
 
   const createInvitationMutation = useCreateInvitation({
     onSuccess: () => {
-      addNotification({                                       
+      addNotification({
         type: "success",
         title: "Invitación enviada",
         message: "La invitación se envió correctamente.",
@@ -120,7 +146,11 @@ export const StudentDashboardTeamSection = ({
 
   const handleAddMember = async () => {
     if (!newMember.email) {
-      addNotification({ type: "error", title: "Email requerido", message: "Ingresa el correo del miembro." });
+      addNotification({
+        type: "error",
+        title: "Email requerido",
+        message: "Ingresa el correo del miembro.",
+      });
       return;
     }
 
@@ -151,11 +181,26 @@ export const StudentDashboardTeamSection = ({
         console.error("Invitation error:", inviteErr);
       }
 
-      addNotification({ type: "success", title: "Miembro agregado", message: "El miembro fue agregado correctamente." });
-      setNewMember({ firstName: "", lastName: "", email: "", ParticipantCode: "", semester: "", career: "" });
+      addNotification({
+        type: "success",
+        title: "Miembro agregado",
+        message: "El miembro fue agregado correctamente.",
+      });
+      setNewMember({
+        firstName: "",
+        lastName: "",
+        email: "",
+        ParticipantCode: "",
+        semester: "",
+        career: "",
+      });
       setShowAddForm(false);
     } catch (error) {
-      addNotification({ type: "error", title: "Error al agregar miembro", message: (error as any)?.message || "No se pudo agregar el miembro." });
+      addNotification({
+        type: "error",
+        title: "Error al agregar miembro",
+        message: (error as any)?.message || "No se pudo agregar el miembro.",
+      });
     }
   };
   return (
@@ -195,16 +240,74 @@ export const StudentDashboardTeamSection = ({
       {showAddForm && (
         <div className="rounded-xl border border-default-200/60 bg-default-50/50 p-4">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <Input size="sm" placeholder="Nombre" value={newMember.firstName} onValueChange={(v) => setNewMember({ ...newMember, firstName: v })} />
-            <Input size="sm" placeholder="Apellido" value={newMember.lastName} onValueChange={(v) => setNewMember({ ...newMember, lastName: v })} />
-            <Input size="sm" placeholder="Correo" value={newMember.email} onValueChange={(v) => setNewMember({ ...newMember, email: v })} />
-            <Input size="sm" placeholder="Codigo estudiantil" value={newMember.ParticipantCode} onValueChange={(v) => setNewMember({ ...newMember, ParticipantCode: v })} />
-            <Input size="sm" placeholder="Semestre" value={String(newMember.semester ?? "")} onValueChange={(v) => setNewMember({ ...newMember, semester: v })} />
-            <Input size="sm" placeholder="Carrera" value={newMember.career} onValueChange={(v) => setNewMember({ ...newMember, career: v })} />
+            <Input
+              size="sm"
+              placeholder="Nombre"
+              value={newMember.firstName}
+              onValueChange={(v) =>
+                setNewMember({ ...newMember, firstName: v })
+              }
+            />
+            <Input
+              size="sm"
+              placeholder="Apellido"
+              value={newMember.lastName}
+              onValueChange={(v) => setNewMember({ ...newMember, lastName: v })}
+            />
+            <Input
+              size="sm"
+              placeholder="Correo"
+              value={newMember.email}
+              onValueChange={(v) => setNewMember({ ...newMember, email: v })}
+            />
+            <Input
+              size="sm"
+              placeholder="Codigo estudiantil"
+              value={newMember.ParticipantCode}
+              onValueChange={(v) =>
+                setNewMember({ ...newMember, ParticipantCode: v })
+              }
+            />
+            <Input
+              size="sm"
+              placeholder="Semestre"
+              value={String(newMember.semester ?? "")}
+              onValueChange={(v) => setNewMember({ ...newMember, semester: v })}
+            />
+            <Input
+              size="sm"
+              placeholder="Carrera"
+              value={newMember.career}
+              onValueChange={(v) => setNewMember({ ...newMember, career: v })}
+            />
           </div>
           <div className="mt-3 flex gap-2">
-            <Button size="sm" color="success" onPress={handleAddMember} isLoading={addUpdateParticipantMutation.isPending}>Agregar</Button>
-            <Button size="sm" variant="flat" color="danger" onPress={() => { setShowAddForm(false); setNewMember({ firstName: "", lastName: "", email: "", ParticipantCode: "", semester: "", career: "" }); }}>Cancelar</Button>
+            <Button
+              size="sm"
+              color="success"
+              onPress={handleAddMember}
+              isLoading={addUpdateParticipantMutation.isPending}
+            >
+              Agregar
+            </Button>
+            <Button
+              size="sm"
+              variant="flat"
+              color="danger"
+              onPress={() => {
+                setShowAddForm(false);
+                setNewMember({
+                  firstName: "",
+                  lastName: "",
+                  email: "",
+                  ParticipantCode: "",
+                  semester: "",
+                  career: "",
+                });
+              }}
+            >
+              Cancelar
+            </Button>
           </div>
         </div>
       )}
@@ -219,7 +322,10 @@ export const StudentDashboardTeamSection = ({
               >
                 <div className="flex items-start gap-4 ">
                   <Avatar
-                    name={getInitials(participant.firstName, participant.lastName)}
+                    name={getInitials(
+                      participant.firstName,
+                      participant.lastName,
+                    )}
                     className="bg-primary/20 font-semibold text-primary"
                     radius="full"
                     size="lg"
@@ -236,7 +342,9 @@ export const StudentDashboardTeamSection = ({
                           Nombre
                         </span>
                       </label>
-                      {isEditMode && editingParticipantEmail === participant.email && draftParticipant ? (
+                      {isEditMode &&
+                      editingParticipantEmail === participant.email &&
+                      draftParticipant ? (
                         <Input
                           size="sm"
                           value={draftParticipant.firstName}
@@ -269,7 +377,9 @@ export const StudentDashboardTeamSection = ({
                           Apellido
                         </span>
                       </label>
-                      {isEditMode && editingParticipantEmail === participant.email && draftParticipant ? (
+                      {isEditMode &&
+                      editingParticipantEmail === participant.email &&
+                      draftParticipant ? (
                         <Input
                           size="sm"
                           value={draftParticipant.lastName}
@@ -320,14 +430,16 @@ export const StudentDashboardTeamSection = ({
                           Semestre
                         </span>
                       </label>
-                      {isEditMode && editingParticipantEmail === participant.email && draftParticipant ? (
+                      {isEditMode &&
+                      editingParticipantEmail === participant.email &&
+                      draftParticipant ? (
                         <Input
                           size="sm"
                           value={String(draftParticipant.semester ?? "")}
                           onValueChange={(value) =>
                             setDraftParticipant({
                               ...draftParticipant,
-                              semester: Number(value),
+                              semester: value,
                             })
                           }
                           placeholder="Semestre"
@@ -338,7 +450,9 @@ export const StudentDashboardTeamSection = ({
                           id={`participant-semester-${idx}`}
                           className="text-sm italic text-default-500"
                         >
-                          {getSemesterFromParticipant(participant.semester)}
+                          {getSemesterFromParticipant(
+                            Number(participant.semester),
+                          )}
                         </div>
                       )}
                     </div>
@@ -353,7 +467,9 @@ export const StudentDashboardTeamSection = ({
                           Carrera
                         </span>
                       </label>
-                      {isEditMode && editingParticipantEmail === participant.email && draftParticipant ? (
+                      {isEditMode &&
+                      editingParticipantEmail === participant.email &&
+                      draftParticipant ? (
                         <Input
                           size="sm"
                           value={draftParticipant.career}
@@ -371,7 +487,7 @@ export const StudentDashboardTeamSection = ({
                           id={`participant-career-${idx}`}
                           className="text-sm italic text-default-500"
                         >
-                          {normalizeCareer(participant.career)}
+                          {normalizeCareer(participant.career || "")}
                         </div>
                       )}
                     </div>
@@ -386,7 +502,9 @@ export const StudentDashboardTeamSection = ({
                           Codigo estudiantil
                         </span>
                       </label>
-                      {isEditMode && editingParticipantEmail === participant.email && draftParticipant ? (
+                      {isEditMode &&
+                      editingParticipantEmail === participant.email &&
+                      draftParticipant ? (
                         <Input
                           size="sm"
                           value={draftParticipant.ParticipantCode || ""}
@@ -409,47 +527,51 @@ export const StudentDashboardTeamSection = ({
                       )}
                     </div>
 
-                    {isEditMode && editingParticipantEmail === participant.email && draftParticipant && (
-                      <div className="col-span-full flex gap-2">
-                        <Button
-                          isIconOnly
-                          size="sm"
-                          variant="flat"
-                          color="success"
-                          onPress={handleSaveParticipant}
-                          isLoading={addUpdateParticipantMutation.isPending}
-                          disabled={addUpdateParticipantMutation.isPending}
-                          aria-label="Guardar cambios"
-                        >
-                          <Check className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          isIconOnly
-                          size="sm"
-                          variant="flat"
-                          color="danger"
-                          onPress={cancelEditParticipant}
-                          aria-label="Cancelar edición"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    )}
+                    {isEditMode &&
+                      editingParticipantEmail === participant.email &&
+                      draftParticipant && (
+                        <div className="col-span-full flex gap-2">
+                          <Button
+                            isIconOnly
+                            size="sm"
+                            variant="flat"
+                            color="success"
+                            onPress={handleSaveParticipant}
+                            isLoading={addUpdateParticipantMutation.isPending}
+                            disabled={addUpdateParticipantMutation.isPending}
+                            aria-label="Guardar cambios"
+                          >
+                            <Check className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            isIconOnly
+                            size="sm"
+                            variant="flat"
+                            color="danger"
+                            onPress={cancelEditParticipant}
+                            aria-label="Cancelar edición"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
 
-                    {isEditMode && !draftParticipant && canEditParticipant(participant.email) && (
-                      <div className="col-span-full">
-                        <Button
-                          size="sm"
-                          variant="flat"
-                          className="text-xs"
-                          onPress={() => startEditParticipant(participant)}
-                          aria-label="Editar participante"
-                        >
-                          <Edit2 className="h-3 w-3" />
-                          Editar
-                        </Button>
-                      </div>
-                    )}
+                    {isEditMode &&
+                      !draftParticipant &&
+                      canEditParticipant(participant.email) && (
+                        <div className="col-span-full">
+                          <Button
+                            size="sm"
+                            variant="flat"
+                            className="text-xs"
+                            onPress={() => startEditParticipant(participant)}
+                            aria-label="Editar participante"
+                          >
+                            <Edit2 className="h-3 w-3" />
+                            Editar
+                          </Button>
+                        </div>
+                      )}
                   </div>
                 </div>
               </article>
@@ -461,7 +583,6 @@ export const StudentDashboardTeamSection = ({
           No hay miembros en este proyecto aun.
         </p>
       )}
-
     </StudentDashboardSectionCard>
   );
 };

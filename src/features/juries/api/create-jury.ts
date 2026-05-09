@@ -10,6 +10,7 @@ export const createJuryInvitationInputSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
   eventId: z.number().min(1, "Event is required"),
+  eventType: z.enum(["Exposition", "Competition"]),
 });
 
 export type CreateJuryInvitationInput = z.infer<

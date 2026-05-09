@@ -5,21 +5,26 @@ import { QueryConfig } from "@/lib/react-query";
 import { Event } from "@/types/api";
 import { normalizeEvent } from "./event-adapter";
 
-export const getEventsDropdown = async (): Promise<{ data: Event[] }> => {
-  const response = await api.get<Record<string, any>>(`/events/dropdown`, {
-    params: { page: 1, limit: 100, onlyActive: true },
-  });
-
+const extractEvents = (response: Record<string, any>): Event[] => {
   const rawEvents =
     response?.events ??
+    response?.items ??
     response?.data?.events ??
+    response?.data?.items ??
     response?.data?.data ??
     response?.data ??
     [];
-  const data = Array.isArray(rawEvents) ? rawEvents.map(normalizeEvent) : [];
+
+  return Array.isArray(rawEvents) ? rawEvents.map(normalizeEvent) : [];
+};
+
+export const getEventsDropdown = async (): Promise<{ data: Event[] }> => {
+  const response = await api.get<Record<string, any>>(`/events`, {
+    params: { page: 1, limit: 100, onlyActive: true },
+  });
 
   return {
-    data,
+    data: extractEvents(response),
   };
 };
 
