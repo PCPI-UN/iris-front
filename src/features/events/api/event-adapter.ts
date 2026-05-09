@@ -1,4 +1,5 @@
 import { Event } from "@/types/api";
+import { toEventTypeCode, toEvaluationTypeCode } from "../utils/event-enums";
 
 const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -167,11 +168,11 @@ export const normalizeEvent = (raw: any): Event => {
     statusName: raw?.statusName ?? (active ? "ACTIVE" : "INACTIVE"),
     location: raw?.location,
     locationDetails,
-    eventType: raw?.eventType,
+    eventType: toEventTypeCode(raw?.eventType),
     inscriptionCost,
     inscriptionRequirements: raw?.inscriptionRequirements,
     aboutOurAllies: raw?.aboutOurAllies,
-    evaluationType: raw?.evaluationType,
+    evaluationType: toEvaluationTypeCode(raw?.evaluationType),
     minimumTeamSize: raw?.minimumTeamSize,
     specificInscriptionDetails: raw?.specificInscriptionDetails,
     categories,

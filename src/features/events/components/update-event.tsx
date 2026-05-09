@@ -38,12 +38,14 @@ import {
   getDatePart,
   ensureDateTimeValue,
 } from "../utils/event-date-time";
+import { toEventTypeCode, toEvaluationTypeCode } from "../utils/event-enums";
 
 type UpdateEventProps = {
   eventId: number;
 };
 
 type Award = {
+  id?: number;
   title: string;
   description: string;
   value: string;
@@ -89,8 +91,12 @@ type DateFieldErrors = {
   inscriptionDeadline?: string;
 };
 type InscriptionDetail = {
+  id?: number;
+  eventId?: number;
   title: string;
   description: string;
+  value?: number;
+  isRequired?: boolean;
 };
 
 type UpdateEventFormState = {
@@ -105,11 +111,12 @@ type UpdateEventFormState = {
   evaluationsOpened: boolean;
   isPubliclyJoinable: boolean;
   active: boolean;
+  eventType: 1 | 2;
   inscriptionRequirements: string;
   inscriptionCost: string;
   minimumTeamSize: string;
   aboutOurAllies: string;
-  evaluationType: "ZERO_TO_FIVE" | "ZERO_TO_HUNDRED";
+  evaluationType: 1 | 2;
 };
 
 const INITIAL_FORM_STATE: UpdateEventFormState = {
@@ -124,11 +131,12 @@ const INITIAL_FORM_STATE: UpdateEventFormState = {
   evaluationsOpened: false,
   isPubliclyJoinable: true,
   active: true,
+  eventType: 1,
   inscriptionCost: "",
   inscriptionRequirements: "",
   minimumTeamSize: "",
   aboutOurAllies: "",
-  evaluationType: "ZERO_TO_FIVE",
+  evaluationType: 1,
 };
 
 export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
@@ -174,8 +182,6 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
     if (!event) {
       return;
     }
-    const rawEvaluationType = String(event.evaluationType ?? "");
-
     setFormData({
       name: event.name ?? "",
       description: event.description ?? "",
@@ -188,6 +194,7 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
       evaluationsOpened: Boolean(event.evaluationsOpened),
       isPubliclyJoinable: Boolean(event.isPubliclyJoinable),
       active: Boolean(event.active),
+      eventType: toEventTypeCode(event.eventType),
       inscriptionCost: event.inscriptionCost !== undefined && event.inscriptionCost !== null ? String(event.inscriptionCost) : "",
       inscriptionRequirements: event.inscriptionRequirements ?? "",
       minimumTeamSize:
@@ -195,19 +202,18 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
           ? String(event.minimumTeamSize)
           : "",
       aboutOurAllies: event.aboutOurAllies ?? "",
-      evaluationType:
-        rawEvaluationType === "ZERO_TO_FIVE" || rawEvaluationType === "0-5"
-          ? "ZERO_TO_FIVE"
-          : rawEvaluationType === "ZERO_TO_HUNDRED" || rawEvaluationType === "0-100"
-            ? "ZERO_TO_HUNDRED"
-            : "ZERO_TO_FIVE",
+      evaluationType: toEvaluationTypeCode(event.evaluationType),
     });
 
     setSpecificDetails(
       event.specificInscriptionDetails && event.specificInscriptionDetails.length > 0
         ? event.specificInscriptionDetails.map((detail) => ({
+          id: (detail as { id?: number }).id,
+          eventId: (detail as { eventId?: number }).eventId,
           title: detail.title,
           description: detail.description,
+          value: (detail as { value?: number }).value,
+          isRequired: (detail as { isRequired?: boolean }).isRequired,
         }))
         : [{ title: "", description: "" }]
     );
@@ -225,6 +231,7 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
     setAwards(
       event.awards && event.awards.length > 0
         ? event.awards.map((award) => ({
+          id: (award as { id?: number }).id,
           title: award.title ?? "",
           description: award.description ?? "",
           value:
@@ -338,6 +345,7 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
         inscriptionDeadline: formData.inscriptionDeadline,
         evaluationsOpened: formData.evaluationsOpened,
         active: formData.active,
+        eventType: formData.eventType,
         location: formData.location || undefined,
         locationDetails: formData.locationDetails || undefined,
         inscriptionCost: formData.inscriptionCost === "" ? undefined : Number(formData.inscriptionCost),
@@ -350,10 +358,18 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
         collaborators: collaborators.filter((value) => value.trim() !== ""),
         specificInscriptionDetails: specificDetails.filter(
           (detail) => detail.title.trim() !== "" && detail.description.trim() !== ""
-        ),
+        ).map((detail) => ({
+          id: detail.id,
+          eventId: detail.eventId,
+          title: detail.title,
+          description: detail.description,
+          value: detail.value,
+          isRequired: detail.isRequired,
+        })),
         awards: awards
           .filter((award) => award.title.trim() !== "")
           .map((award) => ({
+            id: award.id,
             title: award.title,
             description: award.description || undefined,
             value: award.value === "" ? undefined : Number(award.value),
@@ -531,18 +547,32 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                           className="flex-1"
                         />
                         <Select
-                          label="Evaluation Type"
-                          selectedKeys={[formData.evaluationType]}
+                          label="Event Type"
+                          selectedKeys={[String(formData.eventType)]}
                           onChange={(e) =>
                             setFormData((prev) => ({
                               ...prev,
-                              evaluationType: e.target.value as "ZERO_TO_FIVE" | "ZERO_TO_HUNDRED",
+                              eventType: toEventTypeCode(e.target.value),
                             }))
                           }
                           className="flex-1"
                         >
-                          <SelectItem key="ZERO_TO_FIVE">0 - 5</SelectItem>
-                          <SelectItem key="ZERO_TO_HUNDRED">0 - 100</SelectItem>
+                          <SelectItem key="1">Exposición</SelectItem>
+                          <SelectItem key="2">Competencia</SelectItem>
+                        </Select>
+                        <Select
+                          label="Evaluation Type"
+                          selectedKeys={[String(formData.evaluationType)]}
+                          onChange={(e) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              evaluationType: toEvaluationTypeCode(e.target.value),
+                            }))
+                          }
+                          className="flex-1"
+                        >
+                          <SelectItem key="1">0 - 5</SelectItem>
+                          <SelectItem key="2">0 - 100</SelectItem>
                         </Select>
                       </div>
 

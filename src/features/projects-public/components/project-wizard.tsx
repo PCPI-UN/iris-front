@@ -43,6 +43,7 @@ export type Participant = {
 };
 
 export type ProjectData = {
+  projectCode: string;
   name: string;
   description: string;
   categoryId: number;
@@ -59,6 +60,8 @@ export type WizardData = {
   documents: DocumentsData;
 };
 
+const normalizeSemesterValue = (value: string) => value.match(/\d+/)?.[0] || value;
+
 type ProjectWizardProps = {
   eventId: number;
   eventType: "Competition" | "Exposition";
@@ -67,7 +70,7 @@ type ProjectWizardProps = {
 const CONFLICT_MESSAGE_KEYS = [
   "Conflicting active submissions found for emails",
   "already have an existing project in this event",
-];
+] as const;
 
 const normalizeBackendErrorMessage = (rawMessage: unknown): string => {
   const fallback = "Error al crear el proyecto. Por favor intente nuevamente.";
@@ -123,6 +126,7 @@ export function ProjectWizard({ eventId, eventType}: ProjectWizardProps) {
   const [wizardData, setWizardData] = useState<WizardData>({
     participants: [],
     project: {
+      projectCode: "",
       name: "",
       description: "",
       categoryId: 0,
@@ -196,7 +200,7 @@ const validateStep = (step: number): boolean => {
 
   try {
     switch (step) {
-      case 1: // Participantes
+      case 1: // Participants validation
         const participantSchemaToUse = eventType === "Competition"
           ? z.array(participantSchemaCompetition)
           : z.array(participantSchemaExposition);
@@ -207,14 +211,12 @@ const validateStep = (step: number): boolean => {
         return true;
 
       case 2:
-        // Para Exposition, paso 2 es Proyecto
-        if (eventType === "Exposition") {
+        if (eventType === "Exposition") { // For an exposition, step 2 is project details and needs validation
           projectSchema.parse(wizardData.project);
         }
-        // Para Competition, paso 2 es Review (no valida, solo muestra)
-        return true;
+        return true; // For a competition, step 2 is review, so we skip validation here and do it all on submit
 
-      case 3: // Documentos (solo Exposition)
+      case 3: // Documents validation (only for exposition)
         documentsSchema.parse(wizardData.documents);
         return true;
 
@@ -252,9 +254,7 @@ const handleSubmit = () => {
   setStepErrors([]);
 
   try {
-    // Para Competition, solo envía participantes
     if (isCompetitionEvent) {
-      // Validar participantes
       z.array(participantSchemaCompetition)
         .min(1, "Debe agregar al menos un participante")
         .parse(wizardData.participants);
@@ -264,7 +264,6 @@ const handleSubmit = () => {
         return;
       }
 
-      // Validar schema de competencia
       const payloadData = {
         eventId: String(eventId),
         eventType: "Competition",
@@ -275,7 +274,7 @@ const handleSubmit = () => {
             lastName: p.lastName,
             email: p.email,
             studentCode: p.studentCode,
-            semester: p.semester,
+            semester: normalizeSemesterValue(p.semester),
             career: p.career,
           }))
         ),
@@ -294,19 +293,17 @@ const handleSubmit = () => {
       return;
     }
 
-    // Para Exposition, envía todo como está
-    // Validar participantes
+    // Validate all steps for exposition on submit
     z.array(participantSchemaExposition)
       .min(1, "Debe agregar al menos un participante")
       .parse(wizardData.participants);
 
-    // Validar proyecto
     projectSchema.parse(wizardData.project);
 
-    // Validar documentos
     documentsSchema.parse(wizardData.documents);
 
     const payloadData = {
+    projectCode: wizardData.project.projectCode.trim(),
       name: wizardData.project.name,
       description: wizardData.project.description,
       eventId: String(eventId),
@@ -318,7 +315,7 @@ const handleSubmit = () => {
           lastName: p.lastName,
           email: p.email,
           studentCode: p.studentCode,
-          semester: p.semester || "",
+          semester: p.semester ? normalizeSemesterValue(p.semester) : "",
           career: p.career || "",
         }))
       ),
@@ -335,6 +332,7 @@ const handleSubmit = () => {
     createProjectInputSchema.parse(payloadData);
 
     const formData = new FormData();
+    if (payloadData.projectCode) formData.append("projectCode", payloadData.projectCode);
     formData.append("name", payloadData.name);
     if (payloadData.description) formData.append("description", payloadData.description);
     formData.append("eventId", payloadData.eventId);
@@ -430,7 +428,7 @@ const handleSubmit = () => {
             <ParticipantsStep
               participants={wizardData.participants}
               onUpdate={updateParticipants}
-              eventType={eventType}  // ← AÑADE ESTO
+              eventType={eventType} 
             />
           )}
           {currentStep === 2 && eventType === "Exposition" && (

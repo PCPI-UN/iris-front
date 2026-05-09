@@ -35,6 +35,7 @@ import {
   getDatePart,
   ensureDateTimeValue,
 } from "../utils/event-date-time";
+import { toEventTypeCode, toEvaluationTypeCode } from "../utils/event-enums";
 
 type Award = {
   title: string;
@@ -90,8 +91,8 @@ export const CreateEvent = () => {
     isPubliclyJoinable: true,
     active: true,
     evaluationsOpened: false,
-    eventType: "Exposition",
-    evaluationType: "ZERO_TO_FIVE",
+    eventType: 1,
+    evaluationType: 1,
   });
 
   const [specificDetails, setSpecificDetails] = useState([{ title: "", description: "" }]);
@@ -134,8 +135,8 @@ export const CreateEvent = () => {
       isPubliclyJoinable: true,
       active: true,
       evaluationsOpened: false,
-      eventType: "Exposition",
-      evaluationType: "ZERO_TO_FIVE",
+      eventType: 1,
+      evaluationType: 1,
     });
     setSpecificDetails([{ title: "", description: "" }]);
     setOrganizers([""]);
@@ -233,6 +234,8 @@ export const CreateEvent = () => {
         evaluationsOpened: Boolean(formData.evaluationsOpened),
         isPubliclyJoinable: Boolean(formData.isPubliclyJoinable),
         active: Boolean(formData.active)??true,
+        eventType: toEventTypeCode(formData.eventType),
+        evaluationType: toEvaluationTypeCode(formData.evaluationType),
         locationDetails: formData.locationDetails || undefined,
         inscriptionCost:
           formData.inscriptionCost === "" || formData.inscriptionCost === undefined
@@ -252,9 +255,6 @@ export const CreateEvent = () => {
       };
 
       if (!dataToSubmit.accessCode) delete dataToSubmit.accessCode;
-      delete dataToSubmit.locationDetail;
-      delete dataToSubmit.cost;
-      delete dataToSubmit.organizations;
 
       const values = await createEventInputSchema.parseAsync(dataToSubmit);
       await createEventMutation.mutateAsync({ data: values });
@@ -375,25 +375,29 @@ export const CreateEvent = () => {
                       <Select
                         label="Tipo de Evento"
                         name="eventType"
-                        defaultSelectedKeys={[formData.eventType]}
-                        onChange={(e) => setFormData({ ...formData, eventType: e.target.value })}
+                        selectedKeys={[String(formData.eventType ?? 1)]}
+                        onChange={(e) =>
+                          setFormData({ ...formData, eventType: Number(e.target.value) })
+                        }
                         isRequired
                         className="flex-1"
                       >
-                        <SelectItem key="Exposition">Exposición</SelectItem>
-                        <SelectItem key="Competition">Competencia</SelectItem>
+                        <SelectItem key="1">Exposición</SelectItem>
+                        <SelectItem key="2">Competencia</SelectItem>
                       </Select>
                     </div>
 
                     <Select
                       label="Tipo de Evaluación"
                       name="evaluationType"
-                      defaultSelectedKeys={[formData.evaluationType]}
-                      onChange={(e) => setFormData({ ...formData, evaluationType: e.target.value })}
+                      selectedKeys={[String(formData.evaluationType ?? 1)]}
+                      onChange={(e) =>
+                        setFormData({ ...formData, evaluationType: Number(e.target.value) })
+                      }
                       className="flex-1"
                     >
-                      <SelectItem key="ZERO_TO_FIVE">0 - 5</SelectItem>
-                      <SelectItem key="ZERO_TO_HUNDRED">0 - 100</SelectItem>
+                      <SelectItem key="1">0 - 5</SelectItem>
+                      <SelectItem key="2">0 - 100</SelectItem>
                     </Select>
 
                     <div className="pt-2 border-t border-default-200">

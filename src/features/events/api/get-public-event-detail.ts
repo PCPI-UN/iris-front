@@ -22,7 +22,11 @@ export const getPublicEventDetail = async ({
       { suppressErrorNotification: true },
     );
 
-    const event = response.data ?? response.event;
+    const event =
+      response.event ??
+      (response.data as any)?.event ??
+      (response.data as any)?.data ??
+      response.data;
     if (!event) {
       throw new Error("Evento no encontrado");
     }

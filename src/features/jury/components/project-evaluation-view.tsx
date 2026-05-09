@@ -173,13 +173,17 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
                 <div className="hidden sm:block">
                   <AvatarGroup
                     participants={
-                      project.pendingParticipants.length > 0
-                        ? project.pendingParticipants.map((p: any) => ({
-                          name: `${p.firstName} ${p.lastName}`.trim()
-                        }))
-                        : project.participants.map((p: any) => ({
-                          name: `${p.firstName} ${p.lastName}`.trim()
-                        }))
+                      project.pendingParticipants?.length > 0
+                        ? project.pendingParticipants
+                            .filter((p: any) => p?.firstName && p?.lastName)
+                            .map((p: any) => ({
+                              name: `${String(p.firstName ?? "").trim()} ${String(p.lastName ?? "").trim()}`.trim()
+                            }))
+                        : project.participants
+                            ?.filter((p: any) => p?.firstName && p?.lastName)
+                            .map((p: any) => ({
+                              name: `${String(p.firstName ?? "").trim()} ${String(p.lastName ?? "").trim()}`.trim()
+                            })) ?? []
                     }
                     size={35}
                   />
@@ -187,18 +191,28 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
 
                 {/* Mobile: Lista de nombres */}
                 <div className="sm:hidden space-y-2">
-                  {(project.pendingParticipants.length > 0
+                  {(project.pendingParticipants?.length > 0
                     ? project.pendingParticipants
                     : project.participants
-                  ).map((participant: any, idx: number) => (
-                    <div key={idx} className="flex items-center gap-2 text-sm">
-                      <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
-                        {participant.firstName[0]}
-                        {participant.lastName[0]}
-                      </div>
-                      <span>{participant.firstName} {participant.lastName}</span>
-                    </div>
-                  ))}
+                  )
+                    ?.filter((p: any) => p?.firstName && p?.lastName)
+                    .map((participant: any, idx: number) => {
+                      const firstName = String(participant.firstName ?? "").trim();
+                      const lastName = String(participant.lastName ?? "").trim();
+                      
+                      if (!firstName || !lastName) return null;
+                      
+                      return (
+                        <div key={idx} className="flex items-center gap-2 text-sm">
+                          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
+                            {firstName[0]}
+                            {lastName[0]}
+                          </div>
+                          <span>{firstName} {lastName}</span>
+                        </div>
+                      );
+                    })
+                    .filter(Boolean)}
                 </div>
               </div>
 
