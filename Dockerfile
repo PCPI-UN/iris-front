@@ -12,7 +12,8 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 # ========================
 FROM base AS deps
 COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile
+RUN npm pkg delete scripts.prepare && \
+  pnpm install --frozen-lockfile
 
 # ========================
 # Stage 3: Builder
