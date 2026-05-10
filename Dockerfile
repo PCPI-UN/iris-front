@@ -34,6 +34,7 @@ ENV NEXT_PUBLIC_MOCK_API_PORT=${NEXT_PUBLIC_MOCK_API_PORT}
 ENV API_URL=${API_URL}
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
+ENV NODE_OPTIONS="--max-old-space-size=4096"
 
 RUN pnpm build 2>&1 || (echo "BUILD FAILED" && exit 1)
 # ========================
