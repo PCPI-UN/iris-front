@@ -55,6 +55,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
 COPY --from=builder /app/public ./public
 COPY --chown=nextjs:nodejs package.json ./
 
+RUN chown -R nextjs:nodejs /app
 USER nextjs
 
 EXPOSE ${PORT}
