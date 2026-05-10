@@ -55,7 +55,7 @@ RUN apk add --no-cache dumb-init && \
 COPY --from=deps --chown=nextjs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
 COPY --from=builder /app/public ./public
-COPY --chown=nextjs:nodejs package.json ./
+COPY --chown=nextjs:nodejs package.json pnpm-lock.yaml ./
 
 RUN chown -R nextjs:nodejs /app
 USER nextjs
@@ -65,4 +65,4 @@ EXPOSE ${PORT}
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD node -e "require('http').get('http://localhost:' + process.env.PORT, (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})" || exit 1
 
-CMD ["dumb-init", "pnpm", "start"]
+CMD ["dumb-init", "node_modules/.bin/next", "start"]
