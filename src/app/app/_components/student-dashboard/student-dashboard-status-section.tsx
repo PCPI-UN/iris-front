@@ -32,20 +32,20 @@ export const StudentDashboardStatusSection = ({
             id="project-state"
             role="status"
             aria-live="polite"
-            className="flex w-full flex-col gap-3 rounded-xl border border-default-200 bg-default-50/50 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-5"
+            className="flex w-full flex-col gap-3 rounded-xl border border-default-200 bg-default-50/50 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-5"
           >
             <label
               htmlFor="project-state"
-              className="text-xs font-semibold uppercase tracking-wide text-default-500"
+              className="text-md font-bold tracking-wide text-default-600"
             >
-              Estado actual:
+              Estado Actual:
             </label>
 
             <span
-              className={`inline-flex w-full items-center justify-center gap-2 rounded-full p-1 text-sm font-semibold sm:w-auto sm:px-3 sm:py-1 ${getStateColor(state)}`}
+              className={`inline-flex w-full items-center justify-center gap-2 rounded-full p-1 text-md font-semibold sm:w-auto sm:px-3 sm:py-1 ${getStateColor(state)}`}
               aria-label={`Estado: ${getProjectStateLabel(state)}`}
             >
-              <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+              <CheckCircle2 className="size-5" aria-hidden="true" />
               {getProjectStateLabel(state)}
             </span>
           </div>

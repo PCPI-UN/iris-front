@@ -48,3 +48,9 @@ export const CAREER_OPTIONS = [
   { label: "Ing Biomédica", value: "Ingeniería Biomédica" },
   { label: "Ciencia de Datos", value: "Ciencia de Datos" },
 ];
+
+export const statusParticipantOptions = [
+  { label: 1, value: "PENDING" },
+  { label: 2, value: "INVITED" },
+  { label: 3, value: "JOINED" },
+];

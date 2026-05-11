@@ -7,6 +7,7 @@ import { useNotifications } from "@/components/ui/notifications";
 import { useUser } from "@/lib/auth";
 import { useChangeProjectToUnderReview } from "@/features/projects/api/change-project-to-under-review";
 import { useProject as useMyProjectByEvent } from "@/features/projects/api/get-project-user-event";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Spinner } from "@/components/ui/spinner";
 import { StudentDashboardDocumentsSection } from "./student-dashboard/student-dashboard-documents-section";
@@ -34,6 +35,12 @@ export const StudentDashboard = ({ eventId }: StudentDashboardProps) => {
   const project = projectQuery.data?.project;
   const event = projectQuery.data?.event;
   const isEditMode = (project?.state as string) === "REQUEST_CHANGES";
+
+  useEffect(() => {
+    if (!user.isLoading && !user.data) {
+      router.replace("/");
+    }
+  }, [router, user.data, user.isLoading]);
 
   const handleSaveChanges = async () => {
     if (!project?.id) return;
@@ -66,6 +73,10 @@ export const StudentDashboard = ({ eventId }: StudentDashboardProps) => {
         <Spinner size="lg" />
       </div>
     );
+  }
+
+  if (!user.data) {
+    return null;
   }
 
   return (
@@ -132,6 +143,7 @@ export const StudentDashboard = ({ eventId }: StudentDashboardProps) => {
                 docsProject={project.documents || []}
                 canEdit={isEditMode}
                 projectId={project.id}
+                eventId={event.id}
               />
             )}
 
@@ -146,7 +158,7 @@ export const StudentDashboard = ({ eventId }: StudentDashboardProps) => {
             )}
 
             <StudentDashboardTeamSection
-              UserEmail={user.data?.email || undefined }
+              UserEmail={user.data?.email || undefined}
               participants={project.participants || []}
               canEdit={isEditMode}
               projectId={project.id}
@@ -155,7 +167,10 @@ export const StudentDashboard = ({ eventId }: StudentDashboardProps) => {
         </div>
       )}
 
-      <aside id="save-changes" className="w-full px-8 flex justify-end lg:w-auto">
+      <aside
+        id="save-changes"
+        className="w-full px-8 flex justify-end lg:w-auto"
+      >
         {isEditMode ? (
           <Button
             isIconOnly
