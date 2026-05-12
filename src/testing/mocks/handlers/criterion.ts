@@ -11,6 +11,7 @@ type CriterionBody = {
   description?: string;
   weight: number;
   active?: boolean;
+  categoryIds?: number[];
   courseIds?: number[];
 };
 
@@ -37,8 +38,8 @@ export const criterionHandlers = [
           .getAll()
           .filter(
             (c: any) =>
-              Array.isArray(c.courseIds) &&
-              c.courseIds.includes(Number(courseId))
+              Array.isArray(c.categoryIds ?? c.courseIds) &&
+              (c.categoryIds ?? c.courseIds).includes(Number(courseId))
           )
           .map((c: any) => ({
             id: c.id,
@@ -47,7 +48,8 @@ export const criterionHandlers = [
             description: c.description,
             weight: c.weight,
             active: c.active ?? true,
-            courseIds: c.courseIds || [],
+            categoryIds: c.categoryIds || c.courseIds || [],
+            courseIds: c.courseIds || c.categoryIds || [],
           }));
 
         return HttpResponse.json({ criterions: items });
@@ -70,27 +72,27 @@ export const criterionHandlers = [
       const url = new URL(request.url);
       const page = Number(url.searchParams.get("page") || 1);
       const eventId = url.searchParams.get("eventId");
-      const courseId = url.searchParams.get("courseId");
-      const courseIdsRaw = url.searchParams.get("courseIds");
-      const courseIds = courseIdsRaw
-        ? courseIdsRaw
+      const categoryId = url.searchParams.get("categoryId") || url.searchParams.get("courseId");
+      const categoryIdsRaw = url.searchParams.get("categoryIds") || url.searchParams.get("courseIds");
+      const categoryIds = categoryIdsRaw
+        ? categoryIdsRaw
             .split(",")
             .map((s) => s.trim())
             .filter(Boolean)
         : [];
-      const effectiveCourseIds =
-        courseIds.length > 0 ? courseIds : courseId ? [courseId] : [];
+      const effectiveCategoryIds =
+        categoryIds.length > 0 ? categoryIds : categoryId ? [categoryId] : [];
 
       let all = db.criterion.getAll();
       if (eventId) {
         all = all.filter((c: any) => String(c.eventId) === String(eventId));
       }
-      if (effectiveCourseIds.length > 0) {
+      if (effectiveCategoryIds.length > 0) {
         all = all.filter(
           (c: any) =>
-            Array.isArray(c.courseIds) &&
-            c.courseIds.some((id: number | string) =>
-              effectiveCourseIds.includes(String(id))
+            Array.isArray(c.categoryIds ?? c.courseIds) &&
+            (c.categoryIds ?? c.courseIds).some((id: number | string) =>
+              effectiveCategoryIds.includes(String(id))
             )
         );
       }
@@ -103,7 +105,8 @@ export const criterionHandlers = [
         description: c.description,
         weight: c.weight,
         active: c.active ?? true,
-        courseIds: c.courseIds || [],
+        categoryIds: c.categoryIds || c.courseIds || [],
+        courseIds: c.courseIds || c.categoryIds || [],
         createdAt: c.createdAt,
       }));
       return HttpResponse.json({
@@ -150,7 +153,8 @@ export const criterionHandlers = [
         description: c.description,
         weight: c.weight,
         active: c.active ?? true,
-        courseIds: c.courseIds || [],
+        categoryIds: c.categoryIds || c.courseIds || [],
+        courseIds: c.courseIds || c.categoryIds || [],
         createdAt: c.createdAt,
       });
     } catch (error: any) {
@@ -185,7 +189,16 @@ export const criterionHandlers = [
         description: body.description,
         weight: body.weight,
         active: body.active ?? true,
-        courseIds: Array.isArray(body.courseIds) ? body.courseIds : [],
+        categoryIds: Array.isArray(body.categoryIds)
+          ? body.categoryIds
+          : Array.isArray(body.courseIds)
+            ? body.courseIds
+            : [],
+        courseIds: Array.isArray(body.courseIds)
+          ? body.courseIds
+          : Array.isArray(body.categoryIds)
+            ? body.categoryIds
+            : [],
       };
       const created = db.criterion.create(criterionBody);
       await persistDb("criterion");
@@ -225,8 +238,14 @@ export const criterionHandlers = [
           updateData.description = data.description;
         if (typeof data.weight === "number") updateData.weight = data.weight;
         if (typeof data.active === "boolean") updateData.active = data.active;
-        if (Array.isArray(data.courseIds))
+        if (Array.isArray(data.categoryIds)) {
+          updateData.categoryIds = data.categoryIds;
+          updateData.courseIds = data.categoryIds;
+        }
+        if (Array.isArray(data.courseIds)) {
+          updateData.categoryIds = data.courseIds;
           updateData.courseIds = data.courseIds;
+        }
         const criterion = db.criterion.update({
           where: { id: { equals: criterionId } },
           data: updateData,

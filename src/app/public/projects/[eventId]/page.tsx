@@ -10,7 +10,7 @@ import {
 import { paths } from "@/config/paths";
 import { ProjectWizard } from "@/features/projects-public/components/project-wizard";
 import { PublicLayout } from "@/components/layouts/public-layout";
-import { getCoursesDropdownQueryOptions } from "@/features/courses/api/get-courses-dropdown";
+import { getCategoriesDropdownQueryOptions } from "@/features/courses/api/get-categories-dropdown";
 import { getPublicEventDetailQueryOptions } from "@/features/events/api/get-public-event-detail";
 import {
   extractEventIdFromSlug,
@@ -62,7 +62,7 @@ const PublicProjectPage = ({
         setEventType(toPublicEventType(eventDetailResult.data.eventType));
 
         await queryClient.prefetchQuery(
-          getCoursesDropdownQueryOptions(parsedEventId),
+          getCategoriesDropdownQueryOptions(parsedEventId),
         );
 
         setDehydratedState(dehydrate(queryClient));

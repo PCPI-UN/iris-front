@@ -18,7 +18,7 @@ import { useUser } from "@/lib/auth";
 import { Select, SelectItem } from "@/components/ui/select";
 import { useEffect, useState } from "react";
 import { useEvents } from "@/features/events/api/get-events";
-import { useCourses } from "@/features/courses/api/get-courses";
+import { useCategories } from "@/features/courses/api/get-categories";
 import { useCriterion } from "../api/get-criterion";
 import {
   updateCriteriaInputSchema,
@@ -34,7 +34,7 @@ export const UpdateCriteria = ({ criterionId }: UpdateCriteriaProps) => {
   const { addNotification } = useNotifications();
   const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
   const [selectedEvent, setSelectedEvent] = useState<string>("");
-  const [selectedCourses, setSelectedCourses] = useState<Set<string>>(
+  const [selectedCategories, setSelectedCategories] = useState<Set<string>>(
     new Set()
   );
 
@@ -66,20 +66,20 @@ export const UpdateCriteria = ({ criterionId }: UpdateCriteriaProps) => {
   useEffect(() => {
     if (isOpen && criterion) {
       setSelectedEvent(criterion.eventId ? String(criterion.eventId) : "");
-      const preselected = criterion.courseIds
-        ? new Set(criterion.courseIds.map((id) => String(id)))
+      const preselected = criterion.categoryIds
+        ? new Set(criterion.categoryIds.map((id) => String(id)))
         : new Set<string>();
-      setSelectedCourses(preselected);
+      setSelectedCategories(preselected);
     }
   }, [isOpen, criterion]);
 
   const eventsQuery = useEvents({ page: 1 });
-  const coursesQuery = useCourses({
+  const categoriesQuery = useCategories({
     eventId: selectedEvent ? Number(selectedEvent) : undefined,
     page: 1,
   });
   const events = eventsQuery.data?.data ?? [];
-  const courses = coursesQuery.data?.data ?? [];
+  const categories = categoriesQuery.data?.data ?? [];
 
   return (
     <>
@@ -140,8 +140,8 @@ export const UpdateCriteria = ({ criterionId }: UpdateCriteriaProps) => {
                     data.description = rawData.description;
                   if (rawData.weight) data.weight = Number(rawData.weight);
                   if (selectedEvent) data.eventId = Number(selectedEvent);
-                  if (selectedCourses && selectedCourses.size) {
-                    data.courseIds = Array.from(selectedCourses).map((id) =>
+                  if (selectedCategories && selectedCategories.size) {
+                    data.categoryIds = Array.from(selectedCategories).map((id) =>
                       Number(id)
                     );
                   }
@@ -174,7 +174,7 @@ export const UpdateCriteria = ({ criterionId }: UpdateCriteriaProps) => {
                     onSelectionChange={(keys) => {
                       const id = Array.from(keys)[0] as string;
                       setSelectedEvent(id || "");
-                      setSelectedCourses(new Set());
+                      setSelectedCategories(new Set());
                     }}
                     isLoading={eventsQuery.isLoading}
                     isRequired
@@ -185,30 +185,30 @@ export const UpdateCriteria = ({ criterionId }: UpdateCriteriaProps) => {
                   </Select>
 
                   <Select
-                    label="Courses"
+                    label="Categories"
                     placeholder={
                       selectedEvent
-                        ? "Select one or more courses"
+                        ? "Select one or more categories"
                         : "Select event first"
                     }
                     selectionMode="multiple"
-                    selectedKeys={selectedCourses}
+                    selectedKeys={selectedCategories}
                     onSelectionChange={(keys) => {
                       const set =
                         keys instanceof Set ? keys : new Set(Array.from(keys));
-                      setSelectedCourses(set as Set<string>);
+                      setSelectedCategories(set as Set<string>);
                     }}
                     isDisabled={!selectedEvent}
-                    isLoading={!!selectedEvent && coursesQuery.isLoading}
+                    isLoading={!!selectedEvent && categoriesQuery.isLoading}
                   >
                     {selectedEvent ? (
-                      courses.length ? (
-                        courses.map((c) => (
+                      categories.length ? (
+                        categories.map((c) => (
                           <SelectItem key={String(c.id)}>{c.code}</SelectItem>
                         ))
                       ) : (
-                        <SelectItem key="no-courses" isDisabled>
-                          No courses
+                        <SelectItem key="no-categories" isDisabled>
+                          No categories
                         </SelectItem>
                       )
                     ) : (

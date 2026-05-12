@@ -11,7 +11,7 @@ import { Chip } from "@heroui/chip";
 import { UpdateCriteria } from "./update-criteria";
 import { DeleteCriteria } from "./delete-criteria";
 import { useEventsDropdown } from "@/features/events/api/get-events-dropdown";
-import { useCourses } from "@/features/courses/api/get-courses";
+import { useCategories } from "@/features/courses/api/get-categories";
 
 export const CriteriaList = () => {
   const searchParams = useSearchParams();
@@ -20,25 +20,25 @@ export const CriteriaList = () => {
 
   // Local filter state
   const [selectedEventKey, setSelectedEventKey] = useState<string>("");
-  const [selectedCourseKey, setSelectedCourseKey] = useState<string>("");
+  const [selectedCategoryKey, setSelectedCategoryKey] = useState<string>("");
 
   // Queries
   const criteriaQuery = useCriteria({
     page,
     limit: 100,
     eventId: selectedEventKey ? Number(selectedEventKey) : undefined,
-    courseId: selectedCourseKey ? Number(selectedCourseKey) : undefined,
+    categoryId: selectedCategoryKey ? Number(selectedCategoryKey) : undefined,
   });
 
   const eventsQuery = useEventsDropdown();
-  const coursesQuery = useCourses({
+  const categoriesQuery = useCategories({
     page: 1,
     eventId: selectedEventKey ? Number(selectedEventKey) : undefined,
     queryConfig: { enabled: !!selectedEventKey },
   });
 
   const events = eventsQuery.data?.data ?? [];
-  const courses = coursesQuery.data?.data ?? [];
+  const categories = categoriesQuery.data?.data ?? [];
 
   const isLoading = criteriaQuery.isLoading || eventsQuery.isLoading;
 
@@ -58,12 +58,12 @@ export const CriteriaList = () => {
     const selected = Array.from(keys)[0];
     const eventKey = selected ? String(selected) : "";
     setSelectedEventKey(eventKey);
-    setSelectedCourseKey(""); // Reset course when event changes
+    setSelectedCategoryKey("");
   }, []);
 
-  const handleCourseChange = useCallback((keys: any) => {
+  const handleCategoryChange = useCallback((keys: any) => {
     const selected = Array.from(keys)[0];
-    setSelectedCourseKey(selected ? String(selected) : "");
+    setSelectedCategoryKey(selected ? String(selected) : "");
   }, []);
 
   return (
@@ -86,25 +86,25 @@ export const CriteriaList = () => {
 
         <div className="w-full sm:flex-1">
           <Select
-            label="Curso"
+            label="Categoría"
             placeholder={
               selectedEventKey
-                ? "Selecciona un curso (opcional)"
+                ? "Selecciona una categoría (opcional)"
                 : "Selecciona un evento primero"
             }
-            selectedKeys={selectedCourseKey ? [selectedCourseKey] : []}
-            onSelectionChange={handleCourseChange}
+            selectedKeys={selectedCategoryKey ? [selectedCategoryKey] : []}
+            onSelectionChange={handleCategoryChange}
             isDisabled={!selectedEventKey}
-            isLoading={!!selectedEventKey && coursesQuery.isLoading}
+            isLoading={!!selectedEventKey && categoriesQuery.isLoading}
           >
-            {courses.length > 0 ? (
-              courses.map((c) => (
+            {categories.length > 0 ? (
+              categories.map((c) => (
                 <SelectItem key={String(c.id)}>{c.code}</SelectItem>
               ))
             ) : (
-              <SelectItem key="no-courses" isDisabled>
+              <SelectItem key="no-categories" isDisabled>
                 {selectedEventKey
-                  ? "No hay cursos disponibles"
+                  ? "No hay categorías disponibles"
                   : "Selecciona un evento primero"}
               </SelectItem>
             )}
@@ -124,7 +124,7 @@ export const CriteriaList = () => {
       ) : criteria.length === 0 ? (
         <div className="flex h-48 w-full items-center justify-center text-default-400">
           No hay criterios para este evento
-          {selectedCourseKey && " y curso"}
+          {selectedCategoryKey && " y categoría"}
         </div>
       ) : (
         <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">

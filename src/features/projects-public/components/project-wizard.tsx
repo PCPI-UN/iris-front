@@ -7,7 +7,7 @@ import { ParticipantsStep } from "./wizard-steps/participants-step";
 import { ProjectDetailsStep } from "./wizard-steps/project-details-step";
 import { DocumentsStep } from "./wizard-steps/documents-step";
 import { ReviewStep } from "./wizard-steps/review-step";
-import { useCoursesDropdown } from "@/features/courses/api/get-courses-dropdown";
+import { useCategoriesDropdown } from "@/features/courses/api/get-categories-dropdown";
 import { CheckCircle2, FileText, Users, Upload } from "lucide-react";
 import { cn } from "@/utils/cn";
 import { z } from "zod";
@@ -30,6 +30,7 @@ import {
   ModalFooter,
 } from "@/components/ui/modal";
 import { paths } from "@/config/paths";
+import { appendLegacyCourseIdToFormData } from "@/lib/compat/category-legacy";
 
 export type Participant = {
   id: string;
@@ -45,7 +46,7 @@ export type ProjectData = {
   projectCode: string;
   name: string;
   description: string;
-  courseId: number;
+  categoryId: number;
 };
 
 export type DocumentsData = {
@@ -128,7 +129,7 @@ export function ProjectWizard({ eventId, eventType}: ProjectWizardProps) {
       projectCode: "",
       name: "",
       description: "",
-      courseId: 0,
+      categoryId: 0,
     },
     documents: {
       poster: null,
@@ -136,20 +137,20 @@ export function ProjectWizard({ eventId, eventType}: ProjectWizardProps) {
     },
   });
 
-  const competitionCoursesQuery = useCoursesDropdown({
+  const competitionCategoriesQuery = useCategoriesDropdown({
     eventId,
     queryConfig: { enabled: isCompetitionEvent && !!eventId },
   });
 
-  const autoAssignedCourseId = competitionCoursesQuery.data?.data?.[0]?.id;
+  const autoAssignedCategoryId = competitionCategoriesQuery.data?.data?.[0]?.id;
 
   useEffect(() => {
-    if (!isCompetitionEvent || !autoAssignedCourseId) {
+    if (!isCompetitionEvent || !autoAssignedCategoryId) {
       return;
     }
 
     setWizardData((prev) => {
-      if (prev.project.courseId === autoAssignedCourseId) {
+      if (prev.project.categoryId === autoAssignedCategoryId) {
         return prev;
       }
 
@@ -157,11 +158,11 @@ export function ProjectWizard({ eventId, eventType}: ProjectWizardProps) {
         ...prev,
         project: {
           ...prev.project,
-          courseId: autoAssignedCourseId,
+          categoryId: autoAssignedCategoryId,
         },
       };
     });
-  }, [isCompetitionEvent, autoAssignedCourseId]);
+  }, [isCompetitionEvent, autoAssignedCategoryId]);
 
   const createProjectMutation = useCreateProject({
     mutationConfig: {
@@ -258,15 +259,15 @@ const handleSubmit = () => {
         .min(1, "Debe agregar al menos un participante")
         .parse(wizardData.participants);
 
-      if (!wizardData.project.courseId) {
-        setStepErrors(["No se pudo asignar automáticamente un curso para este evento. Intente nuevamente más tarde."]);
+      if (!wizardData.project.categoryId) {
+        setStepErrors(["No se pudo asignar automáticamente una categoría para este evento. Intente nuevamente más tarde."]);
         return;
       }
 
       const payloadData = {
         eventId: String(eventId),
         eventType: "Competition",
-        courseId: String(wizardData.project.courseId),
+        categoryId: String(wizardData.project.categoryId),
         participants: JSON.stringify(
           wizardData.participants.map(p => ({
             firstName: p.firstName,
@@ -284,7 +285,7 @@ const handleSubmit = () => {
       const formData = new FormData();
       formData.append("eventId", payloadData.eventId);
       formData.append("eventType", payloadData.eventType);
-      formData.append("courseId", payloadData.courseId);
+      appendLegacyCourseIdToFormData(formData, payloadData.categoryId);
       formData.append("participants", payloadData.participants);
       formData.append("name", `Equipo de ${wizardData.participants.map(p => p.firstName).join("-")}`);
 
@@ -307,7 +308,7 @@ const handleSubmit = () => {
       description: wizardData.project.description,
       eventId: String(eventId),
       eventType: "Exposition",
-      courseId: String(wizardData.project.courseId),
+      categoryId: String(wizardData.project.categoryId),
       participants: JSON.stringify(
         wizardData.participants.map(p => ({
           firstName: p.firstName,
@@ -336,7 +337,7 @@ const handleSubmit = () => {
     if (payloadData.description) formData.append("description", payloadData.description);
     formData.append("eventId", payloadData.eventId);
     formData.append("eventType", payloadData.eventType);
-    formData.append("courseId", payloadData.courseId);
+    appendLegacyCourseIdToFormData(formData, payloadData.categoryId);
     formData.append("participants", payloadData.participants);
     formData.append("documents", payloadData.documents);
 
