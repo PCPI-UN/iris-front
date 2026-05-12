@@ -1,6 +1,5 @@
 "use client";
 
-import { ProjectsTable } from "@/features/assignments/components/project-table";
 import { AssignJudgesPanel } from "@/features/assignments/components/assign-judges-panel";
 import { RoleGuard } from "@/components/auth/role-guard";
 import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query";
