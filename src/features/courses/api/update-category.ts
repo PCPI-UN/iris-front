@@ -3,34 +3,34 @@ import { z } from "zod";
 
 import { api } from "@/lib/api-client";
 import { MutationConfig } from "@/lib/react-query";
-import { Course } from "@/types/api";
+import { Category } from "@/types/api";
 
-import { getCourseQueryOptions } from "./get-course";
+import { getCategoryQueryOptions } from "./get-category";
 
-export const updateCourseInputSchema = z.object({
+export const updateCategoryInputSchema = z.object({
   id: z.number().min(1, "ID is required"),
   code: z.string().min(1, "Required"),
   description: z.string().min(1, "Required"),
   active: z.boolean(),
 });
 
-export type UpdateCourseInput = z.infer<typeof updateCourseInputSchema>;
+export type UpdateCategoryInput = z.infer<typeof updateCategoryInputSchema>;
 
-export const updateCourse = ({
+export const updateCategory = ({
   data
 }: {
-  data: UpdateCourseInput;
-}): Promise<{ data: Course }> => {
-  return api.patch(`/events/courses/update`, data);
+  data: UpdateCategoryInput;
+}): Promise<{ ok: boolean; message: string }> => {
+  return api.patch(`/events/courses/${data.id}`, data);
 };
 
-type UseUpdateCourseOptions = {
-  mutationConfig?: MutationConfig<typeof updateCourse>;
+type UseUpdateCategoryOptions = {
+  mutationConfig?: MutationConfig<typeof updateCategory>;
 };
 
-export const useUpdateCourse = ({
+export const useUpdateCategory = ({
   mutationConfig,
-}: UseUpdateCourseOptions = {}) => {
+}: UseUpdateCategoryOptions = {}) => {
   const queryClient = useQueryClient();
 
   const { onSuccess, ...restConfig } = mutationConfig || {};
@@ -38,14 +38,14 @@ export const useUpdateCourse = ({
   return useMutation({
     onSuccess: (data, variables, ...args) => {
       queryClient.invalidateQueries({
-        queryKey: ["courses"],
+        queryKey: ["categories"],
       });
       queryClient.refetchQueries({
-        queryKey: getCourseQueryOptions(data.data.id).queryKey,
+        queryKey: getCategoryQueryOptions(variables.data.id).queryKey,
       });
       onSuccess?.(data, variables, ...args);
     },
     ...restConfig,
-    mutationFn: updateCourse,
+    mutationFn: updateCategory,
   });
 };

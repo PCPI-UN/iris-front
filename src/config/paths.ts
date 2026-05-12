@@ -95,6 +95,10 @@ export const paths = {
       getHref: () => "/app/courses",
       roles: ["Admin"],
     },
+    categories: {
+      getHref: () => "/app/categories",
+      roles: ["Admin"],
+    },
     project_jury: {
       getHref: (id: string) => `/app/events/${id}`,
       roles: ["User"], // Requires subrole JURY in the specific event

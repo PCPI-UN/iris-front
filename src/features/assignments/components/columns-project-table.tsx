@@ -1,6 +1,5 @@
 import { Column } from "@/components/data-table";
 import { StatusBadge } from "@/components/ui/status-badge/status-badge";
-import { Project } from "@/types/api";
 import { Button } from "@/components/ui/button";
 import { EyeIcon, UserRoundPlus } from "lucide-react";
 

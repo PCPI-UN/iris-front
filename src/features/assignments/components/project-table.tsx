@@ -1,7 +1,6 @@
 "use client";
 
 import { DataTable } from "@/components/data-table";
-import { Button } from "@/components/ui/button";
 import { columnsProject } from "./columns-project-table";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useProjects } from "@/features/projects/api/get-projects";
@@ -36,7 +35,7 @@ export const ProjectsTable = ({
   };
   
 
-  const columns = columnsProject({onSelectProject, onViewProject})
+  const columns = columnsProject({onSelectProject, onViewProject});
 
   return (
     <div className="flex justify-between mr-5">

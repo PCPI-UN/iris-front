@@ -1,6 +1,7 @@
 import { useQuery, queryOptions } from "@tanstack/react-query";
 
 import { api } from "@/lib/api-client";
+import { normalizeCategoryIds } from "@/lib/compat/category-legacy";
 import { QueryConfig } from "@/lib/react-query";
 import { Criterion } from "@/types/api";
 
@@ -10,10 +11,13 @@ export const getCriterion = async ({
   criterionId: number;
 }): Promise<{ data: Criterion }> => {
   const response = await api.get<Criterion>(`/criterions/${criterionId}`);
+  const criterion = (response as any).data || response;
 
-  // If the response has a 'data' property, use it; otherwise wrap the response
   return {
-    data: (response as any).data || response,
+    data: {
+      ...criterion,
+      categoryIds: normalizeCategoryIds(criterion) as number[],
+    },
   };
 };
 
