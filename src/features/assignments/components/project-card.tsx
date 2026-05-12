@@ -3,7 +3,7 @@
 import { DataTable } from "@/components/data-table";
 import { Button } from "@/components/ui/button";
 import { columnsProject } from "./columns-project-table";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useProjects } from "@/features/projects/api/get-projects";
 import { GlassCard } from "@/features/landing/components/glass-card";
 import { StatusBadge } from "@/components/ui/status-badge/status-badge";
@@ -15,7 +15,6 @@ import { ProjectPanel } from "./project-panel";
 export const ProjectsCard = () => {
 
   const searchParams = useSearchParams();
-  const router = useRouter();
   
   const page = searchParams?.get("page") ? Number(searchParams.get("page")) : 1;
   const eventId = searchParams?.get("event") ? Number(searchParams.get("event")) : 0;
