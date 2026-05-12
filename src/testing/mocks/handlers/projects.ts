@@ -84,6 +84,15 @@ type ProjectDTO = {
   }>;
 };
 
+type ProjectWithJurorsDTO = ProjectDTO & {
+  jurors: Array<{
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  }>;
+};
+
 const mapProjectToDTO = (project: any): ProjectDTO => {
   return {
     id: project.id,
@@ -98,6 +107,32 @@ const mapProjectToDTO = (project: any): ProjectDTO => {
     documents: project.documents ?? [],
     reason: project.reason,
     participants: project.participants ?? [],
+  };
+};
+
+const mapProjectWithJurorsToDTO = (project: any): ProjectWithJurorsDTO => {
+  const jurors = (project.jurorAssignments ?? [])
+    .map((assignment: any) => {
+      const user = db.user.findFirst({
+        where: { id: { equals: String(assignment?.memberUserId ?? '') } },
+      });
+
+      if (!user) {
+        return null;
+      }
+
+      return {
+        id: String(user.id),
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+      };
+    })
+    .filter(Boolean) as ProjectWithJurorsDTO['jurors'];
+
+  return {
+    ...mapProjectToDTO(project),
+    jurors,
   };
 };
 
@@ -207,6 +242,105 @@ export const projectsHandlers = [
     } catch (error: any) {
       return HttpResponse.json(
         { message: error?.message || "Server Error" },
+        { status: 500 }
+      );
+    }
+  }),
+
+  http.get(`${env.API_URL}/projects/by-event/:eventId/with-jurors`, async ({ cookies, request, params }) => {
+    await networkDelay();
+
+    try {
+      const { user, error } = requireAuth(cookies);
+      if (error || !user) {
+        return HttpResponse.json({ message: error || 'Unauthorized' }, { status: 401 });
+      }
+
+      const rawEventId = String(params.eventId ?? '');
+      if (!rawEventId || rawEventId === 'undefined' || rawEventId === 'NaN') {
+        return HttpResponse.json({ items: [], page: 1, limit: PAGE_SIZE, total: 0, totalPages: 1 });
+      }
+
+      const eventId = toInternalPrefixedId(rawEventId, 'event');
+      const url = new URL(request.url);
+      const page = Number(url.searchParams.get('currentPage') || 1);
+      const itemsPerPage = Number(url.searchParams.get('itemsPerPage') || PAGE_SIZE);
+      const state = url.searchParams.get('state');
+      const rawCourseId = url.searchParams.get('courseId');
+      const courseId = rawCourseId ? toInternalPrefixedId(rawCourseId, 'course') : undefined;
+      const searchText = url.searchParams.get('q')?.trim().toLowerCase() || '';
+      const validPage = validatePage(page);
+
+      let allProjects = db.project
+        .getAll()
+        .filter((p) => String(p.eventId) === String(eventId));
+
+      if (state) {
+        allProjects = allProjects.filter((p) => String(p.state) === String(state));
+      }
+
+      if (courseId) {
+        allProjects = allProjects.filter((p) => String(p.courseId) === String(courseId));
+      }
+
+      if (searchText) {
+        allProjects = allProjects.filter((project) => {
+          const jurorText = (project.jurorAssignments ?? [])
+            .map((assignment: any) => {
+              const user = db.user.findFirst({
+                where: { id: { equals: String(assignment?.memberUserId ?? '') } },
+              });
+
+              return user ? `${user.firstName} ${user.lastName} ${user.email}` : '';
+            })
+            .join(' ')
+            .toLowerCase();
+
+          const participantText = (project.participants ?? [])
+            .map((participant: any) => `${participant.firstName} ${participant.lastName} ${participant.email}`)
+            .join(' ')
+            .toLowerCase();
+
+          return [
+            project.name,
+            project.description ?? '',
+            project.eventNumber ?? '',
+            String(project.courseId ?? ''),
+            String(project.state ?? ''),
+            jurorText,
+            participantText,
+          ]
+            .join(' ')
+            .toLowerCase()
+            .includes(searchText);
+        });
+      }
+
+      if (user.role !== 'ADMIN') {
+        const userId = (user as any)?.id ?? (user as any)?.userId;
+        if (!userId || !isUserJuryOfEvent(userId, eventId)) {
+          allProjects = [];
+        } else {
+          allProjects = allProjects.filter((p) => isUserAssignedToProject(p, userId));
+        }
+      }
+
+      const total = allProjects.length;
+      const pagination = calculatePagination(total, validPage, itemsPerPage);
+      const start = itemsPerPage * (pagination.page - 1);
+      const end = start + itemsPerPage;
+      const items = allProjects.slice(start, end).map(mapProjectWithJurorsToDTO);
+
+      return HttpResponse.json({
+        items,
+        page: pagination.page,
+        limit: itemsPerPage,
+        total: pagination.total,
+        totalPages: pagination.totalPages,
+      });
+    } catch (error: any) {
+      return HttpResponse.json(
+        { message: error?.message || 'Server Error' },
         { status: 500 }
       );
     }

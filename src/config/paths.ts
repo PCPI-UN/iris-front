@@ -78,6 +78,10 @@ export const paths = {
       getHref: () => "/app/projects",
       roles: ["Admin"],
     },
+    monitoring: {
+      getHref: () => "/app/monitoreo",
+      roles: ["Admin"],
+    },
     juries: {
       getHref: () => "/app/juries",
     },
