@@ -26,7 +26,6 @@ export const ProjectsCard = () => {
 
   const projectsQuery = useProjects({ page, eventId, state, courseId });
   const projects = projectsQuery.data?.data;
-  const meta = projectsQuery.data?.meta;
 
   const [selectedProject, setSelectedProject] = useState<any | null>(null);
   const [selectedProjectView, setSelectedProjectView] = useState<any | null>(null);
