@@ -13,9 +13,15 @@ import {
   BookOpen,
   Check,
   X,
+  Plus,
 } from "lucide-react";
 import { ProjectParticipant } from "@/types/api";
-import { getInitials } from "../../../../features/events/api/student-dashboard.helpers";
+import {
+  getInitials,
+  getParticipantStatusColor,
+  getParticipantStatusLabel,
+  normalizeParticipantStatus,
+} from "../../../../features/events/api/student-dashboard.helpers";
 import { StudentDashboardSectionCard } from "./student-dashboard-section-card";
 import {
   SEMESTER_OPTIONS,
@@ -67,6 +73,7 @@ export const StudentDashboardTeamSection = ({
     career: "",
   });
 
+  
   const addUpdateParticipantMutation = useAddUpdateParticipant({
     onSuccess: () => {
       addNotification({
@@ -130,16 +137,21 @@ export const StudentDashboardTeamSection = ({
   const handleSaveParticipant = async () => {
     if (!draftParticipant) return;
 
+    const currentParticipant = participants.find(
+      (participant) => participant.email === editingParticipantEmail,
+    );
+    const currentStatus = normalizeParticipantStatus(currentParticipant?.status);
+
     try {
       await addUpdateParticipantMutation.mutateAsync({
         projectId,
         firstName: draftParticipant.firstName,
         lastName: draftParticipant.lastName,
-        email: draftParticipant.email,
+        email: editingParticipantEmail || draftParticipant.email,
         studentCode: draftParticipant.ParticipantCode || "",
         semester: String(draftParticipant.semester),
         career: draftParticipant.career,
-        status: "PENDING",
+        status: currentStatus,
       });
     } catch (error) {
       console.error("Error updating participant:", error);
@@ -157,36 +169,21 @@ export const StudentDashboardTeamSection = ({
     }
 
     try {
-      await addUpdateParticipantMutation.mutateAsync({
-        projectId,
-        firstName: newMember.firstName,
-        lastName: newMember.lastName,
+      // Solo enviar invitación, sin agregar inmediatamente al proyecto
+      // El participante se agregará cuando acepte la invitación y su estado sea JOINED
+      await createInvitationMutation.mutateAsync({
         email: newMember.email,
-        studentCode: newMember.ParticipantCode || "",
-        semester: String(newMember.semester || ""),
-        career: newMember.career || "",
-        status: "PENDING",
+        eventType: "PROJECT",
+        targetType: "PROJECT",
+        targetId: projectId,
+        firstName: newMember.firstName || undefined,
+        lastName: newMember.lastName || undefined,
       });
-
-      // Enviar invitación después de crear/actualizar participante
-      try {
-        await createInvitationMutation.mutateAsync({
-          email: newMember.email,
-          eventType: "PROJECT",
-          targetType: "PROJECT",
-          targetId: projectId,
-          firstName: newMember.firstName || undefined,
-          lastName: newMember.lastName || undefined,
-        });
-      } catch (inviteErr) {
-        // createInvitationMutation.onError already notifica; log para debug
-        console.error("Invitation error:", inviteErr);
-      }
 
       addNotification({
         type: "success",
-        title: "Miembro agregado",
-        message: "El miembro fue agregado correctamente.",
+        title: "Invitación enviada",
+        message: "La invitación se envió correctamente. El miembro se agregará al proyecto cuando acepte.",
       });
       setNewMember({
         firstName: "",
@@ -200,8 +197,8 @@ export const StudentDashboardTeamSection = ({
     } catch (error) {
       addNotification({
         type: "error",
-        title: "Error al agregar miembro",
-        message: (error as any)?.message || "No se pudo agregar el miembro.",
+        title: "Error al enviar invitación",
+        message: (error as any)?.message || "No se pudo enviar la invitación.",
       });
     }
   };
@@ -226,6 +223,7 @@ export const StudentDashboardTeamSection = ({
               <Edit2 className="h-3 w-3" />
               {isEditMode ? "Hecho" : "Editar miembros"}
             </Button>
+
             <Button
               size="sm"
               variant="flat"
@@ -233,7 +231,7 @@ export const StudentDashboardTeamSection = ({
               onPress={() => setShowAddForm(!showAddForm)}
               aria-label="Agregar miembro"
             >
-              + Agregar miembro
+              Agregar miembro
             </Button>
           </div>
         ) : null
@@ -246,9 +244,7 @@ export const StudentDashboardTeamSection = ({
               size="sm"
               placeholder="Nombre"
               value={newMember.firstName}
-              onValueChange={(v) =>
-                setNewMember({ ...newMember, firstName: v })
-              }
+              onValueChange={(v) => setNewMember({ ...newMember, firstName: v })}
             />
             <Input
               size="sm"
@@ -280,9 +276,7 @@ export const StudentDashboardTeamSection = ({
               }}
             >
               {SEMESTER_OPTIONS.map((option) => (
-                <SelectItem key={option.value}>
-                  {option.label}
-                </SelectItem>
+                <SelectItem key={option.value}>{option.label}</SelectItem>
               ))}
             </Select>
             <Select
@@ -295,9 +289,7 @@ export const StudentDashboardTeamSection = ({
               }}
             >
               {CAREER_OPTIONS.map((option) => (
-                <SelectItem key={option.value}>
-                  {option.label}
-                </SelectItem>
+                <SelectItem key={option.value}>{option.label}</SelectItem>
               ))}
             </Select>
           </div>
@@ -306,7 +298,7 @@ export const StudentDashboardTeamSection = ({
               size="sm"
               color="success"
               onPress={handleAddMember}
-              isLoading={addUpdateParticipantMutation.isPending}
+              isLoading={createInvitationMutation.isPending}
             >
               Agregar
             </Button>
@@ -334,283 +326,294 @@ export const StudentDashboardTeamSection = ({
 
       {participants.length > 0 ? (
         <ol className="space-y-4" aria-label="Lista de participantes">
-          {participants.map((participant, idx) => (
-            <li key={idx}>
-              <article
-                className="group relative rounded-xl border border-default-200/60 bg-default-50/50 p-5 transition-colors hover:border-primary/40"
-                aria-label={`Participante: ${participant.firstName} ${participant.lastName}`}
-              >
-                <div className="flex items-start gap-4 ">
-                  <Avatar
-                    name={getInitials(
-                      participant.firstName,
-                      participant.lastName,
-                    )}
-                    className="bg-primary/20 font-semibold text-primary"
-                    radius="full"
-                    size="lg"
-                    aria-hidden="true"
-                  />
-                  <div className="min-w-0 w-full grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
-                    <div className="space-y-1">
-                      <label
-                        htmlFor={`participant-name-${idx}`}
-                        className="flex items-center gap-2 text-default-500"
-                      >
-                        <User className="h-4 w-4" aria-hidden="true" />
-                        <span className="text-xs font-semibold uppercase tracking-wide">
-                          Nombre
-                        </span>
-                      </label>
-                      {isEditMode &&
-                      editingParticipantEmail === participant.email &&
-                      draftParticipant ? (
-                        <Input
-                          size="sm"
-                          value={draftParticipant.firstName}
-                          onValueChange={(value) =>
-                            setDraftParticipant({
-                              ...draftParticipant,
-                              firstName: value,
-                            })
-                          }
-                          placeholder="Nombre"
-                          className="text-sm"
-                        />
-                      ) : (
-                        <div
-                          id={`participant-name-${idx}`}
-                          className="text-sm w-full font-medium md:text-base"
-                        >
-                          {participant.firstName}
-                        </div>
-                      )}
-                    </div>
+          {participants.map((participant, idx) => {
+            const participantStatus = normalizeParticipantStatus(participant.status);
 
-                    <div className="space-y-1">
-                      <label
-                        htmlFor={`participant-lastname-${idx}`}
-                        className="flex items-center gap-2 text-default-500"
-                      >
-                        <User className="h-4 w-4" aria-hidden="true" />
-                        <span className="text-xs font-semibold uppercase tracking-wide">
-                          Apellido
-                        </span>
-                      </label>
-                      {isEditMode &&
-                      editingParticipantEmail === participant.email &&
-                      draftParticipant ? (
-                        <Input
-                          size="sm"
-                          value={draftParticipant.lastName}
-                          onValueChange={(value) =>
-                            setDraftParticipant({
-                              ...draftParticipant,
-                              lastName: value,
-                            })
-                          }
-                          placeholder="Apellido"
-                          className="text-sm"
-                        />
-                      ) : (
-                        <div
-                          id={`participant-lastname-${idx}`}
-                          className="text-sm w-full font-medium md:text-base"
-                        >
-                          {participant.lastName}
-                        </div>
-                      )}
-                    </div>
+            return (
+              <li key={idx}>
+                <article
+                  className="group relative rounded-xl border border-default-200/60 bg-default-50/50 p-5 transition-colors hover:border-primary/40"
+                  aria-label={`Participante: ${participant.firstName} ${participant.lastName}`}
+                >
+                  <div className="flex min-h-[120px] flex-col gap-4 xl:flex-row xl:items-stretch">
+                    <div className="flex min-w-0 flex-1 items-start gap-4">
+                      <Avatar
+                        name={getInitials(
+                          participant.firstName,
+                          participant.lastName,
+                        )}
+                        className="bg-primary/20 font-semibold text-primary"
+                        radius="full"
+                        size="lg"
+                        aria-hidden="true"
+                      />
 
-                    <div className="space-y-1">
-                      <label
-                        htmlFor={`participant-email-${idx}`}
-                        className="flex items-center gap-2 text-default-500"
-                      >
-                        <Mail className="h-4 w-4" aria-hidden="true" />
-                        <span className="text-xs font-semibold uppercase tracking-wide">
-                          Correo
-                        </span>
-                      </label>
-                      <div
-                        id={`participant-email-${idx}`}
-                        className="w-full break-words text-sm"
-                      >
-                        {participant.email}
+                      <div className="min-w-0 flex-1 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                        <div className="space-y-1">
+                          <label
+                            htmlFor={`participant-name-${idx}`}
+                            className="flex items-center gap-2 text-default-500"
+                          >
+                            <User className="h-4 w-4" aria-hidden="true" />
+                            <span className="text-xs font-semibold uppercase tracking-wide">
+                              Nombre
+                            </span>
+                          </label>
+                          {isEditMode &&
+                          editingParticipantEmail === participant.email &&
+                          draftParticipant ? (
+                            <Input
+                              size="sm"
+                              value={draftParticipant.firstName}
+                              onValueChange={(value) =>
+                                setDraftParticipant({
+                                  ...draftParticipant,
+                                  firstName: value,
+                                })
+                              }
+                              placeholder="Nombre"
+                              className="text-sm"
+                            />
+                          ) : (
+                            <div
+                              id={`participant-name-${idx}`}
+                              className="text-sm w-full font-medium md:text-base"
+                            >
+                              {participant.firstName}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="space-y-1">
+                          <label
+                            htmlFor={`participant-lastname-${idx}`}
+                            className="flex items-center gap-2 text-default-500"
+                          >
+                            <User className="h-4 w-4" aria-hidden="true" />
+                            <span className="text-xs font-semibold uppercase tracking-wide">
+                              Apellido
+                            </span>
+                          </label>
+                          {isEditMode &&
+                          editingParticipantEmail === participant.email &&
+                          draftParticipant ? (
+                            <Input
+                              size="sm"
+                              value={draftParticipant.lastName}
+                              onValueChange={(value) =>
+                                setDraftParticipant({
+                                  ...draftParticipant,
+                                  lastName: value,
+                                })
+                              }
+                              placeholder="Apellido"
+                              className="text-sm"
+                            />
+                          ) : (
+                            <div
+                              id={`participant-lastname-${idx}`}
+                              className="text-sm w-full font-medium md:text-base"
+                            >
+                              {participant.lastName}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="space-y-1">
+                          <label
+                            htmlFor={`participant-email-${idx}`}
+                            className="flex items-center gap-2 text-default-500"
+                          >
+                            <Mail className="h-4 w-4" aria-hidden="true" />
+                            <span className="text-xs font-semibold uppercase tracking-wide">
+                              Correo
+                            </span>
+                          </label>
+                          <div
+                            id={`participant-email-${idx}`}
+                            className="w-full break-words text-sm"
+                          >
+                            {participant.email}
+                          </div>
+                        </div>
+
+                        <div className="space-y-1">
+                          <label
+                            htmlFor={`participant-semester-${idx}`}
+                            className="flex items-center gap-2 text-default-500"
+                          >
+                            <Scale className="h-4 w-4" aria-hidden="true" />
+                            <span className="text-xs font-semibold uppercase tracking-wide">
+                              Semestre
+                            </span>
+                          </label>
+                          {isEditMode &&
+                          editingParticipantEmail === participant.email &&
+                          draftParticipant ? (
+                            <Select
+                              size="sm"
+                              selectedKeys={draftParticipant.semester ? [String(draftParticipant.semester)] : []}
+                              onSelectionChange={(keys) => {
+                                const selected = Array.from(keys)[0] as string;
+                                setDraftParticipant({
+                                  ...draftParticipant,
+                                  semester: Number(selected),
+                                });
+                              }}
+                              placeholder="Selecciona semestre"
+                              className="text-sm"
+                            >
+                              {SEMESTER_OPTIONS.map((option) => (
+                                <SelectItem key={option.value}>{option.label}</SelectItem>
+                              ))}
+                            </Select>
+                          ) : (
+                            <div
+                              id={`participant-semester-${idx}`}
+                              className="text-sm italic text-default-500"
+                            >
+                              {SEMESTER_OPTIONS.find(
+                                (o) => o.value === String(participant.semester),
+                              )?.label || "Sin semestre"}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="space-y-1">
+                          <label
+                            htmlFor={`participant-career-${idx}`}
+                            className="flex items-center gap-2 text-default-500"
+                          >
+                            <BookOpen className="h-4 w-4" aria-hidden="true" />
+                            <span className="text-xs font-semibold uppercase tracking-wide">
+                              Carrera
+                            </span>
+                          </label>
+                          {isEditMode &&
+                          editingParticipantEmail === participant.email &&
+                          draftParticipant ? (
+                            <Select
+                              size="sm"
+                              selectedKeys={draftParticipant.career ? [draftParticipant.career] : []}
+                              onSelectionChange={(keys) => {
+                                const selected = Array.from(keys)[0] as string;
+                                setDraftParticipant({
+                                  ...draftParticipant,
+                                  career: selected,
+                                });
+                              }}
+                              placeholder="Selecciona carrera"
+                              className="text-sm"
+                            >
+                              {CAREER_OPTIONS.map((option) => (
+                                <SelectItem key={option.value}>{option.label}</SelectItem>
+                              ))}
+                            </Select>
+                          ) : (
+                            <div
+                              id={`participant-career-${idx}`}
+                              className="text-sm italic text-default-500"
+                            >
+                              {CAREER_OPTIONS.find((o) => o.value === participant.career)?.label || "Sin carrera"}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="space-y-1">
+                          <label
+                            htmlFor={`participant-code-${idx}`}
+                            className="flex items-center gap-2 text-default-500"
+                          >
+                            <Hash className="h-4 w-4" aria-hidden="true" />
+                            <span className="text-xs font-semibold uppercase tracking-wide">
+                              Codigo estudiantil
+                            </span>
+                          </label>
+                          {isEditMode &&
+                          editingParticipantEmail === participant.email &&
+                          draftParticipant ? (
+                            <Input
+                              size="sm"
+                              value={draftParticipant.ParticipantCode || ""}
+                              onValueChange={(value) =>
+                                setDraftParticipant({
+                                  ...draftParticipant,
+                                  ParticipantCode: value,
+                                })
+                              }
+                              placeholder="Codigo estudiantil"
+                              className="text-sm"
+                            />
+                          ) : (
+                            <div
+                              id={`participant-code-${idx}`}
+                              className="text-sm italic text-default-500"
+                            >
+                              {participant.ParticipantCode || "Sin codigo"}
+                            </div>
+                          )}
+                        </div>
+
+                        {isEditMode &&
+                          editingParticipantEmail === participant.email &&
+                          draftParticipant && (
+                            <div className="col-span-full flex gap-2">
+                              <Button
+                                isIconOnly
+                                size="sm"
+                                variant="flat"
+                                color="success"
+                                onPress={handleSaveParticipant}
+                                isLoading={addUpdateParticipantMutation.isPending}
+                                disabled={addUpdateParticipantMutation.isPending}
+                                aria-label="Guardar cambios"
+                              >
+                                <Check className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                isIconOnly
+                                size="sm"
+                                variant="flat"
+                                color="danger"
+                                onPress={cancelEditParticipant}
+                                aria-label="Cancelar edición"
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          )}
+
+                        {isEditMode &&
+                          !draftParticipant &&
+                          canEditParticipant(participant.email) && (
+                            <div className="col-span-full">
+                              <Button
+                                size="sm"
+                                variant="flat"
+                                className="text-xs"
+                                onPress={() => startEditParticipant(participant)}
+                                aria-label="Editar participante"
+                              >
+                                <Edit2 className="h-3 w-3" />
+                                Editar
+                              </Button>
+                            </div>
+                          )}
                       </div>
                     </div>
 
-                    <div className="space-y-1">
-                      <label
-                        htmlFor={`participant-semester-${idx}`}
-                        className="flex items-center gap-2 text-default-500"
+                    <div className="flex min-w-[140px] items-center justify-center self-stretch xl:justify-end">
+                      <span
+                        className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide ${getParticipantStatusColor(participantStatus)}`}
                       >
-                        <Scale className="h-4 w-4" aria-hidden="true" />
-                        <span className="text-xs font-semibold uppercase tracking-wide">
-                          Semestre
-                        </span>
-                      </label>
-                      {isEditMode &&
-                      editingParticipantEmail === participant.email &&
-                      draftParticipant ? (
-                        <Select
-                          size="sm"
-                          selectedKeys={draftParticipant.semester ? [String(draftParticipant.semester)] : []}
-                          onSelectionChange={(keys) => {
-                            const selected = Array.from(keys)[0] as string;
-                            setDraftParticipant({
-                              ...draftParticipant,
-                              semester: Number(selected),
-                            });
-                          }}
-                          placeholder="Selecciona semestre"
-                          className="text-sm"
-                        >
-                          {SEMESTER_OPTIONS.map((option) => (
-                            <SelectItem key={option.value}>
-                              {option.label}
-                            </SelectItem>
-                          ))}
-                        </Select>
-                      ) : (
-                        <div
-                          id={`participant-semester-${idx}`}
-                          className="text-sm italic text-default-500"
-                        >
-                          {
-                            SEMESTER_OPTIONS.find((o) => o.value === String(participant.semester))?.label || "Sin semestre"
-                          }
-                        </div>
-                      )}
+                        {getParticipantStatusLabel(participantStatus)}
+                      </span>
                     </div>
-
-                    <div className="space-y-1">
-                      <label
-                        htmlFor={`participant-career-${idx}`}
-                        className="flex items-center gap-2 text-default-500"
-                      >
-                        <BookOpen className="h-4 w-4" aria-hidden="true" />
-                        <span className="text-xs font-semibold uppercase tracking-wide">
-                          Carrera
-                        </span>
-                      </label>
-                      {isEditMode &&
-                      editingParticipantEmail === participant.email &&
-                      draftParticipant ? (
-                        <Select
-                          size="sm"
-                          selectedKeys={draftParticipant.career ? [draftParticipant.career] : []}
-                          onSelectionChange={(keys) => {
-                            const selected = Array.from(keys)[0] as string;
-                            setDraftParticipant({
-                              ...draftParticipant,
-                              career: selected,
-                            });
-                          }}
-                          placeholder="Selecciona carrera"
-                          className="text-sm"
-                        >
-                          {CAREER_OPTIONS.map((option) => (
-                            <SelectItem key={option.value}>
-                              {option.label}
-                            </SelectItem>
-                          ))}
-                        </Select>
-                      ) : (
-                        <div
-                          id={`participant-career-${idx}`}
-                          className="text-sm italic text-default-500"
-                        >
-                          {CAREER_OPTIONS.find((o) => o.value === participant.career)?.label || "Sin carrera"}
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="space-y-1">
-                      <label
-                        htmlFor={`participant-code-${idx}`}
-                        className="flex items-center gap-2 text-default-500"
-                      >
-                        <Hash className="h-4 w-4" aria-hidden="true" />
-                        <span className="text-xs font-semibold uppercase tracking-wide">
-                          Codigo estudiantil
-                        </span>
-                      </label>
-                      {isEditMode &&
-                      editingParticipantEmail === participant.email &&
-                      draftParticipant ? (
-                        <Input
-                          size="sm"
-                          value={draftParticipant.ParticipantCode || ""}
-                          onValueChange={(value) =>
-                            setDraftParticipant({
-                              ...draftParticipant,
-                              ParticipantCode: value,
-                            })
-                          }
-                          placeholder="Codigo estudiantil"
-                          className="text-sm"
-                        />
-                      ) : (
-                        <div
-                          id={`participant-code-${idx}`}
-                          className="text-sm italic text-default-500"
-                        >
-                          {participant.ParticipantCode || "Sin codigo"}
-                        </div>
-                      )}
-                    </div>
-
-                    {isEditMode &&
-                      editingParticipantEmail === participant.email &&
-                      draftParticipant && (
-                        <div className="col-span-full flex gap-2">
-                          <Button
-                            isIconOnly
-                            size="sm"
-                            variant="flat"
-                            color="success"
-                            onPress={handleSaveParticipant}
-                            isLoading={addUpdateParticipantMutation.isPending}
-                            disabled={addUpdateParticipantMutation.isPending}
-                            aria-label="Guardar cambios"
-                          >
-                            <Check className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            isIconOnly
-                            size="sm"
-                            variant="flat"
-                            color="danger"
-                            onPress={cancelEditParticipant}
-                            aria-label="Cancelar edición"
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      )}
-
-                    {isEditMode &&
-                      !draftParticipant &&
-                      canEditParticipant(participant.email) && (
-                        <div className="col-span-full">
-                          <Button
-                            size="sm"
-                            variant="flat"
-                            className="text-xs"
-                            onPress={() => startEditParticipant(participant)}
-                            aria-label="Editar participante"
-                          >
-                            <Edit2 className="h-3 w-3" />
-                            Editar
-                          </Button>
-                        </div>
-                      )}
                   </div>
-                </div>
-              </article>
-            </li>
-          ))}
+                </article>
+              </li>
+            );
+          })}
         </ol>
       ) : (
         <p className="rounded-xl border border-default-200 bg-background p-4 text-sm text-default-500">

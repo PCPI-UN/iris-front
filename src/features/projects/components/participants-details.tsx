@@ -12,7 +12,7 @@ type ParticipantsDetailsProps = {
   defaultExpanded?: boolean;
 };
 
-type ParticipantRow = ProjectParticipant & {
+type ParticipantRow = Omit<ProjectParticipant, "status"> & {
   status: "CONFIRMED" | "PENDING";
   displayName: string;
   displaySemester: string;
@@ -47,12 +47,13 @@ export const ParticipantsDetails = ({
           return p && String(p.firstName ?? "").trim() && String(p.lastName ?? "").trim();
         })
         .map((participant, index) => {
+          const { status: _participantStatus, ...participantData } = participant;
           const firstName = String(participant.firstName ?? "").trim();
           const lastName = String(participant.lastName ?? "").trim();
           const displayName = `${firstName} ${lastName}`.trim();
 
           return {
-            ...participant,
+            ...participantData,
             status,
             displayName: displayName || "N/A",
             displaySemester:
@@ -99,7 +100,6 @@ export const ParticipantsDetails = ({
           type="button"
           onClick={() => setIsExpanded((value) => !value)}
           className="inline-flex shrink-0 items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-white/15"
-          aria-expanded={isExpanded}
         >
           {isExpanded ? "Colapsar" : "Expandir"}
           {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}

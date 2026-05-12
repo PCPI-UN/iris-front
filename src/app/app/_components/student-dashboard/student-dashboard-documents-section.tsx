@@ -287,7 +287,7 @@ export const StudentDashboardDocumentsSection = ({
         )}
       </div>
 
-      <div className="space-y-3 border-t border-default-200/60 pt-4">
+      {canEdit && (
         <div className="flex items-center justify-between gap-3 xs:flex-col xs:items-start">
           <div className="sm:flex xs:flex-col justify-between w-full">
             <p className="text-md font-semibold text-default-600 w-full">
@@ -327,7 +327,8 @@ export const StudentDashboardDocumentsSection = ({
             </Button>
           </div>
         </div>
-
+      )}
+      <div className="space-y-3 border-t border-default-200/60 pt-4">
         {orderedSecondaryDocuments.length > 0 ? (
           <ul className="space-y-3">
             {orderedSecondaryDocuments.map((document, idx) => (

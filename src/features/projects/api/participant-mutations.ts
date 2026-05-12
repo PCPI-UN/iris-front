@@ -10,7 +10,7 @@ export type AddUpdateParticipantInput = {
   studentCode: string;
   semester?: string;
   career?: string;
-  status: "PENDING";
+  status: "PENDING" | "INVITED" | "JOINED";
 };
 
 export type CreateInvitationInput = {

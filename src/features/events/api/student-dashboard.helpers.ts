@@ -1,3 +1,5 @@
+import { ProjectParticipant } from "@/types/api";
+
 export const getProjectStateLabel = (state?: string) => {
   if (state === "UNDER_REVIEW") return "En revision";
   if (state === "APPROVED") return "Aprobado";
@@ -54,3 +56,54 @@ export const statusParticipantOptions = [
   { label: 2, value: "INVITED" },
   { label: 3, value: "JOINED" },
 ];
+
+type ParticipantApiStatus = "PENDING" | "INVITED" | "JOINED";
+
+const normalizeStatusKey = (status?: string | number) => {
+  if (typeof status === "number") return String(status);
+  return status?.trim().toUpperCase();
+};
+
+export const normalizeParticipantStatus = (
+  status?: string | number,
+): ParticipantApiStatus => {
+  const normalizedStatus = normalizeStatusKey(status);
+
+  if (normalizedStatus === "1" || normalizedStatus === "PENDING") return "PENDING";
+  if (normalizedStatus === "2" || normalizedStatus === "INVITED") return "INVITED";
+  if (normalizedStatus === "3" || normalizedStatus === "JOINED") return "JOINED";
+  return "PENDING";
+};
+
+export const getParticipantStatusLabel = (status?: string | number) => {
+  const normalizedStatus = normalizeParticipantStatus(status);
+
+  if (normalizedStatus === "PENDING") return "Pendiente";
+  if (normalizedStatus === "INVITED") return "Invitado";
+  if (normalizedStatus === "JOINED") return "Aceptado";
+
+  return "Pendiente";
+};
+
+export const getParticipantStatusColor = (status?: string | number) => {
+  const normalizedStatus = normalizeParticipantStatus(status);
+
+  if (normalizedStatus === "PENDING") {
+    return "bg-amber-500/15 text-amber-600 dark:text-amber-300 border border-amber-500/30";
+  }
+
+  if (normalizedStatus === "INVITED") {
+    return "bg-sky-500/15 text-sky-600 dark:text-sky-300 border border-sky-500/30";
+  }
+
+  if (normalizedStatus === "JOINED") {
+    return "bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 border border-emerald-500/30";
+  }
+
+  return "bg-gray-500/15 text-gray-600 dark:text-gray-300 border border-gray-500/30";
+};
+
+export const getCurrentUserStatus = (participants: ProjectParticipant[], userEmail?: string) => {
+  const userParticipant = participants.find((p) => p.email === userEmail);
+  return userParticipant ? userParticipant.status : "PENDING";
+};
