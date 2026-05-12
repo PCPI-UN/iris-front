@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { columnsProject } from "./columns-project-table";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useProjects } from "@/features/projects/api/get-projects";
-import { Pagination } from "@heroui/pagination";
 import { GlassCard } from "@/features/landing/components/glass-card";
 import { StatusBadge } from "@/components/ui/status-badge/status-badge";
 import { stylesGradient } from "@/components/ui/status-badge/status-style";
