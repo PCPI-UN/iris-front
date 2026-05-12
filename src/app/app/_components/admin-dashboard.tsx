@@ -5,7 +5,7 @@ import { Calendar, Folder, FileCheck, ShieldCheck, Users, Award } from 'lucide-r
 import { useEffect, useMemo, useState } from 'react';
 import { Select, SelectItem } from '@/components/ui/select/select';
 import { useEvents } from '@/features/events/api/get-events';
-import { useCoursesDropdown } from '@/features/courses/api/get-courses-dropdown';
+import { useCategoriesDropdown } from '@/features/courses/api/get-categories-dropdown';
 import { useProjectsWithJurors } from '@/features/projects/api/get-projects-with-jurors';
 import { Card, CardHeader, CardBody } from '@/components/ui/card';
 import { useDashboardStats } from '@/features/dashboard/api/get-dashboard-stats';
@@ -141,16 +141,21 @@ function DistributionCardContent() {
   const { data: eventsData, isLoading: isEventsLoading } = useEvents({ page: 1 });
   const events = eventsData?.data ?? [];
   const [selectedEventId, setSelectedEventId] = useState<number | undefined>(events[0]?.id);
-  const [selectedCourseId, setSelectedCourseId] = useState<number | undefined>(undefined);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | undefined>(undefined);
 
   useEffect(() => {
     if (!events.length) return;
     if (!selectedEventId) setSelectedEventId(events[0].id);
   }, [events]);
 
-  const coursesDropdownQuery = useCoursesDropdown({ eventId: selectedEventId, queryConfig: { enabled: Boolean(selectedEventId) } });
+  // Reset category when event changes
+  useEffect(() => {
+    setSelectedCategoryId(undefined);
+  }, [selectedEventId]);
 
-  const projectsQuery = useProjectsWithJurors({ currentPage: 1, itemsPerPage: 10000, eventId: selectedEventId, courseId: selectedCourseId, queryConfig: { enabled: Boolean(selectedEventId) } });
+  const categoriesDropdownQuery = useCategoriesDropdown({ eventId: selectedEventId, queryConfig: { enabled: Boolean(selectedEventId) } });
+
+  const projectsQuery = useProjectsWithJurors({ currentPage: 1, itemsPerPage: 10000, eventId: selectedEventId, courseId: selectedCategoryId, queryConfig: { enabled: Boolean(selectedEventId) } });
   const projects = projectsQuery.data?.data ?? [];
 
   const projectTotals = useMemo(() => {
@@ -193,7 +198,6 @@ function DistributionCardContent() {
             onSelectionChange={(keys) => {
               const selected = Array.from(keys)[0];
               setSelectedEventId(selected ? Number(selected) : undefined);
-              setSelectedCourseId(undefined);
             }}
             isLoading={isEventsLoading}
           >
@@ -207,17 +211,17 @@ function DistributionCardContent() {
           <Select
             label="Categoría"
             placeholder={selectedEventId ? 'Todas las categorías' : 'Selecciona un evento primero'}
-            selectedKeys={selectedCourseId ? [String(selectedCourseId)] : []}
+            selectedKeys={selectedCategoryId ? [String(selectedCategoryId)] : []}
             onSelectionChange={(keys) => {
               const selected = Array.from(keys)[0];
-              setSelectedCourseId(selected ? Number(selected) : undefined);
+              setSelectedCategoryId(selected ? Number(selected) : undefined);
             }}
             isDisabled={!selectedEventId}
-            isLoading={coursesDropdownQuery.isLoading}
+            isLoading={categoriesDropdownQuery.isLoading}
           >
-            {coursesDropdownQuery.data?.data?.length ? (
-              coursesDropdownQuery.data.data.map((course) => (
-                <SelectItem key={String(course.id)}>{course.code}</SelectItem>
+            {categoriesDropdownQuery.data?.data?.length ? (
+              categoriesDropdownQuery.data.data.map((category: any) => (
+                <SelectItem key={String(category.id)}>{category.code}</SelectItem>
               ))
             ) : (
               <SelectItem key="no-categories" isDisabled>{selectedEventId ? 'No hay categorías' : 'Selecciona un evento primero'}</SelectItem>

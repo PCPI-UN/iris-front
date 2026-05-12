@@ -19,9 +19,9 @@ export const ProjectsCard = () => {
   const page = searchParams?.get("page") ? Number(searchParams.get("page")) : 1;
   const eventId = searchParams?.get("event") ? Number(searchParams.get("event")) : 0;
   const state = "APPROVED";
-  const courseId = searchParams?.get("courseId") ? Number(searchParams.get("courseId")) : 0;
+  const categoryId = searchParams?.get("categoryId") ? Number(searchParams.get("categoryId")) : 0;
 
-  const projectsQuery = useProjects({ page, eventId, state, courseId });
+  const projectsQuery = useProjects({ page, eventId, state, categoryId });
   const projects = projectsQuery.data?.data;
 
   const [selectedProject, setSelectedProject] = useState<any | null>(null);

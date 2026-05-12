@@ -33,7 +33,7 @@ import { StatusBadge } from '@/components/ui/status-badge/status-badge';
 import { useUser } from '@/lib/auth';
 import { getProjectEvaluationStats, type ProjectEvaluationStats } from '@/features/evaluations/api/get-project-evaluation-stats';
 import { useEvents } from '@/features/events/api/get-events';
-import { useCoursesDropdown } from '@/features/courses/api/get-courses-dropdown';
+import { useCategoriesDropdown } from '@/features/courses/api/get-categories-dropdown';
 import {
   ProjectJuror,
   ProjectWithJurors,
@@ -303,7 +303,7 @@ export const MonitoringDashboard = () => {
   };
 
   const projectQueryEnabled = Boolean(selectedEventId);
-  const coursesDropdownQuery = useCoursesDropdown({
+  const categoriesDropdownQuery = useCategoriesDropdown({
     eventId: selectedEventId,
     queryConfig: { enabled: projectQueryEnabled },
   });
@@ -445,10 +445,10 @@ export const MonitoringDashboard = () => {
   const categoryEvaluationStats = useMemo(() => {
     return buildCategoryEvaluationStats(
       statisticsProjects,
-      coursesDropdownQuery.data?.data ?? [],
+      categoriesDropdownQuery.data?.data ?? [],
       allProjectStatsById,
     );
-  }, [allProjectStatsById, coursesDropdownQuery.data?.data, statisticsProjects]);
+  }, [allProjectStatsById, categoriesDropdownQuery.data?.data, statisticsProjects]);
 
   // Calcular métricas de evaluación
   const evaluationMetrics = useMemo(() => {
@@ -663,12 +663,12 @@ export const MonitoringDashboard = () => {
                   selectedKeys={selectedCourseId ? [String(selectedCourseId)] : []}
                   onSelectionChange={(keys) => handleCourseChange(keys as Set<string>)}
                   isDisabled={!selectedEventId}
-                  isLoading={coursesDropdownQuery.isLoading}
+                  isLoading={categoriesDropdownQuery.isLoading}
                 >
-                  {coursesDropdownQuery.data?.data?.length ? (
-                    coursesDropdownQuery.data.data.map((course) => (
-                      <SelectItem key={String(course.id)}>
-                        {course.code}
+                  {categoriesDropdownQuery.data?.data?.length ? (
+                    categoriesDropdownQuery.data.data.map((category) => (
+                      <SelectItem key={String(category.id)}>
+                        {category.code}
                       </SelectItem>
                     ))
                   ) : (

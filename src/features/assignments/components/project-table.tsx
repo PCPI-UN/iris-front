@@ -20,9 +20,9 @@ export const ProjectsTable = ({
   const page = searchParams?.get("page") ? Number(searchParams.get("page")) : 1;
   const eventId = searchParams?.get("event") ? Number(searchParams.get("event")) : 0;
   const state = "APPROVED";
-  const courseId = searchParams?.get("courseId") ? Number(searchParams.get("courseId")) : 0;
+  const categoryId = searchParams?.get("categoryId") ? Number(searchParams.get("categoryId")) : 0;
 
-  const projectsQuery = useProjects({ page, eventId, state, courseId });
+  const projectsQuery = useProjects({ page, eventId, state, categoryId });
   const projects = projectsQuery.data?.data;
   const meta = projectsQuery.data?.meta;
   
@@ -31,6 +31,7 @@ export const ProjectsTable = ({
     params.set("page", String(newPage));
     if (eventId) params.set("event", String(eventId));
     if (state) params.set("state", state);
+    if (categoryId) params.set("categoryId", String(categoryId));
     router.push(`?${params.toString()}`);
   };
   
