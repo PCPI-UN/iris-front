@@ -1,7 +1,6 @@
 "use client";
 
 import { DataTable } from "@/components/data-table";
-import { Button } from "@/components/ui/button";
 import { columnsProject } from "./columns-project-table";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useProjects } from "@/features/projects/api/get-projects";
