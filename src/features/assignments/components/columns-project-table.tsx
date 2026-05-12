@@ -4,7 +4,7 @@ import { Project } from "@/types/api";
 import { Button } from "@/components/ui/button";
 import { EyeIcon, UserRoundPlus } from "lucide-react";
 
-export const columnsProject = ({onSelectProject, onViewProject}: { onSelectProject: (project: any) => void; onViewProject: (project: any) => void; }): Column<any>[] => {
+export const columnsProject = ({onSelectProject, onViewProject}: { onSelectProject: (project: Project) => void; onViewProject: (project: Project) => void; }): Column<Project>[] => {
   return [
     {
       title: "Proyecto",
