@@ -34,7 +34,12 @@ export const UpdateCategory = ({ categoryId }: UpdateCategoryProps) => {
   const { addNotification } = useNotifications();
   const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
 
-  const categoryQuery = useCategory({ categoryId });
+  const categoryQuery = useCategory({
+    categoryId,
+    queryConfig: {
+      enabled: isOpen,
+    },
+  });
   const updateCategoryMutation = useUpdateCategory({
     mutationConfig: {
       onSuccess: () => {
@@ -59,7 +64,6 @@ export const UpdateCategory = ({ categoryId }: UpdateCategoryProps) => {
         className="w-full"
         size="sm"
         onPress={() => {
-          categoryQuery.refetch();
           onOpen();
         }}
         startContent={<SquarePen size={16} />}

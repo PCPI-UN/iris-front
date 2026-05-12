@@ -1,11 +1,10 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { api } from "@/lib/api-client";
-import { Category } from "@/types/api";
 import { MutationConfig } from "@/lib/react-query";
 
-export const deleteCategory = ({ categoryId }: { categoryId: number }): Promise<{ data: Category }> => {
-  return api.delete(`/events/courses/delete`, { id: categoryId });
+export const deleteCategory = ({ categoryId }: { categoryId: number }): Promise<{ ok: boolean }> => {
+  return api.delete(`/events/courses/${categoryId}`);
 };
 
 type UseDeleteCategoryOptions = {
@@ -21,9 +20,31 @@ export const useDeleteCategory = ({
 
   return useMutation({
     onSuccess: (data, variables, ...args) => {
-      queryClient.invalidateQueries({
-        queryKey: ["categories"],
+      // Update ALL categories list queries by filtering out the deleted category
+      queryClient.setQueriesData(
+        {
+          predicate: (query) =>
+            Array.isArray(query.queryKey) &&
+            query.queryKey[0] === "categories" &&
+            typeof query.queryKey[1] === "object",
+        },
+        (oldData: any) => {
+          if (!oldData) return oldData;
+          return {
+            ...oldData,
+            data: (oldData.data || []).filter(
+              (category: any) => category.id !== variables.categoryId
+            ),
+          };
+        }
+      );
+
+      // Also remove the detail query
+      queryClient.removeQueries({
+        queryKey: ["categories", variables.categoryId],
+        exact: true,
       });
+
       onSuccess?.(data, variables, ...args);
     },
     ...restConfig,

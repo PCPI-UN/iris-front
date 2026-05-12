@@ -20,8 +20,8 @@ export const updateCategory = ({
   data
 }: {
   data: UpdateCategoryInput;
-}): Promise<{ data: Category }> => {
-  return api.patch(`/events/courses/update`, data);
+}): Promise<{ ok: boolean; message: string }> => {
+  return api.patch(`/events/courses/${data.id}`, data);
 };
 
 type UseUpdateCategoryOptions = {
@@ -41,7 +41,7 @@ export const useUpdateCategory = ({
         queryKey: ["categories"],
       });
       queryClient.refetchQueries({
-        queryKey: getCategoryQueryOptions(data.data.id).queryKey,
+        queryKey: getCategoryQueryOptions(variables.data.id).queryKey,
       });
       onSuccess?.(data, variables, ...args);
     },

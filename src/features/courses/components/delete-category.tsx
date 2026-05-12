@@ -17,9 +17,11 @@ import { useDisclosure } from '@/hooks/use-disclosure';
 
 type DeleteCategoryProps = {
   id: number;
+  eventId?: number;
+  totalCategoriesPerEvent: number;
 };
 
-export const DeleteCategory = ({ id }: DeleteCategoryProps) => {
+export const DeleteCategory = ({ id, eventId, totalCategoriesPerEvent }: DeleteCategoryProps) => {
   const { addNotification } = useNotifications();
   const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
   const deleteCategoryMutation = useDeleteCategory({
@@ -42,7 +44,18 @@ export const DeleteCategory = ({ id }: DeleteCategoryProps) => {
         className="w-full"
         size="sm"
         color="danger"
-        onPress={() => onOpen()}
+        onPress={() => {
+          if (totalCategoriesPerEvent <= 1) {
+            addNotification({
+              type: "error",
+              title: "No se puede eliminar",
+              message: "Debe existir al menos 1 categoría por evento.",
+            });
+            return;
+          }
+
+          onOpen();
+        }}
       >
         <Trash size={16} />
         Delete Category

@@ -1,6 +1,5 @@
 "use client";
 
-import { useQueryClient } from "@tanstack/react-query";
 import { useSearchParams, useRouter } from "next/navigation";
 
 import { Spinner } from "@/components/ui/spinner";
@@ -81,7 +80,11 @@ export const CategoriesList = () => {
 
               <div className="flex gap-2 pt-2">
                 <UpdateCategory categoryId={category.id} />
-                <DeleteCategory id={category.id} />
+                <DeleteCategory 
+                  id={category.id} 
+                  eventId={category.eventId} 
+                  totalCategoriesPerEvent={categories.filter(c => c.eventId === category.eventId).length}
+                />
               </div>
             </CardBody>
           </Card>
