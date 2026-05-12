@@ -46,21 +46,21 @@ export const canUpdateProject = (user: User | null | undefined) => {
   return hasRole(user, "Admin");
 };
 
-// Courses
-export const canCreateCourse = (user: User | null | undefined) => {
+// Categories
+export const canCreateCategory = (user: User | null | undefined) => {
   return hasRole(user, "Admin");
 };
 
-export const canDeleteCourse = (user: User | null | undefined) => {
+export const canDeleteCategory = (user: User | null | undefined) => {
   return hasRole(user, "Admin");
 };
 
-export const canUpdateCourse = (user: User | null | undefined) => {
+export const canUpdateCategory = (user: User | null | undefined) => {
   return hasRole(user, "Admin");
 };
 
-export const canViewCourses = (user: User | null | undefined) => {
-  // Todos los roles autenticados pueden ver cursos por ahora
+export const canViewCategories = (user: User | null | undefined) => {
+  // Todos los roles autenticados pueden ver categorías por ahora
   return Boolean(user);
 };
 

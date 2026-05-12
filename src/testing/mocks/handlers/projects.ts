@@ -5,7 +5,8 @@ import { requireAuth, networkDelay } from "../utils";
 
 type ProjectBody = {
   eventId: string;
-  courseId: string;
+  categoryId?: string;
+  courseId?: string;
   name: string;
   logo?: string;
   description?: string | undefined;
@@ -52,7 +53,7 @@ const parseProjectBody = async (request: Request): Promise<ProjectBody> => {
       name: String(form.get("name") || ""),
       description: String(form.get("description") || ""),
       eventId: String(form.get("eventId") || ""),
-      courseId: String(form.get("courseId") || ""),
+      categoryId: String(form.get("categoryId") || form.get("courseId") || ""),
       logo: String(form.get("logo") || ""),
       state: String(form.get("state") || "UNDER_REVIEW"),
       participants: parseJsonArray(form.get("participants"), []),
@@ -70,6 +71,7 @@ type ProjectDTO = {
   logo: string;
   state: string;
   eventId: string;
+  categoryId?: string;
   eventNumber?: string;
   createdAt: number;
   documents: Array<{ type: string; url: string }>;
@@ -90,6 +92,7 @@ const mapProjectToDTO = (project: any): ProjectDTO => {
     logo: project.logo,
     state: project.state,
     eventId: project.eventId,
+    categoryId: project.categoryId ?? project.courseId,
     eventNumber: project.eventNumber || "",
     createdAt: project.createdAt,
     documents: project.documents ?? [],
@@ -157,8 +160,8 @@ export const projectsHandlers = [
       const url = new URL(request.url);
       const page = Number(url.searchParams.get("page") || 1);
       const state = url.searchParams.get("state");
-      const rawcourseId = url.searchParams.get("courseId");
-      const courseId = rawcourseId ? toInternalPrefixedId(rawcourseId, "course") : undefined;
+      const rawCategoryId = url.searchParams.get("categoryId") || url.searchParams.get("courseId");
+      const categoryId = rawCategoryId ? toInternalPrefixedId(rawCategoryId, "course") : undefined;
       const pageSize = PAGE_SIZE;
       const validPage = validatePage(page);
 
@@ -170,8 +173,12 @@ export const projectsHandlers = [
         allProjects = allProjects.filter((p) => String(p.state) === String(state));
       }
 
-      if (courseId) {
-        allProjects = allProjects.filter((p) => String(p.courseId) === String(courseId))
+      if (categoryId) {
+        allProjects = allProjects.filter(
+          (p) =>
+            String((p as any).categoryId ?? (p as any).courseId) ===
+            String(categoryId)
+        );
       }
 
       // USER role: only assigned projects if jury of event
@@ -235,12 +242,13 @@ export const projectsHandlers = [
       }
 
       // Determinar si es Competition o Exposition:
-      // Competition: no env?a name (solo participantes, curso asignado en cliente)
-      // Exposition: requiere name y courseId ingresados por el usuario
+      // Competition: no envía name (solo participantes, categoría asignada en cliente)
+      // Exposition: requiere name y categoryId ingresados por el usuario
       const isCompetition = !data.name?.trim();
+      const selectedCategoryId = data.categoryId || data.courseId;
 
       if (!isCompetition) {
-        // Para Exposition: validar name y courseId
+        // Para Exposition: validar name y categoryId
         if (!data.name?.trim()) {
           return HttpResponse.json(
             { message: "name is required" },
@@ -248,9 +256,9 @@ export const projectsHandlers = [
           );
         }
 
-        if (!data.courseId?.trim()) {
+        if (!selectedCategoryId?.trim()) {
           return HttpResponse.json(
-            { message: "courseId is required" },
+            { message: "categoryId is required" },
             { status: 400 }
           );
         }
@@ -258,7 +266,8 @@ export const projectsHandlers = [
 
       const result = db.project.create({
         eventId: toInternalPrefixedId(String(data.eventId), "event"),
-        courseId: data.courseId ? toInternalPrefixedId(String(data.courseId), "course") : "no-course",
+        categoryId: selectedCategoryId ? toInternalPrefixedId(String(selectedCategoryId), "course") : "no-course",
+        courseId: selectedCategoryId ? toInternalPrefixedId(String(selectedCategoryId), "course") : "no-course",
         name: data.name || (isCompetition ? "Competition Entry" : ""),
         logo: data.logo || "",
         description: data.description || undefined,
@@ -587,7 +596,14 @@ export const projectsHandlers = [
 
         const updateData: Partial<ProjectBody> = {};
         if (data.eventId) updateData.eventId = data.eventId;
-        if (data.courseId) updateData.courseId = data.courseId;
+        if (data.categoryId) {
+          updateData.categoryId = data.categoryId;
+          updateData.courseId = data.categoryId;
+        }
+        if (data.courseId) {
+          updateData.categoryId = data.courseId;
+          updateData.courseId = data.courseId;
+        }
         if (data.name) updateData.name = data.name;
         if (data.logo) updateData.logo = data.logo;
         if (data.description !== undefined)
@@ -613,6 +629,70 @@ export const projectsHandlers = [
 
         await persistDb("project");
         return HttpResponse.json({ data: project });
+      } catch (error: any) {
+        return HttpResponse.json(
+          { message: error?.message || "Server Error" },
+          { status: 500 }
+        );
+      }
+    }
+  ),
+
+  http.delete(
+    `${env.API_URL}/projects/:projectId/jurors/:memberUserId`,
+    async ({ cookies, params }) => {
+      await networkDelay();
+
+      try {
+        const { error } = requireAuth(cookies);
+        if (error) {
+          return HttpResponse.json({ message: error }, { status: 401 });
+        }
+
+        const projectId = params.projectId as string;
+        const memberUserId = params.memberUserId as string;
+
+        if (!projectId || !memberUserId) {
+          return HttpResponse.json(
+            { message: "projectId and memberUserId are required" },
+            { status: 400 }
+          );
+        }
+
+        const project = db.project.findFirst({
+          where: { id: { equals: projectId } },
+        });
+
+        if (!project) {
+          return HttpResponse.json(
+            { message: "Project not found" },
+            { status: 404 }
+          );
+        }
+
+        const remainingAssignments = (project.jurorAssignments ?? []).filter(
+          (assignment: any) => String(assignment?.memberUserId) !== String(memberUserId)
+        );
+
+        const updatedProject = db.project.update({
+          where: { id: { equals: projectId } },
+          data: {
+            jurorAssignments: remainingAssignments,
+          },
+        });
+
+        if (!updatedProject) {
+          return HttpResponse.json(
+            { message: "Project not found" },
+            { status: 404 }
+          );
+        }
+
+        await persistDb("project");
+        return HttpResponse.json({
+          success: true,
+          message: "Juror removed from project",
+        });
       } catch (error: any) {
         return HttpResponse.json(
           { message: error?.message || "Server Error" },

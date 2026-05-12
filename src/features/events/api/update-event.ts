@@ -9,7 +9,7 @@ import { normalizeEvent } from "./event-adapter";
 import { getEventQueryOptions } from "./get-event";
 import { getEventsQueryOptions } from "./get-events";
 import { normalizeEventDatesForPayload } from '../utils/event-date-payload';
-import { toEventTypeCode, toEvaluationTypeCode } from "../utils/event-enums";
+import { toEventTypeLabel, toEvaluationTypeCode } from "../utils/event-enums";
 
 export const updateEventInputSchema = z.object({
   id: z.number().positive(),
@@ -81,7 +81,7 @@ export const updateEvent = ({
       eventType:
         normalizedPayload.eventType === undefined
           ? undefined
-          : toEventTypeCode(normalizedPayload.eventType),
+          : toEventTypeLabel(normalizedPayload.eventType),
       evaluationType:
         normalizedPayload.evaluationType === undefined
           ? undefined

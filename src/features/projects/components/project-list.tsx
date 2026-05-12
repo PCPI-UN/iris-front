@@ -7,7 +7,6 @@ import { useProjects } from "../api/get-projects";
 import { ApproveProjectModal } from "./approve-modal";
 import { RejectProjectModal } from "./reject-modal";
 import { Button } from "@/components/ui/button";
-import { AvatarGroup } from "./avatar-icon";
 import { FileText } from "lucide-react";
 import { GlassCard } from "@/features/landing/components/glass-card";
 import { StatusBadge } from "@/components/ui/status-badge/status-badge";
@@ -17,24 +16,25 @@ import { ViewDetails } from "./view-details";
 import { DataTable } from "@/components/data-table";
 import { columnsProject } from "./columns-project-table";
 import React from "react";
+import { readCategoryIdFromSearchParams } from "@/lib/compat/category-legacy";
+import { ParticipantsDetails } from "./participants-details";
 
-//MOCKAPI -> category
-//BACK -> courseId
 
 export const ProjectList = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
 
   const page = searchParams?.get("page") ? Number(searchParams.get("page")) : 1;
-  const eventId = searchParams?.get("event") ? Number(searchParams.get("event")) : undefined;
+  const eventId = searchParams?.get("event") ? Number(searchParams.get("event")) : 0;
   const state = searchParams?.get("state") || "UNDER_REVIEW";
-  const courseId = searchParams?.get("courseId") ? Number(searchParams.get("courseId")) : undefined;
+  const categoryParam = readCategoryIdFromSearchParams(searchParams);
+  const categoryId = categoryParam ? Number(categoryParam) : undefined;
 
-  const projectsQuery = useProjects({ page, eventId, state, courseId });
+  const projectsQuery = useProjects({ page, eventId, state, categoryId });
   const projects = projectsQuery.data?.data;
   const meta = projectsQuery.data?.meta;
-  
 
+  
   {/* ======================== ACTIONS APPROVE, REJECT, REQUEST FOR TABLE ======================== */}
   const [selectedId, setSelectedId] = React.useState<number | null>(null);
   const [action, setAction] = React.useState<"approve" | "reject" | "request" | null>(null);
@@ -55,7 +55,7 @@ export const ProjectList = () => {
   };
   {/* ======================== ACTIONS APPROVE, REJECT, REQUEST FOR TABLE ======================== */}
   const columns = columnsProject({onApprove: handleApprove, onReject: handleReject, onRequest: handleRequest,
-});
+  });
 
   const handlePageChange = (newPage: number) => {
     const params = new URLSearchParams();
@@ -70,7 +70,7 @@ export const ProjectList = () => {
     params.set("page", "1");
     if (eventId) params.set("event", String(eventId));
     if (newStatus) params.set("state", newStatus);
-    if (courseId) params.set("courseId", String(courseId))
+    if (categoryId) params.set("categoryId", String(categoryId));
     router.push(`?${params.toString()}`);
   };
 
@@ -78,7 +78,7 @@ export const ProjectList = () => {
   return (
     <div className="space-y-4 sm:space-y-6 md:space-y-8">
 
-      {/* ======================== FILTROS ======================== */}
+      {/* ======================== FILTERS ======================== */}
       <div className="grid md:grid-cols-4 items-center gap-3">
         <Button
           variant={state === "UNDER_REVIEW" ? "flat" : "bordered"}
@@ -109,13 +109,6 @@ export const ProjectList = () => {
         </Button>
       </div>
 
-      {/* ======================== VALIDACIÓN DE EVENTO ======================== */}
-      {!eventId && (
-        <div className="text-center py-12 text-muted-foreground">
-          Por favor selecciona un evento para ver los proyectos.
-        </div>
-      )}
-
       {/* ======================== LOADING ======================== */}
       {projectsQuery.isLoading && (
         <div className="flex h-48 w-full items-center justify-center">
@@ -123,14 +116,8 @@ export const ProjectList = () => {
         </div>
       )}
 
-      {/* ======================== NO HAY PROYECTOS ======================== */}
-      {!projectsQuery.isLoading && projects?.length === 0 && (
-        <div className="text-center py-12 text-muted-foreground">
-          No hay proyectos con este estado.
-        </div>
-      )}
 
-      {/* ======================== GRID DE PROYECTOS ======================== */}
+      {/* ======================== PROJECTS GRID ======================== */}
       {projects && projects.length > 0 && (
         <div className="grid md:hidden gap-4 sm:gap-6 md:gap-8 grid-cols-1 lg:grid-cols-2">
           {projects.map((project) => (
@@ -142,7 +129,7 @@ export const ProjectList = () => {
               <div className="relative z-10 p-4 sm:p-6">
                 <div className="space-y-4">
 
-                  {/* ---------- Nombre y descripción ---------- */}
+                  {/* ---------- Name and description ---------- */}
                   <div className="flex justify-between">
                     <div>
                       <h3 className="text-base sm:text-lg font-semibold">{project.name}</h3>
@@ -156,43 +143,12 @@ export const ProjectList = () => {
                     <StatusBadge key={project.id} state={project.state}/>
                   </div>
 
-                  {/* ---------- Team members ---------- */}
-                  <div className="space-y-4">
+                  <ParticipantsDetails
+                    confirmedParticipants={project.participants}
+                    pendingParticipants={project.pendingParticipants}
+                  />
 
-                    {/* Desktop: AvatarGroup */}
-                    <div className="hidden sm:block">
-                      <AvatarGroup
-                        participants={
-                          (project.pendingParticipants?.length ?? 0) > 0
-                            ? project.pendingParticipants.map(p => ({
-                                name: `${p.firstName} ${p.lastName}`.trim()
-                              }))
-                            : project.participants.map(p => ({
-                                name: `${p.firstName} ${p.lastName}`.trim()
-                              }))
-                        }
-                        size={35}
-                      />
-                    </div>
-
-                    {/* Mobile: Lista de nombres */}
-                    <div className="sm:hidden space-y-2">
-                      {((project.pendingParticipants?.length ?? 0) > 0
-                        ? project.pendingParticipants
-                        : project.participants
-                      ).map((participant, idx) => (
-                        <div key={idx} className="flex items-center gap-2 text-sm">
-                          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
-                            {participant.firstName[0]}
-                            {participant.lastName[0]}
-                          </div>
-                          <span>{participant.firstName} {participant.lastName}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* ---------- Documentos ---------- */}
+                  {/* ---------- Documents ---------- */}
                   {project.documents && project.documents.length > 0 && (
                     <div className="space-y-2 pt-2">
                       {/* Encabezado documentos */}
@@ -237,7 +193,7 @@ export const ProjectList = () => {
                     </div>
                   )}
 
-                  {/* ---------- Acciones por estado ---------- */}
+                  {/* ---------- Actions by state ---------- */}
                   <div className="pt-2">
                     {project.state === "UNDER_REVIEW" && (
                       <div className="grid md:grid-cols-3 gap-2 mb-2">
@@ -292,7 +248,7 @@ export const ProjectList = () => {
         )}
       </div>
 
-      {/* ======================== PAGINACIÓN ======================== */}
+      {/* ======================== PAGINATION ======================== */}
       {meta && meta.totalPages > 1 && (
         <div className="flex justify-center mt-6">
           <Pagination

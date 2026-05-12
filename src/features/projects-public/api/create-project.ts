@@ -9,16 +9,20 @@ import { z } from "zod";
 // Schema para Competition (solo participantes)
 export const createCompetitionInputSchema = z.object({
   eventId: z.string().min(1),
-  courseId: z.string().min(1),
+  categoryId: z.string().min(1),
   participants: z.string().min(1), // JSON string
 });
 
 // Schema para Exposition (proyecto completo)
 export const createProjectInputSchema = z.object({
+  projectCode: z.union([
+    z.string().regex(/^[1-9]\d?$/, 'El número asignado debe tener máximo 2 cifras y no puede iniciar en 0'),
+    z.literal(''),
+  ]).optional(),
   name: z.string().min(2).max(255),
   description: z.string().max(3000).optional(),
   eventId: z.string().min(1),
-  courseId: z.string().min(1),
+  categoryId: z.string().min(1),
   participants: z.string().min(1), // JSON string
   documents: z.string().min(1),    // JSON string
 });

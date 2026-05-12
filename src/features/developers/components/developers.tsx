@@ -7,7 +7,7 @@ import {
   contributors,
 } from '@/features/developers/data/contributors';
 // Utility functions for handling contributor data and filtering
-import { Code2, Layers3, Sparkles, Users } from 'lucide-react';
+import { Code2, Github, Layers3, Sparkles, Users } from 'lucide-react';
 import {
   buildRoleStats,
   compareVersions,
@@ -248,7 +248,7 @@ export function Developers() {
       <div id="contributors-grid" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {filtered.map((developer) => (
           <div
-            key={developer.name}
+            key={developer.fullName}
             className="relative rounded-[1.5rem] overflow-hidden transition-all hover:-translate-y-1 hover:shadow-[0_0_26px_oklch(0.82_0.18_330_/_0.35)]"
           >
             <div className="absolute inset-0 rounded-[1.5rem] p-[1.5px] pointer-events-none" style={rainbowOutlineStyle} />
@@ -261,17 +261,38 @@ export function Developers() {
                 }}
               />
 
-              <h3 className="text-lg sm:text-xl font-semibold text-white">{developer.name}</h3>
-              <p className="mt-3 inline-flex max-w-full rounded-full border border-white/45 bg-transparent px-3 py-1 text-sm text-white justify-center text-center break-words">
-                {developer.roleLabels.join(' • ')}
-              </p>
+              <h3 className="text-lg sm:text-xl font-semibold text-white">{developer.fullName}</h3>
+              <div className="mt-3 flex w-full flex-wrap items-center justify-center gap-2">
+                <p className="inline-flex min-h-8 max-w-full items-center rounded-full border border-white/45 bg-transparent px-3 text-sm italic text-white justify-center text-center break-words">
+                  {developer.roleLabels.join(' • ')}
+                </p>
+
+                {developer.github ? (
+                  <a
+                    href={developer.github}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/25 bg-white/10 text-white transition-opacity hover:opacity-80"
+                    aria-label={`GitHub de ${developer.fullName}`}
+                  >
+                    <Github className="h-4 w-4" />
+                  </a>
+                ) : (
+                  <span
+                    className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-white/45"
+                    aria-label="GitHub pendiente"
+                  >
+                    <Github className="h-4 w-4" />
+                  </span>
+                )}
+              </div>
 
               <div className="mt-3 flex flex-wrap justify-center gap-x-3 gap-y-1">
                 {developer.versions.map((version) => {
                   const accent = getVersionAccent(version);
                   return (
                     <span
-                      key={`${developer.name}-${version}`}
+                      key={`${developer.fullName}-${version}`}
                       className={`inline-flex items-center gap-1.5 text-sm ${accent.textClass}`}
                     >
                       <span className={`h-2.5 w-2.5 rounded-sm ${accent.dotClass}`} />
@@ -280,6 +301,7 @@ export function Developers() {
                   );
                 })}
               </div>
+
             </article>
           </div>
         ))}

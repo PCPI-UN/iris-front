@@ -1,7 +1,14 @@
 // Developers info for all versions
-import type { DeveloperProfile } from '@/types/api';
 
-export type ContributorCard = Pick<DeveloperProfile, 'name' | 'role' | 'version'>;
+export type ContributorCard = {
+  firstName: string;
+  middleName?: string;
+  lastName1: string;
+  lastName2: string;
+  role: string;
+  version: string;
+  github: string;
+};
 
 export type ContributorRoleGroup =
   | 'Frontend'
@@ -14,6 +21,14 @@ export type ContributorRoleGroup =
   | 'Otros';
 
 const normalizeRole = (role: string) => role.trim().toLowerCase();
+
+export const getContributorFullName = ({
+  firstName,
+  middleName,
+  lastName1,
+  lastName2,
+}: Pick<ContributorCard, 'firstName' | 'middleName' | 'lastName1' | 'lastName2'>) =>
+  [firstName, middleName, lastName1, lastName2].filter(Boolean).join(' ');
 
 export const getContributorRoleLabels = (role: string) =>
   role
@@ -38,27 +53,27 @@ export const getContributorRoleGroup = (role: string): ContributorRoleGroup => {
 };
 
 export const contributors: ContributorCard[] = [
-  { name: 'Juan Povea', role: 'Backend Leader', version: 'v1.0' },
-  { name: 'Jorge Sánchez', role: 'Frontend Leader', version: 'v1.0' },
-  { name: 'Alejandra Valencia', role: 'Scrum Master - Backend Developer', version: 'v1.0' },
-  { name: 'Carlos López', role: 'UI/UX Leader - Frontend Developer', version: 'v1.0' },
-  { name: 'Yovany Zhu Ye', role: 'Full Stack Developer', version: 'v1.0' },
-  { name: 'Jhonatan Romero', role: 'Frontend Developer', version: 'v1.0' },
-  { name: 'Jesús Cantillo', role: 'Backend Developer', version: 'v1.0' },
-  { name: 'Juan Carrasquilla', role: 'Backend Developer', version: 'v1.0' },
-  { name: 'Samuel Robles', role: 'Backend Developer', version: 'v1.0' },
-  { name: 'Gabriel Palencia', role: 'Backend Developer', version: 'v1.0' },
-  { name: 'Daniel Romero', role: 'Software Architect', version: 'v1.0' },
+  { firstName: 'Juan', middleName: 'Andrés', lastName1: 'Povea', lastName2: 'Fernandez', role: 'Backend Leader', version: 'v1.0', github: 'https://github.com/J-Povea21' },
+  { firstName: 'Jorge', middleName: 'Luis', lastName1: 'Sánchez', lastName2: 'Barrenche', role: 'Frontend Leader', version: 'v1.0', github: 'https://github.com/jorgeluissanchez' },
+  { firstName: 'Alejandra', lastName1: 'Valencia', lastName2: 'Rua', role: 'Scrum Master - Backend Developer', version: 'v1.0', github: 'https://github.com/alejavalerua' },
+  { firstName: 'Carlos', middleName: 'Elías', lastName1: 'López', lastName2: 'Gallardo', role: 'UI/UX Leader - Frontend Developer', version: 'v1.0', github: 'https://github.com/cegallardo0405' },
+  { firstName: 'Yovany', lastName1: 'Zhu', lastName2: 'Ye', role: 'FullStack Developer', version: 'v1.0', github: 'https://github.com/yzhuye' },
+  { firstName: 'Jhonatan', middleName: 'Smith', lastName1: 'Romero Pacheco', lastName2: '', role: 'Frontend Developer', version: 'v1.0', github: 'https://github.com/jhonatanrp05' },
+  { firstName: 'Jesús', middleName: 'David', lastName1: 'Cantillo', lastName2: 'Guerrero', role: 'Backend Developer', version: 'v1.0', github: 'https://github.com/suscantillo' },
+  { firstName: 'Juan', middleName: 'Miguel', lastName1: 'Carrasquilla', lastName2: 'Escobar', role: 'Backend Developer', version: 'v1.0', github: 'https://github.com/JuanMicarras' },
+  { firstName: 'Samuel', middleName: 'José', lastName1: 'Robles', lastName2: 'Batista', role: 'Backend Developer', version: 'v1.0', github: 'https://github.com/Sjrobles' },
+  { firstName: 'Gabriel', middleName: 'Elias', lastName1: 'Palencia', lastName2: 'Cure', role: 'Backend Developer', version: 'v1.0', github: 'https://github.com/GabrielPalencia' },
+  { firstName: 'Daniel', middleName: 'José', lastName1: 'Romero', lastName2: 'Martínez', role: 'Software Architect', version: 'v1.0', github: 'https://github.com/djromerom' },
 
-  { name: 'Daniel Romero', role: 'Software Architect', version: 'v2.0' },
-  { name: 'Kevin Torregrosa', role: 'Backend Leader', version: 'v2.0' },
-  { name: 'Paula Núñez', role: 'Frontend Leader', version: 'v2.0' },
-  { name: 'Andrés Monserrat', role: 'Frontend Developer', version: 'v2.0' },
-  { name: 'Isabella Arrieta', role: 'Full Stack Developer', version: 'v2.0' },
-  { name: 'Judith Pérez', role: 'Full Stack Developer', version: 'v2.0' },
-  { name: 'Esteban Arnedo', role: 'Full Stack Developer', version: 'v2.0' },
-  { name: 'Carlos Arango', role: 'Full Stack Developer', version: 'v2.0' },
-  { name: 'Wilmer Santiago', role: 'Full Stack Developer', version: 'v2.0' },
-  { name: 'Camilo de la Rosa', role: 'DevOps Engineer', version: 'v2.0' },
-  { name: 'Natalia Carpintero', role: 'Scrum Master - Frontend Developer', version: 'v2.0' },
+  { firstName: 'Daniel', middleName: 'José', lastName1: 'Romero', lastName2: 'Martínez', role: 'Software Architect', version: 'v2.0', github: 'https://github.com/djromerom' },
+  { firstName: 'Kevin', middleName: 'Jesús', lastName1: 'Torregrosa', lastName2: 'Padilla', role: 'Backend Leader', version: 'v2.0', github: 'https://github.com/MrManini' },
+  { firstName: 'Paula', middleName: 'Irina', lastName1: 'Núñez', lastName2: 'Zarante', role: 'Frontend Developer', version: 'v2.0', github: 'https://github.com/pzarante' },
+  { firstName: 'Andrés', middleName: 'Felipe', lastName1: 'Monserrat', lastName2: 'Ardilla', role: 'Frontend Developer', version: 'v2.0', github: 'https://github.com/AndresMonserrat' },
+  { firstName: 'Judith', middleName: 'Isabel', lastName1: 'Pérez', lastName2: 'Conde', role: 'Frontend Leader - FullStack Developer', version: 'v2.0', github: 'https://github.com/Judithpc23' },
+  { firstName: 'Isabella', lastName1: 'Arrieta', lastName2: 'Juliao', role: 'FullStack Developer', version: 'v2.0', github: 'https://github.com/isaAJ05' },
+  { firstName: 'Esteban', middleName: 'David', lastName1: 'Arnedo', lastName2: 'Dadul', role: 'FullStack Developer', version: 'v2.0', github: 'https://github.com/Edadul' },
+  { firstName: 'Carlos', middleName: 'Alberto', lastName1: 'Arango', lastName2: 'Mejía', role: 'FullStack Developer', version: 'v2.0', github: 'https://github.com/Carlosam7' },
+  { firstName: 'Wilmer', middleName: 'Junior', lastName1: 'Santiago', lastName2: 'Donado', role: 'FullStack Developer', version: 'v2.0', github: 'https://github.com/WilmerJr01' },
+  { firstName: 'Camilo', middleName: 'Andrés', lastName1: 'De la Rosa', lastName2: 'Movilla', role: 'DevOps Engineer', version: 'v2.0', github: 'https://github.com/CamiloDlRM' },
+  { firstName: 'Natalia', middleName: 'Patricia', lastName1: 'Carpintero', lastName2: 'Leal', role: 'Scrum Master - Frontend Developer', version: 'v2.0', github: 'https://github.com/Carpinteron' },
 ];

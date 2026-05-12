@@ -1,22 +1,35 @@
 import { queryOptions, useQuery } from "@tanstack/react-query";
 
 import { api } from "@/lib/api-client";
+import { withLegacyCourseIdParam } from "@/lib/compat/category-legacy";
 import { QueryConfig } from "@/lib/react-query";
 import { Meta, Project } from "@/types/api";
 
-//MOCKAPI -> category
-//BACK -> courseId
+
+export type ProjectJuror = {
+  id?: string | number;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+};
+
+export type ProjectWithJurors = Project & {
+  jurors?: ProjectJuror[];
+};
 
 export const getProjects = async (
-  { page, eventId, state, courseId }: { page?: number; eventId?: number, state?: string, courseId?: number } = { page: 1 }
-): Promise<{ data: Project[]; meta: Meta }> => {
+  { page, eventId, state, categoryId }: { page?: number; eventId?: number, state?: string, categoryId?: number } = { page: 1 }
+): Promise<{ data: ProjectWithJurors[]; meta: Meta }> => {
+  
   const response = await api.get<{
-    items: Project[];
+    items: ProjectWithJurors[];
     page: number;
     limit: number;
     total: number;
     totalPages: number;
-  }>(`/projects/by-event/${eventId}`, { params: { page, state, courseId } });
+
+  }>(`/projects/by-event/${eventId}/with-jurors`, { params: { page, state, ...withLegacyCourseIdParam(categoryId) } });
+
   
   return {
     data: response.items || [],
@@ -33,14 +46,14 @@ export const getProjectsQueryOptions = ({
   page = 1,
   eventId,
   state,
-  courseId,
-}: { page?: number; eventId?: number; state?: string, courseId?: number } = {}) => {
+  categoryId,
+}: { page?: number; eventId?: number; state?: string; categoryId?: number } = {}) => {
   return queryOptions({
     queryKey: [
       "projects",
-      { page, eventId, state, courseId },
+      { page, eventId, state, categoryId },
     ],
-    queryFn: () => getProjects({ page, eventId, state, courseId }),
+    queryFn: () => getProjects({ page, eventId, state, categoryId }),
   });
 };
 
@@ -48,7 +61,7 @@ type UseProjectsOptions = {
   page?: number;
   eventId?: number;
   state?: string;
-  courseId?: number;
+  categoryId?: number;
   queryConfig?: QueryConfig<typeof getProjectsQueryOptions>;
 };
 
@@ -57,10 +70,10 @@ export const useProjects = ({
   page,
   eventId,
   state,
-  courseId
+  categoryId
 }: UseProjectsOptions) => {
   return useQuery({
-    ...getProjectsQueryOptions({ page, eventId, state, courseId }),
+    ...getProjectsQueryOptions({ page, eventId, state, categoryId }),
     ...queryConfig,
   });
 };

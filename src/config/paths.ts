@@ -81,11 +81,18 @@ export const paths = {
     juries: {
       getHref: () => "/app/juries",
     },
+    assignments: {
+      getHref: () => "/app/assignments"
+    },
     administrators: {
       getHref: () => "/app/administrators",
     },
     courses: {
       getHref: () => "/app/courses",
+      roles: ["Admin"],
+    },
+    categories: {
+      getHref: () => "/app/categories",
       roles: ["Admin"],
     },
     project_jury: {
@@ -143,7 +150,7 @@ export const paths = {
       },
     },
     developers: {
-      getHref: () => '/public/developers',
+      getHref: () => '/public/contributors',
     },
   },
 } as const;

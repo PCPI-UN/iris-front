@@ -10,10 +10,11 @@ import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@/comp
 import { FileText, Users, Send, ArrowLeft, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react"
 import { useProject } from "@/features/projects/api/get-project"
 import { AvatarGroup } from "@/features/projects/components/avatar-icon"
-import { useCourseCriteria } from "@/features/cirteria/api/get-course-criterion"
+import { useCategoryCriteria } from "@/features/criteria/api/get-category-criterion"
 import { useCreateEvaluation } from "@/features/evaluations/api/create-evaluation"
 import { useNotifications } from "@/components/ui/notifications"
 import { Spinner } from "@heroui/spinner"
+import { normalizeCategoryId } from "@/lib/compat/category-legacy"
 
 const SCORE_SCALE = [
   { value: 1, label: "Insuficiente" },
@@ -53,18 +54,19 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
   const { data: projectData, isLoading: isProjectLoading } = useProject({ projectId });
 
   const project = (projectData as any)?.data ?? projectData ?? null;
+  const projectCategoryId = normalizeCategoryId(project ?? {}) ?? "";
 
   const {
-    data: courseCriteriaData,
-    isLoading: isCourseCriteriaLoading,
-  } = useCourseCriteria({
-    courseId: project?.courseId ?? "",
+    data: categoryCriteriaData,
+    isLoading: isCategoryCriteriaLoading,
+  } = useCategoryCriteria({
+    categoryId: String(projectCategoryId),
     queryConfig: {
-      enabled: !!project?.courseId,
+      enabled: !!projectCategoryId,
     },
   });
 
-  if (isProjectLoading || isCourseCriteriaLoading) {
+  if (isProjectLoading || isCategoryCriteriaLoading) {
     return (     
       <div className="flex justify-center items-center min-h-[400px]">
         <Spinner size="lg" />
@@ -73,7 +75,7 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
   }
 
   const backendSections =
-    courseCriteriaData?.map((cat, index) => ({
+    categoryCriteriaData?.map((cat, index) => ({
       id: `section-${index + 1}`,
       name: `${index + 1}. (${cat.weight}) ${cat.category}`,
       isSection: true,
@@ -171,13 +173,17 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
                 <div className="hidden sm:block">
                   <AvatarGroup
                     participants={
-                      project.pendingParticipants.length > 0
-                        ? project.pendingParticipants.map((p: any) => ({
-                          name: `${p.firstName} ${p.lastName}`.trim()
-                        }))
-                        : project.participants.map((p: any) => ({
-                          name: `${p.firstName} ${p.lastName}`.trim()
-                        }))
+                      project.pendingParticipants?.length > 0
+                        ? project.pendingParticipants
+                            .filter((p: any) => p?.firstName && p?.lastName)
+                            .map((p: any) => ({
+                              name: `${String(p.firstName ?? "").trim()} ${String(p.lastName ?? "").trim()}`.trim()
+                            }))
+                        : project.participants
+                            ?.filter((p: any) => p?.firstName && p?.lastName)
+                            .map((p: any) => ({
+                              name: `${String(p.firstName ?? "").trim()} ${String(p.lastName ?? "").trim()}`.trim()
+                            })) ?? []
                     }
                     size={35}
                   />
@@ -185,18 +191,28 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
 
                 {/* Mobile: Lista de nombres */}
                 <div className="sm:hidden space-y-2">
-                  {(project.pendingParticipants.length > 0
+                  {(project.pendingParticipants?.length > 0
                     ? project.pendingParticipants
                     : project.participants
-                  ).map((participant: any, idx: number) => (
-                    <div key={idx} className="flex items-center gap-2 text-sm">
-                      <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
-                        {participant.firstName[0]}
-                        {participant.lastName[0]}
-                      </div>
-                      <span>{participant.firstName} {participant.lastName}</span>
-                    </div>
-                  ))}
+                  )
+                    ?.filter((p: any) => p?.firstName && p?.lastName)
+                    .map((participant: any, idx: number) => {
+                      const firstName = String(participant.firstName ?? "").trim();
+                      const lastName = String(participant.lastName ?? "").trim();
+                      
+                      if (!firstName || !lastName) return null;
+                      
+                      return (
+                        <div key={idx} className="flex items-center gap-2 text-sm">
+                          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
+                            {firstName[0]}
+                            {lastName[0]}
+                          </div>
+                          <span>{firstName} {lastName}</span>
+                        </div>
+                      );
+                    })
+                    .filter(Boolean)}
                 </div>
               </div>
 

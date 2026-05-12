@@ -353,12 +353,13 @@ export const coursesHandlers = [
   }),
 
   // Current app contract: update
-  http.patch(`${env.API_URL}/events/courses/update`, async ({ request }) => {
+  http.patch(`${env.API_URL}/events/courses/:id`, async ({ params, request }) => {
     await networkDelay();
 
     try {
+      const courseId = toPublicNumericId(String(params.id), "course");
       const payload = (await request.json()) as CourseBody;
-      return updateCourseInternal(payload);
+      return updateCourseInternal({ ...payload, id: courseId });
     } catch (error: any) {
       return HttpResponse.json(
         { message: error?.message || "Server Error" },
@@ -382,16 +383,11 @@ export const coursesHandlers = [
   }),
 
   // Current app contract: delete
-  http.delete(`${env.API_URL}/events/courses/delete`, async ({ request }) => {
+  http.delete(`${env.API_URL}/events/courses/:id`, async ({ params }) => {
     await networkDelay();
 
     try {
-      const body = (await request.json()) as { id?: number };
-      if (!body?.id) {
-        return HttpResponse.json({ message: "id is required" }, { status: 400 });
-      }
-
-      return deleteCourseInternal(body.id);
+      return deleteCourseInternal(String(params.id));
     } catch (error: any) {
       return HttpResponse.json(
         { message: error?.message || "Server Error" },

@@ -3,34 +3,32 @@ import { z } from "zod";
 
 import { api } from "@/lib/api-client";
 import { MutationConfig } from "@/lib/react-query";
-import { Course } from "@/types/api";
+import { Category } from "@/types/api";
 
-import { getCoursesQueryOptions } from "./get-courses";
-
-export const createCourseInputSchema = z.object({
+export const createCategoryInputSchema = z.object({
   code: z.string().min(1, "Required"),
   description: z.string().min(1, "Required"),
   eventId: z.number().min(1, "Event is required"),
   status: z.enum(["active", "inactive"]).optional(),
 });
 
-export type CreateCourseInput = z.infer<typeof createCourseInputSchema>;
+export type CreateCategoryInput = z.infer<typeof createCategoryInputSchema>;
 
-export const createCourse = ({
+export const createCategory = ({
   data,
 }: {
-  data: CreateCourseInput;
-}): Promise<{ data: Course }> => {
+  data: CreateCategoryInput;
+}): Promise<{ data: Category }> => {
   return api.post("/events/courses", data);
 };
 
-type UseCreateCourseOptions = {
-  mutationConfig?: MutationConfig<typeof createCourse>;
+type UseCreateCategoryOptions = {
+  mutationConfig?: MutationConfig<typeof createCategory>;
 };
 
-export const useCreateCourse = ({
+export const useCreateCategory = ({
   mutationConfig,
-}: UseCreateCourseOptions = {}) => {
+}: UseCreateCategoryOptions = {}) => {
   const queryClient = useQueryClient();
 
   const { onSuccess, ...restConfig } = mutationConfig || {};
@@ -38,11 +36,11 @@ export const useCreateCourse = ({
   return useMutation({
     onSuccess: (data, variables, ...args) => {
       queryClient.invalidateQueries({
-        queryKey: ["courses"],
+        queryKey: ["categories"],
       });
       onSuccess?.(data, variables, ...args);
     },
     ...restConfig,
-    mutationFn: createCourse,
+    mutationFn: createCategory,
   });
 };

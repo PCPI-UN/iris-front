@@ -4,7 +4,7 @@ import { Card, CardBody, CardHeader } from "@heroui/react"
 import { Chip } from "@heroui/react"
 import { Users, FileText, Upload, CheckCircle2, AlertCircle } from "lucide-react"
 import { WizardData } from "../project-wizard"
-import { useCourse } from "@/features/courses/api/get-course"
+import { useCategory } from "@/features/courses/api/get-category"
 import { getSemesterLabel, getCareerLabel } from "./constants-carrers-semesters"
 
 type ReviewStepProps = {
@@ -14,9 +14,9 @@ type ReviewStepProps = {
 
 export function ReviewStep({ data, eventType }: ReviewStepProps) {
 
-  const courseQuery = useCourse({ courseId: data.project.courseId })
+  const categoryQuery = useCategory({ categoryId: data.project.categoryId })
 
-  const course = courseQuery.data?.data
+  const category = categoryQuery.data?.data
 
   return (
     <div className="space-y-6">
@@ -33,37 +33,54 @@ export function ReviewStep({ data, eventType }: ReviewStepProps) {
         </CardHeader>
         <CardBody>
           <div className="space-y-3">
-            {data.participants.map((participant) => (
-              <div key={participant.id} className="rounded-lg border border-default-200 bg-default-50 p-4">
-                <div className="space-y-2">
-                  <p className="font-medium text-base">
-                    {participant.firstName} {participant.lastName}
-                  </p>
-                  <p className="text-sm text-default-500">{participant.email}</p>
-                  
-                  <div className="grid grid-cols-2 gap-4 pt-2">
-                    {participant.studentCode && (
+            {data.participants
+              .filter((p) => p?.firstName && p?.lastName)
+              .map((participant) => {
+                const firstName = String(participant.firstName ?? "").trim();
+                const lastName = String(participant.lastName ?? "").trim();
+                
+                if (!firstName || !lastName) return null;
+                
+                return (
+                  <div key={participant.id} className="rounded-lg border border-default-200 bg-default-50 p-4">
+                    <div className="space-y-2">
+                      <p className="font-medium text-base">
+                        {firstName} {lastName}
+                      </p>
+                      <p className="text-sm text-default-500">{participant.email}</p>
+
+                      <div className="grid grid-cols-1 gap-4 pt-2 sm:grid-cols-2">
+                        {participant.studentCode && (
+                          <div>
+                            <p className="text-xs font-medium text-default-500 uppercase">Código</p>
+                            <p className="text-sm text-foreground">{participant.studentCode}</p>
+                          </div>
+                        )}
+                    <div>
+                      <p className="text-xs font-medium text-default-500 uppercase">Semestre</p>
+                      <p className="text-sm text-foreground">
+                        {participant.semester ? getSemesterLabel(participant.semester) : "No especificado"}
+                      </p>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <p className="text-xs font-medium text-default-500 uppercase">Carrera</p>
+                      <p className="text-sm text-foreground">
+                        {participant.career ? getCareerLabel(participant.career) : "No especificada"}
+                      </p>
+                    </div>
+                    {eventType === "Competition" && !participant.semester && (
                       <div>
-                        <p className="text-xs font-medium text-default-500 uppercase">Código</p>
-                        <p className="text-sm text-foreground">{participant.studentCode}</p>
+                        <p className="text-xs font-medium text-default-500 uppercase">Observación</p>
+                        <p className="text-sm text-default-500">El semestre no fue registrado.</p>
                       </div>
                     )}
-                    {eventType === "Competition" && participant.semester && (
-                      <div>
-                        <p className="text-xs font-medium text-default-500 uppercase">Semestre</p>
-                        <p className="text-sm text-foreground">{getSemesterLabel(participant.semester)}</p>
                       </div>
-                    )}
-                    {eventType === "Competition" && participant.career && (
-                      <div className="col-span-2">
-                        <p className="text-xs font-medium text-default-500 uppercase">Carrera</p>
-                        <p className="text-sm text-foreground">{getCareerLabel(participant.career)}</p>
-                      </div>
-                    )}
+                    </div>
                   </div>
-                </div>
-              </div>
-            ))}
+                );
+              })
+              .filter(Boolean)}
+
           </div>
         </CardBody>
       </Card>
@@ -84,12 +101,16 @@ export function ReviewStep({ data, eventType }: ReviewStepProps) {
                 <p className="mt-1">{data.project.name || "No especificado"}</p>
               </div>
               <div>
+                <p className="text-sm font-medium text-default-500">Num. Asignado</p>
+                <p className="mt-1">{data.project.projectCode || "No especificado"}</p>
+              </div>
+              <div>
                 <p className="text-sm font-medium text-default-500">Descripción</p>
                 <p className="mt-1 text-pretty leading-relaxed">{data.project.description || "No especificada"}</p>
               </div>
               <div>
-                <p className="text-sm font-medium text-default-500">Curso</p>
-                <p className="mt-1">{course?.code || "No especificado"}</p>
+                <p className="text-sm font-medium text-default-500">Categoría</p>
+                <p className="mt-1">{category?.code || "No especificado"}</p>
               </div>
             </div>
           </CardBody>

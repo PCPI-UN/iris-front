@@ -4,7 +4,7 @@ import { Input } from "@heroui/react";
 import { Textarea } from "@heroui/input";
 import { Select, SelectItem } from "@heroui/select";
 import { ProjectData } from "../project-wizard";
-import { useCoursesDropdown } from "@/features/courses/api/get-courses-dropdown";
+import { useCategoriesDropdown } from "@/features/courses/api/get-categories-dropdown";
 
 type ProjectDetailsStepProps = {
   eventId: number;
@@ -12,38 +12,64 @@ type ProjectDetailsStepProps = {
   onUpdate: (project: ProjectData) => void;
 };
 
+const normalizeAssignedNumber = (value: string) => {
+  const digits = value.replace(/\D/g, "").slice(0, 2);
+
+  if (digits === "0") {
+    return "";
+  }
+
+  return digits.replace(/^0+/, "");
+};
+
 export function ProjectDetailsStep({
   eventId,
   project,
   onUpdate,
 }: ProjectDetailsStepProps) {
-  const coursesQuery = useCoursesDropdown({
+  const categoriesQuery = useCategoriesDropdown({
     eventId,
     queryConfig: { enabled: !!eventId },
   });
 
-  const courses = coursesQuery.data?.data ?? [];
+  const categories = categoriesQuery.data?.data ?? [];
 
   const nameLength = project.name.length;
   const descLength = project.description.length;
 
   return (
     <div className="space-y-6">
-      {/* Nombre del Proyecto */}
-      <div className="relative">
-        <Input
-          label="Nombre del Proyecto"
-          placeholder="Sistema de gestión de inventario inteligente"
-          value={project.name}
-          onValueChange={(value) => onUpdate({ ...project, name: value })}
-          isRequired
-          maxLength={255}
-        />
+      <div className="grid gap-4 md:grid-cols-[8rem_minmax(0,1fr)] md:items-start">
+        <div>
+          <Input
+            label="Num. Asignado"
+            placeholder="10"
+            value={project.projectCode}
+            onValueChange={(value) =>
+              onUpdate({ ...project, projectCode: normalizeAssignedNumber(value) })
+            }
+            inputMode="numeric"
+            type="text"
+            maxLength={2}
+          />
+        </div>
 
-        {/* Contador */}
-        <p className="text-xs text-default-400 absolute right-1 -bottom-5">
-          {nameLength}/255
-        </p>
+        {/* Nombre del Proyecto */}
+        <div className="relative">
+          <Input
+            label="Nombre del Proyecto"
+            placeholder="Sistema de gestión de inventario inteligente"
+            value={project.name}
+            onValueChange={(value) => onUpdate({ ...project, name: value })}
+            isRequired
+            maxLength={255}
+          />
+
+          {/* Contador */}
+          <p className="text-xs text-default-400 absolute right-1 -bottom-5">
+            {nameLength}/255
+          </p>
+        </div>
       </div>
 
       {/* Descripción */}
@@ -64,26 +90,26 @@ export function ProjectDetailsStep({
         </p>
       </div>
 
-      {/* Select de cursos */}
+      {/* Select de categorías */}
       <Select
-        label="Curso al que Pertenece"
-        placeholder="Seleccione un curso"
-        selectedKeys={project.courseId ? [String(project.courseId)] : []}
+        label="Categoría"
+        placeholder="Seleccione una categoría"
+        selectedKeys={project.categoryId ? [String(project.categoryId)] : []}
         onSelectionChange={(keys) => {
           const selected = Array.from(keys)[0] as string;
-          onUpdate({ ...project, courseId: Number(selected) });
+          onUpdate({ ...project, categoryId: Number(selected) });
         }}
-        isDisabled={!eventId || coursesQuery.isLoading}
-        isLoading={!!eventId && coursesQuery.isLoading}
+        isDisabled={!eventId || categoriesQuery.isLoading}
+        isLoading={!!eventId && categoriesQuery.isLoading}
         isRequired
       >
-        {courses.length > 0 ? (
-          courses.map((course: any) => (
-            <SelectItem key={course.id}>{course.code}</SelectItem>
+        {categories.length > 0 ? (
+          categories.map((category: any) => (
+            <SelectItem key={category.id}>{category.code}</SelectItem>
           ))
         ) : (
-          <SelectItem key="no-courses" isDisabled>
-            {eventId ? "No courses available" : "Event required"}
+          <SelectItem key="no-categories" isDisabled>
+            {eventId ? "No categories available" : "Event required"}
           </SelectItem>
         )}
       </Select>
