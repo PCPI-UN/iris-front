@@ -140,8 +140,8 @@ export type Event = Entity<{
 export type Project = Entity<{
   id: number;
   eventId: number;
-  categoryId?: number;
-  courseId: number;
+  categoryId: number;
+  courseId?: number;
   projectCode?: string | null;
   name: string;
   description?: string;
@@ -195,8 +195,6 @@ export type Category = Entity<{
   event?: { id: number; name: string };
   createdAt: number;
 }>;
-
-export type Course = Category;
 
 export type EvaluationScoreInput = {
   criterion: string;

@@ -10,7 +10,7 @@ export type Criterion = {
   description: string;
   weight: number;
   active: boolean;
-  courseIds: number[];
+  categoryIds: number[];
   category: string;
 };
 

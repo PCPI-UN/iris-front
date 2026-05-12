@@ -9,9 +9,11 @@ export const getCategoriesByEvent = async (eventId?: number) => {
     nextPageToken?: string;
   }>(`/events/courses/event/${eventId}`);
 
+  const categories = response.courses || [];
+
   return {
     ...response,
-    categories: response.courses || [],
+    categories,
   };
 };
 
@@ -25,6 +27,3 @@ export const useCategoriesByEvent = (eventId?: number) => {
     enabled: !!eventId,
   });
 };
-
-export const getCoursesByEvent = getCategoriesByEvent;
-export const useCoursesByEvent = useCategoriesByEvent;

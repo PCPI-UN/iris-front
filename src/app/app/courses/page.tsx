@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 
 import { paths } from "@/config/paths";
 
-const CoursesPage = async ({
+const LegacyCategoriesRedirectPage = async ({
   searchParams,
 }: {
   searchParams: Promise<{ page: string | null; event: string | null }>;
@@ -25,4 +25,4 @@ const CoursesPage = async ({
   redirect(destination);
 };
 
-export default CoursesPage;
+export default LegacyCategoriesRedirectPage;

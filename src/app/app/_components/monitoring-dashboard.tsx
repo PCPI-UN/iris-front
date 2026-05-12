@@ -31,6 +31,11 @@ import {
 import { Spinner } from '@/components/ui/spinner';
 import { StatusBadge } from '@/components/ui/status-badge/status-badge';
 import { useUser } from '@/lib/auth';
+import {
+  categoryQueryParamKeys,
+  normalizeCategoryId,
+  readCategoryIdFromSearchParams,
+} from '@/lib/compat/category-legacy';
 import { getProjectEvaluationStats, type ProjectEvaluationStats } from '@/features/evaluations/api/get-project-evaluation-stats';
 import { useEvents } from '@/features/events/api/get-events';
 import { useCategoriesDropdown } from '@/features/courses/api/get-categories-dropdown';
@@ -185,20 +190,20 @@ type ProjectEvaluationProgress = {
 type ProjectEvaluationSummary = ProjectEvaluationStats | undefined;
 
 type CategoryEvaluationStats = {
-  courseId: number;
+  categoryId: number;
   label: string;
   totalProjects: number;
   evaluatedProjects: number;
   pendingProjects: number;
 };
 
-const getCourseLabel = (course: { id: number; code: string; description?: string }, fallbackId: number) => {
-  if (course.code?.trim()) {
-    return course.code.trim();
+const getCategoryLabel = (category: { id: number; code: string; description?: string }, fallbackId: number) => {
+  if (category.code?.trim()) {
+    return category.code.trim();
   }
 
-  if (course.description?.trim()) {
-    return course.description.trim();
+  if (category.description?.trim()) {
+    return category.description.trim();
   }
 
   return `Categoría ${fallbackId}`;
@@ -206,18 +211,23 @@ const getCourseLabel = (course: { id: number; code: string; description?: string
 
 const buildCategoryEvaluationStats = (
   projects: ProjectWithJurors[],
-  courses: { id: number; code: string; description?: string }[],
+  categories: { id: number; code: string; description?: string }[],
   statsByProjectId: Map<string, ProjectEvaluationStats | undefined>,
 ) => {
-  const courseMap = new Map(courses.map((course) => [course.id, course]));
+  const categoryMap = new Map(categories.map((category) => [category.id, category]));
   const statsMap = new Map<number, CategoryEvaluationStats>();
 
   projects.forEach((project) => {
-    const courseId = project.courseId;
-    const course = courseMap.get(courseId);
-    const current = statsMap.get(courseId) ?? {
-      courseId,
-      label: course ? getCourseLabel(course, courseId) : `Categoría ${courseId}`,
+    const categoryId = Number(normalizeCategoryId(project));
+
+    if (!Number.isFinite(categoryId) || categoryId <= 0) {
+      return;
+    }
+
+    const category = categoryMap.get(categoryId);
+    const current = statsMap.get(categoryId) ?? {
+      categoryId,
+      label: category ? getCategoryLabel(category, categoryId) : `Categoría ${categoryId}`,
       totalProjects: 0,
       evaluatedProjects: 0,
       pendingProjects: 0,
@@ -233,7 +243,7 @@ const buildCategoryEvaluationStats = (
       current.pendingProjects += 1;
     }
 
-    statsMap.set(courseId, current);
+    statsMap.set(categoryId, current);
   });
 
   return Array.from(statsMap.values()).sort((left, right) => right.totalProjects - left.totalProjects);
@@ -256,7 +266,7 @@ export const MonitoringDashboard = () => {
   const activeTab = (viewParam === 'projects' ? 'projects' : viewParam === 'ranking' ? 'ranking' : 'statistics') as MonitoringTab;
   const currentPage = parsePage(searchParams?.get('page'));
   const stateParam = searchParams?.get('state');
-  const selectedCourseId = parseOptionalId(searchParams?.get('courseId'));
+  const selectedCategoryId = parseOptionalId(readCategoryIdFromSearchParams(searchParams));
   const selectedState: ProjectFilterState = isProjectState(stateParam)
     ? stateParam
     : 'ALL';
@@ -285,6 +295,7 @@ export const MonitoringDashboard = () => {
     { resetPage = false }: { resetPage?: boolean } = {},
   ) => {
     const nextParams = new URLSearchParams(searchParams?.toString() ?? '');
+    const legacyCategoryParamKey = categoryQueryParamKeys.find((key) => key !== 'categoryId');
 
     if (resetPage) {
       nextParams.set('page', '1');
@@ -293,10 +304,19 @@ export const MonitoringDashboard = () => {
     Object.entries(changes).forEach(([key, value]) => {
       if (value === null || value === undefined || value === '') {
         nextParams.delete(key);
+
+        if (key === 'categoryId' && legacyCategoryParamKey) {
+          nextParams.delete(legacyCategoryParamKey);
+        }
+
         return;
       }
 
       nextParams.set(key, String(value));
+
+      if (key === 'categoryId' && legacyCategoryParamKey) {
+        nextParams.delete(legacyCategoryParamKey);
+      }
     });
 
     router.replace(`?${nextParams.toString()}`, { scroll: false });
@@ -321,7 +341,7 @@ export const MonitoringDashboard = () => {
     currentPage,
     itemsPerPage: 10,
     eventId: selectedEventId,
-    courseId: selectedCourseId,
+    categoryId: selectedCategoryId,
     state: selectedState === 'ALL' ? undefined : selectedState,
     q: projectSearch.trim() || undefined,
     queryConfig: { enabled: projectQueryEnabled && activeTab === 'projects' },
@@ -412,8 +432,11 @@ export const MonitoringDashboard = () => {
   }, [allProjectEvaluationStatsQueries, allProjects]);
 
   const statisticsProjects = useMemo(
-    () => (selectedCourseId ? allProjects.filter((project) => project.courseId === selectedCourseId) : allProjects),
-    [allProjects, selectedCourseId],
+    () =>
+      selectedCategoryId
+        ? allProjects.filter((project) => Number(normalizeCategoryId(project)) === selectedCategoryId)
+        : allProjects,
+    [allProjects, selectedCategoryId],
   );
 
   const projectTotals = useMemo(
@@ -529,7 +552,7 @@ export const MonitoringDashboard = () => {
 
   const handleEventChange = (value: string) => {
     setProjectSearch('');
-    updateParams({ event: value, courseId: null }, { resetPage: true });
+    updateParams({ event: value, categoryId: null }, { resetPage: true });
   };
 
   const handleTabChange = (tab: MonitoringTab) => {
@@ -540,9 +563,9 @@ export const MonitoringDashboard = () => {
     updateParams({ state: state === 'ALL' ? null : state }, { resetPage: true });
   };
 
-  const handleCourseChange = (keys: Set<string>) => {
+  const handleCategoryChange = (keys: Set<string>) => {
     const selected = Array.from(keys)[0];
-    updateParams({ courseId: selected ? Number(selected) : null }, { resetPage: true });
+    updateParams({ categoryId: selected ? Number(selected) : null }, { resetPage: true });
   };
 
   const handlePageChange = (page: number) => {
@@ -660,8 +683,8 @@ export const MonitoringDashboard = () => {
                       ? 'Todas las categorías'
                       : 'Selecciona un evento primero'
                   }
-                  selectedKeys={selectedCourseId ? [String(selectedCourseId)] : []}
-                  onSelectionChange={(keys) => handleCourseChange(keys as Set<string>)}
+                  selectedKeys={selectedCategoryId ? [String(selectedCategoryId)] : []}
+                  onSelectionChange={(keys) => handleCategoryChange(keys as Set<string>)}
                   isDisabled={!selectedEventId}
                   isLoading={categoriesDropdownQuery.isLoading}
                 >
@@ -875,7 +898,7 @@ export const MonitoringDashboard = () => {
 
                       return (
                         <div
-                          key={category.courseId}
+                          key={category.categoryId}
                           className="space-y-2 rounded-2xl border border-default-200/70 bg-background/80 p-4"
                         >
                           <div className="flex flex-wrap items-start justify-between gap-3">
