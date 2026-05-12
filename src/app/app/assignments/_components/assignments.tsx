@@ -1,7 +1,5 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
-
 import { ContentLayout } from "@/components/layouts/content-layout";
 import '@/features/landing/index.css';
 import { ProjectsTable } from "@/features/assignments/components/project-table";
@@ -13,8 +11,6 @@ import { ProjectsCard } from "@/features/assignments/components/project-card";
 
 
 export const Assignments = () => {
-  const searchParams = useSearchParams();
-  const eventId = searchParams?.get("event");
   const [activePanel, setActivePanel] = useState<{type: "assign" | "view" | null; project: any | null;} | null>(null);
 
   return (
