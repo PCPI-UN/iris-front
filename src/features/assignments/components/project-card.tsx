@@ -28,14 +28,6 @@ export const ProjectsCard = () => {
 
   const [selectedProject, setSelectedProject] = useState<any | null>(null);
   const [selectedProjectView, setSelectedProjectView] = useState<any | null>(null);
-  
-  const handlePageChange = (newPage: number) => {
-    const params = new URLSearchParams();
-    params.set("page", String(newPage));
-    if (eventId) params.set("event", String(eventId));
-    if (state) params.set("state", state);
-    router.push(`?${params.toString()}`);
-  };
 
   return (
     <div className="flex flex-col space-y-5 justify-between my-5">
