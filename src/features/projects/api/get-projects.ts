@@ -5,27 +5,31 @@ import { withLegacyCourseIdParam } from "@/lib/compat/category-legacy";
 import { QueryConfig } from "@/lib/react-query";
 import { Meta, Project } from "@/types/api";
 
+
+export type ProjectJuror = {
+  id?: string | number;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+};
+
+export type ProjectWithJurors = Project & {
+  jurors?: ProjectJuror[];
+};
+
 export const getProjects = async (
-  {
-    page,
-    eventId,
-    state,
-    categoryId,
-  }: { page?: number; eventId?: number; state?: string; categoryId?: number } = { page: 1 }
-): Promise<{ data: Project[]; meta: Meta }> => {
+  { page, eventId, state, categoryId }: { page?: number; eventId?: number, state?: string, categoryId?: number } = { page: 1 }
+): Promise<{ data: ProjectWithJurors[]; meta: Meta }> => {
+  
   const response = await api.get<{
-    items: Project[];
+    items: ProjectWithJurors[];
     page: number;
     limit: number;
     total: number;
     totalPages: number;
-  }>(`/projects/by-event/${eventId}`, {
-    params: {
-      page,
-      state,
-      ...withLegacyCourseIdParam(categoryId),
-    },
-  });
+
+  }>(`/projects/by-event/${eventId}/with-jurors`, { params: { page, state, ...withLegacyCourseIdParam(categoryId) } });
+
   
   return {
     data: response.items || [],

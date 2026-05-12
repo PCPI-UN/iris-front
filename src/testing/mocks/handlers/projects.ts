@@ -638,6 +638,70 @@ export const projectsHandlers = [
     }
   ),
 
+  http.delete(
+    `${env.API_URL}/projects/:projectId/jurors/:memberUserId`,
+    async ({ cookies, params }) => {
+      await networkDelay();
+
+      try {
+        const { error } = requireAuth(cookies);
+        if (error) {
+          return HttpResponse.json({ message: error }, { status: 401 });
+        }
+
+        const projectId = params.projectId as string;
+        const memberUserId = params.memberUserId as string;
+
+        if (!projectId || !memberUserId) {
+          return HttpResponse.json(
+            { message: "projectId and memberUserId are required" },
+            { status: 400 }
+          );
+        }
+
+        const project = db.project.findFirst({
+          where: { id: { equals: projectId } },
+        });
+
+        if (!project) {
+          return HttpResponse.json(
+            { message: "Project not found" },
+            { status: 404 }
+          );
+        }
+
+        const remainingAssignments = (project.jurorAssignments ?? []).filter(
+          (assignment: any) => String(assignment?.memberUserId) !== String(memberUserId)
+        );
+
+        const updatedProject = db.project.update({
+          where: { id: { equals: projectId } },
+          data: {
+            jurorAssignments: remainingAssignments,
+          },
+        });
+
+        if (!updatedProject) {
+          return HttpResponse.json(
+            { message: "Project not found" },
+            { status: 404 }
+          );
+        }
+
+        await persistDb("project");
+        return HttpResponse.json({
+          success: true,
+          message: "Juror removed from project",
+        });
+      } catch (error: any) {
+        return HttpResponse.json(
+          { message: error?.message || "Server Error" },
+          { status: 500 }
+        );
+      }
+    }
+  ),
+
   http.delete(`${env.API_URL}/projects/:id`, async ({ cookies, params }) => {
     await networkDelay();
     try {
