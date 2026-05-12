@@ -958,7 +958,7 @@ export const MonitoringDashboard = () => {
                       <Table aria-label="Ranking de proyectos" selectionMode="none">
                         <TableHeader>
                           <TableColumn className="w-20">Posición</TableColumn>
-                          <TableColumn className="w-36">ProjectCode</TableColumn>
+                          <TableColumn className="w-36">Code</TableColumn>
                           <TableColumn>Equipo</TableColumn>
                           <TableColumn>Integrantes</TableColumn>
                           <TableColumn className="w-32 text-center">Puntaje</TableColumn>
