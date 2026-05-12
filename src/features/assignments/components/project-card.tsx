@@ -8,7 +8,6 @@ import { useProjects } from "@/features/projects/api/get-projects";
 import { Pagination } from "@heroui/pagination";
 import { GlassCard } from "@/features/landing/components/glass-card";
 import { StatusBadge } from "@/components/ui/status-badge/status-badge";
-import { AvatarGroup } from "@heroui/avatar";
 import { stylesGradient } from "@/components/ui/status-badge/status-style";
 import { useState } from "react";
 import { AssignJudgesPanel } from "./assign-judges-panel";
