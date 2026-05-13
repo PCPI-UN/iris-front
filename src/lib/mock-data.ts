@@ -1,0 +1,92 @@
+import type { EventReportData } from "../types/report-types";
+
+export const MOCK_EVENT_REPORT: EventReportData = {
+  eventId: 1,
+  eventName: "Feria de Innovación 2025",
+  reportDate: new Date().toISOString(),
+  dashboard: {
+    totalProjects: 12,
+    submittedProjects: 10,
+    approved: 4,
+    underReview: 3,
+    rejected: 1,
+    changesRequired: 2,
+    projectsByCategory: [
+      { category: "Ingeniería de Software", count: 5 },
+      { category: "Inteligencia Artificial", count: 3 },
+      { category: "Robótica", count: 2 },
+      { category: "Ciencia de Datos", count: 2 },
+    ],
+    missingDocuments: [
+      { projectName: "SmartCampus AI", missing: "Carta de autorización, Resumen ejecutivo" },
+      { projectName: "RoboGuard 3000", missing: "Informe técnico" },
+    ],
+  },
+  projects: [
+    {
+      id: 1,
+      number: "PRY-001",
+      name: "SmartCampus AI",
+      category: "Inteligencia Artificial",
+      status: "Aprovado",
+      teamLeader: "Ana García",
+      members: 4,
+      documents: 3,
+      judges: 2,
+      createdAt: "2025-03-01T10:00:00Z",
+      participants: [
+        { name: "Ana García", email: "ana@uni.edu", career: "Ing. de Sistemas" },
+        { name: "Luis Pérez", email: "luis@uni.edu", career: "Ing. de Sistemas" },
+        { name: "María López", email: "maria@uni.edu", career: "Ciencias de Datos" },
+        { name: "Carlos Ruiz", email: "carlos@uni.edu", career: "Ing. de Software" },
+      ],
+      assignedJudges: [
+        { name: "Dr. Hernández", email: "hernandez@uni.edu", assignedAt: "2025-03-10T09:00:00Z", evaluated: true },
+        { name: "Dra. Montoya", email: "montoya@uni.edu", assignedAt: "2025-03-10T09:00:00Z", evaluated: false },
+      ],
+      missingDocuments: ["Carta de autorización", "Resumen ejecutivo"],
+    },
+    {
+      id: 2,
+      number: "PRY-002",
+      name: "RoboGuard 3000",
+      category: "Robótica",
+      status: "En revisión",
+      teamLeader: "Pedro Jiménez",
+      members: 3,
+      documents: 4,
+      judges: 1,
+      createdAt: "2025-03-02T11:30:00Z",
+      participants: [
+        { name: "Pedro Jiménez", email: "pedro@uni.edu", career: "Mecatrónica" },
+        { name: "Sofía Torres", email: "sofia@uni.edu", career: "Mecatrónica" },
+        { name: "Andrés Silva", email: "andres@uni.edu", career: "Electrónica" },
+      ],
+      assignedJudges: [
+        { name: "Ing. Vargas", email: "vargas@uni.edu", assignedAt: "2025-03-11T10:00:00Z", evaluated: false },
+      ],
+      missingDocuments: ["Informe técnico"],
+    },
+    {
+      id: 3,
+      number: "PRY-003",
+      name: "DataViz Platform",
+      category: "Ciencia de Datos",
+      status: "Cambios requeridos",
+      teamLeader: "Valentina Ríos",
+      members: 2,
+      documents: 5,
+      judges: 2,
+      createdAt: "2025-03-03T08:00:00Z",
+      participants: [
+        { name: "Valentina Ríos", email: "vrios@uni.edu", career: "Ciencias de Datos" },
+        { name: "Diego Moreno", email: "dmoreno@uni.edu", career: "Estadística" },
+      ],
+      assignedJudges: [
+        { name: "Dr. Castillo", email: "castillo@uni.edu", assignedAt: "2025-03-12T14:00:00Z", evaluated: true },
+        { name: "Dra. Fuentes", email: "fuentes@uni.edu", assignedAt: "2025-03-12T14:00:00Z", evaluated: true },
+      ],
+      missingDocuments: [],
+    },
+  ],
+};
