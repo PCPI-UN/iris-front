@@ -1,12 +1,14 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { Calendar, Users, Check } from "lucide-react";
+import { BarChart3, Calendar } from "lucide-react";
 import { Card, CardBody } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { useEvents } from "../api/get-events";
 import dayjs from "dayjs";
-import { Snippet } from "@/components/ui/snippet";
+import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import { MonitoringDashboard } from "@/app/app/_components/monitoring-dashboard";
 
 export const formatDateShort = (date: string | number) => {
   return dayjs(date).format('MMM D, YYYY');
@@ -15,6 +17,7 @@ export const formatDateShort = (date: string | number) => {
 export const GetPastEventsAdmin = () => {
   const searchParams = useSearchParams();
   const page = searchParams?.get("page") ? Number(searchParams.get("page")) : 1;
+  const [activeEventId, setActiveEventId] = useState<number | null>(null);
 
   const eventsQuery = useEvents({ page });
 
@@ -25,6 +28,15 @@ export const GetPastEventsAdmin = () => {
       </div>
     );
   }
+
+  if (activeEventId !== null) {
+  return (
+    <MonitoringDashboard
+      initialEventId={activeEventId}
+      onBack={() => setActiveEventId(null)}
+    />
+  );
+}
 
   const events = eventsQuery.data?.data ?? [];
 
@@ -64,22 +76,16 @@ export const GetPastEventsAdmin = () => {
                   <span>{formatDateShort(event.inscriptionDeadline)}</span>
                 </div>
               </div>
-
-              <Card className="flex flex-row items-center justify-between p-2 glass-card">
-                <div className="flex items-center gap-2">
-                  <Users className="h-4 w-4 text-default-400" />
-                  <span className="text-sm">
-                    Access code: {" "}
-                    <Snippet size="sm" symbol="">{event.accessCode}</Snippet>
-                  </span>
-                </div>
-                {event.isPubliclyJoinable && (
-                  <div className="flex items-center gap-1 text-green-600 ">
-                    <Check className="h-4 w-4" />
-                    <span className="text-sm font-medium">Public</span>
-                  </div>
-                )}
-              </Card>
+              <Button
+                color="primary"
+                variant="shadow"
+                size="lg"
+                startContent={<BarChart3 className="h-4 w-4" />}
+                className="mt-2 w-full font-semibold"
+                onClick={() => setActiveEventId(Number(event.id))}
+              >
+                Ver estadísticas
+              </Button>
             </CardBody>
           </Card>
         ))}
