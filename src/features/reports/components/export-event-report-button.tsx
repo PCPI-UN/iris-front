@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { generateEventReport } from "../../../lib/generate-event-report";
-import { fetchEventReportData } from "../../../lib/fetch-event-report-data";
+import { fetchEventReportData } from "../api/fetch-event-report-data";
 import { Button } from "@heroui/button";
 
 // Types

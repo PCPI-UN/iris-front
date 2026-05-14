@@ -1,9 +1,8 @@
 export type ProjectStatus =
-  | "Aprovado"
-  | "En revisión"
-  | "Rechazado"
-  | "Cambios requeridos"
-  | "Pendiente";
+  | "APPROVED"
+  | "UNDER_REVIEW"
+  | "REJECTED"
+  | "REQUEST_CHANGES"
 
 export interface Participant {
   name: string;
@@ -11,27 +10,28 @@ export interface Participant {
   career: string;
 }
 
-export interface Judge {
-  name: string;
+export interface Juror {
+  id: number;
+  firstName: string;
+  lastName: string;
   email: string;
-  assignedAt: string;
-  evaluated: boolean;
 }
 
 export interface Project {
   id: number;
-  number: string;
+  eventId: number;
+  categoryId: number;
+  number: string; //
   name: string;
   category: string;
   status: ProjectStatus;
-  teamLeader: string;
   members: number;
-  documents: number;
-  judges: number;
+  description: string;
+  documents: [];
+  jurors: Juror[];
   createdAt: string;
   participants: Participant[];
-  assignedJudges: Judge[];
-  missingDocuments: string[];
+  jurorAssignments: any;
 }
 
 // Dashboard / Stats
@@ -46,15 +46,19 @@ export interface MissingDocumentEntry {
   missing: string;
 }
 
+interface StudentStats {
+  noStudents: number;
+  [careerName: string]: number; 
+}
+
 export interface DashboardStats {
   totalProjects: number;
-  submittedProjects: number;
   approved: number;
   underReview: number;
   rejected: number;
   changesRequired: number;
   projectsByCategory: CategoryCount[];
-  missingDocuments: MissingDocumentEntry[];
+  participants: StudentStats;
 }
 
 // Full Report Payload
