@@ -20,6 +20,7 @@ export const GetPastEventsAdmin = () => {
   const [activeEventId, setActiveEventId] = useState<number | null>(null);
 
   const eventsQuery = useEvents({ page });
+  const events = eventsQuery.data?.data ?? [];
 
   if (eventsQuery.isLoading) {
     return (
@@ -30,15 +31,15 @@ export const GetPastEventsAdmin = () => {
   }
 
   if (activeEventId !== null) {
-  return (
-    <MonitoringDashboard
-      initialEventId={activeEventId}
-      onBack={() => setActiveEventId(null)}
-    />
-  );
-}
-
-  const events = eventsQuery.data?.data ?? [];
+    const selectedEvent = events.find(e => e.id === activeEventId);
+    return (
+      <MonitoringDashboard
+        initialEventId={activeEventId}
+        onBack={() => setActiveEventId(null)}
+        eventData={selectedEvent}
+      />
+    );
+  }
 
   const pastEvents = events.filter((e) => dayjs(e.endDate).isBefore(dayjs()));
 

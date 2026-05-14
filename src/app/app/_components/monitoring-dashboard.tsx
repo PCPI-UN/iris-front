@@ -44,7 +44,7 @@ import { RankingTab } from '@/features/monitoring/components/ranking-tab';
 import { StatisticsTab } from '@/features/monitoring/components/statistics-tab';
 import { ProjectsTab } from '@/features/monitoring/components/projects-tab';
 
-export const MonitoringDashboard = ({ initialEventId, onBack }: MonitoringDashboardProps = {}) => {
+export const MonitoringDashboard = ({ initialEventId, onBack, eventData }: MonitoringDashboardProps = {}) => {
   const user = useUser();
   const { data: eventsData, isLoading: isEventsLoading } = useEvents({ page: 1 });
   const {
@@ -350,6 +350,7 @@ export const MonitoringDashboard = ({ initialEventId, onBack }: MonitoringDashbo
       <MonitoringDashboardHeader
         onBack={onBack}
         userName={`${user.data?.firstName ?? ''} ${user.data?.lastName ?? ''}`.trim()}
+        eventData={eventData}
       />
 
       <Card className="glass-card border border-default-200/70 shadow-sm">

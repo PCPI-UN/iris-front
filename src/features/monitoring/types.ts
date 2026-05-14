@@ -1,5 +1,6 @@
 import type { ProjectJuror, ProjectWithJurors } from '@/features/projects/api/get-projects-with-jurors';
 import type { ProjectEvaluationStats } from '@/features/evaluations/api/get-project-evaluation-stats';
+import type { Event } from '@/types/api';
 
 export type { ProjectEvaluationStats };
 
@@ -29,6 +30,7 @@ export type CategoryEvaluationStats = {
 export type MonitoringDashboardProps = {
   initialEventId?: number;
   onBack?: () => void;
+  eventData?: Event;
 };
 
 export type SortOrder = 'asc' | 'desc';
