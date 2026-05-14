@@ -30,7 +30,7 @@ export const MonitoringDashboardFilters = ({
 }: MonitoringDashboardFiltersProps) => {
   return (
     <div className="flex flex-col gap-4 lg:flex-row lg:gap-4">
-      {!isPastEventMode ? (
+      {!isPastEventMode && (
         <div className="flex w-full flex-col gap-3 lg:max-w-[420px]">
           <Select
             label="Evento"
@@ -50,13 +50,6 @@ export const MonitoringDashboardFilters = ({
               </SelectItem>
             ))}
           </Select>
-        </div>
-      ) : (
-        <div className="flex w-full flex-col gap-1 lg:max-w-[420px]">
-          <span className="text-sm text-default-500">Evento</span>
-          <span className="text-base font-semibold text-foreground">
-            {selectedEventName ?? 'Evento seleccionado'}
-          </span>
         </div>
       )}
 
