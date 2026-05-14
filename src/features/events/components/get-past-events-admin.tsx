@@ -1,14 +1,13 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { BarChart3, Calendar } from "lucide-react";
 import { Card, CardBody } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { useEvents } from "../api/get-events";
 import dayjs from "dayjs";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
-import { MonitoringDashboard } from "@/app/app/_components/monitoring-dashboard";
+import PastEventDashboard from '@/features/events/components/past-event-dashboard';
 
 export const formatDateShort = (date: string | number) => {
   return dayjs(date).format('MMM D, YYYY');
@@ -16,8 +15,9 @@ export const formatDateShort = (date: string | number) => {
 
 export const GetPastEventsAdmin = () => {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const page = searchParams?.get("page") ? Number(searchParams.get("page")) : 1;
-  const [activeEventId, setActiveEventId] = useState<number | null>(null);
+  const activeEventId = searchParams?.get("eventId") ? Number(searchParams.get("eventId")) : null;
 
   const eventsQuery = useEvents({ page });
   const events = eventsQuery.data?.data ?? [];
@@ -32,13 +32,8 @@ export const GetPastEventsAdmin = () => {
 
   if (activeEventId !== null) {
     const selectedEvent = events.find(e => e.id === activeEventId);
-    return (
-      <MonitoringDashboard
-        initialEventId={activeEventId}
-        onBack={() => setActiveEventId(null)}
-        eventData={selectedEvent}
-      />
-    );
+    if (!selectedEvent) return null;
+    return <PastEventDashboard event={selectedEvent} onBack={() => router.push('/app/events/past')} />;
   }
 
   const pastEvents = events.filter((e) => dayjs(e.endDate).isBefore(dayjs()));
@@ -83,7 +78,7 @@ export const GetPastEventsAdmin = () => {
                 size="lg"
                 startContent={<BarChart3 className="h-4 w-4" />}
                 className="mt-2 w-full font-semibold"
-                onClick={() => setActiveEventId(Number(event.id))}
+                onClick={() => router.push(`/app/events/past?eventId=${event.id}`)}
               >
                 Ver estadísticas
               </Button>

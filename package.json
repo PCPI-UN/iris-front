@@ -92,6 +92,7 @@
     "react-error-boundary": "^6.0.0",
     "react-hook-form": "^7.65.0",
     "react-image-crop": "^11.0.10",
+    "recharts": "^3.8.1",
     "tailwind-merge": "^3.3.1",
     "tailwindcss-animate": "^1.0.7",
     "zod": "^4.1.12",

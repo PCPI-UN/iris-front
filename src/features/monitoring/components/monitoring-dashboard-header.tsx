@@ -61,6 +61,9 @@ export const MonitoringDashboardHeader = ({ onBack, userName, eventData }: Monit
     <div className="space-y-1 md:space-y-2">
       {onBack ? (
         <Button variant="light" onPress={onBack} className="w-fit font-medium">
+              <svg>
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
           Volver a eventos pasados
         </Button>
       ) : null}
