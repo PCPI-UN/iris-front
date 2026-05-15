@@ -307,7 +307,7 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
                 <p className="text-base md:text-lg font-semibold">
-                  Evaluación Póster - Proyecto Final de Ingenierías
+                  Evaluación de Jurado
                 </p>
                 <p className="text-xs md:text-sm text-muted-foreground mt-1">
                   Sección {currentPage + 1} de {allSections.length}
