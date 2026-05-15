@@ -917,24 +917,26 @@ export const CriteriaList = () => {
         </div>
       </div>
 
-      <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-3">
-        <Card className="glass-card shadow-sm">
-          <CardHeader className="pb-2 justify-center">
-            <p className="text-xs font-medium text-default-500">Total de criterios</p>
-          </CardHeader>
-          <CardBody className="pt-0 text-center">
-            <p className="text-2xl font-bold">{criteria.length}</p>
-          </CardBody>
-        </Card>
-        <Card className="glass-card shadow-sm">
-          <CardHeader className="pb-2 justify-center">
-            <p className="text-xs font-medium text-default-500">Total de componentes</p>
-          </CardHeader>
-          <CardBody className="pt-0 text-center">
-            <p className="text-2xl font-bold">{availableComponents.length}</p>
-          </CardBody>
-        </Card>
-      </div>
+      {!!selectedEventKey && (
+        <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-3">
+          <Card className="glass-card shadow-sm">
+            <CardHeader className="pb-2 justify-center">
+              <p className="text-xs font-medium text-default-500">Total de criterios</p>
+            </CardHeader>
+            <CardBody className="pt-0 text-center">
+              <p className="text-2xl font-bold">{criteria.length}</p>
+            </CardBody>
+          </Card>
+          <Card className="glass-card shadow-sm">
+            <CardHeader className="pb-2 justify-center">
+              <p className="text-xs font-medium text-default-500">Total de componentes</p>
+            </CardHeader>
+            <CardBody className="pt-0 text-center">
+              <p className="text-2xl font-bold">{availableComponents.length}</p>
+            </CardBody>
+          </Card>
+        </div>
+      )}
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">
