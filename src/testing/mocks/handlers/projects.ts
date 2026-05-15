@@ -5,7 +5,8 @@ import { requireAuth, networkDelay } from "../utils";
 
 type ProjectBody = {
   eventId: string;
-  courseId: string;
+  categoryId?: string;
+  courseId?: string;
   name: string;
   logo?: string;
   description?: string | undefined;
@@ -52,7 +53,7 @@ const parseProjectBody = async (request: Request): Promise<ProjectBody> => {
       name: String(form.get("name") || ""),
       description: String(form.get("description") || ""),
       eventId: String(form.get("eventId") || ""),
-      courseId: String(form.get("courseId") || ""),
+      categoryId: String(form.get("categoryId") || form.get("courseId") || ""),
       logo: String(form.get("logo") || ""),
       state: String(form.get("state") || "UNDER_REVIEW"),
       participants: parseJsonArray(form.get("participants"), []),
@@ -70,6 +71,7 @@ type ProjectDTO = {
   logo: string;
   state: string;
   eventId: string;
+  categoryId?: string;
   eventNumber?: string;
   createdAt: number;
   documents: Array<{ type: string; url: string }>;
@@ -82,6 +84,15 @@ type ProjectDTO = {
   }>;
 };
 
+type ProjectWithJurorsDTO = ProjectDTO & {
+  jurors: Array<{
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  }>;
+};
+
 const mapProjectToDTO = (project: any): ProjectDTO => {
   return {
     id: project.id,
@@ -90,11 +101,38 @@ const mapProjectToDTO = (project: any): ProjectDTO => {
     logo: project.logo,
     state: project.state,
     eventId: project.eventId,
+    categoryId: project.categoryId ?? project.courseId,
     eventNumber: project.eventNumber || "",
     createdAt: project.createdAt,
     documents: project.documents ?? [],
     reason: project.reason,
     participants: project.participants ?? [],
+  };
+};
+
+const mapProjectWithJurorsToDTO = (project: any): ProjectWithJurorsDTO => {
+  const jurors = (project.jurorAssignments ?? [])
+    .map((assignment: any) => {
+      const user = db.user.findFirst({
+        where: { id: { equals: String(assignment?.memberUserId ?? '') } },
+      });
+
+      if (!user) {
+        return null;
+      }
+
+      return {
+        id: String(user.id),
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+      };
+    })
+    .filter(Boolean) as ProjectWithJurorsDTO['jurors'];
+
+  return {
+    ...mapProjectToDTO(project),
+    jurors,
   };
 };
 
@@ -157,8 +195,8 @@ export const projectsHandlers = [
       const url = new URL(request.url);
       const page = Number(url.searchParams.get("page") || 1);
       const state = url.searchParams.get("state");
-      const rawcourseId = url.searchParams.get("courseId");
-      const courseId = rawcourseId ? toInternalPrefixedId(rawcourseId, "course") : undefined;
+      const rawCategoryId = url.searchParams.get("categoryId") || url.searchParams.get("courseId");
+      const categoryId = rawCategoryId ? toInternalPrefixedId(rawCategoryId, "course") : undefined;
       const pageSize = PAGE_SIZE;
       const validPage = validatePage(page);
 
@@ -170,8 +208,12 @@ export const projectsHandlers = [
         allProjects = allProjects.filter((p) => String(p.state) === String(state));
       }
 
-      if (courseId) {
-        allProjects = allProjects.filter((p) => String(p.courseId) === String(courseId))
+      if (categoryId) {
+        allProjects = allProjects.filter(
+          (p) =>
+            String((p as any).categoryId ?? (p as any).courseId) ===
+            String(categoryId)
+        );
       }
 
       // USER role: only assigned projects if jury of event
@@ -200,6 +242,105 @@ export const projectsHandlers = [
     } catch (error: any) {
       return HttpResponse.json(
         { message: error?.message || "Server Error" },
+        { status: 500 }
+      );
+    }
+  }),
+
+  http.get(`${env.API_URL}/projects/by-event/:eventId/with-jurors`, async ({ cookies, request, params }) => {
+    await networkDelay();
+
+    try {
+      const { user, error } = requireAuth(cookies);
+      if (error || !user) {
+        return HttpResponse.json({ message: error || 'Unauthorized' }, { status: 401 });
+      }
+
+      const rawEventId = String(params.eventId ?? '');
+      if (!rawEventId || rawEventId === 'undefined' || rawEventId === 'NaN') {
+        return HttpResponse.json({ items: [], page: 1, limit: PAGE_SIZE, total: 0, totalPages: 1 });
+      }
+
+      const eventId = toInternalPrefixedId(rawEventId, 'event');
+      const url = new URL(request.url);
+      const page = Number(url.searchParams.get('currentPage') || 1);
+      const itemsPerPage = Number(url.searchParams.get('itemsPerPage') || PAGE_SIZE);
+      const state = url.searchParams.get('state');
+      const rawCourseId = url.searchParams.get('courseId');
+      const courseId = rawCourseId ? toInternalPrefixedId(rawCourseId, 'course') : undefined;
+      const searchText = url.searchParams.get('q')?.trim().toLowerCase() || '';
+      const validPage = validatePage(page);
+
+      let allProjects = db.project
+        .getAll()
+        .filter((p) => String(p.eventId) === String(eventId));
+
+      if (state) {
+        allProjects = allProjects.filter((p) => String(p.state) === String(state));
+      }
+
+      if (courseId) {
+        allProjects = allProjects.filter((p) => String(p.courseId) === String(courseId));
+      }
+
+      if (searchText) {
+        allProjects = allProjects.filter((project) => {
+          const jurorText = (project.jurorAssignments ?? [])
+            .map((assignment: any) => {
+              const user = db.user.findFirst({
+                where: { id: { equals: String(assignment?.memberUserId ?? '') } },
+              });
+
+              return user ? `${user.firstName} ${user.lastName} ${user.email}` : '';
+            })
+            .join(' ')
+            .toLowerCase();
+
+          const participantText = (project.participants ?? [])
+            .map((participant: any) => `${participant.firstName} ${participant.lastName} ${participant.email}`)
+            .join(' ')
+            .toLowerCase();
+
+          return [
+            project.name,
+            project.description ?? '',
+            project.eventNumber ?? '',
+            String(project.courseId ?? ''),
+            String(project.state ?? ''),
+            jurorText,
+            participantText,
+          ]
+            .join(' ')
+            .toLowerCase()
+            .includes(searchText);
+        });
+      }
+
+      if (user.role !== 'ADMIN') {
+        const userId = (user as any)?.id ?? (user as any)?.userId;
+        if (!userId || !isUserJuryOfEvent(userId, eventId)) {
+          allProjects = [];
+        } else {
+          allProjects = allProjects.filter((p) => isUserAssignedToProject(p, userId));
+        }
+      }
+
+      const total = allProjects.length;
+      const pagination = calculatePagination(total, validPage, itemsPerPage);
+      const start = itemsPerPage * (pagination.page - 1);
+      const end = start + itemsPerPage;
+      const items = allProjects.slice(start, end).map(mapProjectWithJurorsToDTO);
+
+      return HttpResponse.json({
+        items,
+        page: pagination.page,
+        limit: itemsPerPage,
+        total: pagination.total,
+        totalPages: pagination.totalPages,
+      });
+    } catch (error: any) {
+      return HttpResponse.json(
+        { message: error?.message || 'Server Error' },
         { status: 500 }
       );
     }
@@ -235,12 +376,13 @@ export const projectsHandlers = [
       }
 
       // Determinar si es Competition o Exposition:
-      // Competition: no env?a name (solo participantes, curso asignado en cliente)
-      // Exposition: requiere name y courseId ingresados por el usuario
+      // Competition: no envía name (solo participantes, categoría asignada en cliente)
+      // Exposition: requiere name y categoryId ingresados por el usuario
       const isCompetition = !data.name?.trim();
+      const selectedCategoryId = data.categoryId || data.courseId;
 
       if (!isCompetition) {
-        // Para Exposition: validar name y courseId
+        // Para Exposition: validar name y categoryId
         if (!data.name?.trim()) {
           return HttpResponse.json(
             { message: "name is required" },
@@ -248,9 +390,9 @@ export const projectsHandlers = [
           );
         }
 
-        if (!data.courseId?.trim()) {
+        if (!selectedCategoryId?.trim()) {
           return HttpResponse.json(
-            { message: "courseId is required" },
+            { message: "categoryId is required" },
             { status: 400 }
           );
         }
@@ -258,7 +400,8 @@ export const projectsHandlers = [
 
       const result = db.project.create({
         eventId: toInternalPrefixedId(String(data.eventId), "event"),
-        courseId: data.courseId ? toInternalPrefixedId(String(data.courseId), "course") : "no-course",
+        categoryId: selectedCategoryId ? toInternalPrefixedId(String(selectedCategoryId), "course") : "no-course",
+        courseId: selectedCategoryId ? toInternalPrefixedId(String(selectedCategoryId), "course") : "no-course",
         name: data.name || (isCompetition ? "Competition Entry" : ""),
         logo: data.logo || "",
         description: data.description || undefined,
@@ -587,7 +730,14 @@ export const projectsHandlers = [
 
         const updateData: Partial<ProjectBody> = {};
         if (data.eventId) updateData.eventId = data.eventId;
-        if (data.courseId) updateData.courseId = data.courseId;
+        if (data.categoryId) {
+          updateData.categoryId = data.categoryId;
+          updateData.courseId = data.categoryId;
+        }
+        if (data.courseId) {
+          updateData.categoryId = data.courseId;
+          updateData.courseId = data.courseId;
+        }
         if (data.name) updateData.name = data.name;
         if (data.logo) updateData.logo = data.logo;
         if (data.description !== undefined)

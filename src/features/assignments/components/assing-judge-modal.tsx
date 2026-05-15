@@ -11,7 +11,6 @@ import {
 import { useDisclosure } from "@/hooks/use-disclosure";
 import { useNotifications } from "@/components/ui/notifications";
 import { useState } from "react";
-import { AvatarGroup } from "@heroui/avatar";
 import { Input } from "@/components/ui/input";
 
 // 🔥 Debes crear este hook

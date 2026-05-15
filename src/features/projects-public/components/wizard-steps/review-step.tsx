@@ -4,7 +4,7 @@ import { Card, CardBody, CardHeader } from "@heroui/react"
 import { Chip } from "@heroui/react"
 import { Users, FileText, Upload, CheckCircle2, AlertCircle } from "lucide-react"
 import { WizardData } from "../project-wizard"
-import { useCourse } from "@/features/courses/api/get-course"
+import { useCategory } from "@/features/courses/api/get-category"
 import { getSemesterLabel, getCareerLabel } from "./constants-carrers-semesters"
 
 type ReviewStepProps = {
@@ -14,9 +14,9 @@ type ReviewStepProps = {
 
 export function ReviewStep({ data, eventType }: ReviewStepProps) {
 
-  const courseQuery = useCourse({ courseId: data.project.courseId })
+  const categoryQuery = useCategory({ categoryId: data.project.categoryId })
 
-  const course = courseQuery.data?.data
+  const category = categoryQuery.data?.data
 
   return (
     <div className="space-y-6">
@@ -109,8 +109,8 @@ export function ReviewStep({ data, eventType }: ReviewStepProps) {
                 <p className="mt-1 text-pretty leading-relaxed">{data.project.description || "No especificada"}</p>
               </div>
               <div>
-                <p className="text-sm font-medium text-default-500">Curso</p>
-                <p className="mt-1">{course?.code || "No especificado"}</p>
+                <p className="text-sm font-medium text-default-500">Categoría</p>
+                <p className="mt-1">{category?.code || "No especificado"}</p>
               </div>
             </div>
           </CardBody>

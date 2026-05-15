@@ -1,20 +1,20 @@
 "use client";
 import { ContentLayout } from "@/components/layouts/content-layout";
-import { CoursesList } from "@/features/courses/components/courses-list";
-import { EventsDropdown } from "@/features/projects/components/events-dropdown";
-import { CreateCourse } from "@/features/courses/components/create-course";
+import { CategoriesList } from "@/features/courses/components/categories-list";
+import { CreateCategory } from "@/features/courses/components/create-category";
+import { EventsDropdownForCategories } from "@/features/courses/components/events-dropdown-categories";
 import '@/features/landing/index.css';
 
-export const Courses = () => {
+export const Categories = () => {
   return (
-    <ContentLayout title="Course Management">
-      <p className="text-gray-300 mb-4 text-sm sm:text-base">Manage courses within events</p>
+    <ContentLayout title="Category Management">
+      <p className="text-gray-300 mb-4 text-sm sm:text-base">Manage categories within events</p>
       <div className="flex flex-col sm:flex-row justify-between gap-3">
-        <EventsDropdown />
-        <CreateCourse />
+        <EventsDropdownForCategories />
+        <CreateCategory />
       </div>
       <div className="mt-4">
-        <CoursesList />
+        <CategoriesList />
       </div>
     </ContentLayout>
   );

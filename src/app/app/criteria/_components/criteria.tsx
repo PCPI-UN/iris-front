@@ -1,7 +1,11 @@
 "use client";
 
 import { ContentLayout } from "@/components/layouts/content-layout";
-import { CriteriaList } from "@/features/cirteria/components/criteria-list";
+
+import { CriteriaList } from "@/features/criteria/components/criteria-list";
+
+import { CreateCriteria } from "@/features/criteria/components/create-criteria";
+
 import "@/features/landing/index.css";
 
 export const Criteria = () => {

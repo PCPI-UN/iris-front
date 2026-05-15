@@ -18,7 +18,7 @@ import { useNotifications } from "@/components/ui/notifications";
 import { useUser } from "@/lib/auth";
 import { Select, SelectItem } from "@/components/ui/select";
 import { useEventsDropdown } from "@/features/events/api/get-events-dropdown";
-import { useCourses } from "@/features/courses/api/get-courses";
+import { useCategories } from "@/features/courses/api/get-categories";
 
 import {
   createCriteriaInputSchema,
@@ -30,7 +30,7 @@ export const CreateCriteria = () => {
   const { addNotification } = useNotifications();
   const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
   const [selectedEventKey, setSelectedEventKey] = useState<string>("");
-  const [selectedCourseKeys, setSelectedCourseKeys] = useState<Set<string>>(
+  const [selectedCategoryKeys, setSelectedCategoryKeys] = useState<Set<string>>(
     new Set()
   );
   const user = useUser();
@@ -44,7 +44,7 @@ export const CreateCriteria = () => {
           message: "El criterio de evaluación ha sido creado exitosamente.",
         });
         setSelectedEventKey("");
-        setSelectedCourseKeys(new Set());
+        setSelectedCategoryKeys(new Set());
         onClose();
       },
       onError: (error: any) => {
@@ -59,12 +59,12 @@ export const CreateCriteria = () => {
 
   const eventsQuery = useEventsDropdown();
   const events = eventsQuery.data?.data ?? [];
-  const coursesQuery = useCourses({
+  const categoriesQuery = useCategories({
     page: 1,
     eventId: selectedEventKey ? Number(selectedEventKey) : undefined,
     queryConfig: { enabled: !!selectedEventKey },
   });
-  const courses = coursesQuery.data?.data ?? [];
+  const categories = categoriesQuery.data?.data ?? [];
 
   return (
     <>
@@ -93,11 +93,11 @@ export const CreateCriteria = () => {
                   return;
                 }
 
-                if (selectedCourseKeys.size === 0) {
+                if (selectedCategoryKeys.size === 0) {
                   addNotification({
                     type: "error",
                     title: "Error de validación",
-                    message: "Por favor selecciona al menos un curso",
+                    message: "Por favor selecciona al menos una categoría",
                   });
                   return;
                 }
@@ -107,7 +107,7 @@ export const CreateCriteria = () => {
                   name: rawData.name as string,
                   description: rawData.description as string,
                   weight: Number(rawData.weight),
-                  courseIds: Array.from(selectedCourseKeys).map(Number),
+                  categoryIds: Array.from(selectedCategoryKeys).map(Number),
                 };
 
                 try {
@@ -137,7 +137,7 @@ export const CreateCriteria = () => {
                   onSelectionChange={(keys) => {
                     const selected = Array.from(keys)[0];
                     setSelectedEventKey(selected ? String(selected) : "");
-                    setSelectedCourseKeys(new Set());
+                    setSelectedCategoryKeys(new Set());
                   }}
                   isRequired
                   isLoading={eventsQuery.isLoading}
@@ -148,31 +148,31 @@ export const CreateCriteria = () => {
                 </Select>
 
                 <Select
-                  label="Cursos"
+                  label="Categorías"
                   placeholder={
                     selectedEventKey
-                      ? "Selecciona uno o más cursos"
+                      ? "Selecciona una o más categorías"
                       : "Selecciona un evento primero"
                   }
                   selectionMode="multiple"
-                  selectedKeys={selectedCourseKeys}
+                  selectedKeys={selectedCategoryKeys}
                   onSelectionChange={(keys) => {
                     const stringSet = new Set(Array.from(keys).map(String));
-                    setSelectedCourseKeys(stringSet);
+                    setSelectedCategoryKeys(stringSet);
                   }}
                   isDisabled={!selectedEventKey}
-                  isLoading={!!selectedEventKey && coursesQuery.isLoading}
+                  isLoading={!!selectedEventKey && categoriesQuery.isLoading}
                 >
-                  {courses.length > 0 ? (
-                    courses.map((course) => (
-                      <SelectItem key={String(course.id)}>
-                        {course.code}
+                  {categories.length > 0 ? (
+                    categories.map((category) => (
+                      <SelectItem key={String(category.id)}>
+                        {category.code}
                       </SelectItem>
                     ))
                   ) : (
-                    <SelectItem key="no-courses" isDisabled>
+                    <SelectItem key="no-categories" isDisabled>
                       {selectedEventKey
-                        ? "No hay cursos"
+                        ? "No hay categorías"
                         : "Selecciona un evento primero"}
                     </SelectItem>
                   )}
@@ -214,7 +214,7 @@ export const CreateCriteria = () => {
                   disabled={
                     createCriteriaMutation.isPending ||
                     !selectedEventKey ||
-                    selectedCourseKeys.size === 0
+                    selectedCategoryKeys.size === 0
                   }
                 >
                   Crear Criterio

@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 
 import { api } from "@/lib/api-client";
+import { withLegacyCourseIdsParam } from "@/lib/compat/category-legacy";
 import { MutationConfig } from "@/lib/react-query";
 import { Criterion } from "@/types/api";
 
@@ -13,9 +14,10 @@ export const createCriteriaInputSchema = z.object({
     .number()
     .min(0, "Weight must be greater than or equal to 0")
     .max(1, "Weight must be less than or equal to 1"),
-  courseIds: z
-    .array(z.number().min(1, "Course is required"))
-    .min(1, "At least one course is required"),
+
+  categoryIds: z
+    .array(z.number().min(1, "Category is required"))
+    .min(1, "At least one category is required"),
   category: z.string().optional(),
   componentId: z.number().min(1).optional(),
 });
@@ -27,7 +29,11 @@ export const createCriteria = ({
 }: {
   data: CreateCriteriaInput;
 }): Promise<{ data: Criterion }> => {
-  return api.post("/criterions", data);
+  const payload = {
+    ...data,
+    ...withLegacyCourseIdsParam(data.categoryIds),
+  };
+  return api.post("/criterions", payload);
 };
 
 type UseCreateCriteriaOptions = {

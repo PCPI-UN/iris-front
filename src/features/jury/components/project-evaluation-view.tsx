@@ -10,10 +10,11 @@ import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@/comp
 import { FileText, Users, Send, ArrowLeft, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react"
 import { useProject } from "@/features/projects/api/get-project"
 import { AvatarGroup } from "@/features/projects/components/avatar-icon"
-import { useCourseCriteria } from "@/features/cirteria/api/get-course-criterion"
+import { useCategoryCriteria } from "@/features/criteria/api/get-category-criterion"
 import { useCreateEvaluation } from "@/features/evaluations/api/create-evaluation"
 import { useNotifications } from "@/components/ui/notifications"
 import { Spinner } from "@heroui/spinner"
+import { normalizeCategoryId } from "@/lib/compat/category-legacy"
 
 const SCORE_SCALE = [
   { value: 1, label: "Insuficiente" },
@@ -53,18 +54,19 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
   const { data: projectData, isLoading: isProjectLoading } = useProject({ projectId });
 
   const project = (projectData as any)?.data ?? projectData ?? null;
+  const projectCategoryId = normalizeCategoryId(project ?? {}) ?? "";
 
   const {
-    data: courseCriteriaData,
-    isLoading: isCourseCriteriaLoading,
-  } = useCourseCriteria({
-    courseId: project?.courseId ?? "",
+    data: categoryCriteriaData,
+    isLoading: isCategoryCriteriaLoading,
+  } = useCategoryCriteria({
+    categoryId: String(projectCategoryId),
     queryConfig: {
-      enabled: !!project?.courseId,
+      enabled: !!projectCategoryId,
     },
   });
 
-  if (isProjectLoading || isCourseCriteriaLoading) {
+  if (isProjectLoading || isCategoryCriteriaLoading) {
     return (     
       <div className="flex justify-center items-center min-h-[400px]">
         <Spinner size="lg" />
@@ -73,7 +75,7 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
   }
 
   const backendSections =
-    courseCriteriaData?.map((cat, index) => ({
+    categoryCriteriaData?.map((cat, index) => ({
       id: `section-${index + 1}`,
       name: `${index + 1}. (${cat.weight}) ${cat.category}`,
       isSection: true,

@@ -12,22 +12,24 @@ import {
 } from "@/components/ui/modal";
 import { useNotifications } from "@/components/ui/notifications";
 
-import { useDeleteCourse } from "../api/delete-course";
+import { useDeleteCategory } from "../api/delete-category";
 import { useDisclosure } from '@/hooks/use-disclosure';
 
-type DeleteCourseProps = {
+type DeleteCategoryProps = {
   id: number;
+  eventId?: number;
+  totalCategoriesPerEvent: number;
 };
 
-export const DeleteCourse = ({ id }: DeleteCourseProps) => {
+export const DeleteCategory = ({ id, eventId, totalCategoriesPerEvent }: DeleteCategoryProps) => {
   const { addNotification } = useNotifications();
   const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
-  const deleteCourseMutation = useDeleteCourse({
+  const deleteCategoryMutation = useDeleteCategory({
     mutationConfig: {
       onSuccess: () => {
         addNotification({
           type: "success",
-          title: "Course Deleted",
+          title: "Category Deleted",
         });
         onClose();
       },
@@ -42,21 +44,32 @@ export const DeleteCourse = ({ id }: DeleteCourseProps) => {
         className="w-full"
         size="sm"
         color="danger"
-        onPress={() => onOpen()}
+        onPress={() => {
+          if (totalCategoriesPerEvent <= 1) {
+            addNotification({
+              type: "error",
+              title: "No se puede eliminar",
+              message: "Debe existir al menos 1 categoría por evento.",
+            });
+            return;
+          }
+
+          onOpen();
+        }}
       >
         <Trash size={16} />
-        Delete Course
+        Delete Category
       </Button>
       <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="2xl">
         <ModalContent>
           {(onClose) => (
             <>
               <ModalHeader className="flex flex-col gap-1">
-                <h2 className="text-lg font-bold">Delete Course</h2>
+                <h2 className="text-lg font-bold">Delete Category</h2>
               </ModalHeader>
               <ModalBody>
                 <p className="text-sm text-gray-500">
-                  Are you sure you want to delete this course? This action cannot be undone.
+                  Are you sure you want to delete this category? This action cannot be undone.
                 </p>
               </ModalBody>
               <ModalFooter>
@@ -65,11 +78,11 @@ export const DeleteCourse = ({ id }: DeleteCourseProps) => {
                 </Button>
                 <Button
                   color="primary"
-                  isLoading={deleteCourseMutation.isPending}
-                  onPress={() => deleteCourseMutation.mutate({ courseId: id })}
+                  isLoading={deleteCategoryMutation.isPending}
+                  onPress={() => deleteCategoryMutation.mutate({ categoryId: id })}
                   startContent={<Trash className="size-4" />}
                 >
-                  Delete Course
+                  Delete Category
                 </Button>
               </ModalFooter>
             </>

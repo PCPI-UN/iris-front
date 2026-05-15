@@ -16,7 +16,7 @@ import {
 import { useNotifications } from "@/components/ui/notifications";
 import { Select, SelectItem } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { useCourses } from "@/features/courses/api/get-courses";
+import { useCategories } from "@/features/courses/api/get-categories";
 import { useEventsDropdown } from "@/features/events/api/get-events-dropdown";
 import { useDisclosure } from "@/hooks/use-disclosure";
 import { CriterionComponent } from "@/types/api";
@@ -98,21 +98,20 @@ export const CreateCriteriaContextual = ({
   });
 
   const eventsQuery = useEventsDropdown();
-  const coursesQuery = useCourses({
+  const categoriesQuery = useCategories({
     page: 1,
     eventId: selectedEventKey ? Number(selectedEventKey) : undefined,
     queryConfig: { enabled: !!selectedEventKey },
   });
 
   const events = eventsQuery.data?.data ?? [];
-  const courses = coursesQuery.data?.data ?? [];
+  const categories = categoriesQuery.data?.data ?? [];
 
   const selectedEvent = useMemo(
     () => events.find((event) => String(event.id) === selectedEventKey),
     [events, selectedEventKey]
   );
 
-  const categories = selectedEvent?.categories ?? [];
   const resolvedComponentId = fixedComponent?.id
     ? String(fixedComponent.id)
     : selectedComponentKey;
@@ -152,12 +151,12 @@ export const CreateCriteriaContextual = ({
                   return;
                 }
 
-                if (courses.length === 0) {
+                if (categories.length === 0) {
                   addNotification({
                     type: "error",
-                    title: "Sin cursos",
+                    title: "Sin categorías",
                     message:
-                      "El evento seleccionado no tiene cursos asociados para aplicar este criterio.",
+                      "El evento seleccionado no tiene categorías asociadas para aplicar este criterio.",
                   });
                   return;
                 }
@@ -176,8 +175,9 @@ export const CreateCriteriaContextual = ({
                   name: String(rawData.name || "").trim(),
                   description: String(rawData.description || "").trim(),
                   weight: Number(weightPercent) / 100,
-                  courseIds: courses.map((course) => Number(course.id)),
-                  category: selectedCategory || undefined,
+                  categoryIds: selectedCategory
+                    ? [Number(selectedCategory)]
+                    : categories.map((category) => Number(category.id)),
                   componentId: resolvedComponentId
                     ? Number(resolvedComponentId)
                     : undefined,
@@ -242,10 +242,13 @@ export const CreateCriteriaContextual = ({
                     setSelectedCategory(selected ? String(selected) : "");
                   }}
                   isDisabled={!selectedEventKey || categories.length === 0}
+                  isLoading={!!selectedEventKey && categoriesQuery.isLoading}
                 >
                   {categories.length > 0 ? (
                     categories.map((category) => (
-                      <SelectItem key={category.name}>{category.name}</SelectItem>
+                      <SelectItem key={String(category.id)}>
+                        {category.code}
+                      </SelectItem>
                     ))
                   ) : (
                     <SelectItem key="no-categories" isDisabled>

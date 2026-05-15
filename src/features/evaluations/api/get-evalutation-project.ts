@@ -16,6 +16,7 @@ export type Evaluation = {
   id: string;
   projectId: string;
   memberUserId: string;
+  evaluatorId: string;
   grade: number;
   comments: string;
   scores: EvaluationScoreInput[];

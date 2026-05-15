@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 
 import { api } from "@/lib/api-client";
+import { withLegacyCourseIdParam } from "@/lib/compat/category-legacy";
 import { MutationConfig } from "@/lib/react-query";
 import { Project } from "@/types/api";
 
@@ -9,7 +10,7 @@ import { getProjectsQueryOptions } from "./get-projects";
 
 export const updateProjectInputSchema = z.object({
   eventId: z.string().optional(),
-  courseId: z.string().optional(),
+  categoryId: z.string().optional(),
   name: z.string().max(255, "El nombre no puede exceder 255 caracteres").optional(),
   logo: z.string().optional(),
   description: z.string().max(3000, "La descripción no puede exceder 3000 caracteres").optional(),
@@ -38,7 +39,11 @@ export const updateProject = ({
   data: UpdateProjectInput;
   projectId: string;
 }): Promise<{ data: Project }> => {
-  return api.patch(`/projects/${projectId}`, data);
+  const payload = {
+    ...data,
+    ...withLegacyCourseIdParam(data.categoryId),
+  };
+  return api.patch(`/projects/${projectId}`, payload);
 };
 
 type UseUpdateProjectOptions = {

@@ -7,7 +7,7 @@ export type Entity<T> = {
   [K in keyof T]: T[K];
 } & BaseEntity;
 
-export type CourseCategory = {
+export type CategoryCriteriaGroup = {
   category: string;
   weight: number;
   criterions: {
@@ -15,6 +15,8 @@ export type CourseCategory = {
     name: string;
   }[];
 };
+
+export type CourseCategory = CategoryCriteriaGroup;
 
 export type Meta = {
   page: number;
@@ -138,6 +140,7 @@ export type Event = Entity<{
 export type Project = Entity<{
   id: number;
   eventId: number;
+  categoryId?: number;
   courseId: number;
   projectCode?: string | null;
   name: string;
@@ -183,7 +186,7 @@ export type ProjectAssignment = Entity<{
   project: Project;
 }>;
 
-export type Course = Entity<{
+export type Category = Entity<{
   id: number;
   eventId: number;
   code: string;
@@ -192,6 +195,8 @@ export type Course = Entity<{
   event?: { id: number; name: string };
   createdAt: number;
 }>;
+
+export type Course = Category;
 
 export type EvaluationScoreInput = {
   criterion: string;
@@ -261,7 +266,7 @@ export type Criterion = Entity<{
   description?: string;
   weight: number;
   active: boolean;
-  courseIds: number[];
+  categoryIds: number[];
   category?: string;
   component?: CriterionComponent;
   createdAt?: number;
@@ -273,8 +278,9 @@ export type CriterionComponent = {
   weight: number;
 };
 
-export type CriterionCourse = Entity<{
-  courseId: number;
+export type CriterionCategory = Entity<{
+  categoryId: number;
+  
   criterionId: number;
 }>;
 

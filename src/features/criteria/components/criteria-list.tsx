@@ -23,7 +23,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useEventsDropdown } from "@/features/events/api/get-events-dropdown";
-import { useCourses } from "@/features/courses/api/get-courses";
+import { useCategories } from "@/features/courses/api/get-categories";
+
 import { Criterion, CriterionComponent } from "@/types/api";
 
 import { useComponents } from "../api/get-components";
@@ -66,7 +67,8 @@ export const CriteriaList = () => {
   const { addNotification } = useNotifications();
 
   const [selectedEventKey, setSelectedEventKey] = useState<string>("");
-  const [selectedCourseKey, setSelectedCourseKey] = useState<string>("");
+
+  const [selectedCategoryKey, setSelectedCategoryKey] = useState<string>("");
   const [assignmentByCriterion, setAssignmentByCriterion] = useState<
     Record<number, string>
   >({});
@@ -80,9 +82,9 @@ export const CriteriaList = () => {
     Record<string, CriterionComponent[]>
   >({});
 
-  const selectedCourseId = useMemo(() => {
-    return toPositiveInt(selectedCourseKey);
-  }, [selectedCourseKey]);
+  const selectedCategoryId = useMemo(() => {
+    return toPositiveInt(selectedCategoryKey);
+  }, [selectedCategoryKey]);
 
   const selectedEventId = useMemo(() => {
     return toPositiveInt(selectedEventKey);
@@ -91,11 +93,14 @@ export const CriteriaList = () => {
   const criteriaQuery = useCriteria({
     page: 1,
     limit: 100,
-    eventId: selectedEventId,
-    courseId: selectedCourseId,
+
+    
+    eventId: selectedEventKey ? Number(selectedEventKey) : undefined,
+    categoryId: selectedCategoryKey ? Number(selectedCategoryKey) : undefined,
+
   });
   const eventsQuery = useEventsDropdown();
-  const coursesQuery = useCourses({
+  const categoriesQuery = useCategories({
     page: 1,
     eventId: selectedEventId,
     queryConfig: { enabled: !!selectedEventKey },
@@ -108,8 +113,9 @@ export const CriteriaList = () => {
   const deleteComponentMutation = useDeleteComponent();
 
   const events = eventsQuery.data?.data ?? [];
-  const courses = coursesQuery.data?.data ?? [];
+
   const allComponents = componentsQuery.data?.components ?? [];
+  const categories = categoriesQuery.data?.data ?? [];
 
   const isLoading =
     criteriaQuery.isLoading || eventsQuery.isLoading || componentsQuery.isLoading;
@@ -189,9 +195,9 @@ export const CriteriaList = () => {
   const storageKey = useMemo(
     () =>
       selectedEventKey
-        ? `criteria-component-collapsible:${selectedEventKey}:${selectedCourseKey || "all"}`
+        ? `criteria-component-collapsible:${selectedEventKey}:${selectedCategoryKey || "all"}`
         : "",
-    [selectedEventKey, selectedCourseKey]
+    [selectedEventKey, selectedCategoryKey]
   );
 
   useEffect(() => {
@@ -350,31 +356,31 @@ export const CriteriaList = () => {
 
     if (!validEventId) {
       setSelectedEventKey("");
-      setSelectedCourseKey("");
+      setSelectedCategoryKey("");
       setAssignmentByCriterion({});
       return;
     }
 
     setSelectedEventKey(eventKey);
-    setSelectedCourseKey("");
+    setSelectedCategoryKey("");
     setAssignmentByCriterion({});
   }, []);
 
-  const handleCourseChange = useCallback((keys: any) => {
+  const handleCategoryChange = useCallback((keys: any) => {
     const nextKey = getSingleSelectionKey(keys);
 
     if (!nextKey) {
-      setSelectedCourseKey("");
+      setSelectedCategoryKey("");
       return;
     }
 
-    const validCourseId = toPositiveInt(nextKey);
-    if (!validCourseId) {
-      setSelectedCourseKey("");
+    const validCategoryId = toPositiveInt(nextKey);
+    if (!validCategoryId) {
+      setSelectedCategoryKey("");
       return;
     }
 
-    setSelectedCourseKey(String(validCourseId));
+    setSelectedCategoryKey(String(validCategoryId));
   }, []);
 
   const handleAssignToComponent = useCallback(
@@ -387,7 +393,7 @@ export const CriteriaList = () => {
           criterionId: criterion.id,
           data: {
             componentId: Number(selectedComponent),
-            courseIds: criterion.courseIds,
+            categoryIds: criterion.categoryIds,
             eventId: criterion.eventId,
             ...(criterion.name ? { name: criterion.name } : {}),
             ...(criterion.description ? { description: criterion.description } : {}),
@@ -606,25 +612,26 @@ export const CriteriaList = () => {
 
         <div className="w-full sm:flex-1">
           <Select
-            label="Curso"
+            label="Categoría"
             placeholder={
               selectedEventKey
-                ? "Selecciona un curso (opcional)"
+                ? "Selecciona una categoría (opcional)"
                 : "Selecciona un evento primero"
             }
-            selectedKeys={selectedCourseKey ? [selectedCourseKey] : []}
-            onSelectionChange={handleCourseChange}
+            selectedKeys={selectedCategoryKey ? [selectedCategoryKey] : []}
+            onSelectionChange={handleCategoryChange}
             isDisabled={!selectedEventKey}
-            isLoading={!!selectedEventKey && coursesQuery.isLoading}
+            isLoading={!!selectedEventKey && categoriesQuery.isLoading}
           >
-            {courses.length > 0 ? (
-              courses.map((course) => (
-                <SelectItem key={String(course.id)}>{course.code}</SelectItem>
+
+            {categories.length > 0 ? (
+              categories.map((c) => (
+                <SelectItem key={String(c.id)}>{c.code}</SelectItem>
               ))
             ) : (
-              <SelectItem key="no-courses" isDisabled>
+              <SelectItem key="no-categories" isDisabled>
                 {selectedEventKey
-                  ? "No hay cursos disponibles"
+                  ? "No hay categorías disponibles"
                   : "Selecciona un evento primero"}
               </SelectItem>
             )}
@@ -786,6 +793,7 @@ export const CriteriaList = () => {
         <div className="flex h-48 w-full items-center justify-center text-default-400">
           Selecciona un evento para ver los criterios
         </div>
+
       ) : mode === "neutral" ? (
         <Card className="glass-card">
           <CardBody className="py-10 text-center text-default-500">
@@ -884,6 +892,7 @@ export const CriteriaList = () => {
               </Collapsible>
             );
           })}
+
         </div>
       ) : (
         <div className="space-y-3">

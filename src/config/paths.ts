@@ -78,6 +78,10 @@ export const paths = {
       getHref: () => "/app/projects",
       roles: ["Admin"],
     },
+    monitoring: {
+      getHref: () => "/app/monitoreo",
+      roles: ["Admin"],
+    },
     juries: {
       getHref: () => "/app/juries",
     },
@@ -89,6 +93,10 @@ export const paths = {
     },
     courses: {
       getHref: () => "/app/courses",
+      roles: ["Admin"],
+    },
+    categories: {
+      getHref: () => "/app/categories",
       roles: ["Admin"],
     },
     project_jury: {
