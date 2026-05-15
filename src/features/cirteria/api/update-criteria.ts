@@ -16,6 +16,8 @@ export const updateCriteriaInputSchema = z.object({
     .optional(),
   eventId: z.number().min(1, "Event is required").optional(),
   courseIds: z.array(z.number().min(1, "Course is required")).optional(),
+  category: z.string().optional(),
+  componentId: z.number().min(1).nullable().optional(),
 });
 
 export type UpdateCriteriaInput = z.infer<typeof updateCriteriaInputSchema>;
