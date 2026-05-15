@@ -95,7 +95,7 @@ export function ProjectCard({ project }: { project: any }) {
                         <FileText className="h-4 w-4" />
                         <span>Documents: {project.documents?.length || 0} file(s) attached</span>
                     </div>
-
+                                
                     <Button
                         className="mt-6 w-full transition-transform hover:scale-[1.01]"
                         color="primary"
