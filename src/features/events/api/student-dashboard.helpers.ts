@@ -57,7 +57,7 @@ export const statusParticipantOptions = [
   { label: 3, value: "JOINED" },
 ];
 
-type ParticipantApiStatus = "PENDING" | "INVITED" | "JOINED";
+type ParticipantApiStatus = 1 | 2 | 3;
 
 const normalizeStatusKey = (status?: string | number) => {
   if (typeof status === "number") return String(status);
@@ -68,19 +68,19 @@ export const normalizeParticipantStatus = (
   status?: string | number,
 ): ParticipantApiStatus => {
   const normalizedStatus = normalizeStatusKey(status);
-
-  if (normalizedStatus === "1" || normalizedStatus === "PENDING") return "PENDING";
-  if (normalizedStatus === "2" || normalizedStatus === "INVITED") return "INVITED";
-  if (normalizedStatus === "3" || normalizedStatus === "JOINED") return "JOINED";
-  return "PENDING";
+  console.log("normalizeParticipantStatus", { status, normalizedStatus });
+  if (normalizedStatus === "1" || normalizedStatus === "PENDING") return 1;
+  if (normalizedStatus === "2" || normalizedStatus === "INVITED") return 2;
+  if (normalizedStatus === "3" || normalizedStatus === "JOINED") return 3;
+  return 1;
 };
 
 export const getParticipantStatusLabel = (status?: string | number) => {
   const normalizedStatus = normalizeParticipantStatus(status);
 
-  if (normalizedStatus === "PENDING") return "Pendiente";
-  if (normalizedStatus === "INVITED") return "Invitado";
-  if (normalizedStatus === "JOINED") return "Aceptado";
+  if (normalizedStatus === 1) return "Pendiente";
+  if (normalizedStatus === 2) return "Invitado";
+  if (normalizedStatus === 3) return "joined";
 
   return "Pendiente";
 };
@@ -88,22 +88,28 @@ export const getParticipantStatusLabel = (status?: string | number) => {
 export const getParticipantStatusColor = (status?: string | number) => {
   const normalizedStatus = normalizeParticipantStatus(status);
 
-  if (normalizedStatus === "PENDING") {
+  if (normalizedStatus === 1) {
     return "bg-amber-500/15 text-amber-600 dark:text-amber-300 border border-amber-500/30";
   }
 
-  if (normalizedStatus === "INVITED") {
+  if (normalizedStatus === 2) {
     return "bg-sky-500/15 text-sky-600 dark:text-sky-300 border border-sky-500/30";
   }
 
-  if (normalizedStatus === "JOINED") {
+  if (normalizedStatus === 3) {
     return "bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 border border-emerald-500/30";
   }
 
   return "bg-gray-500/15 text-gray-600 dark:text-gray-300 border border-gray-500/30";
 };
 
-export const getCurrentUserStatus = (participants: ProjectParticipant[], userEmail?: string) => {
+export const getCurrentUserStatus = (
+  participants: ProjectParticipant[],
+  userEmail?: string,
+) => {
   const userParticipant = participants.find((p) => p.email === userEmail);
-  return userParticipant ? userParticipant.status : "PENDING";
+
+  if (!userParticipant) return undefined;
+
+  return normalizeParticipantStatus(userParticipant.status);
 };

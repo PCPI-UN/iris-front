@@ -173,14 +173,14 @@ export type ProjectParticipant = Entity<{
   project: Project;
   semester: number;
   career: string;
-  status: ParticipantStatus;
+  status: 1;
 }>;
 
-const enum ParticipantStatus {
+/* const enum ParticipantStatus {
   PENDING = 1,
   INVITED = 2,
   JOINED = 3,
-}
+} */
 
 export type ProjectAssignment = Entity<{
   projectId: string;

@@ -174,9 +174,9 @@ export const StudentDashboard = ({ eventId }: StudentDashboardProps) => {
         {isEditMode ? (
           <Button
             isIconOnly
-            variant="flat"
+            variant="shadow"
             aria-label="Guardar cambios"
-            className="flex w-full items-center gap-2 px-3 py-2 text-xs font-semibold text-green-400 shadow-sm transition-colors hover:bg-green-700/10 hover:text-green-500 focus-visible:bg-green-400 focus-visible:text-green-50 disabled:pointer-events-none disabled:opacity-50 disabled:bg-transparent sm:w-auto sm:px-4 sm:text-sm"
+            className="flex w-full items-center gap-2 px-3 py-2 text-xs font-semibold text-green-400 shadow-sm transition-colors hover:bg-green-700/10 hover:text-green-500 focus-visible:bg-green-400 focus-visible:text-green-50 disabled:pointer-events-none disabled:opacity-50 disabled:bg-transparent sm:w-auto sm:px-4 sm:text-sm shadow-green-500/20 lg:px-6 lg:text-base"
             onPress={handleSaveChanges}
             isLoading={changeProjectToUnderReviewMutation.isPending}
             disabled={changeProjectToUnderReviewMutation.isPending}

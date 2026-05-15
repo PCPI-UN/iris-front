@@ -10,7 +10,7 @@ export type AddUpdateParticipantInput = {
   studentCode: string;
   semester?: string;
   career?: string;
-  status: "PENDING" | "INVITED" | "JOINED";
+  status: 1 | 2 | 3 // 1: PENDING, 2: INVITED, 3: JOINED
 };
 
 export type CreateInvitationInput = {
@@ -60,7 +60,18 @@ async function addUpdateParticipant(
   input: AddUpdateParticipantInput
 ): Promise<{ data: any }> {
   const { projectId, ...participantData } = input;
-  return api.post(`/projects/add-update-participants`, {
+  const statusToNumber = (status: AddUpdateParticipantInput['status']) => {
+    if (typeof status === 'number') return status;
+    const normalized = String(status || '').trim().toUpperCase();
+    if (normalized === 'PENDING' || normalized === '1') return 1;
+    if (normalized === 'INVITED' || normalized === '2') return 2;
+    if (normalized === 'JOINED' || normalized === '3') return 3;
+    return 1;
+  };
+
+  const numericStatus = statusToNumber(participantData.status as any);
+
+  return api.post<{ data: any }>(`/projects/add-update-participants`, {
     projectId,
     firstName: participantData.firstName,
     lastName: participantData.lastName,
@@ -68,7 +79,7 @@ async function addUpdateParticipant(
     studentCode: participantData.studentCode,
     semester: participantData.semester,
     career: participantData.career,
-    status: participantData.status,
+    status: numericStatus,
   });
 }
 

@@ -2,18 +2,16 @@
 
 import { useState } from "react";
 import { Avatar } from "@heroui/avatar";
-import { Button } from "@heroui/button";
 import {
-  Edit2,
   Hash,
   Mail,
   User,
   Users,
   Scale,
   BookOpen,
+  Edit2,
   Check,
   X,
-  Plus,
 } from "lucide-react";
 import { ProjectParticipant } from "@/types/api";
 import {
@@ -21,20 +19,18 @@ import {
   getParticipantStatusColor,
   getParticipantStatusLabel,
   normalizeParticipantStatus,
-} from "../../../../features/events/api/student-dashboard.helpers";
-import { StudentDashboardSectionCard } from "./student-dashboard-section-card";
-import {
   SEMESTER_OPTIONS,
   CAREER_OPTIONS,
-} from "@/features/events/api/student-dashboard.helpers";
+} from "../../../../features/events/api/student-dashboard.helpers";
+import { Button } from "@heroui/button";
+import { Input } from "@heroui/input";
+import { Select, SelectItem } from "@heroui/select";
 import { useNotifications } from "@/components/ui/notifications";
 import {
   useAddUpdateParticipant,
   useCreateInvitation,
 } from "@/features/projects/api/participant-mutations";
-import { Input } from "@heroui/input";
-import { Select, SelectItem } from "@heroui/select";
-
+import { StudentDashboardSectionCard } from "./student-dashboard-section-card";
 
 type StudentDashboardTeamSectionProps = {
   participants: ProjectParticipant[];
@@ -50,30 +46,22 @@ export const StudentDashboardTeamSection = ({
   UserEmail,
 }: StudentDashboardTeamSectionProps) => {
   const { addNotification } = useNotifications();
-  const [isEditMode, setIsEditMode] = useState(false);
+
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newMember, setNewMember] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    studentCode: "",
+    semester: "",
+    career: "",
+  });
   const [editingParticipantEmail, setEditingParticipantEmail] = useState<
     string | null
   >(null);
   const [draftParticipant, setDraftParticipant] =
     useState<ProjectParticipant | null>(null);
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [newMember, setNewMember] = useState<{
-    firstName: string;
-    lastName: string;
-    email: string;
-    ParticipantCode?: string;
-    semester?: number | string;
-    career?: string;
-  }>({
-    firstName: "",
-    lastName: "",
-    email: "",
-    ParticipantCode: "",
-    semester: "",
-    career: "",
-  });
 
-  
   const addUpdateParticipantMutation = useAddUpdateParticipant({
     onSuccess: () => {
       addNotification({
@@ -85,11 +73,11 @@ export const StudentDashboardTeamSection = ({
       setDraftParticipant(null);
       setEditingParticipantEmail(null);
     },
-    onError: (error) => {
+    onError: (error: any) => {
       addNotification({
         type: "error",
         title: "Error al actualizar participante",
-        message: error.message || "Hubo un error al actualizar.",
+        message: error?.message || "Hubo un error al actualizar.",
       });
     },
   });
@@ -116,7 +104,6 @@ export const StudentDashboardTeamSection = ({
   };
 
   const startEditParticipant = (participant: ProjectParticipant) => {
-    // Only allow editing if the participant email matches the current user's email
     if (!canEditParticipant(participant.email)) {
       addNotification({
         type: "error",
@@ -134,13 +121,25 @@ export const StudentDashboardTeamSection = ({
     setDraftParticipant(null);
   };
 
-  const handleSaveParticipant = async () => {
+  const currentParticipant = participants.find(
+    (p) => p.email === editingParticipantEmail,
+  );
+
+  console.log("currentParticipant", currentParticipant);
+
+  const handleSaveParticipant = async (currentStatus?: string | number) => {
     if (!draftParticipant) return;
 
     const currentParticipant = participants.find(
-      (participant) => participant.email === editingParticipantEmail,
+      (p) => p.email === editingParticipantEmail,
     );
-    const currentStatus = normalizeParticipantStatus(currentParticipant?.status);
+
+    const statusToSend = normalizeParticipantStatus(
+      currentStatus ??
+        currentParticipant?.status ??
+        draftParticipant.status ??
+        1,
+    );
 
     try {
       await addUpdateParticipantMutation.mutateAsync({
@@ -151,8 +150,9 @@ export const StudentDashboardTeamSection = ({
         studentCode: draftParticipant.ParticipantCode || "",
         semester: String(draftParticipant.semester),
         career: draftParticipant.career,
-        status: currentStatus,
+        status: statusToSend,
       });
+      console.log("Participante actualizado con status:", statusToSend);
     } catch (error) {
       console.error("Error updating participant:", error);
     }
@@ -168,166 +168,188 @@ export const StudentDashboardTeamSection = ({
       return;
     }
 
+    if (!newMember.firstName || !newMember.lastName) {
+      addNotification({
+        type: "error",
+        title: "Datos incompletos",
+        message: "Completa nombre y apellido antes de continuar.",
+      });
+      return;
+    }
+
     try {
-      // Solo enviar invitación, sin agregar inmediatamente al proyecto
-      // El participante se agregará cuando acepte la invitación y su estado sea JOINED
+      await addUpdateParticipantMutation.mutateAsync({
+        projectId,
+        firstName: newMember.firstName,
+        lastName: newMember.lastName,
+        email: newMember.email,
+        studentCode: newMember.studentCode,
+        semester: newMember.semester,
+        career: newMember.career,
+        status: 1,
+      });
+
       await createInvitationMutation.mutateAsync({
         email: newMember.email,
         eventType: "PROJECT",
         targetType: "PROJECT",
         targetId: projectId,
-        firstName: newMember.firstName || undefined,
-        lastName: newMember.lastName || undefined,
+        firstName: newMember.firstName,
+        lastName: newMember.lastName,
       });
 
-      addNotification({
-        type: "success",
-        title: "Invitación enviada",
-        message: "La invitación se envió correctamente. El miembro se agregará al proyecto cuando acepte.",
-      });
       setNewMember({
         firstName: "",
         lastName: "",
         email: "",
-        ParticipantCode: "",
+        studentCode: "",
         semester: "",
         career: "",
       });
       setShowAddForm(false);
     } catch (error) {
-      addNotification({
-        type: "error",
-        title: "Error al enviar invitación",
-        message: (error as any)?.message || "No se pudo enviar la invitación.",
-      });
+      console.error("Error creating participant/invitation:", error);
     }
   };
+
   return (
     <StudentDashboardSectionCard
       title="Miembros del equipo"
       icon={Users}
       className="space-y-5"
-      action={
-        canEdit ? (
-          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-            <Button
-              size="sm"
-              variant="flat"
-              className="flex items-center gap-1.5 text-sm bg-sky-200/20 text-sky-300 hover:bg-sky-300/20 dark:hover:text-sky-400"
-              onPress={() => {
-                setIsEditMode(!isEditMode);
-                if (isEditMode) cancelEditParticipant();
-              }}
-              aria-label="Editar miembros del equipo"
-            >
-              <Edit2 className="h-3 w-3" />
-              {isEditMode ? "Hecho" : "Editar miembros"}
-            </Button>
+    >
+      {canEdit ? (
+        <div className="rounded-xl border border-default-200/60 bg-default-50/50 p-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-semibold text-foreground">
+                Agregar participante nuevo
+              </p>
+              <p className="text-xs text-default-500">
+                Primero se crea el participante y luego se envía la invitación
+                al correo.
+              </p>
+            </div>
 
             <Button
               size="sm"
               variant="flat"
-              className="flex items-center gap-1.5 text-sm bg-emerald-200/20 text-emerald-600 hover:bg-emerald-300/20"
-              onPress={() => setShowAddForm(!showAddForm)}
-              aria-label="Agregar miembro"
+              className="bg-emerald-200/20 text-emerald-600 hover:bg-emerald-300/20"
+              onPress={() => setShowAddForm((current) => !current)}
             >
-              Agregar miembro
+              {showAddForm ? "Ocultar formulario" : "Agregar miembro"}
             </Button>
           </div>
-        ) : null
-      }
-    >
-      {showAddForm && (
-        <div className="rounded-xl border border-default-200/60 bg-default-50/50 p-4">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <Input
-              size="sm"
-              placeholder="Nombre"
-              value={newMember.firstName}
-              onValueChange={(v) => setNewMember({ ...newMember, firstName: v })}
-            />
-            <Input
-              size="sm"
-              placeholder="Apellido"
-              value={newMember.lastName}
-              onValueChange={(v) => setNewMember({ ...newMember, lastName: v })}
-            />
-            <Input
-              size="sm"
-              placeholder="Correo"
-              value={newMember.email}
-              onValueChange={(v) => setNewMember({ ...newMember, email: v })}
-            />
-            <Input
-              size="sm"
-              placeholder="Codigo estudiantil"
-              value={newMember.ParticipantCode}
-              onValueChange={(v) =>
-                setNewMember({ ...newMember, ParticipantCode: v })
-              }
-            />
-            <Select
-              size="sm"
-              placeholder="Selecciona semestre"
-              selectedKeys={newMember.semester ? [String(newMember.semester)] : []}
-              onSelectionChange={(keys) => {
-                const selected = Array.from(keys)[0] as string;
-                setNewMember({ ...newMember, semester: selected });
-              }}
-            >
-              {SEMESTER_OPTIONS.map((option) => (
-                <SelectItem key={option.value}>{option.label}</SelectItem>
-              ))}
-            </Select>
-            <Select
-              size="sm"
-              placeholder="Selecciona carrera"
-              selectedKeys={newMember.career ? [newMember.career] : []}
-              onSelectionChange={(keys) => {
-                const selected = Array.from(keys)[0] as string;
-                setNewMember({ ...newMember, career: selected });
-              }}
-            >
-              {CAREER_OPTIONS.map((option) => (
-                <SelectItem key={option.value}>{option.label}</SelectItem>
-              ))}
-            </Select>
-          </div>
-          <div className="mt-3 flex gap-2">
-            <Button
-              size="sm"
-              color="success"
-              onPress={handleAddMember}
-              isLoading={createInvitationMutation.isPending}
-            >
-              Agregar
-            </Button>
-            <Button
-              size="sm"
-              variant="flat"
-              color="danger"
-              onPress={() => {
-                setShowAddForm(false);
-                setNewMember({
-                  firstName: "",
-                  lastName: "",
-                  email: "",
-                  ParticipantCode: "",
-                  semester: "",
-                  career: "",
-                });
-              }}
-            >
-              Cancelar
-            </Button>
-          </div>
+
+          {showAddForm ? (
+            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <Input
+                size="sm"
+                placeholder="Nombre"
+                value={newMember.firstName}
+                onValueChange={(value) =>
+                  setNewMember({ ...newMember, firstName: value })
+                }
+              />
+              <Input
+                size="sm"
+                placeholder="Apellido"
+                value={newMember.lastName}
+                onValueChange={(value) =>
+                  setNewMember({ ...newMember, lastName: value })
+                }
+              />
+              <Input
+                size="sm"
+                placeholder="Correo"
+                value={newMember.email}
+                onValueChange={(value) =>
+                  setNewMember({ ...newMember, email: value })
+                }
+              />
+              <Input
+                size="sm"
+                placeholder="Codigo estudiantil"
+                value={newMember.studentCode}
+                onValueChange={(value) =>
+                  setNewMember({ ...newMember, studentCode: value })
+                }
+              />
+              <Select
+                size="sm"
+                placeholder="Selecciona semestre"
+                selectedKeys={newMember.semester ? [newMember.semester] : []}
+                onSelectionChange={(keys) => {
+                  const selected = Array.from(keys)[0] as string;
+                  setNewMember({ ...newMember, semester: selected });
+                }}
+              >
+                {SEMESTER_OPTIONS.map((option) => (
+                  <SelectItem key={option.value}>{option.label}</SelectItem>
+                ))}
+              </Select>
+              <Select
+                size="sm"
+                placeholder="Selecciona carrera"
+                selectedKeys={newMember.career ? [newMember.career] : []}
+                onSelectionChange={(keys) => {
+                  const selected = Array.from(keys)[0] as string;
+                  setNewMember({ ...newMember, career: selected });
+                }}
+              >
+                {CAREER_OPTIONS.map((option) => (
+                  <SelectItem key={option.value}>{option.label}</SelectItem>
+                ))}
+              </Select>
+            </div>
+          ) : null}
+
+          {showAddForm ? (
+            <div className="mt-3 flex gap-2">
+              <Button
+                size="sm"
+                color="success"
+                onPress={handleAddMember}
+                isLoading={
+                  addUpdateParticipantMutation.isPending ||
+                  createInvitationMutation.isPending
+                }
+              >
+                Agregar y enviar invitación
+              </Button>
+              <Button
+                size="sm"
+                variant="flat"
+                color="danger"
+                onPress={() => {
+                  setShowAddForm(false);
+                  setNewMember({
+                    firstName: "",
+                    lastName: "",
+                    email: "",
+                    studentCode: "",
+                    semester: "",
+                    career: "",
+                  });
+                }}
+              >
+                Cancelar
+              </Button>
+            </div>
+          ) : null}
         </div>
-      )}
+      ) : null}
 
       {participants.length > 0 ? (
         <ol className="space-y-4" aria-label="Lista de participantes">
           {participants.map((participant, idx) => {
-            const participantStatus = normalizeParticipantStatus(participant.status);
+            const participantStatus = normalizeParticipantStatus(
+              participant.status,
+            );
+
+            const isEditingThis =
+              editingParticipantEmail === participant.email &&
+              !!draftParticipant;
 
             return (
               <li key={idx}>
@@ -349,6 +371,7 @@ export const StudentDashboardTeamSection = ({
                       />
 
                       <div className="min-w-0 flex-1 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                        {/* Nombre */}
                         <div className="space-y-1">
                           <label
                             htmlFor={`participant-name-${idx}`}
@@ -359,15 +382,14 @@ export const StudentDashboardTeamSection = ({
                               Nombre
                             </span>
                           </label>
-                          {isEditMode &&
-                          editingParticipantEmail === participant.email &&
-                          draftParticipant ? (
+
+                          {isEditingThis ? (
                             <Input
                               size="sm"
-                              value={draftParticipant.firstName}
+                              value={draftParticipant!.firstName}
                               onValueChange={(value) =>
                                 setDraftParticipant({
-                                  ...draftParticipant,
+                                  ...draftParticipant!,
                                   firstName: value,
                                 })
                               }
@@ -384,6 +406,7 @@ export const StudentDashboardTeamSection = ({
                           )}
                         </div>
 
+                        {/* Apellido */}
                         <div className="space-y-1">
                           <label
                             htmlFor={`participant-lastname-${idx}`}
@@ -394,15 +417,14 @@ export const StudentDashboardTeamSection = ({
                               Apellido
                             </span>
                           </label>
-                          {isEditMode &&
-                          editingParticipantEmail === participant.email &&
-                          draftParticipant ? (
+
+                          {isEditingThis ? (
                             <Input
                               size="sm"
-                              value={draftParticipant.lastName}
+                              value={draftParticipant!.lastName}
                               onValueChange={(value) =>
                                 setDraftParticipant({
-                                  ...draftParticipant,
+                                  ...draftParticipant!,
                                   lastName: value,
                                 })
                               }
@@ -419,6 +441,7 @@ export const StudentDashboardTeamSection = ({
                           )}
                         </div>
 
+                        {/* Correo (no editable) */}
                         <div className="space-y-1">
                           <label
                             htmlFor={`participant-email-${idx}`}
@@ -437,6 +460,7 @@ export const StudentDashboardTeamSection = ({
                           </div>
                         </div>
 
+                        {/* Semestre */}
                         <div className="space-y-1">
                           <label
                             htmlFor={`participant-semester-${idx}`}
@@ -447,16 +471,19 @@ export const StudentDashboardTeamSection = ({
                               Semestre
                             </span>
                           </label>
-                          {isEditMode &&
-                          editingParticipantEmail === participant.email &&
-                          draftParticipant ? (
+
+                          {isEditingThis ? (
                             <Select
                               size="sm"
-                              selectedKeys={draftParticipant.semester ? [String(draftParticipant.semester)] : []}
+                              selectedKeys={
+                                draftParticipant!.semester
+                                  ? [String(draftParticipant!.semester)]
+                                  : []
+                              }
                               onSelectionChange={(keys) => {
                                 const selected = Array.from(keys)[0] as string;
                                 setDraftParticipant({
-                                  ...draftParticipant,
+                                  ...draftParticipant!,
                                   semester: Number(selected),
                                 });
                               }}
@@ -464,7 +491,9 @@ export const StudentDashboardTeamSection = ({
                               className="text-sm"
                             >
                               {SEMESTER_OPTIONS.map((option) => (
-                                <SelectItem key={option.value}>{option.label}</SelectItem>
+                                <SelectItem key={option.value}>
+                                  {option.label}
+                                </SelectItem>
                               ))}
                             </Select>
                           ) : (
@@ -479,6 +508,7 @@ export const StudentDashboardTeamSection = ({
                           )}
                         </div>
 
+                        {/* Carrera */}
                         <div className="space-y-1">
                           <label
                             htmlFor={`participant-career-${idx}`}
@@ -489,16 +519,19 @@ export const StudentDashboardTeamSection = ({
                               Carrera
                             </span>
                           </label>
-                          {isEditMode &&
-                          editingParticipantEmail === participant.email &&
-                          draftParticipant ? (
+
+                          {isEditingThis ? (
                             <Select
                               size="sm"
-                              selectedKeys={draftParticipant.career ? [draftParticipant.career] : []}
+                              selectedKeys={
+                                draftParticipant!.career
+                                  ? [draftParticipant!.career]
+                                  : []
+                              }
                               onSelectionChange={(keys) => {
                                 const selected = Array.from(keys)[0] as string;
                                 setDraftParticipant({
-                                  ...draftParticipant,
+                                  ...draftParticipant!,
                                   career: selected,
                                 });
                               }}
@@ -506,7 +539,9 @@ export const StudentDashboardTeamSection = ({
                               className="text-sm"
                             >
                               {CAREER_OPTIONS.map((option) => (
-                                <SelectItem key={option.value}>{option.label}</SelectItem>
+                                <SelectItem key={option.value}>
+                                  {option.label}
+                                </SelectItem>
                               ))}
                             </Select>
                           ) : (
@@ -514,11 +549,14 @@ export const StudentDashboardTeamSection = ({
                               id={`participant-career-${idx}`}
                               className="text-sm italic text-default-500"
                             >
-                              {CAREER_OPTIONS.find((o) => o.value === participant.career)?.label || "Sin carrera"}
+                              {CAREER_OPTIONS.find(
+                                (o) => o.value === participant.career,
+                              )?.label || "Sin carrera"}
                             </div>
                           )}
                         </div>
 
+                        {/* Codigo estudiantil */}
                         <div className="space-y-1">
                           <label
                             htmlFor={`participant-code-${idx}`}
@@ -529,15 +567,14 @@ export const StudentDashboardTeamSection = ({
                               Codigo estudiantil
                             </span>
                           </label>
-                          {isEditMode &&
-                          editingParticipantEmail === participant.email &&
-                          draftParticipant ? (
+
+                          {isEditingThis ? (
                             <Input
                               size="sm"
-                              value={draftParticipant.ParticipantCode || ""}
+                              value={draftParticipant!.ParticipantCode || ""}
                               onValueChange={(value) =>
                                 setDraftParticipant({
-                                  ...draftParticipant,
+                                  ...draftParticipant!,
                                   ParticipantCode: value,
                                 })
                               }
@@ -552,24 +589,29 @@ export const StudentDashboardTeamSection = ({
                               {participant.ParticipantCode || "Sin codigo"}
                             </div>
                           )}
-                        </div>
 
-                        {isEditMode &&
-                          editingParticipantEmail === participant.email &&
-                          draftParticipant && (
+                          {/* Actions: Save/Cancel when editing, Edit when not */}
+                          {isEditingThis && (
                             <div className="col-span-full flex gap-2">
                               <Button
                                 isIconOnly
                                 size="sm"
                                 variant="flat"
                                 color="success"
-                                onPress={handleSaveParticipant}
-                                isLoading={addUpdateParticipantMutation.isPending}
-                                disabled={addUpdateParticipantMutation.isPending}
+                                onPress={() =>
+                                  void handleSaveParticipant(participant.status)
+                                }
+                                isLoading={
+                                  addUpdateParticipantMutation.isPending
+                                }
+                                disabled={
+                                  addUpdateParticipantMutation.isPending
+                                }
                                 aria-label="Guardar cambios"
                               >
                                 <Check className="h-4 w-4" />
                               </Button>
+
                               <Button
                                 isIconOnly
                                 size="sm"
@@ -583,22 +625,24 @@ export const StudentDashboardTeamSection = ({
                             </div>
                           )}
 
-                        {isEditMode &&
-                          !draftParticipant &&
-                          canEditParticipant(participant.email) && (
-                            <div className="col-span-full">
-                              <Button
-                                size="sm"
-                                variant="flat"
-                                className="text-xs"
-                                onPress={() => startEditParticipant(participant)}
-                                aria-label="Editar participante"
-                              >
-                                <Edit2 className="h-3 w-3" />
-                                Editar
-                              </Button>
-                            </div>
-                          )}
+                          {!isEditingThis &&
+                            canEditParticipant(participant.email) && (
+                              <div className="col-span-full">
+                                <Button
+                                  size="sm"
+                                  variant="flat"
+                                  className="text-xs"
+                                  onPress={() =>
+                                    startEditParticipant(participant)
+                                  }
+                                  aria-label="Editar participante"
+                                >
+                                  <Edit2 className="h-3 w-3" />
+                                  Editar
+                                </Button>
+                              </div>
+                            )}
+                        </div>
                       </div>
                     </div>
 
