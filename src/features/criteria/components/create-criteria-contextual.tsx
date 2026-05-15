@@ -26,16 +26,11 @@ import {
   useCreateCriteria,
 } from "../api/create-criteria";
 import {
-  createComponentInputSchema,
-  useCreateComponent,
-} from "../api/create-component";
-import {
   updateCriteriaInputSchema,
   useUpdateCriteria,
 } from "../api/update-criteria";
 
 const ALL_CATEGORIES_KEY = "__all_categories__";
-const ADD_COMPONENT_KEY = "__add_component__";
 
 type CreateCriteriaContextualProps = {
   defaultEventId?: string;
@@ -64,6 +59,7 @@ type CreateCriteriaContextualProps = {
   onCreated?: () => void;
   onUpdated?: () => void;
   onComponentCreated?: (component: CriterionComponent) => void;
+  availableWeightPercent?: number;
 };
 
 const toKeySet = (values: number[] | undefined) =>
@@ -83,15 +79,15 @@ export const CreateCriteriaContextual = ({
   onCreated,
   onUpdated,
   onComponentCreated,
+  availableWeightPercent,
 }: CreateCriteriaContextualProps) => {
   const { addNotification } = useNotifications();
   const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
   const isEditing = !!criterionToEdit;
-  const [isComponentFormOpen, setIsComponentFormOpen] = useState(false);
-  const [componentWeightPercent, setComponentWeightPercent] = useState(25);
-  const [localComponents, setLocalComponents] = useState<CriterionComponent[]>(
-    [],
-  );
+  const normalizeForUI = (raw?: number) => {
+    const val = Number(raw ?? 0);
+    return Math.round(val * 100);
+  };
 
   const [selectedEventKey, setSelectedEventKey] = useState<string>(
     criterionToEdit?.eventId
@@ -109,10 +105,9 @@ export const CreateCriteriaContextual = ({
         : "",
   );
   const [weightPercent, setWeightPercent] = useState(
-    criterionToEdit
-      ? Math.round(Number(criterionToEdit.weight || 0) * 100)
-      : 25,
+    criterionToEdit ? normalizeForUI(criterionToEdit.weight) : 25,
   );
+  const [weightError, setWeightError] = useState<string | null>(null);
   const [hasInitializedCategories, setHasInitializedCategories] =
     useState(false);
 
@@ -138,13 +133,24 @@ export const CreateCriteriaContextual = ({
           : "",
     );
     setSelectedCategoryKeys(toKeySet(criterionToEdit?.categoryIds));
-    setWeightPercent(
-      criterionToEdit
-        ? Math.round(Number(criterionToEdit.weight || 0) * 100)
-        : 25,
-    );
+    setWeightPercent(criterionToEdit ? normalizeForUI(criterionToEdit.weight) : 25);
     setHasInitializedCategories(false);
   }, [criterionToEdit, defaultEventId, fixedComponent, isOpen]);
+
+  useEffect(() => {
+    const available = availableWeightPercent;
+    if (typeof available === "number") {
+      if (weightPercent > available) {
+        setWeightError(
+          `El peso excede el disponible. Disponible: ${available.toFixed(0)}%`,
+        );
+      } else {
+        setWeightError(null);
+      }
+    } else {
+      setWeightError(null);
+    }
+  }, [weightPercent, availableWeightPercent]);
 
   const createCriteriaMutation = useCreateCriteria({
     mutationConfig: {
@@ -191,50 +197,6 @@ export const CreateCriteriaContextual = ({
       },
     },
   });
-  const createComponentMutation = useCreateComponent({
-    mutationConfig: {
-      onSuccess: (componentResponse: any) => {
-        const component = componentResponse?.data ?? componentResponse;
-        const parsedId = Number(component?.id);
-        const normalizedComponent: CriterionComponent | null =
-          Number.isFinite(parsedId) && parsedId > 0
-            ? {
-                id: parsedId,
-                name: String(component?.name ?? "").trim(),
-                description: component?.description,
-                weight: Number(component?.weight ?? 0),
-              }
-            : null;
-
-        if (normalizedComponent) {
-          setLocalComponents((previous) => {
-            const withoutSame = previous.filter(
-              (item) => item.id !== normalizedComponent.id,
-            );
-            return [...withoutSame, normalizedComponent];
-          });
-          setSelectedComponentKey(String(normalizedComponent.id));
-          onComponentCreated?.(normalizedComponent);
-        }
-
-        addNotification({
-          type: "success",
-          title: "Componente creado",
-          message: "El componente fue creado y quedó seleccionado.",
-        });
-        setComponentWeightPercent(25);
-        setIsComponentFormOpen(false);
-      },
-      onError: (error: any) => {
-        addNotification({
-          type: "error",
-          title: "Error",
-          message: error?.message || "No se pudo crear el componente.",
-        });
-      },
-    },
-  });
-
   const eventsQuery = useEventsDropdown();
   const categoriesQuery = useCategories({
     page: 1,
@@ -245,29 +207,12 @@ export const CreateCriteriaContextual = ({
   const events = eventsQuery.data?.data ?? [];
   const categories = categoriesQuery.data?.data ?? [];
 
-  const componentOptions = useMemo(() => {
-    const map = new Map<number, CriterionComponent>();
-    availableComponents.forEach((component) =>
-      map.set(component.id, component),
-    );
-    localComponents.forEach((component) => map.set(component.id, component));
-    return Array.from(map.values()).sort((left, right) =>
-      left.name.localeCompare(right.name),
-    );
-  }, [availableComponents, localComponents]);
-
-  const componentSelectOptions = useMemo(
-    () => [
-      ...componentOptions.map((component) => ({
-        key: String(component.id),
-        label: component.name,
-      })),
-      {
-        key: ADD_COMPONENT_KEY,
-        label: "➕ Añadir nuevo componente",
-      },
-    ],
-    [componentOptions],
+  const componentOptions = useMemo(
+    () =>
+      [...availableComponents].sort((left, right) =>
+        left.name.localeCompare(right.name),
+      ),
+    [availableComponents],
   );
 
   useEffect(() => {
@@ -303,7 +248,7 @@ export const CreateCriteriaContextual = ({
       : selectedComponentKey;
 
   // Show the component selector whenever there are components available
-  // (either passed in or created locally in this session), or when explicitly required.
+  // or when explicitly required.
   const hasComponentOptions = componentOptions.length > 0;
   const needsComponent =
     requireComponentSelection ||
@@ -312,8 +257,7 @@ export const CreateCriteriaContextual = ({
 
   const isPending =
     createCriteriaMutation.isPending ||
-    updateCriteriaMutation.isPending ||
-    createComponentMutation.isPending;
+    updateCriteriaMutation.isPending;
 
   const handleCategorySelectionChange = (keys: unknown) => {
     const nextKeys =
@@ -373,7 +317,7 @@ export const CreateCriteriaContextual = ({
         {isEditing ? "Editar" : buttonLabel}
       </Button>
 
-      <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="2xl">
+      <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="sm">
         <ModalContent>
           {(closeModal) => (
             <Form
@@ -417,11 +361,17 @@ export const CreateCriteriaContextual = ({
                   return;
                 }
 
+                // Normalize and clamp weightPercent to integer 0..100 before sending.
+                const normalizedWeightPercent = Math.max(
+                  0,
+                  Math.min(100, Math.round(Number(weightPercent) || 0)),
+                );
+
                 const payload = {
                   eventId: Number(selectedEventKey),
                   name: String(rawData.name || "").trim(),
                   description: String(rawData.description || "").trim(),
-                  weight: Number(weightPercent) / 100,
+                  weight: normalizedWeightPercent / 100,
                   categoryIds: Array.from(selectedCategoryKeys)
                     .map((categoryId) => Number(categoryId))
                     .filter((categoryId) => Number.isFinite(categoryId)),
@@ -461,130 +411,154 @@ export const CreateCriteriaContextual = ({
                 </p>
               </ModalHeader>
 
-              <ModalBody className="space-y-4">
-                <Input
-                  name="name"
-                  label="Nombre"
-                  placeholder="Ej: Calidad técnica"
-                  defaultValue={criterionToEdit?.name ?? ""}
-                  isRequired
-                />
-
-                <Select
-                  label="Evento"
-                  placeholder="Selecciona un evento"
-                  selectedKeys={selectedEventKey ? [selectedEventKey] : []}
-                  onSelectionChange={(keys) => {
-                    const selected = Array.from(keys)[0];
-                    setSelectedEventKey(selected ? String(selected) : "");
-                    setSelectedCategoryKeys(new Set());
-                    setHasInitializedCategories(false);
-                  }}
-                  isLoading={eventsQuery.isLoading}
-                  isRequired
-                >
-                  {events.map((eventOption) => (
-                    <SelectItem key={String(eventOption.id)}>
-                      {eventOption.name}
-                    </SelectItem>
-                  ))}
-                </Select>
-
-                {/* FIX 1: renderValue collapses the list to "Todas" when all are selected */}
-                <Select
-                  label="Categorías"
-                  placeholder={
-                    categories.length > 0
-                      ? "Selecciona una o más categorías"
-                      : "Sin categorías disponibles"
-                  }
-                  selectionMode="multiple"
-                  selectedKeys={selectedCategoryKeys}
-                  onSelectionChange={handleCategorySelectionChange}
-                  isDisabled={!selectedEventKey || categories.length === 0}
-                  isLoading={!!selectedEventKey && categoriesQuery.isLoading}
-                  renderValue={categoryRenderValue}
-                >
-                  {categories.length > 0 ? (
-                    [
-                      <SelectItem key={ALL_CATEGORIES_KEY}>Todas</SelectItem>,
-                      ...categories.map((category) => (
-                        <SelectItem key={String(category.id)}>
-                          {category.code}
-                        </SelectItem>
-                      )),
-                    ]
-                  ) : (
-                    <SelectItem key="no-categories" isDisabled>
-                      No hay categorías configuradas
-                    </SelectItem>
-                  )}
-                </Select>
-
-                {/* FIX 2: show component selector whenever there are components available,
-                    not only when requireComponentSelection is true.
-                    If fixedComponent is set and not editing, show readonly input instead. */}
-                {fixedComponent && !isEditing ? (
+              <ModalBody className="py-1 sm:py-2">
+                <div className="mx-auto flex w-full max-w-sm sm:max-w-md lg:max-w-lg flex-col gap-1">
                   <Input
-                    label="Componente"
-                    value={fixedComponent.name}
-                    isReadOnly
+                    name="name"
+                    label="Nombre"
+                    placeholder="Ej: Calidad técnica"
+                    defaultValue={criterionToEdit?.name ?? ""}
+                    isRequired
                   />
-                ) : needsComponent ? (
+
                   <Select
-                    label="Componente"
-                    placeholder="Selecciona un componente"
-                    selectedKeys={
-                      selectedComponentKey ? [selectedComponentKey] : []
-                    }
+                    label="Evento"
+                    placeholder="Selecciona un evento"
+                    selectedKeys={selectedEventKey ? [selectedEventKey] : []}
                     onSelectionChange={(keys) => {
                       const selected = Array.from(keys)[0];
-                      if (selected === ADD_COMPONENT_KEY) {
-                        setIsComponentFormOpen(true);
-                        return;
-                      }
-                      setSelectedComponentKey(
-                        selected ? String(selected) : "",
-                      );
+                      setSelectedEventKey(selected ? String(selected) : "");
+                      setSelectedCategoryKeys(new Set());
+                      setHasInitializedCategories(false);
                     }}
-                    isRequired={requireComponentSelection}
+                    isLoading={eventsQuery.isLoading}
+                    isRequired
                   >
-                    {componentSelectOptions.map((component) => (
-                      <SelectItem key={component.key}>
-                        {component.label}
+                    {events.map((eventOption) => (
+                      <SelectItem key={String(eventOption.id)}>
+                        {eventOption.name}
                       </SelectItem>
                     ))}
                   </Select>
-                ) : null}
 
-                <Textarea
-                  name="description"
-                  label="Descripción"
-                  placeholder="Descripción breve del criterio"
-                  defaultValue={criterionToEdit?.description ?? ""}
-                />
-
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-default-600">Peso</span>
-                    <span className="font-semibold text-default-800">
-                      {weightPercent}%
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min={5}
-                    max={100}
-                    step={5}
-                    value={weightPercent}
-                    onChange={(event) =>
-                      setWeightPercent(Number(event.target.value))
+                  {/* FIX 1: renderValue collapses the list to "Todas" when all are selected */}
+                  <Select
+                    label="Categorías"
+                    placeholder={
+                      categories.length > 0
+                        ? "Selecciona una o más categorías"
+                        : "Sin categorías disponibles"
                     }
-                    className="w-full accent-primary"
+                    selectionMode="multiple"
+                    selectedKeys={selectedCategoryKeys}
+                    onSelectionChange={handleCategorySelectionChange}
+                    isDisabled={!selectedEventKey || categories.length === 0}
+                    isLoading={!!selectedEventKey && categoriesQuery.isLoading}
+                    renderValue={categoryRenderValue}
+                  >
+                    {categories.length > 0 ? (
+                      [
+                        <SelectItem key={ALL_CATEGORIES_KEY}>Todas</SelectItem>,
+                        ...categories.map((category) => (
+                          <SelectItem key={String(category.id)}>
+                            {category.code}
+                          </SelectItem>
+                        )),
+                      ]
+                    ) : (
+                      <SelectItem key="no-categories" isDisabled>
+                        No hay categorías configuradas
+                      </SelectItem>
+                    )}
+                  </Select>
+
+                  {/* FIX 2: show component selector whenever there are components available,
+                      not only when requireComponentSelection is true.
+                      If fixedComponent is set and not editing, show readonly input instead. */}
+                  {fixedComponent && !isEditing ? (
+                    <Input
+                      label="Componente"
+                      value={fixedComponent.name}
+                      isReadOnly
+                    />
+                  ) : needsComponent ? (
+                    <Select
+                      label="Componente"
+                      placeholder="Selecciona un componente"
+                      selectedKeys={
+                        selectedComponentKey ? [selectedComponentKey] : []
+                      }
+                      onSelectionChange={(keys) => {
+                        const selected = Array.from(keys)[0];
+                        setSelectedComponentKey(
+                          selected ? String(selected) : "",
+                        );
+                      }}
+                      isRequired={requireComponentSelection}
+                    >
+                      {componentOptions.map((component) => (
+                        <SelectItem key={String(component.id)}>
+                          {component.name}
+                        </SelectItem>
+                      ))}
+                    </Select>
+                  ) : null}
+
+                  <Textarea
+                    name="description"
+                    label="Descripción"
+                    placeholder="Descripción breve del criterio"
+                    defaultValue={criterionToEdit?.description ?? ""}
                   />
-                  <p className="text-xs text-default-500">
-                    Este peso aplica al criterio dentro de la evaluación.
-                  </p>
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-default-600">Peso (sobre el total del evento)</span>
+                      <span className="font-semibold text-default-800">{weightPercent}%</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="range"
+                        min={0}
+                        max={100}
+                        step={1}
+                        value={weightPercent}
+                        onChange={(event) => setWeightPercent(Number(event.target.value))}
+                        className="w-full accent-primary"
+                        aria-label="Peso del criterio"
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                        aria-valuenow={weightPercent}
+                      />
+                      <Input
+                        type="number"
+                        min={0}
+                        max={100}
+                        step={1}
+                        value={String(weightPercent)}
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        onChange={(e: any) => {
+                          const next = e.target.value;
+                          if (/^-?\d*$/.test(next)) {
+                            setWeightPercent(next === "" ? 0 : Number(next));
+                          }
+                        }}
+                        onBlur={() => {
+                          if (!Number.isFinite(Number(weightPercent))) return setWeightPercent(0);
+                          if (weightPercent < 0) setWeightPercent(0);
+                          if (weightPercent > 100) setWeightPercent(100);
+                        }}
+                        className="w-20"
+                      />
+                    </div>
+                    <p className="text-xs text-default-500">Rango permitido: 0% a 100%.</p>
+                    {typeof availableWeightPercent === "number" && (
+                      <p className="text-xs text-default-500">Disponible: {availableWeightPercent.toFixed(0)}%</p>
+                    )}
+                    {weightError && (
+                      <p className="text-xs text-danger">{weightError}</p>
+                    )}
+                  </div>
                 </div>
               </ModalBody>
 
@@ -597,7 +571,7 @@ export const CreateCriteriaContextual = ({
                 >
                   Cancelar
                 </Button>
-                <Button type="submit" color="primary" isLoading={isPending}>
+                <Button type="submit" color="primary" isLoading={isPending} isDisabled={isPending || !!weightError}>
                   {isEditing ? "Guardar cambios" : "Crear criterio"}
                 </Button>
               </ModalFooter>
@@ -606,98 +580,6 @@ export const CreateCriteriaContextual = ({
         </ModalContent>
       </Modal>
 
-      <Modal
-        isOpen={isComponentFormOpen}
-        onOpenChange={setIsComponentFormOpen}
-        size="xl"
-      >
-        <ModalContent>
-          {(closeComponentForm) => (
-            <Form
-              id="create-component-from-criteria"
-              onSubmit={async (event) => {
-                event.preventDefault();
-                const form = event.target as HTMLFormElement;
-                const formData = new FormData(form);
-                const rawData = Object.fromEntries(formData);
-                const payload = {
-                  name: String(rawData.name || "").trim(),
-                  description: String(rawData.description || "").trim(),
-                  weight: Number(componentWeightPercent) / 100,
-                };
-
-                try {
-                  const values =
-                    await createComponentInputSchema.parseAsync(payload);
-                  await createComponentMutation.mutateAsync({ data: values });
-                } catch (error: any) {
-                  addNotification({
-                    type: "error",
-                    title: "Error de validación",
-                    message: error?.message || "Revisa los datos ingresados.",
-                  });
-                }
-              }}
-            >
-              <ModalHeader className="flex flex-col gap-1">
-                Añadir nuevo componente
-                <p className="text-sm font-normal text-default-500">
-                  Al guardarlo quedará seleccionado para este criterio.
-                </p>
-              </ModalHeader>
-              <ModalBody className="space-y-4">
-                <Input
-                  name="name"
-                  label="Nombre"
-                  placeholder="Ej: Innovación"
-                  isRequired
-                />
-                <Textarea
-                  name="description"
-                  label="Descripción"
-                  placeholder="Descripción breve (opcional)"
-                />
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-default-600">Peso</span>
-                    <span className="font-semibold text-default-800">
-                      {componentWeightPercent}%
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min={5}
-                    max={100}
-                    step={5}
-                    value={componentWeightPercent}
-                    onChange={(event) =>
-                      setComponentWeightPercent(Number(event.target.value))
-                    }
-                    className="w-full accent-primary"
-                  />
-                </div>
-              </ModalBody>
-              <ModalFooter>
-                <Button
-                  variant="flat"
-                  color="danger"
-                  onPress={closeComponentForm}
-                  isDisabled={createComponentMutation.isPending}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  type="submit"
-                  color="primary"
-                  isLoading={createComponentMutation.isPending}
-                >
-                  Crear componente
-                </Button>
-              </ModalFooter>
-            </Form>
-          )}
-        </ModalContent>
-      </Modal>
     </>
   );
 };

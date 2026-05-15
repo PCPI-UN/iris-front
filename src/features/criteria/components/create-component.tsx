@@ -1,7 +1,7 @@
 "use client";
 
 import { Pencil, Plus } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
@@ -32,6 +32,9 @@ type CreateComponentProps = {
   onUpdated?: (component: CriterionComponent) => void;
   componentToEdit?: CriterionComponent;
   isDisabled?: boolean;
+  isOpen?: boolean;
+  onOpenChange?: (isOpen: boolean) => void;
+  hideTrigger?: boolean;
 };
 
 export const CreateComponent = ({
@@ -39,25 +42,21 @@ export const CreateComponent = ({
   onUpdated,
   componentToEdit,
   isDisabled = false,
+  isOpen: isOpenProp,
+  onOpenChange,
+  hideTrigger = false,
 }: CreateComponentProps) => {
   const { addNotification } = useNotifications();
-  const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
+  const disclosure = useDisclosure();
   const isEditing = !!componentToEdit;
-  const [weightPercent, setWeightPercent] = useState(
-    componentToEdit
-      ? Math.round(Number(componentToEdit.weight || 0) * 100)
-      : 25,
-  );
-
-  useEffect(() => {
-    if (isOpen) {
-      setWeightPercent(
-        componentToEdit
-          ? Math.round(Number(componentToEdit.weight || 0) * 100)
-          : 25,
-      );
-    }
-  }, [componentToEdit, isOpen]);
+  const isControlled = typeof isOpenProp === "boolean";
+  const isOpen = isControlled ? isOpenProp : disclosure.isOpen;
+  const openModal = isControlled ? () => onOpenChange?.(true) : disclosure.onOpen;
+  const closeModal = isControlled ? () => onOpenChange?.(false) : disclosure.onClose;
+  const handleOpenChange = isControlled ? (nextOpen: boolean) => onOpenChange?.(nextOpen) : disclosure.onOpenChange;
+  // Components no longer have a weight editable from the UI. The backend may
+  // still expose a weight field; the UI will ignore it and send 0 when creating
+  // or updating to avoid influencing calculations on the server.
 
   const normalizeComponent = (
     componentResponse: any,
@@ -89,9 +88,7 @@ export const CreateComponent = ({
         if (normalizedComponent) {
           onCreated?.(normalizedComponent);
         }
-
-        setWeightPercent(25);
-        onClose();
+        closeModal();
       },
       onError: (error: any) => {
         addNotification({
@@ -117,7 +114,7 @@ export const CreateComponent = ({
           onUpdated?.(normalizedComponent);
         }
 
-        onClose();
+        closeModal();
       },
       onError: (error: any) => {
         addNotification({
@@ -134,18 +131,20 @@ export const CreateComponent = ({
 
   return (
     <>
-      <Button
-        size="sm"
-        variant="flat"
-        color="secondary"
-        onPress={onOpen}
-        isDisabled={isDisabled}
-      >
-        {isEditing ? <Pencil size={16} /> : <Plus size={16} />}
-        {isEditing ? "Editar" : "Agregar componente"}
-      </Button>
+      {!hideTrigger && (
+        <Button
+          size="sm"
+          variant="flat"
+          color="secondary"
+          onPress={openModal}
+          isDisabled={isDisabled}
+        >
+          {isEditing ? <Pencil size={16} /> : <Plus size={16} />}
+          {isEditing ? "Editar" : "Agregar componente"}
+        </Button>
+      )}
 
-      <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="2xl">
+      <Modal isOpen={isOpen} onOpenChange={handleOpenChange} size="sm">
         <ModalContent>
           {(closeModal) => (
             <Form
@@ -160,7 +159,8 @@ export const CreateComponent = ({
                 const payload = {
                   name: String(rawData.name || "").trim(),
                   description: String(rawData.description || "").trim(),
-                  weight: Number(weightPercent) / 100,
+                  // UI no longer manages component weight; send 0 for compatibility.
+                  weight: 0,
                 };
 
                 try {
@@ -194,43 +194,24 @@ export const CreateComponent = ({
                 </p>
               </ModalHeader>
 
-              <ModalBody className="space-y-4">
-                <Input
-                  name="name"
-                  label="Nombre"
-                  placeholder="Ej: Innovación"
-                  defaultValue={componentToEdit?.name ?? ""}
-                  isRequired
-                />
-
-                <Textarea
-                  name="description"
-                  label="Descripción"
-                  placeholder="Descripción breve (opcional)"
-                  defaultValue={componentToEdit?.description ?? ""}
-                />
-
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-default-600">Peso</span>
-                    <span className="font-semibold text-default-800">
-                      {weightPercent}%
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min={5}
-                    max={100}
-                    step={5}
-                    value={weightPercent}
-                    onChange={(event) =>
-                      setWeightPercent(Number(event.target.value))
-                    }
-                    className="w-full accent-primary"
+              <ModalBody className="py-2 sm:py-4">
+                <div className="mx-auto flex w-full max-w-md sm:max-w-lg lg:max-w-xl flex-col gap-2">
+                  <Input
+                    name="name"
+                    label="Nombre"
+                    placeholder="Ej: Innovación"
+                    defaultValue={componentToEdit?.name ?? ""}
+                    isRequired
                   />
-                  <p className="text-xs text-default-500">
-                    Rango permitido: 5% a 100%, en pasos de 5%.
-                  </p>
+
+                  <Textarea
+                    name="description"
+                    label="Descripción"
+                    placeholder="Descripción breve (opcional)"
+                    defaultValue={componentToEdit?.description ?? ""}
+                  />
+
+              
                 </div>
               </ModalBody>
 
@@ -243,7 +224,7 @@ export const CreateComponent = ({
                 >
                   Cancelar
                 </Button>
-                <Button type="submit" color="primary" isLoading={isPending}>
+                <Button type="submit" color="primary" isLoading={isPending} isDisabled={isPending}>
                   {isEditing ? "Guardar cambios" : "Crear componente"}
                 </Button>
               </ModalFooter>

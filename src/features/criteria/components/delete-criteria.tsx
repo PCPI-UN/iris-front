@@ -50,16 +50,15 @@ export const DeleteCriteria = ({
   return (
     <>
       <Button
-        className="w-full"
-        variant="shadow"
+        variant="flat"
         size="sm"
         color="danger"
         onPress={() => onOpen()}
         startContent={<Trash size={16} />}
       >
-        Delete
+        Eliminar
       </Button>
-      <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="2xl">
+      <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="sm">
         <ModalContent>
           {(onClose) => (
             <>

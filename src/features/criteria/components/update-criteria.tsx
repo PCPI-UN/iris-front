@@ -28,15 +28,23 @@ import { Input } from "@/components/ui/input";
 
 type UpdateCriteriaProps = {
   criterionId: number;
+  availableWeightPercent?: number;
 };
 
-export const UpdateCriteria = ({ criterionId }: UpdateCriteriaProps) => {
+export const UpdateCriteria = ({ criterionId, availableWeightPercent }: UpdateCriteriaProps) => {
   const { addNotification } = useNotifications();
   const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
   const [selectedEvent, setSelectedEvent] = useState<string>("");
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(
     new Set()
   );
+  const normalizeForUI = (raw?: number) => {
+    const val = Number(raw ?? 0);
+    if (val > 1) return Math.round(val);
+    return Math.round(val * 100);
+  };
+  const [weightPercent, setWeightPercent] = useState(0);
+  const [weightError, setWeightError] = useState<string | null>(null);
 
   const criterionQuery = useCriterion({ criterionId });
   const updateCriteriaMutation = useUpdateCriteria({
@@ -70,8 +78,22 @@ export const UpdateCriteria = ({ criterionId }: UpdateCriteriaProps) => {
         ? new Set(criterion.categoryIds.map((id) => String(id)))
         : new Set<string>();
       setSelectedCategories(preselected);
+      setWeightPercent(normalizeForUI(criterion.weight));
     }
   }, [isOpen, criterion]);
+
+  useEffect(() => {
+    const available = availableWeightPercent;
+    if (typeof available === "number") {
+      if (weightPercent > available) {
+        setWeightError(`El peso excede el disponible. Disponible: ${available.toFixed(0)}%`);
+      } else {
+        setWeightError(null);
+      }
+    } else {
+      setWeightError(null);
+    }
+  }, [weightPercent, availableWeightPercent]);
 
   const eventsQuery = useEvents({ page: 1 });
   const categoriesQuery = useCategories({
@@ -95,7 +117,7 @@ export const UpdateCriteria = ({ criterionId }: UpdateCriteriaProps) => {
       >
         Edit
       </Button>
-      <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="2xl">
+      <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="sm">
         <ModalContent>
           {(onClose) => {
             if (criterionQuery.isLoading) {
@@ -138,7 +160,13 @@ export const UpdateCriteria = ({ criterionId }: UpdateCriteriaProps) => {
                   if (rawData.name) data.name = rawData.name;
                   if (rawData.description)
                     data.description = rawData.description;
-                  if (rawData.weight) data.weight = Number(rawData.weight);
+                  // Normalize and clamp weightPercent to integer 0..100 before sending.
+                  const normalizedWeightPercent = Math.max(
+                    0,
+                    Math.min(100, Math.round(Number(weightPercent) || 0)),
+                  );
+
+                  data.weight = normalizedWeightPercent / 100;
                   if (selectedEvent) data.eventId = Number(selectedEvent);
                   if (selectedCategories && selectedCategories.size) {
                     data.categoryIds = Array.from(selectedCategories).map((id) =>
@@ -164,83 +192,124 @@ export const UpdateCriteria = ({ criterionId }: UpdateCriteriaProps) => {
                     Update the evaluation criteria
                   </p>
                 </ModalHeader>
-                <ModalBody className="space-y-4 w-full">
-                  <Select
-                    label="Event"
-                    placeholder="Select an event"
-                    defaultSelectedKeys={
-                      criterion?.eventId ? [String(criterion.eventId)] : []
-                    }
-                    onSelectionChange={(keys) => {
-                      const id = Array.from(keys)[0] as string;
-                      setSelectedEvent(id || "");
-                      setSelectedCategories(new Set());
-                    }}
-                    isLoading={eventsQuery.isLoading}
-                    isRequired
-                  >
-                    {events.map((event) => (
-                      <SelectItem key={event.id}>{event.name}</SelectItem>
-                    ))}
-                  </Select>
+                <ModalBody className="py-2 sm:py-4">
+                  <div className="mx-auto flex w-full max-w-sm sm:max-w-md lg:max-w-lg flex-col gap-2">
+                    <Select
+                      label="Event"
+                      placeholder="Select an event"
+                      defaultSelectedKeys={
+                        criterion?.eventId ? [String(criterion.eventId)] : []
+                      }
+                      onSelectionChange={(keys) => {
+                        const id = Array.from(keys)[0] as string;
+                        setSelectedEvent(id || "");
+                        setSelectedCategories(new Set());
+                      }}
+                      isLoading={eventsQuery.isLoading}
+                      isRequired
+                    >
+                      {events.map((event) => (
+                        <SelectItem key={event.id}>{event.name}</SelectItem>
+                      ))}
+                    </Select>
 
-                  <Select
-                    label="Categories"
-                    placeholder={
-                      selectedEvent
-                        ? "Select one or more categories"
-                        : "Select event first"
-                    }
-                    selectionMode="multiple"
-                    selectedKeys={selectedCategories}
-                    onSelectionChange={(keys) => {
-                      const set =
-                        keys instanceof Set ? keys : new Set(Array.from(keys));
-                      setSelectedCategories(set as Set<string>);
-                    }}
-                    isDisabled={!selectedEvent}
-                    isLoading={!!selectedEvent && categoriesQuery.isLoading}
-                  >
-                    {selectedEvent ? (
-                      categories.length ? (
-                        categories.map((c) => (
-                          <SelectItem key={String(c.id)}>{c.code}</SelectItem>
-                        ))
+                    <Select
+                      label="Categories"
+                      placeholder={
+                        selectedEvent
+                          ? "Select one or more categories"
+                          : "Select event first"
+                      }
+                      selectionMode="multiple"
+                      selectedKeys={selectedCategories}
+                      onSelectionChange={(keys) => {
+                        const set =
+                          keys instanceof Set ? keys : new Set(Array.from(keys));
+                        setSelectedCategories(set as Set<string>);
+                      }}
+                      isDisabled={!selectedEvent}
+                      isLoading={!!selectedEvent && categoriesQuery.isLoading}
+                    >
+                      {selectedEvent ? (
+                        categories.length ? (
+                          categories.map((c) => (
+                            <SelectItem key={String(c.id)}>{c.code}</SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem key="no-categories" isDisabled>
+                            No categories
+                          </SelectItem>
+                        )
                       ) : (
-                        <SelectItem key="no-categories" isDisabled>
-                          No categories
+                        <SelectItem key="select-event" isDisabled>
+                          Select event first
                         </SelectItem>
-                      )
-                    ) : (
-                      <SelectItem key="select-event" isDisabled>
-                        Select event first
-                      </SelectItem>
-                    )}
-                  </Select>
-                  <Input
-                    label="Name"
-                    name="name"
-                    defaultValue={criterion?.name ?? ""}
-                    placeholder="e.g., Technical Quality"
-                  />
+                      )}
+                    </Select>
+                    <Input
+                      label="Name"
+                      name="name"
+                      defaultValue={criterion?.name ?? ""}
+                      placeholder="e.g., Technical Quality"
+                    />
 
-                  <Textarea
-                    label="Description"
-                    name="description"
-                    defaultValue={criterion?.description ?? ""}
-                    placeholder="Brief description of the criteria"
-                  />
+                    <Textarea
+                      label="Description"
+                      name="description"
+                      defaultValue={criterion?.description ?? ""}
+                      placeholder="Brief description of the criteria"
+                    />
 
-                  <Input
-                    type="number"
-                    label="Weight"
-                    name="weight"
-                    defaultValue={criterion?.weight?.toString() ?? "0"}
-                    min="0"
-                    max="1"
-                    step="0.01"
-                    description="Weight of this criteria in the evaluation (e.g., 0.25 for 25%)"
-                  />
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-default-600">Peso (sobre el total del evento)</span>
+                        <span className="font-semibold text-default-800">{weightPercent}%</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="range"
+                          min={0}
+                          max={100}
+                          step={1}
+                          value={weightPercent}
+                          onChange={(event) => setWeightPercent(Number(event.target.value))}
+                          className="w-full accent-primary"
+                          aria-label="Peso del criterio"
+                          aria-valuemin={0}
+                          aria-valuemax={100}
+                          aria-valuenow={weightPercent}
+                        />
+                        <Input
+                          type="number"
+                          min={0}
+                          max={100}
+                          step={1}
+                          value={String(weightPercent)}
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          onChange={(e: any) => {
+                            const next = e.target.value;
+                            if (/^-?\d*$/.test(next)) {
+                              setWeightPercent(next === "" ? 0 : Number(next));
+                            }
+                          }}
+                          onBlur={() => {
+                            if (!Number.isFinite(Number(weightPercent))) return setWeightPercent(0);
+                            if (weightPercent < 0) setWeightPercent(0);
+                            if (weightPercent > 100) setWeightPercent(100);
+                          }}
+                          className="w-20"
+                        />
+                      </div>
+                      <p className="text-xs text-default-500">Rango permitido: 0% a 100%.</p>
+                      {typeof availableWeightPercent === "number" && (
+                        <p className="text-xs text-default-500">Disponible: {availableWeightPercent.toFixed(0)}%</p>
+                      )}
+                      {weightError && (
+                        <p className="text-xs text-danger">{weightError}</p>
+                      )}
+                    </div>
+                  </div>
                 </ModalBody>
                 <ModalFooter>
                   <Button color="danger" variant="light" onPress={onClose}>
@@ -249,7 +318,7 @@ export const UpdateCriteria = ({ criterionId }: UpdateCriteriaProps) => {
                   <Button
                     type="submit"
                     isLoading={updateCriteriaMutation.isPending}
-                    disabled={updateCriteriaMutation.isPending}
+                    disabled={updateCriteriaMutation.isPending || !!weightError}
                   >
                     Save Changes
                   </Button>

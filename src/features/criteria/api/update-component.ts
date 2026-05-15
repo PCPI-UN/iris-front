@@ -10,7 +10,7 @@ export const updateComponentInputSchema = z.object({
   description: z.string().optional(),
   weight: z
     .number()
-    .min(0.01, "Weight must be greater than 0")
+    .min(0, "Weight must be greater than or equal to 0")
     .max(1, "Weight must be less than or equal to 1")
     .optional(),
 });

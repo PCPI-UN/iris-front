@@ -17,6 +17,7 @@ export const updateCriteriaInputSchema = z.object({
   weight: z
     .number()
     .min(0, "Weight must be greater than or equal to 0")
+    .max(1, "Weight must be less than or equal to 1")
     .optional(),
   eventId: z.number().min(1, "Event is required").optional(),
 

@@ -2,9 +2,7 @@
 
 import {
   AlertTriangle,
-  CheckCircle2,
   ChevronDown,
-  Info,
   RotateCcw,
   Save,
   Trash,
@@ -53,6 +51,8 @@ import { updateComponent } from "../api/update-component";
 import { CreateComponent } from "./create-component";
 import { CreateCriteriaContextual } from "./create-criteria-contextual";
 import { DeleteCriteria } from "./delete-criteria";
+
+const ADD_COMPONENT_KEY = "__add_component__";
 
 type CriteriaMode = "neutral" | "flat" | "mixed" | "components";
 type SavedCriteriaSnapshot = {
@@ -121,6 +121,10 @@ export const CriteriaList = () => {
   >({});
   const [componentToDelete, setComponentToDelete] =
     useState<CriterionComponent | null>(null);
+  const [assignPendingId, setAssignPendingId] = useState<number | null>(null);
+  const [deletePendingId, setDeletePendingId] = useState<number | null>(null);
+  const [inlineComponentFormOpen, setInlineComponentFormOpen] = useState(false);
+  const [pendingInlineAssignmentCriterionId, setPendingInlineAssignmentCriterionId] = useState<number | null>(null);
   const [deleteComponentMode, setDeleteComponentMode] =
     useState<DeleteComponentMode>("reassign");
   const [isCancelChangesOpen, setIsCancelChangesOpen] = useState(false);
@@ -204,38 +208,6 @@ export const CriteriaList = () => {
     () => criteria.filter((c) => !c.component?.id).length,
     [criteria],
   );
-
-  const validationState = useMemo(() => {
-    if (!selectedEventKey) {
-      return {
-        tone: "neutral" as const,
-        message: "Selecciona un evento para configurar criterios de evaluación.",
-      };
-    }
-    if (mode === "neutral") {
-      return {
-        tone: "neutral" as const,
-        message:
-          "No hay criterios configurados. Puedes crear criterios sueltos o por componentes.",
-      };
-    }
-    if (hasComponentsAvailable && looseCount > 0) {
-      return {
-        tone: "danger" as const,
-        message: `Estado bloqueante: el evento está en modo componentes y quedan ${looseCount} criterio(s) suelto(s) por asignar.`,
-      };
-    }
-    if (mode === "components") {
-      return {
-        tone: "success" as const,
-        message: "Configuración válida en modo por componentes.",
-      };
-    }
-    return {
-      tone: "success" as const,
-      message: "Configuración válida en modo plano.",
-    };
-  }, [selectedEventKey, mode, looseCount, hasComponentsAvailable]);
 
   const storageKey = useMemo(
     () =>
@@ -388,31 +360,53 @@ export const CriteriaList = () => {
 
   const totalWeightPercent = useMemo(
     () =>
-      criteria.reduce((total, c) => total + Number(c.weight || 0) * 100, 0),
+      criteria.reduce(
+        (total, criterion) => total + Math.round(Number(criterion.weight || 0) * 100),
+        0,
+      ),
     [criteria],
   );
+
+
+  const availableWeightForNewCriterion = useMemo(
+    () => Math.max(0, 100 - totalWeightPercent),
+    [totalWeightPercent],
+  );
+
+  const availableWeightForCriterionEdit = useCallback(
+    (criterionId?: number) => {
+      if (!criterionId) return Math.max(0, 100 - totalWeightPercent);
+      const c = criteria.find((x) => x.id === criterionId);
+      const own = c ? Math.round(Number(c.weight || 0) * 100) : 0;
+      return Math.max(0, 100 - (totalWeightPercent - own));
+    },
+    [criteria, totalWeightPercent],
+  );
+
+  // Components do not have independent weights in the UI anymore.
 
   const componentSummaryRows = useMemo(
     () =>
       availableComponents.map((component) => {
         const componentCriteria = criteriaByComponent.get(component.id) ?? [];
         const totalCriteriaWeight = componentCriteria.reduce(
-          (sum, c) => sum + Number(c.weight || 0) * 100,
+          (sum, c) => sum + Number(c.weight || 0),
           0,
         );
         return {
           id: component.id,
           name: component.name,
-          weightPercent: Number(component.weight || 0) * 100,
           criteriaCount: componentCriteria.length,
-          criteriaWeightPercent: totalCriteriaWeight,
+          criteriaWeightPercent: totalCriteriaWeight * 100,
         };
       }),
     [availableComponents, criteriaByComponent],
   );
 
   const hasValidationErrors = hasComponentsAvailable && looseCount > 0;
-  const canSave = hasUnsavedChanges && !hasValidationErrors;
+  const weightDeltaTo100 = 100 - totalWeightPercent;
+  const hasExactWeight100 = totalWeightPercent === 100;
+  const canSave = hasUnsavedChanges && !hasValidationErrors && hasExactWeight100;
 
   const markUnsavedChanges = useCallback(() => {
     if (!selectedEventKey) return;
@@ -429,6 +423,35 @@ export const CriteriaList = () => {
       componentsQuery.refetch(),
     ]);
   }, [allEventCriteriaQuery, componentsQuery, criteriaQuery]);
+
+  const registerCreatedComponent = useCallback(
+    (component: CriterionComponent) => {
+      if (!selectedEventKey) return;
+      markUnsavedChanges();
+      mergedComponentIdsRef.current[selectedEventKey] = new Set([
+        ...(mergedComponentIdsRef.current[selectedEventKey] ?? new Set()),
+        component.id,
+      ]);
+      setEventComponentIds((prev) => ({
+        ...prev,
+        [selectedEventKey]: [
+          ...new Set([...(prev[selectedEventKey] ?? []), component.id]),
+        ],
+      }));
+      setCreatedComponentsByEvent((prev) => {
+        const current = prev[selectedEventKey] ?? [];
+        return {
+          ...prev,
+          [selectedEventKey]: [
+            ...current.filter((item) => item.id !== component.id),
+            component,
+          ],
+        };
+      });
+      refetchCriteriaState();
+    },
+    [markUnsavedChanges, refetchCriteriaState, selectedEventKey],
+  );
 
   // Capture a fresh snapshot using refs to avoid stale closures
   const allEventCriteriaRef = useRef(allEventCriteria);
@@ -626,6 +649,7 @@ export const CriteriaList = () => {
     async (criterion: Criterion) => {
       const selected = assignmentByCriterion[criterion.id];
       if (!selected) return;
+      setAssignPendingId(criterion.id);
       try {
         await updateCriteriaMutation.mutateAsync({
           criterionId: criterion.id,
@@ -656,6 +680,8 @@ export const CriteriaList = () => {
           title: "Error",
           message: error?.message || "No se pudo asignar el criterio.",
         });
+      } finally {
+        setAssignPendingId(null);
       }
     },
     [addNotification, assignmentByCriterion, markUnsavedChanges, updateCriteriaMutation],
@@ -663,6 +689,7 @@ export const CriteriaList = () => {
 
   const handleDeleteComponent = useCallback(
     async (component: CriterionComponent, mode: DeleteComponentMode = "reassign") => {
+      setDeletePendingId(component.id);
       try {
         const assignedCriteria = allEventCriteria.filter(
           (c) => c.component?.id === component.id,
@@ -706,6 +733,8 @@ export const CriteriaList = () => {
           title: "Error",
           message: error?.message || "No se pudo eliminar el componente.",
         });
+      } finally {
+        setDeletePendingId(null);
       }
     },
     [
@@ -717,20 +746,6 @@ export const CriteriaList = () => {
       selectedEventKey,
     ],
   );
-
-  const validationBarClassName =
-    validationState.tone === "success"
-      ? "border-success/30 bg-success/10 text-success"
-      : validationState.tone === "danger"
-        ? "border-danger/30 bg-danger/10 text-danger"
-        : "border-default-200 bg-default-50/60 text-default-700";
-
-  const ValidationIcon =
-    validationState.tone === "success"
-      ? CheckCircle2
-      : validationState.tone === "danger"
-        ? AlertTriangle
-        : Info;
 
   const renderCriterionCard = (
     criterion: Criterion,
@@ -780,42 +795,18 @@ export const CriteriaList = () => {
 
               <div className="flex flex-wrap items-center gap-2 sm:self-start">
                 <Chip size="sm" color="primary" variant="flat">
-                  {(criterion.weight * 100).toFixed(0)}%
+                  {(Number(criterion.weight || 0) * 100).toFixed(0)}%
                 </Chip>
                 <CreateCriteriaContextual
                   defaultEventId={selectedEventKey}
                   availableComponents={availableComponents}
                   requireComponentSelection={hasComponentsAvailable}
                   criterionToEdit={criterion}
+                  availableWeightPercent={availableWeightForCriterionEdit(criterion.id)}
                   buttonVariant="flat"
                   buttonColor="default"
                   onUpdated={() => {
                     markUnsavedChanges();
-                    refetchCriteriaState();
-                  }}
-                  onComponentCreated={(component) => {
-                    markUnsavedChanges();
-                    mergedComponentIdsRef.current[selectedEventKey] =
-                      new Set([
-                        ...(mergedComponentIdsRef.current[selectedEventKey] ?? new Set()),
-                        component.id,
-                      ]);
-                    setEventComponentIds((prev) => ({
-                      ...prev,
-                      [selectedEventKey]: [
-                        ...new Set([...(prev[selectedEventKey] ?? []), component.id]),
-                      ],
-                    }));
-                    setCreatedComponentsByEvent((prev) => {
-                      const current = prev[selectedEventKey] ?? [];
-                      return {
-                        ...prev,
-                        [selectedEventKey]: [
-                          ...current.filter((item) => item.id !== component.id),
-                          component,
-                        ],
-                      };
-                    });
                     refetchCriteriaState();
                   }}
                 />
@@ -840,17 +831,27 @@ export const CriteriaList = () => {
                       selectedKeys={selectedAssignment ? [selectedAssignment] : []}
                       onSelectionChange={(keys) => {
                         const selected = Array.from(keys)[0];
+                        if (selected === ADD_COMPONENT_KEY) {
+                          setPendingInlineAssignmentCriterionId(criterion.id);
+                          setInlineComponentFormOpen(true);
+                          return;
+                        }
                         setAssignmentByCriterion((prev) => ({
                           ...prev,
                           [criterion.id]: selected ? String(selected) : "",
                         }));
                       }}
                     >
-                      {availableComponents.map((component) => (
-                        <SelectItem key={String(component.id)}>
-                          {component.name}
+                      <>
+                        {availableComponents.map((component) => (
+                          <SelectItem key={String(component.id)}>
+                            {component.name}
+                          </SelectItem>
+                        ))}
+                        <SelectItem key={ADD_COMPONENT_KEY}>
+                          Añadir nuevo componente
                         </SelectItem>
-                      ))}
+                      </>
                     </Select>
                   </div>
                   <Button
@@ -858,7 +859,7 @@ export const CriteriaList = () => {
                     color="primary"
                     isDisabled={!selectedAssignment}
                     onPress={() => handleAssignToComponent(criterion)}
-                    isLoading={updateCriteriaMutation.isPending}
+                    isLoading={assignPendingId === criterion.id}
                   >
                     Asignar
                   </Button>
@@ -916,38 +917,21 @@ export const CriteriaList = () => {
         </div>
       </div>
 
-      <Card className={validationBarClassName}>
-        <CardBody className="py-3">
-          <div className="flex items-center gap-2 text-sm font-medium">
-            <ValidationIcon className="size-4" />
-            <span>{validationState.message}</span>
-          </div>
-        </CardBody>
-      </Card>
-
       <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-3">
         <Card className="glass-card shadow-sm">
-          <CardHeader className="pb-2">
+          <CardHeader className="pb-2 justify-center">
             <p className="text-xs font-medium text-default-500">Total de criterios</p>
           </CardHeader>
-          <CardBody className="pt-0">
+          <CardBody className="pt-0 text-center">
             <p className="text-2xl font-bold">{criteria.length}</p>
           </CardBody>
         </Card>
         <Card className="glass-card shadow-sm">
-          <CardHeader className="pb-2">
+          <CardHeader className="pb-2 justify-center">
             <p className="text-xs font-medium text-default-500">Total de componentes</p>
           </CardHeader>
-          <CardBody className="pt-0">
+          <CardBody className="pt-0 text-center">
             <p className="text-2xl font-bold">{availableComponents.length}</p>
-          </CardBody>
-        </Card>
-        <Card className="glass-card shadow-sm">
-          <CardHeader className="pb-2">
-            <p className="text-xs font-medium text-default-500">Peso acumulado</p>
-          </CardHeader>
-          <CardBody className="pt-0">
-            <p className="text-2xl font-bold">{totalWeightPercent.toFixed(0)}%</p>
           </CardBody>
         </Card>
       </div>
@@ -960,6 +944,7 @@ export const CriteriaList = () => {
               availableComponents={availableComponents}
               requireComponentSelection={false}
               buttonDisabled={!selectedEventKey}
+              availableWeightPercent={availableWeightForNewCriterion}
               onCreated={() => {
                 markUnsavedChanges();
                 refetchCriteriaState();
@@ -996,7 +981,25 @@ export const CriteriaList = () => {
           />
         </div>
 
-        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:items-end">
+          {!!selectedEventKey && (
+            <p
+              className={`text-xs ${
+                hasExactWeight100
+                  ? "text-success"
+                  : weightDeltaTo100 > 0
+                    ? "text-warning"
+                    : "text-danger"
+              }`}
+            >
+              {hasExactWeight100
+                ? `Acumulado: ${totalWeightPercent}% (completo)`
+                : weightDeltaTo100 > 0
+                  ? `Acumulado: ${totalWeightPercent}% · Falta: ${weightDeltaTo100}% para llegar a 100%`
+                  : `Acumulado: ${totalWeightPercent}% · Sobra: ${Math.abs(weightDeltaTo100)}% sobre 100%`}
+            </p>
+          )}
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
           {hasUnsavedChanges && (
             <Button
               variant="flat"
@@ -1035,8 +1038,30 @@ export const CriteriaList = () => {
             <Save className="size-4" />
             Guardar configuración
           </Button>
+          </div>
         </div>
       </div>
+
+      <CreateComponent
+        isOpen={inlineComponentFormOpen}
+        onOpenChange={(open) => {
+          setInlineComponentFormOpen(open);
+          if (!open) {
+            setPendingInlineAssignmentCriterionId(null);
+          }
+        }}
+        hideTrigger
+        onCreated={(component) => {
+          registerCreatedComponent(component);
+          if (pendingInlineAssignmentCriterionId) {
+            setAssignmentByCriterion((prev) => ({
+              ...prev,
+              [pendingInlineAssignmentCriterionId]: String(component.id),
+            }));
+            setPendingInlineAssignmentCriterionId(null);
+          }
+        }}
+      />
 
       {!!selectedEventKey && availableComponents.length > 0 && (
         <Card className="glass-card">
@@ -1053,30 +1078,24 @@ export const CriteriaList = () => {
               aria-label="Tabla de componentes"
               classNames={{ wrapper: "shadow-none p-0 bg-transparent" }}
             >
-              <TableHeader>
-                <TableColumn>COMPONENTE</TableColumn>
-                <TableColumn align="center">PESO</TableColumn>
-                <TableColumn align="center">CRITERIOS</TableColumn>
-                <TableColumn align="center">PESO CRITERIOS</TableColumn>
-              </TableHeader>
-              <TableBody items={componentSummaryRows} emptyContent="Cargando componentes...">
-                {(row) => (
-                  <TableRow key={row.id}>
-                    <TableCell>{row.name}</TableCell>
-                    <TableCell align="center">{row.weightPercent.toFixed(0)}%</TableCell>
-                    <TableCell align="center">{row.criteriaCount}</TableCell>
-                    <TableCell align="center">
-                      <Chip
-                        size="sm"
-                        color={row.criteriaWeightPercent > row.weightPercent ? "danger" : "default"}
-                        variant="flat"
-                      >
-                        {row.criteriaWeightPercent.toFixed(0)}%
-                      </Chip>
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
+                  <TableHeader>
+                    <TableColumn>COMPONENTE</TableColumn>
+                    <TableColumn align="center">CRITERIOS</TableColumn>
+                    <TableColumn align="center">PESO CRITERIOS</TableColumn>
+                  </TableHeader>
+                  <TableBody items={componentSummaryRows} emptyContent="Cargando componentes...">
+                    {(row) => (
+                      <TableRow key={row.id}>
+                        <TableCell>{row.name}</TableCell>
+                        <TableCell align="center">{row.criteriaCount}</TableCell>
+                        <TableCell align="center">
+                          <Chip size="sm" color="default" variant="flat">
+                            {row.criteriaWeightPercent.toFixed(0)}%
+                          </Chip>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
             </Table>
           </CardBody>
         </Card>
@@ -1142,8 +1161,7 @@ export const CriteriaList = () => {
                             <div className="text-left">
                               <p className="font-semibold text-sm sm:text-base">{component.name}</p>
                               <p className="text-xs text-default-500">
-                                {componentCriteria.length} criterio(s) •{" "}
-                                {(component.weight * 100).toFixed(0)}%
+                                {componentCriteria.length} criterio(s)
                               </p>
                             </div>
                           </div>
@@ -1159,6 +1177,7 @@ export const CriteriaList = () => {
                           buttonLabel="Agregar criterio"
                           buttonVariant="flat"
                           buttonColor="primary"
+                          availableWeightPercent={availableWeightForNewCriterion}
                           onCreated={() => {
                             markUnsavedChanges();
                             refetchCriteriaState();
@@ -1181,11 +1200,12 @@ export const CriteriaList = () => {
                             refetchCriteriaState();
                           }}
                         />
+
                         <Button
                           size="sm"
                           variant="flat"
                           color="danger"
-                          isLoading={deleteComponentMutation.isPending}
+                          isLoading={deletePendingId === component.id}
                           onPress={() => {
                             setDeleteComponentMode("reassign");
                             setComponentToDelete(component);
@@ -1304,13 +1324,13 @@ export const CriteriaList = () => {
                   <Button
                     variant="light"
                     onPress={closeModal}
-                    isDisabled={deleteComponentMutation.isPending}
+                    isDisabled={deletePendingId !== null}
                   >
                     Cancelar
                   </Button>
                   <Button
                     color="danger"
-                    isLoading={deleteComponentMutation.isPending}
+                    isLoading={deletePendingId === componentToDelete?.id}
                     onPress={() => {
                       if (componentToDelete) {
                         handleDeleteComponent(
