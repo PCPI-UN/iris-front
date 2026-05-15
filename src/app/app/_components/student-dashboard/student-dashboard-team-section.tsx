@@ -31,6 +31,7 @@ import {
   useCreateInvitation,
 } from "@/features/projects/api/participant-mutations";
 import { StudentDashboardSectionCard } from "./student-dashboard-section-card";
+import { fa } from "zod/v4/locales/index.js";
 
 type StudentDashboardTeamSectionProps = {
   participants: ProjectParticipant[];
@@ -218,7 +219,8 @@ export const StudentDashboardTeamSection = ({
       icon={Users}
       className="space-y-5"
     >
-      {canEdit ? (
+      {/* Put here canEdit */}
+      {false ? (
         <div className="rounded-xl border border-default-200/60 bg-default-50/50 p-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
