@@ -1,7 +1,7 @@
 "use client";
 
-import { Plus } from "lucide-react";
-import { useState } from "react";
+import { Pencil, Plus } from "lucide-react";
+import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
@@ -22,34 +22,63 @@ import {
   createComponentInputSchema,
   useCreateComponent,
 } from "../api/create-component";
+import {
+  updateComponentInputSchema,
+  useUpdateComponent,
+} from "../api/update-component";
 
 type CreateComponentProps = {
   onCreated?: (component: CriterionComponent) => void;
+  onUpdated?: (component: CriterionComponent) => void;
+  componentToEdit?: CriterionComponent;
   isDisabled?: boolean;
 };
 
 export const CreateComponent = ({
   onCreated,
+  onUpdated,
+  componentToEdit,
   isDisabled = false,
 }: CreateComponentProps) => {
   const { addNotification } = useNotifications();
   const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
-  const [weightPercent, setWeightPercent] = useState(25);
+  const isEditing = !!componentToEdit;
+  const [weightPercent, setWeightPercent] = useState(
+    componentToEdit
+      ? Math.round(Number(componentToEdit.weight || 0) * 100)
+      : 25,
+  );
+
+  useEffect(() => {
+    if (isOpen) {
+      setWeightPercent(
+        componentToEdit
+          ? Math.round(Number(componentToEdit.weight || 0) * 100)
+          : 25,
+      );
+    }
+  }, [componentToEdit, isOpen]);
+
+  const normalizeComponent = (
+    componentResponse: any,
+  ): CriterionComponent | null => {
+    const component = componentResponse?.data ?? componentResponse;
+    const parsedId = Number(component?.id ?? componentToEdit?.id);
+
+    return Number.isFinite(parsedId) && parsedId > 0
+      ? {
+          id: parsedId,
+          name: String(component?.name ?? componentToEdit?.name ?? "").trim(),
+          description: component?.description ?? componentToEdit?.description,
+          weight: Number(component?.weight ?? componentToEdit?.weight ?? 0),
+        }
+      : null;
+  };
 
   const createComponentMutation = useCreateComponent({
     mutationConfig: {
       onSuccess: (componentResponse: any) => {
-        const component = componentResponse?.data ?? componentResponse;
-        const parsedId = Number(component?.id);
-
-        const normalizedComponent: CriterionComponent | null =
-          Number.isFinite(parsedId) && parsedId > 0
-            ? {
-                id: parsedId,
-                name: String(component?.name ?? "").trim(),
-                weight: Number(component?.weight ?? 0),
-              }
-            : null;
+        const normalizedComponent = normalizeComponent(componentResponse);
 
         addNotification({
           type: "success",
@@ -73,6 +102,35 @@ export const CreateComponent = ({
       },
     },
   });
+  const updateComponentMutation = useUpdateComponent({
+    mutationConfig: {
+      onSuccess: (componentResponse: any) => {
+        const normalizedComponent = normalizeComponent(componentResponse);
+
+        addNotification({
+          type: "success",
+          title: "Componente actualizado",
+          message: "El componente fue actualizado correctamente.",
+        });
+
+        if (normalizedComponent) {
+          onUpdated?.(normalizedComponent);
+        }
+
+        onClose();
+      },
+      onError: (error: any) => {
+        addNotification({
+          type: "error",
+          title: "Error",
+          message: error?.message || "No se pudo actualizar el componente.",
+        });
+      },
+    },
+  });
+
+  const isPending =
+    createComponentMutation.isPending || updateComponentMutation.isPending;
 
   return (
     <>
@@ -83,15 +141,16 @@ export const CreateComponent = ({
         onPress={onOpen}
         isDisabled={isDisabled}
       >
-        <Plus size={16} />
-        Agregar componente
+        {isEditing ? <Pencil size={16} /> : <Plus size={16} />}
+        {isEditing ? "Editar" : "Agregar componente"}
       </Button>
 
       <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="2xl">
         <ModalContent>
           {(closeModal) => (
             <Form
-              id="create-component"
+              key={componentToEdit?.id ?? "create-component"}
+              id={isEditing ? "update-component" : "create-component"}
               onSubmit={async (event) => {
                 event.preventDefault();
                 const form = event.target as HTMLFormElement;
@@ -100,12 +159,23 @@ export const CreateComponent = ({
 
                 const payload = {
                   name: String(rawData.name || "").trim(),
+                  description: String(rawData.description || "").trim(),
                   weight: Number(weightPercent) / 100,
                 };
 
                 try {
-                  const values = await createComponentInputSchema.parseAsync(payload);
-                  await createComponentMutation.mutateAsync({ data: values });
+                  if (isEditing && componentToEdit) {
+                    const values =
+                      await updateComponentInputSchema.parseAsync(payload);
+                    await updateComponentMutation.mutateAsync({
+                      componentId: componentToEdit.id,
+                      data: values,
+                    });
+                  } else {
+                    const values =
+                      await createComponentInputSchema.parseAsync(payload);
+                    await createComponentMutation.mutateAsync({ data: values });
+                  }
                 } catch (error: any) {
                   addNotification({
                     type: "error",
@@ -116,9 +186,11 @@ export const CreateComponent = ({
               }}
             >
               <ModalHeader className="flex flex-col gap-1">
-                Crear componente
+                {isEditing ? "Editar componente" : "Crear componente"}
                 <p className="text-sm font-normal text-default-500">
-                  Configura un componente y luego agrega criterios dentro del acordeón.
+                  {isEditing
+                    ? "Actualiza la información del componente."
+                    : "Configura un componente y luego agrega criterios dentro del acordeón."}
                 </p>
               </ModalHeader>
 
@@ -127,6 +199,7 @@ export const CreateComponent = ({
                   name="name"
                   label="Nombre"
                   placeholder="Ej: Innovación"
+                  defaultValue={componentToEdit?.name ?? ""}
                   isRequired
                 />
 
@@ -134,6 +207,7 @@ export const CreateComponent = ({
                   name="description"
                   label="Descripción"
                   placeholder="Descripción breve (opcional)"
+                  defaultValue={componentToEdit?.description ?? ""}
                 />
 
                 <div className="space-y-2">
@@ -165,16 +239,12 @@ export const CreateComponent = ({
                   color="danger"
                   variant="flat"
                   onPress={closeModal}
-                  isDisabled={createComponentMutation.isPending}
+                  isDisabled={isPending}
                 >
                   Cancelar
                 </Button>
-                <Button
-                  type="submit"
-                  color="primary"
-                  isLoading={createComponentMutation.isPending}
-                >
-                  Crear componente
+                <Button type="submit" color="primary" isLoading={isPending}>
+                  {isEditing ? "Guardar cambios" : "Crear componente"}
                 </Button>
               </ModalFooter>
             </Form>

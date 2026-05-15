@@ -275,12 +275,13 @@ export type Criterion = Entity<{
 export type CriterionComponent = {
   id: number;
   name: string;
+  description?: string;
   weight: number;
 };
 
 export type CriterionCategory = Entity<{
   categoryId: number;
-  
+
   criterionId: number;
 }>;
 

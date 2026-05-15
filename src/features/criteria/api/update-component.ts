@@ -7,6 +7,7 @@ import { CriterionComponent } from "@/types/api";
 
 export const updateComponentInputSchema = z.object({
   name: z.string().min(1, "Required").optional(),
+  description: z.string().optional(),
   weight: z
     .number()
     .min(0.01, "Weight must be greater than 0")
