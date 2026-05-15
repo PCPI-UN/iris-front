@@ -94,7 +94,7 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
   const backendSections =
     categoryCriteriaData?.map((cat, index) => ({
       id: `section-${index + 1}`,
-      name: `${index + 1}. (${cat.weight}) ${cat.category}`,
+      name: cat.category ? `${index + 1}. (${cat.weight ?? ''}) ${cat.category}` : "",
       isSection: true,
       subcriteria: cat.criterions.map((c) => ({
         id: c.id.toString(),
@@ -316,9 +316,11 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
             </div>
           </CardHeader>
           <CardBody className="space-y-6 md:space-y-8 p-4 md:p-6">
-            <div className="border-b border-border pb-3">
-              <h3 className="text-base md:text-lg font-semibold text-balance">{currentSection.name}</h3>
-            </div>
+            {currentSection.name ? (
+              <div className="border-b border-border pb-3">
+                <h3 className="text-base md:text-lg font-semibold text-balance">{currentSection.name}</h3>
+              </div>
+            ) : null}
 
             <div className="space-y-6 md:space-y-8">
               {currentSection.subcriteria?.map((criterion) => (

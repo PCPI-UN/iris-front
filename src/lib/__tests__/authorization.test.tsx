@@ -11,12 +11,24 @@ import {
 describe('Discussion Authorization', () => {
   const adminUser: User = {
     id: '1',
-    role: 'ADMIN',
+    firstName: 'Admin',
+    lastName: 'User',
+    email: 'admin@example.com',
+    active: true,
+    status: 'active',
+    platformRoles: [{ id: 1, name: 'Admin', scope: '' }],
+    platformPermissions: [],
   } as User;
 
   const regularUser: User = {
     id: '2',
-    role: 'USER',
+    firstName: 'Regular',
+    lastName: 'User',
+    email: 'user@example.com',
+    active: true,
+    status: 'active',
+    platformRoles: [],
+    platformPermissions: [],
   } as User;
 
   test('should allow admin to create discussions', () => {
@@ -51,17 +63,35 @@ describe('Discussion Authorization', () => {
 describe('Comment Authorization', () => {
   const adminUser: User = {
     id: '1',
-    role: 'ADMIN',
+    firstName: 'Admin',
+    lastName: 'User',
+    email: 'admin@example.com',
+    active: true,
+    status: 'active',
+    platformRoles: [{ id: 1, name: 'Admin', scope: '' }],
+    platformPermissions: [],
   } as User;
 
   const regularUser: User = {
     id: '2',
-    role: 'USER',
+    firstName: 'Regular',
+    lastName: 'User',
+    email: 'user@example.com',
+    active: true,
+    status: 'active',
+    platformRoles: [],
+    platformPermissions: [],
   } as User;
 
   const anotherUser: User = {
     id: '3',
-    role: 'USER',
+    firstName: 'Another',
+    lastName: 'User',
+    email: 'another@example.com',
+    active: true,
+    status: 'active',
+    platformRoles: [],
+    platformPermissions: [],
   } as User;
 
   test('should allow admin to delete any comment', () => {

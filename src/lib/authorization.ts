@@ -64,6 +64,11 @@ export const canViewCategories = (user: User | null | undefined) => {
   return Boolean(user);
 };
 
+export const canViewUsers = (user: User | null | undefined) => {
+  // Only admins can view users
+  return hasRole(user, "Admin");
+};
+
 export const canDeleteComment = (
   user: User | null | undefined,
   comment: Comment

@@ -8,7 +8,7 @@ test('should open the state', () => {
   expect(result.current.isOpen).toBe(false);
 
   act(() => {
-    result.current.open();
+    result.current.onOpen();
   });
 
   expect(result.current.isOpen).toBe(true);
@@ -20,7 +20,7 @@ test('should close the state', () => {
   expect(result.current.isOpen).toBe(false);
 
   act(() => {
-    result.current.close();
+    result.current.onClose();
   });
 
   expect(result.current.isOpen).toBe(false);
@@ -32,25 +32,25 @@ test('should toggle the state', () => {
   expect(result.current.isOpen).toBe(false);
 
   act(() => {
-    result.current.toggle();
+    result.current.onOpenChange();
   });
 
   expect(result.current.isOpen).toBe(true);
 
   act(() => {
-    result.current.toggle();
+    result.current.onOpenChange();
   });
 
   expect(result.current.isOpen).toBe(false);
 });
 
 test('should define initial state', () => {
-  const { result } = renderHook(() => useDisclosure(true));
+  const { result } = renderHook(() => useDisclosure({ defaultOpen: true }));
 
   expect(result.current.isOpen).toBe(true);
 
   act(() => {
-    result.current.toggle();
+    result.current.onOpenChange();
   });
 
   expect(result.current.isOpen).toBe(false);
