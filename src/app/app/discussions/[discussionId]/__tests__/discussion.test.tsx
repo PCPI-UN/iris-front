@@ -98,7 +98,9 @@ test('should update discussion', async () => {
   expect(await screen.findByText(newBody)).toBeInTheDocument();
 });
 
-test('should create and delete a comment on the discussion', async () => {
+test(
+  'should create and delete a comment on the discussion',
+  async () => {
     await renderDiscussion();
 
     const comment = 'Hello World';
@@ -160,4 +162,8 @@ test('should create and delete a comment on the discussion', async () => {
     await waitFor(() => {
       expect(within(commentsList).queryByText(comment)).not.toBeInTheDocument();
     });
-  }, 20000);
+  },
+  {
+    timeout: 20000,
+  },
+);

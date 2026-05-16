@@ -8,12 +8,11 @@ export type Entity<T> = {
 } & BaseEntity;
 
 export type CategoryCriteriaGroup = {
-  category?: string | null;
-  weight?: number | null;
+  category: string;
+  weight: number;
   criterions: {
     id: number;
     name: string;
-    component_id?: number | null;
   }[];
 };
 

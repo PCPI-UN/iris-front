@@ -13,8 +13,6 @@ type CriterionBody = {
   active?: boolean;
   categoryIds?: number[];
   courseIds?: number[];
-  componentId?: number | string;
-  component?: { id?: number | string; name?: string; weight?: number } | null;
 };
 
 export const criterionHandlers = [
@@ -43,21 +41,16 @@ export const criterionHandlers = [
               Array.isArray(c.categoryIds ?? c.courseIds) &&
               (c.categoryIds ?? c.courseIds).includes(Number(courseId))
           )
-            .map((c: any) => ({
-              id: c.id,
-              eventId: c.eventId,
-              name: c.name,
-              description: c.description,
-              weight: c.weight,
-              active: c.active ?? true,
-              categoryIds: c.categoryIds || c.courseIds || [],
-              courseIds: c.courseIds || c.categoryIds || [],
-              // Optional component references supported by backend
-              component_id: c.component_id ?? c.componentId ?? null,
-              component_name: c.component_name ?? c.componentName ?? (c.component?.name ?? null),
-              component_weight: c.component_weight ?? c.componentWeight ?? (c.component?.weight ?? null),
-              component: c.component ?? null,
-            }));
+          .map((c: any) => ({
+            id: c.id,
+            eventId: c.eventId,
+            name: c.name,
+            description: c.description,
+            weight: c.weight,
+            active: c.active ?? true,
+            categoryIds: c.categoryIds || c.courseIds || [],
+            courseIds: c.courseIds || c.categoryIds || [],
+          }));
 
         return HttpResponse.json({ criterions: items });
       } catch (error: any) {
@@ -115,10 +108,6 @@ export const criterionHandlers = [
         categoryIds: c.categoryIds || c.courseIds || [],
         courseIds: c.courseIds || c.categoryIds || [],
         createdAt: c.createdAt,
-        component_id: c.component_id ?? c.componentId ?? null,
-        component_name: c.component_name ?? c.componentName ?? (c.component?.name ?? null),
-        component_weight: c.component_weight ?? c.componentWeight ?? (c.component?.weight ?? null),
-        component: c.component ?? null,
       }));
       return HttpResponse.json({
         criterions: criteria,
@@ -167,10 +156,6 @@ export const criterionHandlers = [
         categoryIds: c.categoryIds || c.courseIds || [],
         courseIds: c.courseIds || c.categoryIds || [],
         createdAt: c.createdAt,
-        component_id: c.component_id ?? c.componentId ?? null,
-        component_name: c.component_name ?? c.componentName ?? (c.component?.name ?? null),
-        component_weight: c.component_weight ?? c.componentWeight ?? (c.component?.weight ?? null),
-        component: c.component ?? null,
       });
     } catch (error: any) {
       return HttpResponse.json(
@@ -214,8 +199,6 @@ export const criterionHandlers = [
           : Array.isArray(body.categoryIds)
             ? body.categoryIds
             : [],
-        componentId: body.componentId ?? body.component_id ?? null,
-        component: body.component ?? null,
       };
       const created = db.criterion.create(criterionBody);
       await persistDb("criterion");
@@ -258,9 +241,6 @@ export const criterionHandlers = [
         if (Array.isArray(data.categoryIds)) {
           updateData.categoryIds = data.categoryIds;
           updateData.courseIds = data.categoryIds;
-        }
-        if (data.componentId !== undefined) {
-          (updateData as any).componentId = data.componentId ?? data.component_id ?? null;
         }
         if (Array.isArray(data.courseIds)) {
           updateData.categoryIds = data.courseIds;
