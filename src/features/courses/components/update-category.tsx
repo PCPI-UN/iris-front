@@ -145,7 +145,7 @@ export const UpdateCategory = ({ categoryId }: UpdateCategoryProps) => {
                 </Select>
 
                 <Input
-                  label="Category code"
+                  label="Category name"
                   name="code"
                   defaultValue={category?.code ?? ""}
                   isRequired

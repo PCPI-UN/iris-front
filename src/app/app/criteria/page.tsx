@@ -7,7 +7,7 @@ export const metadata = {
 };
 
 const CriteriaPage = async () => {
-  // No prefetch needed since we need event and course selection first
+  // No prefetch needed since we need event and category selection first
   // The component will handle loading states
 
   return (

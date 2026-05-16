@@ -4,7 +4,7 @@ import {
   QueryClient,
 } from "@tanstack/react-query";
 
-import { Categories } from "../courses/_components/courses";
+import { Categories } from "./_components/categories";
 import { getCategoriesQueryOptions } from "@/features/courses/api/get-categories";
 import { RoleGuard } from "@/components/auth/role-guard";
 

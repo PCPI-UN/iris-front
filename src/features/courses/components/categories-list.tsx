@@ -6,6 +6,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Card, CardBody } from "@/components/ui/card";
 import { Pagination } from "@/components/ui/pagination";
 import { useCategories } from "../api/get-categories";
+import { useEvents } from "@/features/events/api/get-events";
 import { Chip } from "@heroui/chip";
 
 import { DeleteCategory } from "./delete-category";
@@ -21,6 +22,17 @@ export const CategoriesList = () => {
     page: page,
     eventId: eventId ? Number(eventId) : undefined,
   });
+
+  const eventsQuery = useEvents({ page: 1 });
+  const events = eventsQuery.data?.data || [];
+
+  const eventNameMap = events.reduce(
+    (acc, event) => {
+      acc[event.id] = event.name;
+      return acc;
+    },
+    {} as Record<number, string>
+  );
 
   if (categoriesQuery.isLoading) {
     return (
@@ -69,8 +81,10 @@ export const CategoriesList = () => {
                   {category.eventId ? (
                     <Chip size="sm" variant="bordered" className="max-w-full">
                       <div className="flex flex-col min-w-0">
-                      <span className="truncate">Event #{category.eventId}</span>
-                    </div>
+                        <span className="truncate">
+                          {eventNameMap[category.eventId] || `Event #${category.eventId}`}
+                        </span>
+                      </div>
                     </Chip>
                   ) : (
                     <span className="text-xs sm:text-sm text-default-400">No event assigned</span>
