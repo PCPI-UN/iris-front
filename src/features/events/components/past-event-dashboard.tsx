@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Calendar, Users, Award, Folder, Search, Trophy } from 'lucide-react';
+import { Calendar, Users, Award, Folder, Search, Trophy, Download } from 'lucide-react';
 import { Card, CardHeader } from '@/components/ui/card';
 import { Select, SelectItem } from '@/components/ui/select/select';
 import { Button } from '@/components/ui/button';
@@ -269,7 +269,18 @@ export const PastEventDashboard = ({ event, onBack }: Props) => {
                     </div>
 
                     <h1 className="text-2xl font-semibold max-w-full whitespace-normal md:max-w-md">{event.name}</h1>
-                    <p className="mt-1 text-sm text-default-500 line-clamp-2">{event.description}</p>
+                    <div className="mt-1 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+                        <p className="text-sm text-default-500 line-clamp-2">{event.description}</p>
+                        <Button
+                            className="shrink-0"
+                            size="sm"
+                            variant="flat"
+                            startContent={<Download className="h-4 w-4" />}
+                            onPress={() => {}}
+                        >
+                            Descargar reporte
+                        </Button>
+                    </div>
                     <div className="mt-2 flex flex-col gap-2 text-sm text-default-500 sm:flex-row sm:flex-wrap sm:items-center">
                         <div className="inline-flex items-center gap-2">
                             <Calendar className="h-4 w-4 text-default-400" />
