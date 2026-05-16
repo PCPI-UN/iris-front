@@ -97,6 +97,7 @@ const models = {
     eventId: String,
     categoryId: String,
     courseId: String,
+    projectCode: String,
     name: String,
     logo: String,
     description: String,

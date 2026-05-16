@@ -96,11 +96,11 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
       id: `section-${index + 1}`,
       name: cat.category ? `${index + 1}. (${cat.weight ?? ''}) ${cat.category}` : "",
       isSection: true,
-      subcriteria: cat.criterions.map((c) => ({
-        id: c.id.toString(),
-        name: c.name,
+      subcriteria: cat.criterions?.map((c, cIdx) => ({
+        id: c?.id ? String(c.id) : `criterion-${cIdx}`,
+        name: c?.name ?? "",
         weight: cat.weight,
-      })),
+      })) ?? [],
     })) ?? []
 
   const allSections = backendSections
@@ -182,11 +182,17 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
         <Card className="glass-card border-border bg-card h-fit">
           <CardBody className="p-4 md:p-6">
             <div className="space-y-4 md:space-y-6">
-              <div>
-                <h2 className="text-lg md:text-xl font-semibold text-balance">{project?.name}</h2>
-                <p className="mt-2 text-xs md:text-sm text-muted-foreground leading-relaxed">
-                  {project?.description}
-                </p>
+              <div className="flex items-start gap-4">
+                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-2xl font-semibold text-primary">
+                  {project?.projectCode || "—"}
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <h2 className="text-lg md:text-xl font-semibold text-balance">{project?.name}</h2>
+                  <p className="mt-2 text-xs md:text-sm text-muted-foreground leading-relaxed">
+                    {project?.description}
+                  </p>
+                </div>
               </div>
 
               <div className="space-y-3 md:space-y-4">

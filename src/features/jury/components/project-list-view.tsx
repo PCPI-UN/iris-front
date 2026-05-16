@@ -6,6 +6,8 @@ import { Spinner } from "@/components/ui/spinner"
 import { useRouter } from "next/navigation"
 import { Button } from "@heroui/button"
 import { ArrowLeft } from "lucide-react"
+import { useQueries } from "@tanstack/react-query"
+import { getProjectQueryOptions } from "@/features/projects/api/get-project"
 
 type ProjectListViewProps = {
   eventId: string;
@@ -14,12 +16,34 @@ type ProjectListViewProps = {
 export function ProjectListView({ eventId }: ProjectListViewProps) {
   const router = useRouter();
 
+  const extractProjectCode = (project: any) => {
+    return (
+      project?.projectCode ??
+      project?._projectCode ??
+      project?.data?.projectCode ??
+      project?.data?._projectCode ??
+      null
+    );
+  };
+
   const eventsQuery = useJuryProjects({
     page: 1,
     eventId: Number(eventId),
   });
 
   const projects = eventsQuery.data?.data || [];
+  const projectDetailsQueries = useQueries({
+    queries: projects.map((project) => ({
+      ...getProjectQueryOptions(String(project.id)),
+      enabled: !!project.id,
+    })),
+  });
+
+  const projectsWithCode = projects.map((project, index) => ({
+    ...project,
+    projectCode: extractProjectCode(project) ?? extractProjectCode(projectDetailsQueries[index]?.data),
+  }));
+
   const isLoading = eventsQuery.isLoading;
 
   if (isLoading) {
@@ -57,7 +81,7 @@ export function ProjectListView({ eventId }: ProjectListViewProps) {
         <div className="space-y-4">
           <h2 className="text-lg font-semibold text-foreground">Proyectos por Evaluar</h2>
           <div className="grid gap-6 p-4 sm:grid-cols-1 lg:grid-cols-2">
-            {notEvaluatedProjects.map(project => (
+            {projectsWithCode.filter(p => !p.evaluated).map(project => (
               <ProjectCard key={project.id} project={project} />
             ))}
           </div>
@@ -68,7 +92,7 @@ export function ProjectListView({ eventId }: ProjectListViewProps) {
         <div className="space-y-4">
           <h2 className="text-lg font-semibold text-foreground">Proyectos Evaluados</h2>
           <div className="grid gap-6 p-4 sm:grid-cols-1 lg:grid-cols-2">
-            {evaluatedProjects.map(project => (
+            {projectsWithCode.filter(p => p.evaluated).map(project => (
               <ProjectCard key={project.id} project={project} />
             ))}
           </div>
