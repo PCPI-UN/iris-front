@@ -390,6 +390,7 @@ export const MonitoringDashboard = ({ initialEventId, onBack, eventData }: Monit
             averageGrade: evaluationMetrics.averageGrade,
           }}
           categoryEvaluationStats={categoryEvaluationStats}
+          
         />
       ) : activeTab === 'ranking' ? (
         <RankingTab

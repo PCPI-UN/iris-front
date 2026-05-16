@@ -1,16 +1,22 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Calendar, Users, Award, Folder } from 'lucide-react';
+import { Calendar, Users, Award, Folder, Search, Trophy } from 'lucide-react';
 import { Card, CardHeader } from '@/components/ui/card';
 import { Select, SelectItem } from '@/components/ui/select/select';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { StatusBadge } from '@/components/ui/status-badge/status-badge';
+import { Switch } from '@/components/ui/switch';
+import { Table, TableHeader, TableBody, TableColumn, TableRow, TableCell } from '@/components/ui/table';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { useQueries } from '@tanstack/react-query';
 // local tabs: Statistics | Projects | Jurors | Ranking
 import { useProjectsWithJurors } from '@/features/projects/api/get-projects-with-jurors';
 import { useCategoriesDropdown } from '@/features/courses/api/get-categories-dropdown';
 import { getUniqueJurors, getJurorKey } from '@/features/monitoring/utils/calculations';
+import { normalizeText } from '@/features/monitoring/utils/filters';
+import { getProjectEvaluationStats } from '@/features/evaluations/api/get-project-evaluation-stats';
 import type { Event } from '@/types/api';
 
 type Props = {
@@ -39,6 +45,8 @@ export const PastEventDashboard = ({ event, onBack }: Props) => {
     const [activeTab, setActiveTab] = useState<'statistics' | 'projects' | 'ranking' | 'jurors'>('statistics');
     const [selectedCategoryId, setSelectedCategoryId] = useState<number | undefined>(undefined);
     const categorySelection = selectedCategoryId !== undefined ? [String(selectedCategoryId)] : ['all'];
+
+    const [projectSearch, setProjectSearch] = useState<string>('');
 
     const projectsQuery = useProjectsWithJurors({ currentPage: 1, itemsPerPage: 10000, eventId: event.id, courseId: selectedCategoryId, queryConfig: { enabled: Boolean(event.id) } });
     const projects = projectsQuery.data?.data ?? [];
@@ -107,6 +115,146 @@ export const PastEventDashboard = ({ event, onBack }: Props) => {
 
         return Array.from(map.values());
     }, [projects]);
+
+    const [jurorSearch, setJurorSearch] = useState<string>('');
+    const filteredJurors = useMemo(() => {
+        const term = normalizeText(jurorSearch);
+        if (!term) return jurors;
+        return jurors.filter((juror) =>
+            normalizeText(`${juror.firstName ?? ''} ${juror.lastName ?? ''} ${juror.email ?? ''}`).includes(term),
+        );
+    }, [jurors, jurorSearch]);
+
+    const projectEvaluationQueries = useQueries({
+        queries: projects.map((project) => ({
+            queryKey: ['project-evaluation-stats-past', project.id],
+            queryFn: () => getProjectEvaluationStats(String(project.id)),
+            enabled: Boolean(event.id && project.id),
+        })),
+    });
+
+    const projectStatsById = useMemo(() => {
+        return new Map<string, any>(
+            projects.map((project, index) => [
+                String(project.id),
+                projectEvaluationQueries[index]?.data?.data,
+            ]),
+        );
+    }, [projectEvaluationQueries, projects]);
+
+    const totalCompletedEvaluations = useMemo(() => {
+        let sum = 0;
+        for (const project of projects) {
+            const stats = projectStatsById.get(String(project.id));
+            if (stats && typeof stats.evaluationCount === 'number') {
+                sum += stats.evaluationCount;
+            }
+        }
+        return sum;
+    }, [projectStatsById, projects]);
+
+    const filteredProjects = useMemo(() => {
+        const term = normalizeText(projectSearch);
+
+        if (!term) {
+            return projects;
+        }
+
+        return projects.filter((project) => {
+            const pendingLabels = (project.pendingParticipants ?? [])
+                .map((participant) => `${participant.firstName ?? ''} ${participant.lastName ?? ''}`.trim())
+                .filter((label) => label.length > 0);
+
+            const participantLabels = pendingLabels.length > 0
+                ? pendingLabels.join(' ')
+                : (project.participants ?? [])
+                    .map((participant) => {
+                        const fullName = `${participant.firstName ?? ''} ${participant.lastName ?? ''}`.trim();
+
+                        if (fullName) {
+                            return fullName;
+                        }
+
+                        if (participant.studentCode) {
+                            return `Código ${participant.studentCode}`;
+                        }
+
+                        return 'Participante';
+                    })
+                    .join(' ');
+
+            const jurorLabels = (project.jurors ?? [])
+                .map((juror) => `${juror.firstName} ${juror.lastName} ${juror.email}`)
+                .join(' ');
+
+            return normalizeText(
+                [project.name, project.projectCode ?? '', project.eventNumber ?? '', participantLabels, jurorLabels].join(' '),
+            ).includes(term);
+        });
+    }, [projectSearch, projects]);
+
+    const [rankingSearch, setRankingSearch] = useState<string>('');
+    const [isRankingPublic, setIsRankingPublic] = useState<boolean>(false);
+    const rankingEntries = useMemo(() => {
+        const term = normalizeText(rankingSearch);
+        const byCategory = Array.from(
+            projects.reduce((acc, project) => {
+                const list = acc.get(project.courseId) ?? [];
+                list.push(project);
+                acc.set(project.courseId, list);
+                return acc;
+            }, new Map<number, typeof projects>()),
+        );
+
+        const entries: Array<any> = [];
+
+        byCategory.forEach(([courseId, courseProjects]) => {
+            const category = categoryMap.get(courseId);
+            const label = category?.code ?? category?.description ?? `Categoría ${courseId}`;
+
+            const sorted = [...courseProjects]
+                .map((project) => ({ project, stats: projectStatsById.get(String(project.id)) }))
+                .filter((entry) => {
+                    if (!term) return true;
+                    const p = entry.project;
+                    const participantLabels = ((p.participants ?? []) as any[])
+                        .map((pt) => `${pt.firstName ?? ''} ${pt.lastName ?? ''}`.trim())
+                        .join(' ');
+                    const jurorLabels = ((p.jurors ?? []) as any[])
+                        .map((j) => `${j.firstName ?? ''} ${j.lastName ?? ''} ${j.email ?? ''}`)
+                        .join(' ');
+
+                    return normalizeText([
+                        label,
+                        p.name,
+                        p.projectCode ?? '',
+                        p.eventNumber ?? '',
+                        participantLabels,
+                        jurorLabels,
+                    ].join(' ')).includes(term);
+                })
+                .sort((a, b) => {
+                    const gradeA = a.stats?.averageGrade ?? 0;
+                    const gradeB = b.stats?.averageGrade ?? 0;
+                    if (gradeB !== gradeA) return gradeB - gradeA;
+                    const countA = a.stats?.evaluationCount ?? 0;
+                    const countB = b.stats?.evaluationCount ?? 0;
+                    if (countB !== countA) return countB - countA;
+                    return (a.project.name ?? '').localeCompare(b.project.name ?? '');
+                });
+
+            sorted.forEach((entry, index) => {
+                entries.push({
+                    category: label,
+                    position: index + 1,
+                    project: entry.project,
+                    stats: entry.stats,
+                });
+            });
+        });
+
+        return entries;
+    }, [projects, categoryMap, projectStatsById, rankingSearch]);
 
     const colors = ['#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
 
@@ -210,9 +358,22 @@ export const PastEventDashboard = ({ event, onBack }: Props) => {
                                     </div>
                                 </CardHeader>
                             </Card>
+
+                            <Card className="glass-card shadow-sm">
+                                <CardHeader className="pb-2">
+                                    <div className="flex w-full items-center justify-between gap-2">
+                                        <div className="min-w-0 flex-1 space-y-0.5">
+                                            <p className="text-xs font-medium text-default-500 md:text-sm">Evaluaciones completas</p>
+                                            <h3 className="text-xl font-bold md:text-2xl">{totalCompletedEvaluations}</h3>
+                                        </div>
+                                        <Award className="h-6 w-6 text-amber-500" />
+                                    </div>
+                                </CardHeader>
+                            </Card>
+                            
                         </div>
 
-                        <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
 
                             <Card className="glass-card p-5 shadow-sm">
                                 <div className="mb-4">
@@ -282,86 +443,302 @@ export const PastEventDashboard = ({ event, onBack }: Props) => {
                 )}
 
                 {activeTab === 'projects' && (
-                    <div className="space-y-3">
-                        {projects.map((project) => {
-                            const category = categoryMap.get(project.courseId);
-                            const participants = getUniqueParticipants([...(project.participants ?? []), ...(project.pendingParticipants ?? [])]);
+                    <Card className="glass-card border border-default-200/70 shadow-sm">
+                        <CardHeader className="pb-2">
+                            <h3 className="text-lg font-semibold">Evaluación de proyectos</h3>
+                        </CardHeader>
+                        <div className="p-5 md:p-6">
+                            <div className="mb-4">
+                                <Input
+                                    isClearable
+                                    className="w-full lg:max-w-xl h-10"
+                                    placeholder="Buscar por nombre, código de proyecto, participante o jurado…"
+                                    startContent={<Search className="h-4 w-4 text-default-400" />}
+                                    value={projectSearch}
+                                    onClear={() => setProjectSearch('')}
+                                    onValueChange={setProjectSearch}
+                                />
+                            </div>
 
-                            return (
-                                <Card key={String(project.id)} className="glass-card">
-                                    <CardHeader className="flex items-center justify-between gap-4 p-3">
-                                        <div className="min-w-0 space-y-1">
-                                            <div className="flex flex-wrap items-center gap-2">
-                                                <div className="text-sm font-semibold text-foreground">{project.name}</div>
-                                                <StatusBadge state={project.state} />
-                                            </div>
-                                            <div className="line-clamp-2 text-xs text-default-400">{project.description ?? 'Sin descripción'}</div>
-                                            <div className="text-xs text-default-400">{category?.code ?? `Categoría ${project.courseId}`}</div>
-                                        </div>
+                            {projects.length > 0 ? (
+                                <div className="overflow-hidden rounded-2xl border border-default-200/80">
+                                    <Table aria-label="Evaluación de proyectos" selectionMode="none">
+                                        <TableHeader>
+                                            <TableColumn className="w-32">Code</TableColumn>
+                                            <TableColumn>Proyecto</TableColumn>
+                                            <TableColumn>Integrantes</TableColumn>
+                                            <TableColumn>Jurados asignados</TableColumn>
+                                        </TableHeader>
+                                        <TableBody items={filteredProjects}>
+                                            {(project) => (
+                                                <TableRow key={project.id}>
+                                                    <TableCell className="w-32 whitespace-nowrap">
+                                                        <p className="font-medium text-default-700">{project.projectCode ?? project.eventNumber ?? '—'}</p>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <div className="flex flex-col gap-1">
+                                                            <p className="text-lg font-semibold text-foreground">{project.name}</p>
+                                                            <p className="text-xs text-default-400">{project.description ?? 'Sin descripción'}</p>
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <div className="space-y-1 text-sm leading-tight">
+                                                            {(() => {
+                                                                const pendingLabels = (project.pendingParticipants ?? [])
+                                                                    .map((participant) => `${participant.firstName ?? ''} ${participant.lastName ?? ''}`.trim())
+                                                                    .filter((label) => label.length > 0);
 
-                                        <div className="text-right text-sm text-default-500">
-                                            <div>{participants.length} participantes</div>
-                                            <div>{getUniqueJurors(project.jurors ?? []).length} jurados</div>
-                                        </div>
-                                    </CardHeader>
-                                </Card>
-                            );
-                        })}
-                    </div>
+                                                                const participantLabels = pendingLabels.length > 0
+                                                                    ? pendingLabels
+                                                                    : (project.participants ?? []).map((participant) => {
+                                                                        const fullName = `${participant.firstName ?? ''} ${participant.lastName ?? ''}`.trim();
+
+                                                                        if (fullName) {
+                                                                            return fullName;
+                                                                        }
+
+                                                                        if (participant.studentCode) {
+                                                                            return `Código ${participant.studentCode}`;
+                                                                        }
+
+                                                                        return 'Participante';
+                                                                    });
+
+                                                                return participantLabels.length > 0 ? (
+                                                                    participantLabels.map((label, index) => (
+                                                                        <p key={index} className="text-sm text-default-500">
+                                                                            {label}
+                                                                        </p>
+                                                                    ))
+                                                                ) : (
+                                                                    <p className="text-sm text-default-400">Sin integrantes</p>
+                                                                );
+                                                            })()}
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <div className="space-y-1 text-sm">
+                                                            {(() => {
+                                                                const jurorList = getUniqueJurors(project.jurors ?? []);
+                                                                return jurorList.length > 0 ? (
+                                                                    jurorList.map((juror, index) => (
+                                                                        <p key={index} className="text-sm text-default-500">
+                                                                            {juror.firstName} {juror.lastName}
+                                                                        </p>
+                                                                    ))
+                                                                ) : (
+                                                                    <p className="text-sm text-default-400">Sin jurados asignados</p>
+                                                                );
+                                                            })()}
+                                                        </div>
+                                                    </TableCell>
+                                                </TableRow>
+                                            )}
+                                        </TableBody>
+                                    </Table>
+                                </div>
+                            ) : null}
+                            {filteredProjects.length === 0 && projects.length > 0 && (
+                                <div className="flex min-h-[180px] items-center justify-center rounded-2xl border border-dashed border-default-200 text-sm text-default-400">
+                                    No hay proyectos que coincidan con la búsqueda.
+                                </div>
+                            )}
+                            {projects.length === 0 && (
+                                <div className="flex min-h-[180px] items-center justify-center rounded-2xl border border-dashed border-default-200 text-sm text-default-400">
+                                    No hay proyectos para mostrar.
+                                </div>
+                            )}
+                        </div>
+                    </Card>
                 )}
 
                 {activeTab === 'jurors' && (
-                    <div className="space-y-2">
-                        {jurors.map((juror: any) => (
-                            <Card key={getJurorKey(juror)} className="glass-card">
-                                <CardHeader className="flex items-center justify-between gap-4 p-3">
-                                    <div>
-                                        <div className="text-sm font-semibold text-foreground">{juror.firstName} {juror.lastName}</div>
-                                        <div className="text-xs text-default-400">{juror.email}</div>
-                                    </div>
-                                    <div className="text-sm text-default-400">ID: {juror.id ?? '—'}</div>
-                                </CardHeader>
-                            </Card>
-                        ))}
-                    </div>
+                    <Card className="glass-card border border-default-200/70 shadow-sm">
+                        <CardHeader className="pb-2">
+                            <h3 className="text-lg font-semibold">Jurados</h3>
+                        </CardHeader>
+                        <div className="p-5 md:p-6">
+                            <div className="mb-4">
+                                <Input
+                                    isClearable
+                                    className="w-full lg:max-w-xl h-10"
+                                    placeholder="Buscar por nombre o correo…"
+                                    startContent={<Search className="h-4 w-4 text-default-400" />}
+                                    value={jurorSearch}
+                                    onClear={() => setJurorSearch('')}
+                                    onValueChange={setJurorSearch}
+                                />
+                            </div>
+
+                            {jurors.length > 0 ? (
+                                <div className="overflow-hidden rounded-2xl border border-default-200/80">
+                                    <Table aria-label="Jurados" selectionMode="none">
+                                        <TableHeader>
+                                            <TableColumn>Nombre</TableColumn>
+                                            <TableColumn>Correo</TableColumn>
+                                            <TableColumn>Proyectos Asignados</TableColumn>
+                                        </TableHeader>
+                                        <TableBody items={filteredJurors}>
+                                            {(juror) => {
+                                                const jurorKey = getJurorKey(juror);
+                                                const jurorProjects = projects.filter((project) =>
+                                                    getUniqueJurors(project.jurors ?? []).some((j) => getJurorKey(j) === jurorKey),
+                                                );
+
+                                                return (
+                                                    <TableRow key={jurorKey}>
+                                                        <TableCell>
+                                                            <div className="text-sm font-semibold text-foreground">{juror.firstName} {juror.lastName}</div>
+                                                        </TableCell>
+                                                        <TableCell className="text-sm text-default-400">{juror.email ?? '—'}</TableCell>
+                                                        <TableCell>
+                                                            {jurorProjects.length > 0 ? (
+                                                                <div className="space-y-1 text-sm">
+                                                                    {jurorProjects.map((p) => (
+                                                                        <p key={p.id} className="text-sm text-default-500">{p.name}{p.projectCode ? ` (${p.projectCode})` : ''}</p>
+                                                                    ))}
+                                                                </div>
+                                                            ) : (
+                                                                <p className="text-sm text-default-400">Sin proyectos evaluados</p>
+                                                            )}
+                                                        </TableCell>
+                                                    </TableRow>
+                                                );
+                                            }}
+                                        </TableBody>
+                                    </Table>
+                                </div>
+                            ) : (
+                                <div className="flex min-h-[180px] items-center justify-center rounded-2xl border border-dashed border-default-200 text-sm text-default-400">
+                                    No hay jurados para mostrar.
+                                </div>
+                            )}
+                        </div>
+                    </Card>
                 )}
 
                 {activeTab === 'ranking' && (
-                    <div className="space-y-4">
-                        {Array.from(
-                            projects.reduce((acc, project) => {
-                                const list = acc.get(project.courseId) ?? [];
-                                list.push(project);
-                                acc.set(project.courseId, list);
-                                return acc;
-                            }, new Map<number, typeof projects>()),
-                        ).map(([courseId, courseProjects]) => {
-                            const category = categoryMap.get(courseId);
-                            const label = category?.code ?? category?.description ?? `Categoría ${courseId}`;
-                            const sorted = [...courseProjects].sort(
-                                (a, b) => getUniqueJurors(b.jurors ?? []).length - getUniqueJurors(a.jurors ?? []).length,
-                            );
-
-                            return (
-                                <div key={String(courseId)} className="space-y-2">
-                                    <h4 className="text-sm font-semibold text-foreground">{label}</h4>
-                                    {sorted.map((project, index) => (
-                                        <Card key={String(project.id)} className="glass-card">
-                                            <CardHeader className="flex items-center justify-between gap-4 p-3">
-                                                <div>
-                                                    <div className="text-sm font-semibold text-foreground">{index + 1}. {project.name}</div>
-                                                    <div className="text-xs text-default-400">
-                                                        {(project.participants ?? []).length + (project.pendingParticipants ?? []).length} participantes
-                                                    </div>
-                                                </div>
-                                                <div className="text-sm font-bold text-default-700">{getUniqueJurors(project.jurors ?? []).length} jurados</div>
-                                            </CardHeader>
-                                        </Card>
-                                    ))}
+                    <Card className="glass-card border border-default-200/70 shadow-sm">
+                        <CardHeader className="pb-2">
+                            <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                                <div>
+                                    <h3 className="text-lg font-semibold">Ranking por Categoría</h3>
+                                    <p className="text-sm text-default-400">Vista visual del ranking con puestos destacados.</p>
                                 </div>
-                            );
-                        })}
-                    </div>
+                                <div className="flex items-center gap-3 rounded-2xl border border-default-200/80 bg-default-50 px-3 py-2">
+                                    <div className="flex flex-col">
+                                        <span className="text-sm font-medium text-foreground">Visible al público</span>
+                                        <span className="text-xs text-default-400">
+                                            {isRankingPublic ? 'Ranking publicado' : 'Ranking oculto'}
+                                        </span>
+                                    </div>
+                                    <Switch
+                                        isSelected={isRankingPublic}
+                                        onValueChange={setIsRankingPublic}
+                                        aria-label="Hacer ranking visible al público"
+                                    />
+                                </div>
+                            </div>
+                        </CardHeader>
+                        <div className="p-5 md:p-6">
+                            <div className="mb-4">
+                                <Input
+                                    isClearable
+                                    className="w-full lg:max-w-xl h-10"
+                                    placeholder="Buscar por categoría, equipo, código o participante…"
+                                    startContent={<Search className="h-4 w-4 text-default-400" />}
+                                    value={rankingSearch}
+                                    onClear={() => setRankingSearch('')}
+                                    onValueChange={setRankingSearch}
+                                />
+                            </div>
+
+                            {rankingEntries.length > 0 ? (
+                                <div className="overflow-hidden rounded-2xl border border-default-200/80">
+                                    <Table aria-label="Ranking por categorías" selectionMode="none">
+                                        <TableHeader>
+                                            <TableColumn className="w-36">Categoría</TableColumn>
+                                            <TableColumn className="w-20">Pos.</TableColumn>
+                                            <TableColumn className="w-36">Code</TableColumn>
+                                            <TableColumn>Equipo</TableColumn>
+                                            <TableColumn>Integrantes</TableColumn>
+                                            <TableColumn className="w-32 text-center">Puntaje</TableColumn>
+                                            <TableColumn className="w-32 text-center">Evaluaciones</TableColumn>
+                                        </TableHeader>
+                                        <TableBody items={rankingEntries}>
+                                            {(entry) => (
+                                                <TableRow key={`${entry.project.id}-${entry.category}`}>
+                                                    <TableCell className="w-36">{entry.category}</TableCell>
+                                                    <TableCell className="w-20">
+                                                        {entry.position === 1 ? (
+                                                            <div className="inline-flex items-center gap-2">
+                                                                <Trophy className="h-5 w-5 text-amber-500" />
+                                                                <span className="font-semibold">1</span>
+                                                            </div>
+                                                        ) : entry.position === 2 ? (
+                                                            <div className="inline-flex items-center gap-2">
+                                                                <div className="h-6 w-6 rounded-full bg-slate-200 text-default-700 flex items-center justify-center">2</div>
+                                                            </div>
+                                                        ) : entry.position === 3 ? (
+                                                            <div className="inline-flex items-center gap-2">
+                                                                <div className="h-6 w-6 rounded-full bg-amber-100 text-default-700 flex items-center justify-center">3</div>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="text-default-700">{entry.position}</div>
+                                                        )}
+                                                    </TableCell>
+                                                    <TableCell className="w-36 whitespace-nowrap">
+                                                        <p className="font-medium text-default-700">{entry.project.projectCode ?? entry.project.eventNumber ?? '—'}</p>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <p className="text-lg font-semibold text-foreground">{entry.project.name}</p>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <div className="space-y-1 text-sm leading-tight">
+                                                            {(() => {
+                                                                const pendingLabels = (entry.project.pendingParticipants ?? [])
+                                                                    .map((participant: any) => `${participant.firstName ?? ''} ${participant.lastName ?? ''}`.trim())
+                                                                    .filter((label: string) => label.length > 0);
+
+                                                                const participantLabels = pendingLabels.length > 0
+                                                                    ? pendingLabels
+                                                                    : (entry.project.participants ?? []).map((participant: any) => {
+                                                                        const fullName = `${participant.firstName ?? ''} ${participant.lastName ?? ''}`.trim();
+                                                                        if (fullName) return fullName;
+                                                                        if (participant.studentCode) return `Código ${participant.studentCode}`;
+                                                                        return 'Participante';
+                                                                    });
+
+                                                                return participantLabels.length > 0 ? (
+                                                                    participantLabels.map((label: string, i: number) => <p key={i} className="text-sm text-default-500">{label}</p>)
+                                                                ) : (
+                                                                    <p className="text-sm text-default-400">Sin integrantes</p>
+                                                                );
+                                                            })()}
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell className="w-32 text-center">
+                                                        <div className="flex h-full flex-col items-center justify-center">
+                                                            <p className="text-lg font-semibold">{entry.stats?.averageGrade !== undefined ? entry.stats.averageGrade.toFixed(2) : '—'}</p>
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell className="w-32 text-center">
+                                                        <div className="flex h-full flex-col items-center justify-center">
+                                                            <p className="text-sm">{entry.stats?.evaluationCount ?? 0}</p>
+                                                        </div>
+                                                    </TableCell>
+                                                </TableRow>
+                                            )}
+                                        </TableBody>
+                                    </Table>
+                                </div>
+                            ) : (
+                                <div className="flex min-h-[180px] items-center justify-center rounded-2xl border border-dashed border-default-200 text-sm text-default-400">
+                                    No hay proyectos con evaluaciones para mostrar el ranking.
+                                </div>
+                            )}
+                        </div>
+                    </Card>
                 )}
             </div>
         </div>
