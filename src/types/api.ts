@@ -261,15 +261,25 @@ export type Criterion = Entity<{
   id: number;
   eventId: number;
   name: string;
-  description: string;
+  description?: string;
   weight: number;
   active: boolean;
   categoryIds: number[];
+  category?: string;
+  component?: CriterionComponent;
   createdAt?: number;
 }>;
 
+export type CriterionComponent = {
+  id: number;
+  name: string;
+  description?: string;
+  weight: number;
+};
+
 export type CriterionCategory = Entity<{
   categoryId: number;
+
   criterionId: number;
 }>;
 
