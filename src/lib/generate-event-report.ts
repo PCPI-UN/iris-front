@@ -154,6 +154,7 @@ function buildDashboardSheet(
     ["En revisión", dash.underReview],
     ["Rechazados", dash.rejected],
     ["Cambios requeridos", dash.changesRequired],
+    ["Total de jurados", dash.totalJuries]
   ];
 
   summaryRows.forEach(([label, value], i) => {

@@ -16,7 +16,8 @@ export const MOCK_EVENT_REPORT: EventReportData = {
       { category: "Robótica", count: 2 },
       { category: "Ciencia de Datos", count: 2 },
     ],
-    participants: {noStudents: 70, ingIndustrial: 10, ingSistemas: 50, ingMecanica: 10}
+    participants: {noStudents: 70, ingIndustrial: 10, ingSistemas: 50, ingMecanica: 10},
+    totalJuries: 0
   },
   projects: [
     {

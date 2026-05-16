@@ -59,6 +59,7 @@ export interface DashboardStats {
   changesRequired: number;
   projectsByCategory: CategoryCount[];
   participants: StudentStats;
+  totalJuries: number;
 }
 
 // Full Report Payload

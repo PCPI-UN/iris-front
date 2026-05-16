@@ -40,6 +40,7 @@ export async function fetchEventReportData(eventId: number): Promise<EventReport
     changesRequired: projectsRequire.length,
     projectsByCategory: categories,
     participants: {noStudents: numStudents},
+    totalJuries: dataJuries?.length ?? 0,
   }
 
   // Helper juries
