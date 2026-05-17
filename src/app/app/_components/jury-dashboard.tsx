@@ -2,13 +2,15 @@
 
 import { useUser } from '@/lib/auth';
 import { ProjectListView } from '@/features/jury/components/project-list-view';
+import { EventType } from '@/types/api';
 import '@/features/landing/index.css';
 
 type JuryDashboardProps = {
     eventId?: string;
+    eventType?: EventType;
 };
 
-export const JuryDashboard = ({ eventId }: JuryDashboardProps = {}) => {
+export const JuryDashboard = ({ eventId, eventType }: JuryDashboardProps = {}) => {
     const user = useUser();
 
     if (eventId) {
@@ -23,7 +25,7 @@ export const JuryDashboard = ({ eventId }: JuryDashboardProps = {}) => {
                     </p>
                 </div>
                 <div className="w-full overflow-x-auto">
-                    <ProjectListView eventId={eventId} />
+                    <ProjectListView eventId={eventId} showProjectCode={eventType === EventType.Exposition} />
                 </div>
             </div>
         );

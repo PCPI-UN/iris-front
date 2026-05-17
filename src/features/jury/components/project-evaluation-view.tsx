@@ -27,10 +27,12 @@ import {
 import { useProject } from "@/features/projects/api/get-project"
 import { AvatarGroup } from "@/features/projects/components/avatar-icon"
 import { useCategoryCriteria } from "@/features/criteria/api/get-category-criterion"
+import { useMyEvents } from '@/features/events/api/get-my-events'
 import { useCreateEvaluation } from "@/features/evaluations/api/create-evaluation"
 import { useNotifications } from "@/components/ui/notifications"
 import { Spinner } from "@heroui/spinner"
 import { normalizeCategoryId } from "@/lib/compat/category-legacy"
+import { EventType } from '@/types/api'
 
 const SCORE_SCALE = [
   { value: 1, label: "Insuficiente" },
@@ -51,7 +53,8 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { addNotification } = useNotifications()
-  const { mutate, isPending } = useCreateEvaluation({
+
+  const { mutate } = useCreateEvaluation({
     mutationConfig: {
       onSuccess: () => {
         addNotification({
@@ -59,7 +62,7 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
           title: "Evaluación enviada exitosamente",
         })
         setIsSubmitting(false)
-        router.push(`/app/events/${project.eventId}`)
+        router.push(`/app/events/${project?.eventId}`)
       },
       onError: () => {
         setIsSubmitting(false)
@@ -72,6 +75,10 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
   const project = (projectData as any)?.data ?? projectData ?? null
   const projectCategoryId = normalizeCategoryId(project ?? {}) ?? ""
   const documents = project?.documents ?? []
+
+  const myEventsQuery = useMyEvents({ page: 1, queryConfig: { enabled: !!project?.eventId } })
+  const currentEvent = myEventsQuery.data?.data?.find((e: any) => String(e.id) === String(project?.eventId))
+  const showProjectCode = currentEvent?.eventType === EventType.Exposition
 
   const {
     data: categoryCriteriaData,
@@ -96,15 +103,16 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
       id: `section-${index + 1}`,
       name: `${index + 1}. (${cat.weight}) ${cat.category}`,
       isSection: true,
-      subcriteria: cat.criterions?.map((c, cIdx) => ({
-        id: c?.id ? String(c.id) : `criterion-${cIdx}`,
-        name: c?.name ?? "",
-        weight: cat.weight,
-      })) ?? [],
+      subcriteria:
+        cat.criterions?.map((c, cIdx) => ({
+          id: c?.id ? String(c.id) : `criterion-${cIdx}`,
+          name: c?.name ?? "",
+          weight: cat.weight,
+        })) ?? [],
     })) ?? []
 
   const allSections = backendSections
-  const currentSection = allSections[currentPage]
+  const currentSection = allSections[currentPage] ?? allSections[0]
 
   const handleScoreChange = (criterionId: string, value: number) => {
     setScores((prev) => ({
@@ -178,20 +186,34 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
           Volver
         </Button>
       </div>
+
       <div className="grid gap-6 lg:grid-cols-2">
         <Card className="glass-card border-border bg-card h-fit">
           <CardBody className="p-4 md:p-6">
             <div className="space-y-4 md:space-y-6">
               <div className="flex items-start gap-4">
-                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-2xl font-semibold text-primary">
-                  {project?.projectCode || "—"}
-                </div>
-
                 <div className="min-w-0 flex-1">
-                  <h2 className="text-lg md:text-xl font-semibold text-balance">{project?.name}</h2>
-                  <p className="mt-2 text-xs md:text-sm text-muted-foreground leading-relaxed">
-                    {project?.description}
-                  </p>
+                  <div className="flex items-start gap-4">
+                    {showProjectCode && (
+                      (() => {
+                        const projectLabel =
+                          project?.projectCode || project?._projectCode || project?.data?.projectCode || project?.data?._projectCode || null
+
+                        return projectLabel ? (
+                          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-2xl font-semibold text-primary">
+                            {projectLabel}
+                          </div>
+                        ) : null
+                      })()
+                    )}
+
+                    <div className="min-w-0">
+                      <h2 className="text-lg md:text-xl font-semibold text-balance">{project?.name}</h2>
+                      <p className="mt-2 text-xs md:text-sm text-muted-foreground leading-relaxed">
+                        {project?.description}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -200,6 +222,7 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
                   <Users className="h-4 w-4 text-muted-foreground" />
                   <span className="font-medium">Integrantes del equipo</span>
                 </div>
+
                 <div className="hidden sm:block">
                   <AvatarGroup
                     participants={
@@ -220,10 +243,7 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
                 </div>
 
                 <div className="sm:hidden space-y-2">
-                  {(project.pendingParticipants?.length > 0
-                    ? project.pendingParticipants
-                    : project.participants
-                  )
+                  {(project.pendingParticipants?.length > 0 ? project.pendingParticipants : project.participants)
                     ?.filter((p: any) => p?.firstName && p?.lastName)
                     .map((participant: any, idx: number) => {
                       const firstName = String(participant.firstName ?? "").trim()
@@ -262,9 +282,7 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
                     >
                       <span className="flex min-w-0 items-center gap-2 text-xs md:text-sm">
                         <FileText className="h-4 w-4 text-primary flex-shrink-0" />
-                        <span className="truncate font-medium">
-                          {getDocumentLabel(documents[0], 0)}
-                        </span>
+                        <span className="truncate font-medium">{getDocumentLabel(documents[0], 0)}</span>
                       </span>
                       <ExternalLink className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
                     </Button>
@@ -309,143 +327,153 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
         </Card>
 
         <Card className="glass-card border-border bg-card">
-          <CardHeader className="p-4 md:p-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <div>
-                <p className="text-base md:text-lg font-semibold">
-                  Evaluación de Jurado
-                </p>
-                <p className="text-xs md:text-sm text-muted-foreground mt-1">
-                  Sección {currentPage + 1} de {allSections.length}
+          {allSections.length === 0 ? (
+            <CardBody className="flex min-h-[320px] flex-col items-center justify-center gap-3 p-4 md:p-6 text-center">
+              <AlertCircle className="h-10 w-10 text-warning" />
+              <div className="space-y-1">
+                <h3 className="text-base md:text-lg font-semibold text-balance">
+                  No hay criterios de evaluación disponibles
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Este proyecto no tiene secciones configuradas para evaluación todavía.
                 </p>
               </div>
-            </div>
-          </CardHeader>
-          <CardBody className="space-y-6 md:space-y-8 p-4 md:p-6">
-            <div className="border-b border-border pb-3">
-              <h3 className="text-base md:text-lg font-semibold text-balance">{currentSection.name}</h3>
-            </div>
-
-            <div className="space-y-6 md:space-y-8">
-              {currentSection.subcriteria?.map((criterion) => (
-                <div key={criterion.id} className="space-y-3 md:space-y-4">
-                  <p className="text-sm md:text-base text-foreground leading-relaxed">{criterion.name}</p>
-
-                  <div className="grid grid-col sm:flex-row items-stretch sm:items-center gap-3">
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-xs md:text-sm text-muted-foreground px-1">
-                        {SCORE_SCALE.map((scale) => (
-                          <span key={scale.value} className="flex-1 w-full text-center">
-                            {scale.label}
-                          </span>
-                        ))}
-                      </div>
-
-                      <div className="flex items-center justify-between gap-2 md:gap-4 bg-muted/5 border-border rounded-lg p-3 md:p-4">
-                        {SCORE_SCALE.map((scale) => (
-                          <button
-                            key={scale.value}
-                            onClick={() => handleScoreChange(criterion.id, scale.value)}
-                            className="flex flex-col items-center gap-2 cursor-pointer group flex-1"
-                          >
-                            <div
-                              className={`h-6 w-6 md:h-7 md:w-7 rounded-full border-2 flex items-center justify-center transition-all ${
-                                scores[criterion.id] === scale.value
-                                  ? "border-primary bg-primary shadow-md scale-110"
-                                  : "border-muted-foreground/30 group-hover:border-muted-foreground/50"
-                              }`}
-                            >
-                              {scores[criterion.id] === scale.value && (
-                                <div className="h-3 w-3 md:h-3.5 md:w-3.5 rounded-full bg-primary-foreground" />
-                              )}
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
+              <Button variant="light" onClick={handleGoBack}>
+                Volver al evento
+              </Button>
+            </CardBody>
+          ) : (
+            <>
+              <CardHeader className="p-4 md:p-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div>
+                    <p className="text-base md:text-lg font-semibold">Evaluación de Jurado</p>
+                    <p className="text-xs md:text-sm text-muted-foreground mt-1">
+                      Sección {currentPage + 1} de {allSections.length}
+                    </p>
                   </div>
                 </div>
-              ))}
-            </div>
+              </CardHeader>
 
-            <div className="flex items-center justify-between pt-4 md:pt-6 border-t border-border gap-2">
-              {canGoPrevious ? (
-                <Button
-                  onClick={() => setCurrentPage((p) => p - 1)}
-                  className="gap-1 md:gap-2"
-                  size="sm"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                  <span className="hidden sm:inline">Anterior</span>
-                </Button>
-              ) : (
-                <div className="w-[90px]" />
-              )}
-
-              <div className="flex gap-1.5 md:gap-2">
-                {allSections.map((_, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => setCurrentPage(idx)}
-                    className={`h-2 w-2 rounded-full transition-colors ${
-                      idx === currentPage ? "bg-primary" : "bg-muted-foreground/30"
-                    }`}
-                    aria-label={`Ir a sección ${idx + 1}`}
-                  />
-                ))}
-              </div>
-
-              {canGoNext ? (
-                <Button
-                  onClick={() => setCurrentPage((p) => p + 1)}
-                  className="gap-1 md:gap-2"
-                  size="sm"
-                >
-                  <span className="hidden sm:inline">Siguiente</span>
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              ) : (
-                <div className="w-[90px]" />
-              )}
-            </div>
-
-            {currentPage === allSections.length - 1 && (
-              <>
-                <div className="space-y-2 pt-3 md:pt-4">
-                  <Label htmlFor="comments" className="text-xs md:text-sm font-medium">
-                    Comentarios y Retroalimentación
-                  </Label>
-                  <Textarea
-                    id="comments"
-                    placeholder="Escriba sus comentarios adicionales sobre la evaluación..."
-                    value={comments}
-                    onChange={(e) => setComments(e.target.value)}
-                    className="min-h-[80px] md:min-h-[100px] resize-none text-sm"
-                    disabled={isSubmitting}
-                  />
+              <CardBody className="space-y-6 md:space-y-8 p-4 md:p-6">
+                <div className="border-b border-border pb-3">
+                  <h3 className="text-base md:text-lg font-semibold text-balance">
+                    {currentSection?.name}
+                  </h3>
                 </div>
 
-                <Button
-                  className="w-full transition-transform hover:scale-[1.01] text-sm md:text-base"
-                  color="primary"
-                  size="lg"
-                  onClick={handleSubmit}
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <span className="mr-2">Enviando...</span>
-                    </>
+                <div className="space-y-6 md:space-y-8">
+                  {currentSection?.subcriteria?.map((criterion) => (
+                    <div key={criterion.id} className="space-y-3 md:space-y-4">
+                      <p className="text-sm md:text-base text-foreground leading-relaxed">
+                        {criterion.name}
+                      </p>
+
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-xs md:text-sm text-muted-foreground px-1">
+                          {SCORE_SCALE.map((scale) => (
+                            <span key={scale.value} className="flex-1 w-full text-center">
+                              {scale.label}
+                            </span>
+                          ))}
+                        </div>
+
+                        <div className="flex items-center justify-between gap-2 md:gap-4 bg-muted/5 border-border rounded-lg p-3 md:p-4">
+                          {SCORE_SCALE.map((scale) => (
+                            <button
+                              key={scale.value}
+                              onClick={() => handleScoreChange(criterion.id, scale.value)}
+                              className="flex flex-col items-center gap-2 cursor-pointer group flex-1"
+                            >
+                              <div
+                                className={`h-6 w-6 md:h-7 md:w-7 rounded-full border-2 flex items-center justify-center transition-all ${
+                                  scores[criterion.id] === scale.value
+                                    ? "border-primary bg-primary shadow-md scale-110"
+                                    : "border-muted-foreground/30 group-hover:border-muted-foreground/50"
+                                }`}
+                              >
+                                {scores[criterion.id] === scale.value && (
+                                  <div className="h-3 w-3 md:h-3.5 md:w-3.5 rounded-full bg-primary-foreground" />
+                                )}
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex items-center justify-between pt-4 md:pt-6 border-t border-border gap-2">
+                  {canGoPrevious ? (
+                    <Button onClick={() => setCurrentPage((p) => p - 1)} className="gap-1 md:gap-2" size="sm">
+                      <ChevronLeft className="h-4 w-4" />
+                      <span className="hidden sm:inline">Anterior</span>
+                    </Button>
                   ) : (
-                    <>
-                      <Send className="mr-2 h-4 w-4" />
-                      Enviar evaluación
-                    </>
+                    <div className="w-[90px]" />
                   )}
-                </Button>
-              </>
-            )}
-          </CardBody>
+
+                  <div className="flex gap-1.5 md:gap-2">
+                    {allSections.map((_, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => setCurrentPage(idx)}
+                        className={`h-2 w-2 rounded-full transition-colors ${
+                          idx === currentPage ? "bg-primary" : "bg-muted-foreground/30"
+                        }`}
+                        aria-label={`Ir a sección ${idx + 1}`}
+                      />
+                    ))}
+                  </div>
+
+                  {canGoNext ? (
+                    <Button onClick={() => setCurrentPage((p) => p + 1)} className="gap-1 md:gap-2" size="sm">
+                      <span className="hidden sm:inline">Siguiente</span>
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  ) : (
+                    <div className="w-[90px]" />
+                  )}
+                </div>
+
+                {currentPage === allSections.length - 1 && (
+                  <>
+                    <div className="space-y-2 pt-3 md:pt-4">
+                      <Label htmlFor="comments" className="text-xs md:text-sm font-medium">
+                        Comentarios y Retroalimentación
+                      </Label>
+                      <Textarea
+                        id="comments"
+                        placeholder="Escriba sus comentarios adicionales sobre la evaluación..."
+                        value={comments}
+                        onChange={(e) => setComments(e.target.value)}
+                        className="min-h-[80px] md:min-h-[100px] resize-none text-sm"
+                        disabled={isSubmitting}
+                      />
+                    </div>
+
+                    <Button
+                      className="w-full transition-transform hover:scale-[1.01] text-sm md:text-base"
+                      color="primary"
+                      size="lg"
+                      onClick={handleSubmit}
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? (
+                        <span className="mr-2">Enviando...</span>
+                      ) : (
+                        <>
+                          <Send className="mr-2 h-4 w-4" />
+                          Enviar evaluación
+                        </>
+                      )}
+                    </Button>
+                  </>
+                )}
+              </CardBody>
+            </>
+          )}
         </Card>
       </div>
 
@@ -465,7 +493,9 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
                     Está a punto de enviar su evaluación para{" "}
                     <span className="font-semibold text-foreground">{project?.name}</span>.
                   </p>
-                  <p className="text-sm text-warning">⚠️ Una vez enviada, esta evaluación no puede ser editada.</p>
+                  <p className="text-sm text-warning">
+                    ⚠️ Una vez enviada, esta evaluación no puede ser editada.
+                  </p>
                 </div>
               </ModalBody>
               <ModalFooter>

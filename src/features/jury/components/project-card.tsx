@@ -7,7 +7,7 @@ import { paths } from "@/config/paths";
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@/components/ui/dropdown";
 import { ChevronDown, ExternalLink } from "lucide-react";
 
-export function ProjectCard({ project }: { project: any }) {
+export function ProjectCard({ project, showProjectCode = false }: { project: any; showProjectCode?: boolean }) {
     const router = useRouter();
     const documents = project?.documents ?? [];
 
@@ -27,11 +27,12 @@ export function ProjectCard({ project }: { project: any }) {
   }
 
     const projectLabel =
-        project.projectCode ||
-        project._projectCode ||
-        project.data?.projectCode ||
-        project.data?._projectCode ||
-        "—";
+                (showProjectCode
+                        ? project.projectCode ||
+                            project._projectCode ||
+                            project.data?.projectCode ||
+                            project.data?._projectCode
+                        : null) || null;
     return (
         <Card
             className="glass-card w-full rounded-xl border border-default-200 hover:border-primary transition-all duration-150 hover:scale-[1.01]"
@@ -40,9 +41,11 @@ export function ProjectCard({ project }: { project: any }) {
                 <div className="space-y-4">
                     <div className="flex items-start justify-between gap-4">
                         <div className="flex min-w-0 flex-1 items-start gap-4">
-                            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-2xl font-semibold text-primary">
-                                {projectLabel}
-                            </div>
+                            {showProjectCode && projectLabel ? (
+                                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-2xl font-semibold text-primary">
+                                    {projectLabel}
+                                </div>
+                            ) : null}
 
                             <div className="min-w-0 flex-1">
                                 <h3 className="text-lg font-semibold text-balance">
@@ -64,9 +67,11 @@ export function ProjectCard({ project }: { project: any }) {
                         <div className="flex items-center gap-2 text-xs md:text-sm">
                             <Users className="h-4 w-4 text-muted-foreground" />
                             <span className="font-medium">Integrantes del equipo</span>
-                            <p className="ml-auto text-xs text-muted-foreground">
-                                {project.projectCode ? `Código: ${project.projectCode}` : " "}
-                            </p>
+                            {showProjectCode && project.projectCode ? (
+                                <p className="ml-auto text-xs text-muted-foreground">
+                                    {`Código: ${project.projectCode}`}
+                                </p>
+                            ) : null}
                         </div>
 
                         <div className="hidden sm:block">
