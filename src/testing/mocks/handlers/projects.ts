@@ -7,6 +7,7 @@ type ProjectBody = {
   eventId: string;
   categoryId?: string;
   courseId?: string;
+  projectCode?: string | undefined;
   name: string;
   logo?: string;
   description?: string | undefined;
@@ -72,6 +73,7 @@ type ProjectDTO = {
   state: string;
   eventId: string;
   categoryId?: string;
+  projectCode?: string;
   eventNumber?: string;
   createdAt: number;
   documents: Array<{ type: string; url: string }>;
@@ -102,6 +104,7 @@ const mapProjectToDTO = (project: any): ProjectDTO => {
     state: project.state,
     eventId: project.eventId,
     categoryId: project.categoryId ?? project.courseId,
+    projectCode: project.projectCode ?? "",
     eventNumber: project.eventNumber || "",
     createdAt: project.createdAt,
     documents: project.documents ?? [],
@@ -402,6 +405,7 @@ export const projectsHandlers = [
         eventId: toInternalPrefixedId(String(data.eventId), "event"),
         categoryId: selectedCategoryId ? toInternalPrefixedId(String(selectedCategoryId), "course") : "no-course",
         courseId: selectedCategoryId ? toInternalPrefixedId(String(selectedCategoryId), "course") : "no-course",
+        projectCode: data.projectCode?.trim() || undefined,
         name: data.name || (isCompetition ? "Competition Entry" : ""),
         logo: data.logo || "",
         description: data.description || undefined,

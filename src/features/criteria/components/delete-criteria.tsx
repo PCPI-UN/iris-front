@@ -11,17 +11,19 @@ import {
   ModalFooter,
 } from "@/components/ui/modal";
 import { useNotifications } from "@/components/ui/notifications";
-import { useUser } from "@/lib/auth";
 
 import { useDeleteCriteria } from "../api/delete-criteria";
 import { useDisclosure } from "@/hooks/use-disclosure";
 
 type DeleteCriteriaProps = {
   criterionId: number;
+  onDeleted?: () => void;
 };
 
-export const DeleteCriteria = ({ criterionId }: DeleteCriteriaProps) => {
-  const user = useUser();
+export const DeleteCriteria = ({
+  criterionId,
+  onDeleted,
+}: DeleteCriteriaProps) => {
   const { addNotification } = useNotifications();
   const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
   const deleteCriteriaMutation = useDeleteCriteria({
@@ -29,16 +31,17 @@ export const DeleteCriteria = ({ criterionId }: DeleteCriteriaProps) => {
       onSuccess: () => {
         addNotification({
           type: "success",
-          title: "Criteria Deleted",
-          message: "The evaluation criteria has been deleted successfully.",
+          title: "Criterio eliminado",
+          message: "El criterio de evaluación fue eliminado correctamente.",
         });
+        onDeleted?.();
         onClose();
       },
       onError: (error: any) => {
         addNotification({
           type: "error",
           title: "Error",
-          message: error?.message || "Failed to delete criteria",
+          message: error?.message || "No se pudo eliminar el criterio.",
         });
       },
     },
@@ -47,35 +50,34 @@ export const DeleteCriteria = ({ criterionId }: DeleteCriteriaProps) => {
   return (
     <>
       <Button
-        className="w-full"
-        variant="shadow"
+        variant="flat"
         size="sm"
         color="danger"
         onPress={() => onOpen()}
         startContent={<Trash size={16} />}
       >
-        Delete
+        Eliminar
       </Button>
-      <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="2xl">
+      <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="sm">
         <ModalContent>
           {(onClose) => (
             <>
               <ModalHeader className="flex flex-col gap-1">
-                <h2 className="text-lg font-bold">Delete Criteria</h2>
+                <h2 className="text-lg font-bold">Eliminar criterio</h2>
                 <p className="text-sm font-normal text-gray-500">
-                  Are you sure you want to delete this criteria? This action
-                  cannot be undone.
+                  ¿Seguro que deseas eliminar este criterio? Esta acción no se
+                  puede deshacer.
                 </p>
               </ModalHeader>
               <ModalBody>
                 <p className="text-sm text-gray-500">
-                  This will permanently delete the evaluation criteria. Any
-                  evaluations that reference this criteria may be affected.
+                  Esto eliminará permanentemente el criterio de evaluación. Las
+                  evaluaciones que lo referencien pueden verse afectadas.
                 </p>
               </ModalBody>
               <ModalFooter>
                 <Button color="danger" variant="light" onPress={onClose}>
-                  Cancel
+                  Cancelar
                 </Button>
                 <Button
                   color="primary"
@@ -83,7 +85,7 @@ export const DeleteCriteria = ({ criterionId }: DeleteCriteriaProps) => {
                   onPress={() => deleteCriteriaMutation.mutate({ criterionId })}
                   startContent={<Trash className="size-4" />}
                 >
-                  Delete Criteria
+                  Eliminar criterio
                 </Button>
               </ModalFooter>
             </>

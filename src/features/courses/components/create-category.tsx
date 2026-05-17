@@ -68,8 +68,8 @@ export const CreateCategory = () => {
                 if (!selectedEvent) {
                   addNotification({
                     type: "error",
-                    title: "Event Required",
-                    message: "Please select an event",
+                    title: "Evento Requerido",
+                    message: "Debes seleccionar un evento antes de crear una categoría",
                   });
                   return;
                 }
@@ -120,9 +120,9 @@ export const CreateCategory = () => {
                 </Select>
                 
                 <Input 
-                  label="Category code" 
+                  label="Category name" 
                   name="code" 
-                  placeholder="2354"
+                  placeholder="ej: Dpto. Ingeniería de Sistemas"
                   isRequired 
                 />
 
@@ -145,7 +145,7 @@ export const CreateCategory = () => {
                   type="submit"
                   color="primary"
                   isLoading={createCategoryMutation.isPending}
-                  disabled={createCategoryMutation.isPending || !selectedEvent}
+                  disabled={createCategoryMutation.isPending}
                 >
                   Create category
                 </Button>
