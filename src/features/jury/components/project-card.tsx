@@ -182,12 +182,12 @@ export function ProjectCard({ project, showProjectCode = false }: { project: any
                     </div>
 
                     <Button
-                        className="mt-6 w-full transition-transform hover:scale-[1.01]"
+                        className="mt-6 w-full transition-transform"
                         color="primary"
                         onPress={() => router.push(paths.app.evaluations.getHref(project.id))}
                         isDisabled={project.evaluated}
                     >
-                        {project.evaluated ? "Evaluado" : "Evaluar Proyecto"}
+                        {project.evaluated ? "Evaluado" : (showProjectCode ? "Evaluar Proyecto" : "Evaluar Equipo")}
                     </Button>
                 </div>
             </CardBody>

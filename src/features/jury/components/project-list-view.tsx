@@ -87,12 +87,12 @@ export function ProjectListView({ eventId, showProjectCode = false }: ProjectLis
           onClick={() => router.push('/app')}
         >
           <ArrowLeft className="h-4 w-4" />
-          Back
+          Volver
         </Button>
       </div>
       {notEvaluatedProjects.length > 0 && (
         <div className="space-y-4">
-          <h2 className="text-lg font-semibold text-foreground">Proyectos por Evaluar</h2>
+          <h2 className="text-lg font-semibold text-foreground">{showProjectCode ? 'Proyectos por Evaluar' : 'Equipos por Evaluar'}</h2>
           <div className="grid gap-6 p-4 sm:grid-cols-1 lg:grid-cols-2">
             {projectsWithCode.filter(p => !p.evaluated).map(project => (
               <ProjectCard key={project.id} project={project} showProjectCode={showProjectCode} />
@@ -103,7 +103,7 @@ export function ProjectListView({ eventId, showProjectCode = false }: ProjectLis
 
       {evaluatedProjects.length > 0 && (
         <div className="space-y-4">
-          <h2 className="text-lg font-semibold text-foreground">Proyectos Evaluados</h2>
+          <h2 className="text-lg font-semibold text-foreground">{showProjectCode ? 'Proyectos Evaluados' : 'Equipos Evaluados'}</h2>
           <div className="grid gap-6 p-4 sm:grid-cols-1 lg:grid-cols-2">
             {projectsWithCode.filter(p => p.evaluated).map(project => (
               <ProjectCard key={project.id} project={project} showProjectCode={showProjectCode} />

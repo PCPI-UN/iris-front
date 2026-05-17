@@ -18,11 +18,11 @@ export const JuryDashboard = ({ eventId, eventType }: JuryDashboardProps = {}) =
             <div className='dashboard-page space-y-4 md:space-y-6'>
                 <div className="space-y-1 md:space-y-2">
                     <h1 className="text-2xl md:text-3xl font-bold">
-                        Project Jury
-                    </h1>
-                    <p className="text-sm md:text-base text-muted-foreground">
-                        Review and evaluate projects
-                    </p>
+                            Jurado del Evento
+                        </h1>
+                        <p className="text-sm md:text-base text-muted-foreground">
+                            Revisa y evalúa los proyectos o equipos asignados
+                        </p>
                 </div>
                 <div className="w-full overflow-x-auto">
                     <ProjectListView eventId={eventId} showProjectCode={eventType === EventType.Exposition} />
