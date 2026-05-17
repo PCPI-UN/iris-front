@@ -22,10 +22,10 @@ export const DashboardInfo = () => {
     <div className="dashboard-page space-y-4 md:space-y-6">
       <div className="space-y-1 md:space-y-2">
         <h1 className="text-2xl md:text-3xl font-bold">
-          Welcome back, {`${user.data?.firstName} ${user.data?.lastName}`}
+          Bienvenido, {`${user.data?.firstName} ${user.data?.lastName}` } 
         </h1>
         <p className="text-sm md:text-base text-muted-foreground">
-          Select an event
+          Selecciona un evento
         </p>
       </div>
       <div className="w-full overflow-x-auto">
