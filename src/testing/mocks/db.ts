@@ -95,7 +95,9 @@ const models = {
   project: {
     id: primaryKey(nanoid),
     eventId: String,
+    categoryId: String,
     courseId: String,
+    projectCode: String,
     name: String,
     logo: String,
     description: String,
@@ -120,6 +122,7 @@ const models = {
     name: String,
     description: String,
     weight: Number,
+    categoryIds: Array,
     criterionCourse: Array,
   },
   jury: {

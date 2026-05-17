@@ -4,6 +4,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { Spinner } from "@/components/ui/spinner";
 import { Pagination } from "@/components/ui/pagination";
 import { useProjects } from "../api/get-projects";
+import { useEvents } from "@/features/events/api/get-events";
 import { ApproveProjectModal } from "./approve-modal";
 import { RejectProjectModal } from "./reject-modal";
 import { Button } from "@/components/ui/button";
@@ -16,10 +17,10 @@ import { ViewDetails } from "./view-details";
 import { DataTable } from "@/components/data-table";
 import { columnsProject } from "./columns-project-table";
 import React from "react";
+import { readCategoryIdFromSearchParams } from "@/lib/compat/category-legacy";
 import { ParticipantsDetails } from "./participants-details";
+import { toEventTypeLabel } from "@/features/events/utils/event-enums";
 
-//MOCKAPI -> category
-//BACK -> courseId
 
 export const ProjectList = () => {
   const searchParams = useSearchParams();
@@ -28,11 +29,15 @@ export const ProjectList = () => {
   const page = searchParams?.get("page") ? Number(searchParams.get("page")) : 1;
   const eventId = searchParams?.get("event") ? Number(searchParams.get("event")) : 0;
   const state = searchParams?.get("state") || "UNDER_REVIEW";
-  const courseId = searchParams?.get("courseId") ? Number(searchParams.get("courseId")) : undefined;
+  const categoryParam = readCategoryIdFromSearchParams(searchParams);
+  const categoryId = categoryParam ? Number(categoryParam) : undefined;
 
-  const projectsQuery = useProjects({ page, eventId, state, courseId });
+  const projectsQuery = useProjects({ page, eventId, state, categoryId });
   const projects = projectsQuery.data?.data;
   const meta = projectsQuery.data?.meta;
+  const eventsQuery = useEvents({ page: 1 });
+  const selectedEvent = eventsQuery.data?.data?.find((event) => event.id === eventId);
+  const selectedEventType = selectedEvent ? toEventTypeLabel(selectedEvent.eventType) : undefined;
 
   
   {/* ======================== ACTIONS APPROVE, REJECT, REQUEST FOR TABLE ======================== */}
@@ -70,7 +75,7 @@ export const ProjectList = () => {
     params.set("page", "1");
     if (eventId) params.set("event", String(eventId));
     if (newStatus) params.set("state", newStatus);
-    if (courseId) params.set("courseId", String(courseId))
+    if (categoryId) params.set("categoryId", String(categoryId));
     router.push(`?${params.toString()}`);
   };
 
@@ -199,7 +204,7 @@ export const ProjectList = () => {
                       <div className="grid md:grid-cols-3 gap-2 mb-2">
                         <RejectProjectModal projectId={project.id} />
                         <RequestProjectModal projectId={project.id}/>
-                        <ApproveProjectModal projectId={project.id} />
+                        <ApproveProjectModal projectId={project.id} eventType={selectedEventType} />
                       </div>
                     )}
                       <div className="flex justify-center items-center">
@@ -223,6 +228,7 @@ export const ProjectList = () => {
           <>
             <ApproveProjectModal
               projectId={selectedId}
+              eventType={selectedEventType}
               isOpenTable={action === "approve"}
               onOpenChangeTable={(open) => {
                 if (!open) setAction(null);

@@ -31,7 +31,7 @@ export const projectSchema = z.object({
   projectCode: assignedNumberSchema,
   name: z.string().min(3, 'El nombre debe tener al menos 3 caracteres').max(255, 'El nombre no puede exceder 255 caracteres'),
   description: z.string().max(3000, 'La descripción no puede exceder 3000 caracteres').optional(),
-  courseId: z.number().min(1, 'Debe seleccionar un curso'),
+  categoryId: z.number().min(1, 'Debe seleccionar una categoría'),
 })
 
 export const documentsSchema = z.object({

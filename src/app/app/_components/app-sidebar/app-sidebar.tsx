@@ -13,6 +13,8 @@ import {
   ArrowDownAZ,
   SquareChartGantt,
   Mail,
+  ChartNoAxesCombined,
+  PinIcon,
 } from "lucide-react";
 
 import { NavUser } from "./nav-user";
@@ -52,8 +54,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           { title: "Dashboard", url: paths.app.root.getHref(), icon: Home },
           { title: "Events", url: paths.app.events.getHref(), icon: Calendar },
           {
-            title: "Courses",
-            url: paths.app.courses.getHref(),
+            title: "Categories",
+            url: paths.app.categories.getHref(),
             icon: ArrowDownAZ,
           },
           {
@@ -62,11 +64,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             icon: SquareChartGantt,
           },
           {
+            title: "Monitoreo",
+            url: paths.app.monitoring.getHref(),
+            icon: ChartNoAxesCombined,
+          },
+          {
             title: "Criteria",
             url: paths.app.criteria.getHref(),
             icon: Presentation,
           },
           { title: "Juries", url: paths.app.juries.getHref(), icon: UsersIcon },
+          { title: "Assignments", url: paths.app.assignments.getHref(), icon: PinIcon },
           {
             title: "Administrators",
             url: paths.app.administrators.getHref(),

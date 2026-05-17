@@ -1,0 +1,192 @@
+"use client";
+
+import { SquarePen } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { Form } from "@/components/ui/form";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+} from "@/components/ui/modal";
+import { useDisclosure } from '@/hooks/use-disclosure';
+import { useNotifications } from "@/components/ui/notifications";
+import { Select, SelectItem } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+
+import { useCategory } from "../api/get-category";
+import {
+  updateCategoryInputSchema,
+  useUpdateCategory,
+} from "../api/update-category";
+
+import { useEvents } from "@/features/events/api/get-events";
+
+type UpdateCategoryProps = {
+  categoryId: number;
+};
+
+export const UpdateCategory = ({ categoryId }: UpdateCategoryProps) => {
+  const { addNotification } = useNotifications();
+  const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
+
+  const categoryQuery = useCategory({
+    categoryId,
+    queryConfig: {
+      enabled: isOpen,
+    },
+  });
+  const updateCategoryMutation = useUpdateCategory({
+    mutationConfig: {
+      onSuccess: () => {
+        addNotification({
+          type: "success",
+          title: "Category Updated",
+        });
+        onClose();
+      },
+    },
+  });
+
+  const eventsQuery = useEvents({ page: 1 });
+
+  const category = categoryQuery.data?.data;
+  const events = eventsQuery.data?.data || [];
+
+  return (
+    <>
+      <Button
+        variant="shadow"
+        className="w-full"
+        size="sm"
+        onPress={() => {
+          onOpen();
+        }}
+        startContent={<SquarePen size={16} />}
+      >
+        Edit category
+      </Button>
+
+      <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="2xl">
+        <ModalContent>
+          {(onClose) => {
+            if (categoryQuery.isLoading) {
+              return (
+                <>
+                  <ModalHeader>Update Category</ModalHeader>
+                  <ModalBody className="flex items-center justify-center py-12">
+                    <div>Loading...</div>
+                  </ModalBody>
+                </>
+              );
+            }
+
+            if (!category) {
+              return (
+                <>
+                  <ModalHeader>Update Category</ModalHeader>
+                  <ModalBody>
+                    <p>Category not found</p>
+                  </ModalBody>
+                  <ModalFooter>
+                    <Button onPress={onClose}>Close</Button>
+                  </ModalFooter>
+                </>
+              );
+            }
+
+            return (
+            <Form
+              key={`update-category-${categoryId}-${category?.id}`}
+              id="update-category"
+              onSubmit={async (e) => {
+                e.preventDefault();
+                const form = e.target as HTMLFormElement;
+                const formData = new FormData(form);
+
+                const rawData = Object.fromEntries(formData);
+
+                const data = {
+                  id: category.id,
+                  code: rawData.code,
+                  description: rawData.description,
+                  active: rawData.active === "true",
+                };
+
+                const values = await updateCategoryInputSchema.parseAsync(data);
+                await updateCategoryMutation.mutateAsync({
+                  data: values,
+                });
+                // Notificación y cierre ahora se manejan en onSuccess
+              }}
+            >
+              <ModalHeader className="flex flex-col gap-1">
+                Update Category
+              </ModalHeader>
+
+              <ModalBody className="space-y-4 w-full">
+                {/* Event Select */}
+                <Select
+                  label="Event"
+                  name="eventId"
+                  placeholder="Select an event"
+                  defaultSelectedKeys={
+                    category?.eventId ? [String(category.eventId)] : []
+                  }
+                  isLoading={eventsQuery.isLoading}
+                >
+                  {events.map((event) => (
+                    <SelectItem key={event.id}>{event.name}</SelectItem>
+                  ))}
+                </Select>
+
+                <Input
+                  label="Category name"
+                  name="code"
+                  defaultValue={category?.code ?? ""}
+                  isRequired
+                />
+
+                <Textarea
+                  label="Description"
+                  name="description"
+                  defaultValue={category?.description ?? ""}
+                  isRequired
+                />
+
+                <Switch
+                  name="active"
+                  value="true"
+                  defaultSelected={category?.active}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2`}
+                >
+                  <div className="flex flex-col gap-1">
+                    <p className="text-medium">Active</p>
+                  </div>
+                </Switch>
+              </ModalBody>
+
+              <ModalFooter>
+                <Button color="danger" variant="light" onPress={onClose}>
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  isLoading={updateCategoryMutation.isPending}
+                  disabled={updateCategoryMutation.isPending}
+                >
+                  Save Changes
+                </Button>
+              </ModalFooter>
+            </Form>
+            );
+          }}
+        </ModalContent>
+      </Modal>
+    </>
+  );
+};

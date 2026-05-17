@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 
 import { api } from "@/lib/api-client";
+import { withLegacyCourseIdParam } from "@/lib/compat/category-legacy";
 import { MutationConfig } from "@/lib/react-query";
 import { Project } from "@/types/api";
 

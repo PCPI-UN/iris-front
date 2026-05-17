@@ -1,0 +1,47 @@
+import { useQuery, queryOptions } from "@tanstack/react-query";
+
+import { api } from "@/lib/api-client";
+import { normalizeCategoryIds } from "@/lib/compat/category-legacy";
+import { QueryConfig } from "@/lib/react-query";
+import { Criterion } from "@/types/api";
+
+export const getCriterion = async ({
+  criterionId,
+}: {
+  criterionId: number;
+}): Promise<{ data: Criterion }> => {
+  const response = await api.get<Criterion>(`/criterions/${criterionId}`);
+  const criterion = (response as any).data || response;
+
+  return {
+    data: {
+      ...criterion,
+      categoryIds: normalizeCategoryIds(criterion) as number[],
+    },
+  };
+};
+
+export const getCriterionQueryOptions = (criterionId: number) => {
+  return queryOptions({
+    queryKey: ["criterions", criterionId],
+    queryFn: async () => {
+      const result = await getCriterion({ criterionId });
+      return result;
+    },
+  });
+};
+
+type UseCriterionOptions = {
+  criterionId: number;
+  queryConfig?: QueryConfig<typeof getCriterionQueryOptions>;
+};
+
+export const useCriterion = ({
+  criterionId,
+  queryConfig,
+}: UseCriterionOptions) => {
+  return useQuery({
+    ...getCriterionQueryOptions(criterionId),
+    ...queryConfig,
+  });
+};

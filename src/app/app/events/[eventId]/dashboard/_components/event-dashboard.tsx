@@ -7,6 +7,8 @@ import { useMyEvents } from '@/features/events/api/get-my-events';
 import { Spinner } from '@/components/ui/spinner';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import { EventType } from '@/types/api';
+import { extractEventIdFromSlug } from '@/features/events/utils/resolve-join-target';
 
 type EventDashboardProps = {
   eventId: string;
@@ -16,6 +18,7 @@ export const EventDashboard = ({ eventId }: EventDashboardProps) => {
   const user = useUser();
   const eventsQuery = useMyEvents({ page: 1 });
   const router = useRouter();
+  const normalizedEventId = extractEventIdFromSlug(eventId).eventId;
 
   useEffect(() => {
     // Si es ADMIN, redirigir al dashboard principal
@@ -33,11 +36,11 @@ export const EventDashboard = ({ eventId }: EventDashboardProps) => {
   }
 
   const events = eventsQuery.data?.data || [];
-  const currentEvent = events.find((event) => String(event.id) === String(eventId));
+  const currentEvent = events.find((event) => String(event.id) === normalizedEventId || String(event.id) === String(eventId));
 
   // Renderizar el dashboard según el rol del usuario en este evento
   if (currentEvent?.role?.name === 'Juror') {
-    return <JuryDashboard eventId={eventId} />;
+    return <JuryDashboard eventId={normalizedEventId || eventId} eventType={currentEvent.eventType} />;
   }
 
   if (currentEvent?.role?.name === 'Participant') {
