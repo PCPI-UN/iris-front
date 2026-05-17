@@ -129,6 +129,8 @@ export const CriteriaList = () => {
     useState<DeleteComponentMode>("reassign");
   const [isCancelChangesOpen, setIsCancelChangesOpen] = useState(false);
   const [isRollbackPending, setIsRollbackPending] = useState(false);
+  const [pendingEventKey, setPendingEventKey] = useState<string>("");
+  const [isEventSwitchModalOpen, setIsEventSwitchModalOpen] = useState(false);
   const [savedSnapshotByEvent, setSavedSnapshotByEvent] = useState<
     Record<string, SavedCriteriaSnapshot>
   >({});
@@ -313,9 +315,7 @@ export const CriteriaList = () => {
     selectedEventKey,
   ]);
 
-  // Capture the initial snapshot once per event, only after all queries settle.
-  // Uses a ref to ensure we only capture once and never re-run due to derived
-  // value changes — this is the main fix for the update cycle.
+
   useEffect(() => {
     if (!selectedEventKey) return;
     if (hasUnsavedChangesByEvent[selectedEventKey]) return;
@@ -467,7 +467,7 @@ export const CriteriaList = () => {
     [],
   );
 
-  const handleCancelChanges = useCallback(async () => {
+  const handleCancelChanges = useCallback(async (afterSuccess?: () => void) => {
     if (!selectedEventKey) return;
 
     const savedSnapshot = savedSnapshotByEvent[selectedEventKey];
@@ -599,6 +599,7 @@ export const CriteriaList = () => {
       mergedComponentIdsRef.current[selectedEventKey] = new Set();
 
       setIsCancelChangesOpen(false);
+      afterSuccess?.();
       await refetchCriteriaState();
       addNotification({
         type: "success",
@@ -624,8 +625,7 @@ export const CriteriaList = () => {
     selectedEventKey,
   ]);
 
-  const handleEventChange = useCallback((keys: any) => {
-    const eventKey = getSingleSelectionKey(keys);
+  const doSwitchEvent = useCallback((eventKey: string) => {
     const validEventId = toPositiveInt(eventKey);
     if (!validEventId) {
       setSelectedEventKey("");
@@ -637,6 +637,56 @@ export const CriteriaList = () => {
     setSelectedCategoryKey("");
     setAssignmentByCriterion({});
   }, []);
+
+  const handleEventChange = useCallback(
+    (keys: any) => {
+      const eventKey = getSingleSelectionKey(keys);
+      if (eventKey === selectedEventKey) return;
+      if (selectedEventKey && hasUnsavedChanges) {
+        setPendingEventKey(eventKey);
+        setIsEventSwitchModalOpen(true);
+        return;
+      }
+      doSwitchEvent(eventKey);
+    },
+    [selectedEventKey, hasUnsavedChanges, doSwitchEvent],
+  );
+
+  const handleSaveAndSwitch = useCallback(() => {
+    if (!canSave) return;
+    const snapshot = buildSnapshot();
+    setSavedSnapshotByEvent((prev) => ({
+      ...prev,
+      [selectedEventKey]: snapshot,
+    }));
+    setHasUnsavedChangesByEvent((prev) => ({
+      ...prev,
+      [selectedEventKey]: false,
+    }));
+    snapshotCapturedRef.current[selectedEventKey] = false;
+    setIsEventSwitchModalOpen(false);
+    addNotification({
+      type: "success",
+      title: "Configuración guardada",
+      message: "La configuración quedó marcada como guardada.",
+    });
+    doSwitchEvent(pendingEventKey);
+  }, [
+    canSave,
+    buildSnapshot,
+    selectedEventKey,
+    addNotification,
+    doSwitchEvent,
+    pendingEventKey,
+  ]);
+
+  const handleDiscardAndSwitch = useCallback(() => {
+    const targetKey = pendingEventKey;
+    handleCancelChanges(() => {
+      setIsEventSwitchModalOpen(false);
+      doSwitchEvent(targetKey);
+    });
+  }, [handleCancelChanges, pendingEventKey, doSwitchEvent]);
 
   const handleCategoryChange = useCallback((keys: any) => {
     const nextKey = getSingleSelectionKey(keys);
@@ -1351,6 +1401,76 @@ export const CriteriaList = () => {
         </ModalContent>
       </Modal>
 
+      <Modal
+        isOpen={isEventSwitchModalOpen}
+        onOpenChange={(open) => {
+          if (!isRollbackPending) setIsEventSwitchModalOpen(open);
+        }}
+        size="md"
+        isDismissable={!isRollbackPending}
+      >
+        <ModalContent>
+          {(closeModal) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1">
+                Cambios sin guardar
+                <p className="text-sm font-normal text-default-500">
+                  Tienes cambios sin guardar en el evento actual.
+                </p>
+              </ModalHeader>
+              <ModalBody className="text-sm text-default-600">
+                <p>
+                  Si cambias de evento perderás los cambios no guardados.
+                  ¿Qué deseas hacer?
+                </p>
+                {!canSave && hasUnsavedChanges && (
+                  <p className="rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-warning">
+                    No puedes guardar aún:{" "}
+                    {[
+                      !hasExactWeight100 && "el peso total debe ser 100%",
+                      hasValidationErrors && "todos los criterios deben estar asignados a un componente",
+                    ]
+                      .filter(Boolean)
+                      .join(" y ")}
+                    .
+                  </p>
+                )}
+              </ModalBody>
+              <ModalFooter className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                <Button
+                  variant="light"
+                  onPress={closeModal}
+                  isDisabled={isRollbackPending}
+                  className="w-full sm:w-auto"
+                >
+                  Seguir editando
+                </Button>
+                <Button
+                  variant="flat"
+                  color="danger"
+                  isLoading={isRollbackPending}
+                  onPress={handleDiscardAndSwitch}
+                  className="w-full sm:w-auto"
+                >
+                  <RotateCcw className="size-4" />
+                  Cancelar cambios
+                </Button>
+                <Button
+                  color="primary"
+                  variant="shadow"
+                  isDisabled={!canSave || isRollbackPending}
+                  onPress={handleSaveAndSwitch}
+                  className="w-full sm:w-auto"
+                >
+                  <Save className="size-4" />
+                  Guardar cambios
+                </Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+
       <Modal isOpen={isCancelChangesOpen} onOpenChange={setIsCancelChangesOpen} size="md">
         <ModalContent>
           {(closeModal) => (
@@ -1372,9 +1492,15 @@ export const CriteriaList = () => {
                 <Button variant="light" onPress={closeModal} isDisabled={isRollbackPending}>
                   Mantener cambios
                 </Button>
-                <Button color="danger" isLoading={isRollbackPending} onPress={handleCancelChanges}>
-                  Descartar cambios
-                </Button>
+                <Button
+  color="danger"
+  isLoading={isRollbackPending}
+  onPress={() => {
+    void handleCancelChanges();
+  }}
+>
+  Descartar cambios
+</Button>
               </ModalFooter>
             </>
           )}
