@@ -159,8 +159,10 @@ export const CreateComponent = ({
                 const payload = {
                   name: String(rawData.name || "").trim(),
                   description: String(rawData.description || "").trim(),
-                  // UI no longer manages component weight; send 0 for compatibility.
-                  weight: 0,
+                  // The backend requires a small positive weight for components.
+                  // Send the minimal allowed weight (0.01) so creation succeeds
+                  // while the UI ignores component weight for calculations.
+                  weight: 0.01,
                 };
 
                 try {
