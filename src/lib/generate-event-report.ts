@@ -290,7 +290,7 @@ function buildProjectsSummarySheet(wb: ExcelJS.Workbook, projects: Project[]) {
   const ws = wb.addWorksheet("Resumen proyectos");
 
   // Column widths (A–K)
-  const colWidths = [11, 13, 35, 24, 14, 24, 30, 30, 30, 18, 14];
+  const colWidths = [11, 13, 35, 24, 30, 24, 30, 30, 30, 18, 14];
   colWidths.forEach((w, i) => {
     ws.getColumn(i + 1).width = w;
   });
@@ -428,11 +428,11 @@ function buildProjectsSummarySheet(wb: ExcelJS.Workbook, projects: Project[]) {
 function buildParticipantsSheet(wb: ExcelJS.Workbook, projects: Project[]) {
   const ws = wb.addWorksheet("Participantes");
 
-  const colWidths = [10.78, 12.33, 35, 34.89, 30.33, 23.11, 15];
+  const colWidths = [10.78, 12.33, 35, 34.89, 30.33, 23.11, 15, 15];
   colWidths.forEach((w, i) => (ws.getColumn(i + 1).width = w));
 
   // Row 1: title
-  ws.mergeCells("A1:G1");
+  ws.mergeCells("A1:H1");
   ws.getRow(1).height = 28.8;
   const title = ws.getCell("A1");
   title.value = "Participantes";
@@ -443,7 +443,7 @@ function buildParticipantsSheet(wb: ExcelJS.Workbook, projects: Project[]) {
 
   // Row 3: headers
   ws.getRow(3).height = 20;
-  const headers = ["Id Proyecto", "Número", "Nombre proyecto", "Nombre participante", "Email", "Carrera", "Semestre"];
+  const headers = ["Id Proyecto", "Número", "Nombre proyecto", "Nombre participante", "Email", "Carrera", "Semestre", "Estado"];
   headers.forEach((label, i) => {
     const cell = ws.getCell(3, i + 1);
     cell.value = label;
@@ -453,7 +453,7 @@ function buildParticipantsSheet(wb: ExcelJS.Workbook, projects: Project[]) {
     cell.border = thinBorder(["left", "right", "top", "bottom"]);
   });
 
-  ws.autoFilter = { from: "A3", to: "G3" };
+  ws.autoFilter = { from: "A3", to: "H3" };
   ws.views = [{ state: "frozen", xSplit: 0, ySplit: 3 }];
 
   let rowNum = 4;
@@ -468,7 +468,7 @@ function buildParticipantsSheet(wb: ExcelJS.Workbook, projects: Project[]) {
         ? ({ type: "pattern", pattern: "solid", fgColor: { argb: "FFF2F2F2" } } as ExcelJS.Fill)
         : ({ type: "pattern", pattern: "solid", fgColor: { argb: COLORS.white } } as ExcelJS.Fill);
 
-      const values = [p.id, p.number, p.name, participant.name, participant.email, participant.career, participant.semester];
+      const values = [p.id, p.number, p.name, participant.name, participant.email, participant.career, participant.semester, participant.status === "3" ? "Joined" : "Pendiente"];
       values.forEach((val, ci) => {
         const cell = ws.getCell(rowNum, ci + 1);
         cell.value = val as ExcelJS.CellValue;

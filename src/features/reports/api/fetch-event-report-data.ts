@@ -27,11 +27,11 @@ export async function fetchEventReportData(eventId: number): Promise<EventReport
   }) ?? [];
 
   const participants = (project: ProjectWithJurors) => {
-    return (project.pendingParticipants?.filter(participant => participant.status === "3")) ?? []
+    return project.pendingParticipants ?? []
   }
 
   const studentsByProjects: number[] = data.map(proj => {
-    const participant = participants(proj);
+    const participant = proj.participants ?? [];
     return participant.length
   })
 
@@ -40,7 +40,7 @@ export async function fetchEventReportData(eventId: number): Promise<EventReport
   const studentsByCareer = (projects: ProjectWithJurors[]) => {
     return projects
       .flatMap(
-        (project) => project.pendingParticipants?.filter((participant) => participant.status === "3") ?? []
+        (project) => project.pendingParticipants ?? []
       )
       .reduce<Record<string, number>>((acc, participant) => {
         const career = participant.career ?? "Sin carrera";
@@ -56,7 +56,7 @@ export async function fetchEventReportData(eventId: number): Promise<EventReport
     underReview: projectsReview.length, 
     changesRequired: projectsRequire.length,
     projectsByCategory: categories,
-    participants: {noStudents: numStudents, ...studentsByCareer(data)},
+    participants: {noStudents_confirmed: numStudents, ...studentsByCareer(data)},
     totalJuries: dataJuries?.length ?? 0,
   }
 
@@ -94,6 +94,7 @@ export async function fetchEventReportData(eventId: number): Promise<EventReport
       email: participant.email ?? "",
       career: participant.career ?? "",
       semester: participant.semester ?? "",
+      status: participant.status ?? "",
     })) ?? [],
     jurorAssignments: jurorsInfo(proj, dataJuries),
   }));

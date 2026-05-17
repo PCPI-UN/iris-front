@@ -11,6 +11,7 @@ export interface Participant {
   email: string;
   career: string;
   semester: string;
+  status: string;
 }
 
 export interface Juror {
@@ -50,7 +51,7 @@ export interface MissingDocumentEntry {
 }
 
 interface StudentStats {
-  noStudents: number;
+  noStudents_confirmed: number;
   [careerName: string]: number; 
 }
 

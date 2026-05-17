@@ -16,7 +16,7 @@ export const MOCK_EVENT_REPORT: EventReportData = {
       { category: "Robótica", count: 2 },
       { category: "Ciencia de Datos", count: 2 },
     ],
-    participants: {noStudents: 70, ingIndustrial: 10, ingSistemas: 50, ingMecanica: 10},
+    participants: {noStudents_confirmed: 70, ingIndustrial: 10, ingSistemas: 50, ingMecanica: 10},
     totalJuries: 0
   },
   projects: [
@@ -34,10 +34,10 @@ export const MOCK_EVENT_REPORT: EventReportData = {
       jurors: [],
       createdAt: "2025-03-01T10:00:00Z",
       participants: [
-        { name: "Ana García", email: "ana@uni.edu", career: "Ing. de Sistemas", semester: "2" },
-        { name: "Luis Pérez", email: "luis@uni.edu", career: "Ing. de Sistemas", semester: "2" },
-        { name: "María López", email: "maria@uni.edu", career: "Ciencias de Datos", semester: "4" },
-        { name: "Carlos Ruiz", email: "carlos@uni.edu", career: "Ing. de Software", semester: "7" },
+        { name: "Ana García", email: "ana@uni.edu", career: "Ing. de Sistemas", semester: "2", status: "3" },
+        { name: "Luis Pérez", email: "luis@uni.edu", career: "Ing. de Sistemas", semester: "2", status: "3" },
+        { name: "María López", email: "maria@uni.edu", career: "Ciencias de Datos", semester: "4", status: "3" },
+        { name: "Carlos Ruiz", email: "carlos@uni.edu", career: "Ing. de Software", semester: "7", status: "3" },
       ],
       jurorAssignments: [
         { name: "Dr. Hernández", email: "hernandez@uni.edu", evaluated: true },
@@ -58,9 +58,9 @@ export const MOCK_EVENT_REPORT: EventReportData = {
       jurors: [],
       createdAt: "2025-03-02T11:30:00Z",
       participants: [
-        { name: "Pedro Jiménez", email: "pedro@uni.edu", career: "Mecatrónica", semester: "4" },
-        { name: "Sofía Torres", email: "sofia@uni.edu", career: "Mecatrónica", semester: "4" },
-        { name: "Andrés Silva", email: "andres@uni.edu", career: "Electrónica", semester: "2" },
+        { name: "Pedro Jiménez", email: "pedro@uni.edu", career: "Mecatrónica", semester: "4", status: "3" },
+        { name: "Sofía Torres", email: "sofia@uni.edu", career: "Mecatrónica", semester: "4", status: "3" },
+        { name: "Andrés Silva", email: "andres@uni.edu", career: "Electrónica", semester: "2", status: "3" },
       ],
       jurorAssignments: [
         { name: "Ing. Vargas", email: "vargas@uni.edu", evaluated: false },
@@ -80,8 +80,8 @@ export const MOCK_EVENT_REPORT: EventReportData = {
       jurors: [],
       createdAt: "2025-03-03T08:00:00Z",
       participants: [
-        { name: "Valentina Ríos", email: "vrios@uni.edu", career: "Ciencias de Datos", semester: "7" },
-        { name: "Diego Moreno", email: "dmoreno@uni.edu", career: "Estadística", semester: "7" },
+        { name: "Valentina Ríos", email: "vrios@uni.edu", career: "Ciencias de Datos", semester: "7", status: "3" },
+        { name: "Diego Moreno", email: "dmoreno@uni.edu", career: "Estadística", semester: "7", status: "3" },
       ],
       jurorAssignments: [
         { name: "Dr. Castillo", email: "castillo@uni.edu", evaluated: true },
