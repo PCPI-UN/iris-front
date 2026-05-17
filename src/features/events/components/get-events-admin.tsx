@@ -51,7 +51,10 @@ export const GetEventsAdmin = () => {
             <CardBody className="p-6 space-y-4">
               <div className="space-y-2">
                 <h3 className="text-xl font-semibold">{event.name}</h3>
-                <p className="text-sm text-default-500">{event.description}</p>
+                <p className="text-sm text-default-500">
+                  {event.description?.slice(0, 200)}
+                  {event.description?.length > 200 && "..."}
+                </p>
               </div>
 
               <div className="flex flex-col gap-2 text-sm">
@@ -95,11 +98,10 @@ export const GetEventsAdmin = () => {
               <div className="flex items-center justify-between p-1">
                 <span className="text-sm text-default-400">Evaluations:</span>
                 <span
-                  className={`text-sm font-medium ${
-                    event.evaluationsOpened
+                  className={`text-sm font-medium ${event.evaluationsOpened
                       ? "text-green-600"
                       : "text-gray-400"
-                  }`}
+                    }`}
                 >
                   {event.evaluationsOpened ? "Open" : "Closed"}
                 </span>
