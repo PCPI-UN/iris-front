@@ -155,8 +155,8 @@ export const GetEventsAdmin = () => {
                 <div className="space-y-2">
                   <h3 className="text-xl font-semibold">{event.name}</h3>
                   <p className="text-sm text-default-500">
-                    {event.description?.slice(0, 200)}
-                    {event.description?.length > 200 && "…"}
+                    {event.description?.slice(0, 100)}
+                    {event.description?.length > 100 && "…"}
                   </p>
                 </div>
 
