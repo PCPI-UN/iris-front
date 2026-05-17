@@ -2,7 +2,7 @@
 
 import { useQueryClient } from "@tanstack/react-query";
 import { useSearchParams, useRouter } from "next/navigation";
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { Calendar, Users, Check, Eye } from "lucide-react";
 import { Snippet } from "@/components/ui/snippet";
 import { Card, CardBody } from "@/components/ui/card";
@@ -45,7 +45,7 @@ export const GetEventsAdmin = () => {
 
   const now = Date.now();
 
-  const filteredEvents = useMemo(() => {
+  const filteredEvents = (() => {
     if (filter === "all") return events;
     if (filter === "drafts") return events.filter((e) => e.isPubliclyJoinable === false);
     if (filter === "past") return events.filter((e) => {
@@ -57,7 +57,7 @@ export const GetEventsAdmin = () => {
       const startTs = e.startDate ? Date.parse(e.startDate) : 0;
       return e.active && startTs > now;
     });
-  }, [events, filter, now]);
+  })();
 
   const handlePageChange = (newPage: number) => {
     router.push(`?page=${newPage}`);
