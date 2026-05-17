@@ -2,6 +2,7 @@ import { getProjects, ProjectWithJurors } from "@/features/projects/api/get-proj
 import type { CategoryCount, DashboardStats, EventReportData, Project } from "../../../types/report-types";
 import { EventJuror, getEventJuries } from "@/features/juries/api/get-event-juries";
 import { getEvent } from "@/features/events/api/get-event";
+import { ProjectParticipant } from "@/types/api";
 
 export async function fetchEventReportData(eventId: number): Promise<EventReportData> {
   const projectsQuery = await getProjects({ page: 1, eventId });
@@ -18,6 +19,8 @@ export async function fetchEventReportData(eventId: number): Promise<EventReport
   const projectsRequire = data.filter(data => data.state === "REQUEST_CHANGES");
   const projectsReview = data.filter(data => data.state === "UNDER_REVIEW");
 
+  console.log(data)
+
   // Map categories
   const categories: CategoryCount[] = dataEvent.categories?.map(category => {
     return {
@@ -26,11 +29,28 @@ export async function fetchEventReportData(eventId: number): Promise<EventReport
     }
   }) ?? [];
 
+  const participants = (project: ProjectWithJurors) => {
+    return (project.pendingParticipants?.filter(participant => participant.status === "3")) ?? []
+  }
+
   const studentsByProjects: number[] = data.map(proj => {
-    return proj.participants.length
+    const participant = participants(proj);
+    return participant.length
   })
 
   const numStudents = studentsByProjects.reduce((acc, curr) => acc + curr, 0)
+  
+  const studentsByCareer = (projects: ProjectWithJurors[]) => {
+    return projects
+      .flatMap(
+        (project) => project.pendingParticipants?.filter((participant) => participant.status === "3") ?? []
+      )
+      .reduce<Record<string, number>>((acc, participant) => {
+        const career = participant.career ?? "Sin carrera";
+        acc[career] = (acc[career] || 0) + 1;
+        return acc;
+      }, {});
+  }
 
   const dashboardData: DashboardStats = { 
     totalProjects: data.length, 
@@ -39,7 +59,7 @@ export async function fetchEventReportData(eventId: number): Promise<EventReport
     underReview: projectsReview.length, 
     changesRequired: projectsRequire.length,
     projectsByCategory: categories,
-    participants: {noStudents: numStudents},
+    participants: {noStudents: numStudents, ...studentsByCareer(data)},
     totalJuries: dataJuries?.length ?? 0,
   }
 
@@ -62,9 +82,8 @@ export async function fetchEventReportData(eventId: number): Promise<EventReport
     name: proj.name,
     category: dataEvent.categories?.find(cat => proj.courseId === cat.id)?.name ?? "NaN",
     status: proj.state,
-    members: proj.participants.length,
-    description: proj.description ?? "",
-    documents: [],
+    members: participants(proj).length,
+    documents: proj.documents,
     jurors: proj.jurors?.map(juror => ({ 
       id: Number(juror.id), 
       firstName: juror.firstName ?? "", 
@@ -72,11 +91,12 @@ export async function fetchEventReportData(eventId: number): Promise<EventReport
       email: juror.email ?? "" 
     })) ?? [],
     createdAt: new Date(proj.createdAt).toISOString(),
-    participants: proj.participants?.map(participant => ({
+    participants: participants(proj).map(participant => ({
 
       name: `${participant.firstName ?? ""} ${participant.lastName ?? ""}`.trim(),
       email: participant.email ?? "",
       career: participant.career ?? "",
+      semester: participant.semester ?? "",
     })) ?? [],
     jurorAssignments: jurorsInfo(proj, dataJuries),
   }));

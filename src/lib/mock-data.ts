@@ -34,10 +34,10 @@ export const MOCK_EVENT_REPORT: EventReportData = {
       jurors: [],
       createdAt: "2025-03-01T10:00:00Z",
       participants: [
-        { name: "Ana García", email: "ana@uni.edu", career: "Ing. de Sistemas" },
-        { name: "Luis Pérez", email: "luis@uni.edu", career: "Ing. de Sistemas" },
-        { name: "María López", email: "maria@uni.edu", career: "Ciencias de Datos" },
-        { name: "Carlos Ruiz", email: "carlos@uni.edu", career: "Ing. de Software" },
+        { name: "Ana García", email: "ana@uni.edu", career: "Ing. de Sistemas", semester: "2" },
+        { name: "Luis Pérez", email: "luis@uni.edu", career: "Ing. de Sistemas", semester: "2" },
+        { name: "María López", email: "maria@uni.edu", career: "Ciencias de Datos", semester: "4" },
+        { name: "Carlos Ruiz", email: "carlos@uni.edu", career: "Ing. de Software", semester: "7" },
       ],
       jurorAssignments: [
         { name: "Dr. Hernández", email: "hernandez@uni.edu", evaluated: true },
@@ -58,9 +58,9 @@ export const MOCK_EVENT_REPORT: EventReportData = {
       jurors: [],
       createdAt: "2025-03-02T11:30:00Z",
       participants: [
-        { name: "Pedro Jiménez", email: "pedro@uni.edu", career: "Mecatrónica" },
-        { name: "Sofía Torres", email: "sofia@uni.edu", career: "Mecatrónica" },
-        { name: "Andrés Silva", email: "andres@uni.edu", career: "Electrónica" },
+        { name: "Pedro Jiménez", email: "pedro@uni.edu", career: "Mecatrónica", semester: "4" },
+        { name: "Sofía Torres", email: "sofia@uni.edu", career: "Mecatrónica", semester: "4" },
+        { name: "Andrés Silva", email: "andres@uni.edu", career: "Electrónica", semester: "2" },
       ],
       jurorAssignments: [
         { name: "Ing. Vargas", email: "vargas@uni.edu", evaluated: false },
@@ -80,8 +80,8 @@ export const MOCK_EVENT_REPORT: EventReportData = {
       jurors: [],
       createdAt: "2025-03-03T08:00:00Z",
       participants: [
-        { name: "Valentina Ríos", email: "vrios@uni.edu", career: "Ciencias de Datos" },
-        { name: "Diego Moreno", email: "dmoreno@uni.edu", career: "Estadística" },
+        { name: "Valentina Ríos", email: "vrios@uni.edu", career: "Ciencias de Datos", semester: "7" },
+        { name: "Diego Moreno", email: "dmoreno@uni.edu", career: "Estadística", semester: "7" },
       ],
       jurorAssignments: [
         { name: "Dr. Castillo", email: "castillo@uni.edu", evaluated: true },

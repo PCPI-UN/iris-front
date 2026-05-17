@@ -298,14 +298,14 @@ function buildDashboardSheet(
 function buildProjectsSummarySheet(wb: ExcelJS.Workbook, projects: Project[]) {
   const ws = wb.addWorksheet("Resumen proyectos");
 
-  // Column widths (A–J)
-  const colWidths = [11, 13, 35, 24, 14, 24, 18, 18, 14, 30, 20];
+  // Column widths (A–K)
+  const colWidths = [11, 13, 35, 24, 14, 24, 30, 30, 30, 18, 14];
   colWidths.forEach((w, i) => {
     ws.getColumn(i + 1).width = w;
   });
 
   // Row 1: Sheet title
-  ws.mergeCells("A1:J1");
+  ws.mergeCells("A1:K1");
   ws.getRow(1).height = 29;
   const title = ws.getCell("A1");
   title.value = "Proyectos";
@@ -322,9 +322,10 @@ function buildProjectsSummarySheet(wb: ExcelJS.Workbook, projects: Project[]) {
     { label: "Categoría", align: "left" },
     { label: "Estado", align: "center" },
     { label: "Miembros", align: "center" },
-    { label: "Documentos", align: "center" },
+    { label: "LOGO", align: "center" },
+    { label: "POSTER", align: "center" },
+    { label: "DOCUMENTOS DE SOPORTE", align: "center" },
     { label: "Jurados", align: "center" },
-    { label: "Descripción", align: "left" },
     { label: "Fecha", align: "center" },
   ] as const;
 
@@ -338,7 +339,7 @@ function buildProjectsSummarySheet(wb: ExcelJS.Workbook, projects: Project[]) {
   });
 
   // Add auto-filter
-  ws.autoFilter = { from: "A3", to: "J3" };
+  ws.autoFilter = { from: "A3", to: "K3" };
 
   // Freeze pane below header
   ws.views = [{ state: "frozen", xSplit: 0, ySplit: 3 }];
@@ -361,14 +362,18 @@ function buildProjectsSummarySheet(wb: ExcelJS.Workbook, projects: Project[]) {
       p.category ? p.category : "",
       p.status,
       p.members,
-      p.documents.length,
+      "",
+      "",
+      "",
       p.jurors.length,
-      p.description,
       new Date(p.createdAt),
     ];
 
     values.forEach((val, ci) => {
       const cell = ws.getCell(rowNum, ci + 1);
+      const logo = p.documents.find(d => d.type === "LOGO");
+      const poster = p.documents.find(d => d.type === "POSTER");
+      const support = p.documents.find(d => d.type === "SUPPORTING_DOCUMENT");
       cell.value = val as ExcelJS.CellValue;
       cell.font = { name: "Calibri", size: 11 };
       cell.fill = fill;
@@ -378,6 +383,51 @@ function buildProjectsSummarySheet(wb: ExcelJS.Workbook, projects: Project[]) {
       };
       cell.border = thinBorder(["left", "right", "top", "bottom"]);
       if (ci === 10) cell.numFmt = "dd/mm/yyyy";
+
+      if (ci === 6 && logo) {
+        cell.value = {
+          text: "Logo",
+          hyperlink: logo.url,
+        };
+        cell.font = {
+          name: "Calibri",
+          size: 11,
+          color: { argb: "0563C1" },
+          underline: true,
+        };
+      } else if (ci === 7 && poster) {
+        cell.value = {
+          text: "Poster",
+          hyperlink: poster.url,
+        };
+        cell.font = {
+          name: "Calibri",
+          size: 11,
+          color: { argb: "0563C1" },
+          underline: true,
+        };
+      } else if (ci === 8 && support) {
+        cell.value = {
+          text: "Supporting document",
+          hyperlink: support.url,
+        };
+        cell.font = {
+          name: "Calibri",
+          size: 11,
+          color: { argb: "0563C1" },
+          underline: true,
+        };
+      } else {
+        cell.value = val as ExcelJS.CellValue;
+        cell.font = { name: "Calibri", size: 11 };
+      }
+
+      cell.fill = fill;
+      cell.alignment = {
+        horizontal: ci >= 4 ? "center" : "left",
+        vertical: "middle",
+      };
+
     });
   });
 }
@@ -387,11 +437,11 @@ function buildProjectsSummarySheet(wb: ExcelJS.Workbook, projects: Project[]) {
 function buildParticipantsSheet(wb: ExcelJS.Workbook, projects: Project[]) {
   const ws = wb.addWorksheet("Participantes");
 
-  const colWidths = [10.78, 12.33, 35, 34.89, 30.33, 23.11];
+  const colWidths = [10.78, 12.33, 35, 34.89, 30.33, 23.11, 15];
   colWidths.forEach((w, i) => (ws.getColumn(i + 1).width = w));
 
   // Row 1: title
-  ws.mergeCells("A1:F1");
+  ws.mergeCells("A1:G1");
   ws.getRow(1).height = 28.8;
   const title = ws.getCell("A1");
   title.value = "Participantes";
@@ -401,8 +451,8 @@ function buildParticipantsSheet(wb: ExcelJS.Workbook, projects: Project[]) {
   ws.getRow(2).height = 4;
 
   // Row 3: headers
-  ws.getRow(3).height = 19.95;
-  const headers = ["Id Proyecto", "Número", "Nombre proyecto", "Nombre participante", "Email", "Carrera"];
+  ws.getRow(3).height = 20;
+  const headers = ["Id Proyecto", "Número", "Nombre proyecto", "Nombre participante", "Email", "Carrera", "Semestre"];
   headers.forEach((label, i) => {
     const cell = ws.getCell(3, i + 1);
     cell.value = label;
@@ -412,7 +462,7 @@ function buildParticipantsSheet(wb: ExcelJS.Workbook, projects: Project[]) {
     cell.border = thinBorder(["left", "right", "top", "bottom"]);
   });
 
-  ws.autoFilter = { from: "A3", to: "F3" };
+  ws.autoFilter = { from: "A3", to: "G3" };
   ws.views = [{ state: "frozen", xSplit: 0, ySplit: 3 }];
 
   let rowNum = 4;
@@ -420,14 +470,14 @@ function buildParticipantsSheet(wb: ExcelJS.Workbook, projects: Project[]) {
   for (const p of projects) {
     for (const participant of p.participants) {
       const row = ws.getRow(rowNum);
-      row.height = 19.95;
+      row.height = 20;
 
       const isAlternate = globalIdx % 2 === 1;
       const fill = isAlternate
         ? ({ type: "pattern", pattern: "solid", fgColor: { argb: "FFF2F2F2" } } as ExcelJS.Fill)
         : ({ type: "pattern", pattern: "solid", fgColor: { argb: COLORS.white } } as ExcelJS.Fill);
 
-      const values = [p.id, p.number, p.name, participant.name, participant.email, participant.career];
+      const values = [p.id, p.number, p.name, participant.name, participant.email, participant.career, participant.semester];
       values.forEach((val, ci) => {
         const cell = ws.getCell(rowNum, ci + 1);
         cell.value = val as ExcelJS.CellValue;

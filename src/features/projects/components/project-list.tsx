@@ -159,7 +159,7 @@ export const ProjectList = () => {
 
                       {/* Lista de documentos */}
                       <div className="space-y-3 pt-2">
-                        {project.documents.map((doc) => {
+                        {project.documents.map((doc, index) => {
                           const readableType =
                             doc.type === "POSTER"
                               ? "Poster"
@@ -169,7 +169,7 @@ export const ProjectList = () => {
 
                           return (
                             <div
-                              key={doc.url}
+                              key={index}
                               className="w-full flex items-center justify-between p-3 rounded-lg border border-muted/20 bg-muted/5 hover:bg-muted/10 transition-colors cursor-pointer"
                               onClick={() => window.open(doc.url, "_blank")}
                             >

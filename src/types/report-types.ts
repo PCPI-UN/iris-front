@@ -1,3 +1,5 @@
+import { ProjectDocument } from "./api";
+
 export type ProjectStatus =
   | "APPROVED"
   | "UNDER_REVIEW"
@@ -8,6 +10,7 @@ export interface Participant {
   name: string;
   email: string;
   career: string;
+  semester: string;
 }
 
 export interface Juror {
@@ -26,8 +29,8 @@ export interface Project {
   category: string;
   status: ProjectStatus;
   members: number;
-  description: string;
-  documents: [];
+  description?: string;
+  documents: ProjectDocument[];
   jurors: Juror[];
   createdAt: string;
   participants: Participant[];
