@@ -2,7 +2,6 @@ import { getProjects, ProjectWithJurors } from "@/features/projects/api/get-proj
 import type { CategoryCount, DashboardStats, EventReportData, Project } from "../../../types/report-types";
 import { EventJuror, getEventJuries } from "@/features/juries/api/get-event-juries";
 import { getEvent } from "@/features/events/api/get-event";
-import { ProjectParticipant } from "@/types/api";
 
 export async function fetchEventReportData(eventId: number): Promise<EventReportData> {
   const projectsQuery = await getProjects({ page: 1, eventId });
@@ -18,8 +17,6 @@ export async function fetchEventReportData(eventId: number): Promise<EventReport
   const projectsRejected = data.filter(data => data.state === "REJECTED");
   const projectsRequire = data.filter(data => data.state === "REQUEST_CHANGES");
   const projectsReview = data.filter(data => data.state === "UNDER_REVIEW");
-
-  console.log(data)
 
   // Map categories
   const categories: CategoryCount[] = dataEvent.categories?.map(category => {

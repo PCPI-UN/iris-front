@@ -1,6 +1,5 @@
 import { ExportEventReportButton } from '@/features/reports/components/export-event-report-button';
 import { useSearchParams } from 'next/navigation';
-import { useRouter } from 'next/router';
 import { ReactNode } from 'react';
 
 type ContentLayoutProps = {

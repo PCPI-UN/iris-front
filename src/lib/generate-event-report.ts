@@ -38,15 +38,6 @@ function thinBorder(
   return result;
 }
 
-function applyToMergedRange(
-  ws: ExcelJS.Worksheet,
-  topLeft: string,
-  style: ExcelJS.Style
-) {
-  const cell = ws.getCell(topLeft);
-  Object.assign(cell, style);
-}
-
 // Dashboard sheet
 
 function buildDashboardSheet(
