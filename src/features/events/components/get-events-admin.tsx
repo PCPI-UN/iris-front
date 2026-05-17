@@ -2,6 +2,7 @@
 
 import { useQueryClient } from "@tanstack/react-query";
 import { useSearchParams, useRouter } from "next/navigation";
+import { useState, useMemo } from "react";
 import { Calendar, Users, Check, Eye } from "lucide-react";
 import { Snippet } from "@/components/ui/snippet";
 import { Card, CardBody } from "@/components/ui/card";
@@ -22,8 +23,11 @@ export const GetEventsAdmin = () => {
   const router = useRouter();
   const page = searchParams?.get("page") ? Number(searchParams.get("page")) : 1;
 
+  const [filter, setFilter] = useState<"active" | "all" | "drafts" | "past">("active");
+
   const eventsQuery = useEvents({
     page: page,
+    onlyActive: filter === "active" || filter === "past",
   });
 
   if (eventsQuery.isLoading) {
@@ -39,14 +43,36 @@ export const GetEventsAdmin = () => {
 
   if (!events) return null;
 
+  const now = Date.now();
+
+  const filteredEvents = useMemo(() => {
+    if (filter === "all") return events;
+    if (filter === "drafts") return events.filter((e) => e.isPubliclyJoinable === false);
+    if (filter === "past") return events.filter((e) => {
+      const endTs = e.endDate ? Date.parse(e.endDate) : 0;
+      return e.active && endTs > 0 && endTs < now;
+    });
+    // default: active upcoming => active && startDate in future
+    return events.filter((e) => {
+      const startTs = e.startDate ? Date.parse(e.startDate) : 0;
+      return e.active && startTs > now;
+    });
+  }, [events, filter, now]);
+
   const handlePageChange = (newPage: number) => {
     router.push(`?page=${newPage}`);
   };
 
   return (
     <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <button className={`px-3 py-1 rounded ${filter === 'active' ? 'bg-primary-600 text-white' : 'bg-gray-800/30'}`} onClick={() => setFilter('active')}>Activos</button>
+        <button className={`px-3 py-1 rounded ${filter === 'all' ? 'bg-primary-600 text-white' : 'bg-gray-800/30'}`} onClick={() => setFilter('all')}>Todos</button>
+        <button className={`px-3 py-1 rounded ${filter === 'past' ? 'bg-primary-600 text-white' : 'bg-gray-800/30'}`} onClick={() => setFilter('past')}>Pasados</button>
+        <button className={`px-3 py-1 rounded ${filter === 'drafts' ? 'bg-primary-600 text-white' : 'bg-gray-800/30'}`} onClick={() => setFilter('drafts')}>Drafts</button>
+      </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {events.map((event) => (
+        {filteredEvents.map((event) => (
           <Card shadow="sm" key={event.id} className="glass-card">
             <CardBody className="p-6 space-y-4">
               <div className="space-y-2">
