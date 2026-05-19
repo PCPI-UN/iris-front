@@ -1,10 +1,4 @@
-import {
-  Award,
-  Calendar,
-  Clock,
-  MapPin,
-  Eye,
-} from "lucide-react";
+import { Award, Calendar, Clock, MapPin, Eye } from "lucide-react";
 import { Button } from "@heroui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { Event, EventType } from "@/types/api";
@@ -99,12 +93,12 @@ export const EventCardExpanded = ({
           </div>
 
           <div className="flex space-y-4 w-full ">
-            <div className="rounded-lg border border-default-200 w-fbg-content1/30 flex flex-col lg:flex-row justify-between  p-2 w-full">
+            <div className="rounded-lg border items-center justify-between border-default-200 w-fbg-content1/30 flex flex-col lg:flex-row self-center p-2 w-full">
               <span className="text-md font-semibold m-3 flex items-center gap-2 sm:text-small ">
                 {event.eventType === EventType.Competition ? (
                   <>
                     {getEventKindIcon(event.eventType)}
-                    <span>Mi equipo</span>
+                    {roleName === "Juror" ? "Ver equipos" : "Mi equipo"}
                   </>
                 ) : (
                   <>
@@ -114,25 +108,30 @@ export const EventCardExpanded = ({
                 )}
               </span>
 
-              <Button
-                onPress={() => onGoDashboard(String(event.id))}
-                color={event.active ? "primary" : "default"}
-                className={`w-fit self-center ${
-                  event.active
-                    ? "hover:scale-[1.01]"
-                    : "opacity-70 cursor-not-allowed flex self-center"
-                }`}
-                isDisabled={!event.active}
-              >
-                {<Eye className="size-4" />}
-                {<span className="inline">
-                  {event.active ? getMainButtonLabel(roleName) : "Evento Inactivo"}
-                </span>}
+                <Button
+                  onPress={() => onGoDashboard(String(event.id))}
+                  variant="faded"
+                  color={event.active ? "primary" : "default"}
+                  className={`w-full md:w-fit bg-primary/20 hover:bg-primary/40 font-semibold focus-visible:ring-primary/50                     
+                    ${
+                    event.active
+                      ? "hover:scale-[1.01]"
+                      : "opacity-70 cursor-not-allowed"
+                  }`}
+                  isDisabled={!event.active}
+                >
+                  {event.active
+                    ? roleName === "Juror"
+                      ? event.eventType === EventType.Competition
+                        ? "Ver equipos"
+                        : "Ver proyectos"
+                      : getMainButtonLabel(roleName)
+                    : "Evento Inactivo "}
+                </Button>
 
-                
-              </Button>
+                {/* <ExternalLink className="h-3 w-3" /> */}
+              </div>
             </div>
-          </div>
         </motion.div>
       )}
     </div>

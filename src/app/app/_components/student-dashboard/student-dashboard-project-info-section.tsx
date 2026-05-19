@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Edit2, FolderOpen, Check, X } from "lucide-react";
 import { useNotifications } from "@/components/ui/notifications";
 import { useUpdateProject } from "@/features/projects/api/update-project";
@@ -62,6 +63,8 @@ export const StudentDashboardProjectInfoSection = ({
   };
 
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const nameInputRef = useRef<HTMLInputElement | null>(null);
+  const shouldReduceMotion = useReducedMotion();
 
   const adjustTextareaHeight = () => {
     const el = textareaRef.current;
@@ -72,6 +75,11 @@ export const StudentDashboardProjectInfoSection = ({
 
   useEffect(() => {
     if (isEditing) adjustTextareaHeight();
+    if (isEditing && nameInputRef.current) {
+      // focus the name input when entering edit mode
+      // small delay to ensure element is mounted
+      setTimeout(() => nameInputRef.current?.focus(), 60);
+    }
   }, [isEditing]);
 
   const handleCancel = () => {
@@ -124,79 +132,224 @@ export const StudentDashboardProjectInfoSection = ({
         ) : null
       }
     >
-      <div className="grid grid-cols-1 gap-4">
-        <div className="space-y-1.5">
-          <label
-            htmlFor="project-name"
-            className="text-xs font-semibold uppercase tracking-wide text-default-500"
-          >
-            Nombre del proyecto
-          </label>
+      {shouldReduceMotion ? (
+        // If user prefers reduced motion, render without animation
+        <div className="grid grid-cols-1 gap-4">
+          <div className="space-y-1.5">
+            <label
+              htmlFor="project-name"
+              className="text-xs font-semibold uppercase tracking-wide text-default-500"
+            >
+              Nombre del proyecto
+            </label>
 
-          {isEditing ? (
-            <input
-              id="project-name"
-              type="text"
-              value={editedName}
-              onChange={(e) => setEditedName(e.target.value)}
-              className="w-full rounded-xl border border-default-200 bg-default-50/50 px-4 py-3 font-bold focus:outline-none focus:ring-2 focus:white focus:ring-offset-1 "
-              maxLength={255}
+            {isEditing ? (
+              <input
+                id="project-name"
+                ref={nameInputRef}
+                type="text"
+                value={editedName}
+                onChange={(e) => setEditedName(e.target.value)}
+                className="w-full rounded-xl border border-default-200 bg-default-50/50 px-4 py-3 font-bold focus:outline-none focus:ring-2 focus:white focus:ring-offset-1"
+                maxLength={255}
+              />
+            ) : (
+              <div className="w-full rounded-xl border border-default-200 bg-default-50/50 px-4 py-3 font-bold">
+                {editedName || "Sin nombre"}
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-1.5">
+            <label
+              htmlFor="project-code"
+              className="text-xs font-semibold uppercase tracking-wide text-default-500"
+            >
+              Codigo del proyecto
+            </label>
+
+            <Input
+              id="project-code"
+              value={projectCode || ""}
+              placeholder="Sin codigo asignado"
+              isReadOnly
+              variant="bordered"
+              classNames={{
+                input: "font-semibold text-default-700",
+                inputWrapper:
+                  "bg-default-50/50 border-default-200 data-[hover=true]:border-default-300 text-md",
+              }}
             />
-          ) : (
-            <div className="w-full rounded-xl border border-default-200 bg-default-50/50 px-4 py-3 font-bold">
-              {editedName || "Sin nombre"}
-            </div>
-          )}
+
+          </div>
+
+          <div className="space-y-1.5">
+            <label
+              htmlFor="project-description"
+              className="text-xs font-semibold uppercase tracking-wide text-default-500"
+            >
+              Descripcion
+            </label>
+            {isEditing ? (
+              <textarea
+                id="project-description"
+                ref={textareaRef}
+                value={editedDescription}
+                onChange={(e) => setEditedDescription(e.target.value)}
+                onInput={adjustTextareaHeight}
+                className="w-full rounded-xl border border-default-200 bg-default-50/50 px-4 py-3 text-md leading-relaxed text-default-600 focus:outline-none focus:ring-2 focus:white focus:ring-offset-1 resize-none"
+                maxLength={3000}
+                rows={1}
+              />
+            ) : (
+              <div className="min-h-[72px] w-full rounded-xl border border-default-200 bg-default-50/50 px-4 py-3 text-md leading-relaxed text-default-600">
+                {editedDescription || "Sin descripcion registrada"}
+              </div>
+            )}
+          </div>
         </div>
-
-        <div className="space-y-1.5">
-          <label
-            htmlFor="project-code"
-            className="text-xs font-semibold uppercase tracking-wide text-default-500"
-          >
-            Codigo del proyecto
-          </label>
-
-          <Input
-            id="project-code"
-            value={projectCode || ""}
-            placeholder="Sin codigo asignado"
-            isReadOnly
-            variant="bordered"
-            classNames={{
-              input: "font-semibold text-default-700",
-              inputWrapper:
-                "bg-default-50/50 border-default-200 data-[hover=true]:border-default-300 text-md",
-            }}
-          />
-
-        </div>
-
-        <div className="space-y-1.5">
-          <label
-            htmlFor="project-description"
-            className="text-xs font-semibold uppercase tracking-wide text-default-500"
-          >
-            Descripcion
-          </label>
+      ) : (
+        <AnimatePresence mode="wait" initial={false}>
           {isEditing ? (
-            <textarea
-              id="project-description"
-              ref={textareaRef}
-              value={editedDescription}
-              onChange={(e) => setEditedDescription(e.target.value)}
-              onInput={adjustTextareaHeight}
-              className="w-full rounded-xl border border-default-200 bg-default-50/50 px-4 py-3 text-md leading-relaxed text-default-600 focus:outline-none focus:ring-2 focus:white focus:ring-offset-1 overflow-hidde n resize-none"
-              maxLength={3000}
-              rows={1}
-            />
+            <motion.div
+              layoutId="project-info"
+              key="project-edit"
+              layout
+              initial={{ opacity: 0, y: -8, scale: 0.995 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -6, scale: 0.995 }}
+              transition={{ duration: 0.32, ease: [0.2, 0.8, 0.2, 1] }}
+              className="overflow-hidden"
+            >
+              <div className="grid grid-cols-1 gap-4">
+                <div className="space-y-1.5">
+                  <label
+                    htmlFor="project-name"
+                    className="text-xs font-semibold uppercase tracking-wide text-default-500"
+                  >
+                    Nombre del proyecto
+                  </label>
+
+                  <input
+                    id="project-name"
+                    ref={nameInputRef}
+                    type="text"
+                    value={editedName}
+                    onChange={(e) => setEditedName(e.target.value)}
+                    className="w-full rounded-xl border border-default-200 bg-default-50/50 px-4 py-3 font-bold focus:outline-none focus:ring-2 focus:white focus:ring-offset-1"
+                    maxLength={255}
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label
+                    htmlFor="project-code"
+                    className="text-xs font-semibold uppercase tracking-wide text-default-500"
+                  >
+                    Codigo del proyecto
+                  </label>
+
+                  <Input
+                    id="project-code"
+                    value={projectCode || ""}
+                    placeholder="Sin codigo asignado"
+                    isReadOnly
+                    variant="bordered"
+                    classNames={{
+                      input: "font-semibold text-default-700",
+                      inputWrapper:
+                        "bg-default-50/50 border-default-200 data-[hover=true]:border-default-300 text-md",
+                    }}
+                  />
+
+                </div>
+
+                <div className="space-y-1.5">
+                  <label
+                    htmlFor="project-description"
+                    className="text-xs font-semibold uppercase tracking-wide text-default-500"
+                  >
+                    Descripcion
+                  </label>
+
+                  <textarea
+                    id="project-description"
+                    ref={textareaRef}
+                    value={editedDescription}
+                    onChange={(e) => setEditedDescription(e.target.value)}
+                    onInput={adjustTextareaHeight}
+                    className="w-full rounded-xl border min-h-[20rem] border-default-200 bg-default-50/50 px-4 py-3 text-md leading-relaxed text-default-600 focus:outline-none focus:ring-2 focus:white focus:ring-offset-1 resize-none"
+                    maxLength={3000}
+                    rows={1}
+                  />
+                </div>
+              </div>
+            </motion.div>
           ) : (
-            <div className="min-h-[72px] w-full rounded-xl border border-default-200 bg-default-50/50 px-4 py-3 text-md leading-relaxed text-default-600">
-              {editedDescription || "Sin descripcion registrada"}
-            </div>
+            <motion.div
+              layoutId="project-info"
+              key="project-view"
+              layout
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.22, ease: "linear" }}
+              className="overflow-hidden"
+            >
+              <div className="grid grid-cols-1 gap-4">
+                <div className="space-y-1.5">
+                  <label
+                    htmlFor="project-name"
+                    className="text-xs font-semibold uppercase tracking-wide text-default-500"
+                  >
+                    Nombre del proyecto
+                  </label>
+
+                  <div className="w-full rounded-xl border border-default-200 bg-default-50/50 px-4 py-3 font-bold">
+                    {editedName || "Sin nombre"}
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label
+                    htmlFor="project-code"
+                    className="text-xs font-semibold uppercase tracking-wide text-default-500"
+                  >
+                    Codigo del proyecto
+                  </label>
+
+                  <Input
+                    id="project-code"
+                    value={projectCode || ""}
+                    placeholder="Sin codigo asignado"
+                    isReadOnly
+                    variant="bordered"
+                    classNames={{
+                      input: "font-semibold text-default-700",
+                      inputWrapper:
+                        "bg-default-50/50 border-default-200 data-[hover=true]:border-default-300 text-md",
+                    }}
+                  />
+
+                </div>
+
+                <div className="space-y-1.5">
+                  <label
+                    htmlFor="project-description"
+                    className="text-xs font-semibold uppercase tracking-wide text-default-500"
+                  >
+                    Descripcion
+                  </label>
+
+                  <div className="min-h-[72px] w-full rounded-xl border border-default-200 bg-default-50/50 px-4 py-3 text-md leading-relaxed text-default-600">
+                    {editedDescription || "Sin descripcion registrada"}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
           )}
-        </div>
-      </div>
+        </AnimatePresence>
+      )}
     </StudentDashboardSectionCard>
   );
 };

@@ -415,239 +415,317 @@ export const StudentDashboardTeamSection = ({
                         aria-hidden="true"
                       />
                       <div className="flex flex-col w-full gap-2">
-                        <motion.div
-                          layout
-                          className="min-w-0 flex-1 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
-                          transition={{ duration: 0.2, ease: "easeOut" }}
-                        >
-                          {/* Nombre */}
-                          <div className="space-y-1">
-                            <label
-                              htmlFor={`participant-name-${idx}`}
-                              className="flex items-center gap-2 text-default-500"
+                        <AnimatePresence initial={false} mode="wait">
+                          {isEditingThis ? (
+                            <motion.div
+                              key={`participant-edit-${participant.email}`}
+                              initial={{ opacity: 0, y: -8 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: -8 }}
+                              transition={{ duration: 0.22, ease: "easeOut" }}
+                              className="min-w-0 flex-1 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
                             >
-                              <User className="h-4 w-4" aria-hidden="true" />
-                              <span className="text-xs font-semibold uppercase tracking-wide">
-                                Nombre
-                              </span>
-                            </label>
+                              {/* Nombre (edit) */}
+                              <div className="space-y-1">
+                                <label
+                                  htmlFor={`participant-name-${idx}`}
+                                  className="flex items-center gap-2 text-default-500"
+                                >
+                                  <User className="h-4 w-4" aria-hidden="true" />
+                                  <span className="text-xs font-semibold uppercase tracking-wide">
+                                    Nombre
+                                  </span>
+                                </label>
 
-                            {isEditingThis ? (
-                              <Input
-                                size="sm"
-                                value={draftParticipant!.firstName}
-                                onValueChange={(value) =>
-                                  setDraftParticipant({
-                                    ...draftParticipant!,
-                                    firstName: value,
-                                  })
-                                }
-                                placeholder="Nombre"
-                                className="text-sm"
-                              />
-                            ) : (
-                              <div
-                                id={`participant-name-${idx}`}
-                                className="text-sm w-full font-medium md:text-base"
-                              >
-                                {participant.firstName}
+                                <Input
+                                  size="sm"
+                                  value={draftParticipant!.firstName}
+                                  onValueChange={(value) =>
+                                    setDraftParticipant({
+                                      ...draftParticipant!,
+                                      firstName: value,
+                                    })
+                                  }
+                                  placeholder="Nombre"
+                                  className="text-sm"
+                                />
                               </div>
-                            )}
-                          </div>
 
-                          {/* Apellido */}
-                          <div className="space-y-1">
-                            <label
-                              htmlFor={`participant-lastname-${idx}`}
-                              className="flex items-center gap-2 text-default-500"
-                            >
-                              <User className="h-4 w-4" aria-hidden="true" />
-                              <span className="text-xs font-semibold uppercase tracking-wide">
-                                Apellido
-                              </span>
-                            </label>
+                              {/* Apellido (edit) */}
+                              <div className="space-y-1">
+                                <label
+                                  htmlFor={`participant-lastname-${idx}`}
+                                  className="flex items-center gap-2 text-default-500"
+                                >
+                                  <User className="h-4 w-4" aria-hidden="true" />
+                                  <span className="text-xs font-semibold uppercase tracking-wide">
+                                    Apellido
+                                  </span>
+                                </label>
 
-                            {isEditingThis ? (
-                              <Input
-                                size="sm"
-                                value={draftParticipant!.lastName}
-                                onValueChange={(value) =>
-                                  setDraftParticipant({
-                                    ...draftParticipant!,
-                                    lastName: value,
-                                  })
-                                }
-                                placeholder="Apellido"
-                                className="text-sm"
-                              />
-                            ) : (
-                              <div
-                                id={`participant-lastname-${idx}`}
-                                className="text-sm w-full font-medium md:text-base"
-                              >
-                                {participant.lastName}
+                                <Input
+                                  size="sm"
+                                  value={draftParticipant!.lastName}
+                                  onValueChange={(value) =>
+                                    setDraftParticipant({
+                                      ...draftParticipant!,
+                                      lastName: value,
+                                    })
+                                  }
+                                  placeholder="Apellido"
+                                  className="text-sm"
+                                />
                               </div>
-                            )}
-                          </div>
 
-                          {/* Correo (no editable) */}
-                          <div className="space-y-1">
-                            <label
-                              htmlFor={`participant-email-${idx}`}
-                              className="flex items-center gap-2 text-default-500"
-                            >
-                              <Mail className="h-4 w-4" aria-hidden="true" />
-                              <span className="text-xs font-semibold uppercase tracking-wide">
-                                Correo
-                              </span>
-                            </label>
-                            <div
-                              id={`participant-email-${idx}`}
-                              className="w-full break-words text-sm"
-                            >
-                              {participant.email}
-                            </div>
-                          </div>
-
-                          {/* Semestre */}
-                          <div className="space-y-1">
-                            <label
-                              htmlFor={`participant-semester-${idx}`}
-                              className="flex items-center gap-2 text-default-500"
-                            >
-                              <Scale className="h-4 w-4" aria-hidden="true" />
-                              <span className="text-xs font-semibold uppercase tracking-wide">
-                                Semestre
-                              </span>
-                            </label>
-
-                            {isEditingThis ? (
-                              <Select
-                                size="sm"
-                                selectedKeys={
-                                  draftParticipant!.semester
-                                    ? [String(draftParticipant!.semester)]
-                                    : []
-                                }
-                                onSelectionChange={(keys) => {
-                                  const selected = Array.from(
-                                    keys,
-                                  )[0] as string;
-                                  setDraftParticipant({
-                                    ...draftParticipant!,
-                                    semester: Number(selected),
-                                  });
-                                }}
-                                placeholder="Selecciona semestre"
-                                className="text-sm"
-                              >
-                                {SEMESTER_OPTIONS.map((option) => (
-                                  <SelectItem key={option.value}>
-                                    {option.label}
-                                  </SelectItem>
-                                ))}
-                              </Select>
-                            ) : (
-                              <div
-                                id={`participant-semester-${idx}`}
-                                className="text-sm italic text-default-500"
-                              >
-                                {SEMESTER_OPTIONS.find(
-                                  (o) =>
-                                    o.value === String(participant.semester),
-                                )?.label || "Sin semestre"}
+                              {/* Correo (no editable) */}
+                              <div className="space-y-1">
+                                <label
+                                  htmlFor={`participant-email-${idx}`}
+                                  className="flex items-center gap-2 text-default-500"
+                                >
+                                  <Mail className="h-4 w-4" aria-hidden="true" />
+                                  <span className="text-xs font-semibold uppercase tracking-wide">
+                                    Correo
+                                  </span>
+                                </label>
+                                <div
+                                  id={`participant-email-${idx}`}
+                                  className="w-full break-words text-sm"
+                                >
+                                  {participant.email}
+                                </div>
                               </div>
-                            )}
-                          </div>
 
-                          {/* Carrera */}
-                          <div className="space-y-1">
-                            <label
-                              htmlFor={`participant-career-${idx}`}
-                              className="flex items-center gap-2 text-default-500"
-                            >
-                              <BookOpen
-                                className="h-4 w-4"
-                                aria-hidden="true"
-                              />
-                              <span className="text-xs font-semibold uppercase tracking-wide">
-                                Carrera
-                              </span>
-                            </label>
+                              {/* Semestre (edit) */}
+                              <div className="space-y-1">
+                                <label
+                                  htmlFor={`participant-semester-${idx}`}
+                                  className="flex items-center gap-2 text-default-500"
+                                >
+                                  <Scale className="h-4 w-4" aria-hidden="true" />
+                                  <span className="text-xs font-semibold uppercase tracking-wide">
+                                    Semestre
+                                  </span>
+                                </label>
 
-                            {isEditingThis ? (
-                              <Select
-                                size="sm"
-                                selectedKeys={
-                                  draftParticipant!.career
-                                    ? [draftParticipant!.career]
-                                    : []
-                                }
-                                onSelectionChange={(keys) => {
-                                  const selected = Array.from(
-                                    keys,
-                                  )[0] as string;
-                                  setDraftParticipant({
-                                    ...draftParticipant!,
-                                    career: selected,
-                                  });
-                                }}
-                                placeholder="Selecciona carrera"
-                                className="text-sm"
-                              >
-                                {CAREER_OPTIONS.map((option) => (
-                                  <SelectItem key={option.value}>
-                                    {option.label}
-                                  </SelectItem>
-                                ))}
-                              </Select>
-                            ) : (
-                              <div
-                                id={`participant-career-${idx}`}
-                                className="text-sm italic text-default-500"
-                              >
-                                {CAREER_OPTIONS.find(
-                                  (o) => o.value === participant.career,
-                                )?.label || "Sin carrera"}
+                                <Select
+                                  size="sm"
+                                  selectedKeys={
+                                    draftParticipant!.semester
+                                      ? [String(draftParticipant!.semester)]
+                                      : []
+                                  }
+                                  onSelectionChange={(keys) => {
+                                    const selected = Array.from(keys)[0] as string;
+                                    setDraftParticipant({
+                                      ...draftParticipant!,
+                                      semester: Number(selected),
+                                    });
+                                  }}
+                                  placeholder="Selecciona semestre"
+                                  className="text-sm"
+                                >
+                                  {SEMESTER_OPTIONS.map((option) => (
+                                    <SelectItem key={option.value}>{option.label}</SelectItem>
+                                  ))}
+                                </Select>
                               </div>
-                            )}
-                          </div>
 
-                          {/* Codigo estudiantil */}
-                          <div className="space-y-1">
-                            <label
-                              htmlFor={`participant-code-${idx}`}
-                              className="flex items-center gap-2 text-default-500"
-                            >
-                              <Hash className="h-4 w-4" aria-hidden="true" />
-                              <span className="text-xs font-semibold uppercase tracking-wide">
-                                Codigo estudiantil
-                              </span>
-                            </label>
+                              {/* Carrera (edit) */}
+                              <div className="space-y-1">
+                                <label
+                                  htmlFor={`participant-career-${idx}`}
+                                  className="flex items-center gap-2 text-default-500"
+                                >
+                                  <BookOpen className="h-4 w-4" aria-hidden="true" />
+                                  <span className="text-xs font-semibold uppercase tracking-wide">
+                                    Carrera
+                                  </span>
+                                </label>
 
-                            {isEditingThis ? (
-                              <Input
-                                size="sm"
-                                value={draftParticipant!.ParticipantCode || ""}
-                                onValueChange={(value) =>
-                                  setDraftParticipant({
-                                    ...draftParticipant!,
-                                    ParticipantCode: value,
-                                  })
-                                }
-                                placeholder="Codigo estudiantil"
-                                className="text-sm"
-                              />
-                            ) : (
-                              <div
-                                id={`participant-code-${idx}`}
-                                className="text-sm italic text-default-500"
-                              >
-                                {participant.ParticipantCode || "Sin codigo"}
+                                <Select
+                                  size="sm"
+                                  selectedKeys={
+                                    draftParticipant!.career
+                                      ? [draftParticipant!.career]
+                                      : []
+                                  }
+                                  onSelectionChange={(keys) => {
+                                    const selected = Array.from(keys)[0] as string;
+                                    setDraftParticipant({
+                                      ...draftParticipant!,
+                                      career: selected,
+                                    });
+                                  }}
+                                  placeholder="Selecciona carrera"
+                                  className="text-sm"
+                                >
+                                  {CAREER_OPTIONS.map((option) => (
+                                    <SelectItem key={option.value}>{option.label}</SelectItem>
+                                  ))}
+                                </Select>
                               </div>
-                            )}
-                          </div>
-                        </motion.div>
+
+                              {/* Codigo estudiantil (edit) */}
+                              <div className="space-y-1">
+                                <label
+                                  htmlFor={`participant-code-${idx}`}
+                                  className="flex items-center gap-2 text-default-500"
+                                >
+                                  <Hash className="h-4 w-4" aria-hidden="true" />
+                                  <span className="text-xs font-semibold uppercase tracking-wide">
+                                    Codigo estudiantil
+                                  </span>
+                                </label>
+
+                                <Input
+                                  size="sm"
+                                  value={draftParticipant!.ParticipantCode || ""}
+                                  onValueChange={(value) =>
+                                    setDraftParticipant({
+                                      ...draftParticipant!,
+                                      ParticipantCode: value,
+                                    })
+                                  }
+                                  placeholder="Codigo estudiantil"
+                                  className="text-sm"
+                                />
+                              </div>
+                            </motion.div>
+                          ) : (
+                            <motion.div
+                              key={`participant-view-${participant.email}`}
+                              initial={{ opacity: 0, y: -6 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: -6 }}
+                              transition={{ duration: 0.18, ease: "easeOut" }}
+                              className="min-w-0 flex-1 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
+                            >
+                              {/* Nombre (view) */}
+                              <div className="space-y-1">
+                                <label
+                                  htmlFor={`participant-name-${idx}`}
+                                  className="flex items-center gap-2 text-default-500"
+                                >
+                                  <User className="h-4 w-4" aria-hidden="true" />
+                                  <span className="text-xs font-semibold uppercase tracking-wide">
+                                    Nombre
+                                  </span>
+                                </label>
+
+                                <div
+                                  id={`participant-name-${idx}`}
+                                  className="text-sm w-full font-medium md:text-base"
+                                >
+                                  {participant.firstName}
+                                </div>
+                              </div>
+
+                              {/* Apellido (view) */}
+                              <div className="space-y-1">
+                                <label
+                                  htmlFor={`participant-lastname-${idx}`}
+                                  className="flex items-center gap-2 text-default-500"
+                                >
+                                  <User className="h-4 w-4" aria-hidden="true" />
+                                  <span className="text-xs font-semibold uppercase tracking-wide">
+                                    Apellido
+                                  </span>
+                                </label>
+
+                                <div
+                                  id={`participant-lastname-${idx}`}
+                                  className="text-sm w-full font-medium md:text-base"
+                                >
+                                  {participant.lastName}
+                                </div>
+                              </div>
+
+                              {/* Correo (view) */}
+                              <div className="space-y-1">
+                                <label
+                                  htmlFor={`participant-email-${idx}`}
+                                  className="flex items-center gap-2 text-default-500"
+                                >
+                                  <Mail className="h-4 w-4" aria-hidden="true" />
+                                  <span className="text-xs font-semibold uppercase tracking-wide">
+                                    Correo
+                                  </span>
+                                </label>
+                                <div
+                                  id={`participant-email-${idx}`}
+                                  className="w-full break-words text-sm"
+                                >
+                                  {participant.email}
+                                </div>
+                              </div>
+
+                              {/* Semestre (view) */}
+                              <div className="space-y-1">
+                                <label
+                                  htmlFor={`participant-semester-${idx}`}
+                                  className="flex items-center gap-2 text-default-500"
+                                >
+                                  <Scale className="h-4 w-4" aria-hidden="true" />
+                                  <span className="text-xs font-semibold uppercase tracking-wide">
+                                    Semestre
+                                  </span>
+                                </label>
+
+                                <div
+                                  id={`participant-semester-${idx}`}
+                                  className="text-sm italic text-default-500"
+                                >
+                                  {SEMESTER_OPTIONS.find(
+                                    (o) => o.value === String(participant.semester),
+                                  )?.label || "Sin semestre"}
+                                </div>
+                              </div>
+
+                              {/* Carrera (view) */}
+                              <div className="space-y-1">
+                                <label
+                                  htmlFor={`participant-career-${idx}`}
+                                  className="flex items-center gap-2 text-default-500"
+                                >
+                                  <BookOpen className="h-4 w-4" aria-hidden="true" />
+                                  <span className="text-xs font-semibold uppercase tracking-wide">
+                                    Carrera
+                                  </span>
+                                </label>
+
+                                <div
+                                  id={`participant-career-${idx}`}
+                                  className="text-sm italic text-default-500"
+                                >
+                                  {CAREER_OPTIONS.find(
+                                    (o) => o.value === participant.career,
+                                  )?.label || "Sin carrera"}
+                                </div>
+                              </div>
+
+                              {/* Codigo estudiantil (view) */}
+                              <div className="space-y-1">
+                                <label
+                                  htmlFor={`participant-code-${idx}`}
+                                  className="flex items-center gap-2 text-default-500"
+                                >
+                                  <Hash className="h-4 w-4" aria-hidden="true" />
+                                  <span className="text-xs font-semibold uppercase tracking-wide">
+                                    Codigo estudiantil
+                                  </span>
+                                </label>
+
+                                <div
+                                  id={`participant-code-${idx}`}
+                                  className="text-sm italic text-default-500"
+                                >
+                                  {participant.ParticipantCode || "Sin codigo"}
+                                </div>
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                         {/* Actions: Save/Cancel when editing, Edit when not */}
 
                         {canEdit && canEditParticipant(participant.email) && (

@@ -15,6 +15,7 @@ import { StudentDashboardSectionCard } from "./student-dashboard-section-card";
 import { useNotifications } from "@/components/ui/notifications";
 import { api } from "@/lib/api-client";
 import { useRouter } from "next/dist/client/components/navigation";
+import ca from "zod/v4/locales/ca.cjs";
 
 type StudentDashboardDocumentsSectionProps = {
   docsProject: ProjectDocument[];
@@ -225,10 +226,20 @@ export const StudentDashboardDocumentsSection = ({
               accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.png"
               aria-label="Seleccionar archivo de documento"
             />
+          </div>
+        ) : null
+      }
+    >
+      <div className="space-y-3 border-t border-default-200/60 pt-4 mb-8">
+        <div className="sm:flex xs:flex-col justify-between w-full">
+          <p className="text-md font-semibold text-default-600">
+            Documento principal
+          </p>
+          {canEdit && (
             <Button
               size="md"
               variant="flat"
-              className="flex w-full items-center justify-center gap-1.5 text-sm font-semibold bg-sky-200/20 text-sky-300 hover:bg-sky-300/20 dark:hover:text-sky-400 sm:w-auto"
+              className="flex w-full items-center justify-center gap-1.5 text-sm font-semibold bg-sky-200/20 text-sky-300 hover:bg-sky-300/20 dark:hover:text-sky-400 sm:w-auto selected"
               aria-label="Subir documentos del proyecto"
               onPress={handleUploadClick}
               isLoading={isLoading}
@@ -241,14 +252,9 @@ export const StudentDashboardDocumentsSection = ({
                   ? "Subir Poster"
                   : "Subir Poster"}
             </Button>
-          </div>
-        ) : null
-      }
-    >
-      <div className="space-y-3 border-t border-default-200/60 pt-4 mb-8">
-        <p className="text-md font-semibold text-default-600">
-          Documento principal
-        </p>
+          )}
+        </div>
+
         {primaryDocument ? (
           <a
             href={primaryDocument.url}
@@ -314,7 +320,7 @@ export const StudentDashboardDocumentsSection = ({
             <Button
               size="md"
               variant="flat"
-              className="font-semibold flex w-full items-center justify-center text-sm bg-fuchsia-300/20 text-fuchsia-700 hover:bg-fuchsia-300/20 dark:text-fuchsia-300 dark:hover:text-fuchsia-200 sm:w-auto"
+              className="font-semibold flex w-full items-center justify-center text-sm bg-fuchsia-300/20 text-fuchsia-700 hover:bg-fuchsia-300/20 dark:text-fuchsia-300 dark:hover:text-fuchsia-200 sm:w-auto px-10"
               aria-label="Subir documentos secundarios"
               onPress={handleSecondaryUploadClick}
               isLoading={isSecondaryLoading}
