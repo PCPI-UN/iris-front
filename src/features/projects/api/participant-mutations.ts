@@ -15,8 +15,9 @@ export type AddUpdateParticipantInput = {
 
 export type CreateInvitationInput = {
   email: string;
-  eventType: "EVENT" | "PROJECT";
-  targetType: "EVENT" | "PROJECT";
+  eventType: "Exposition" | "Competition";
+  // The API expects the invitation target to be one of these values
+  targetType: "EVENT" | "PLATFORM" | "PROJECT";
   targetId: number;
   roleIds?: number[];
   firstName?: string;

@@ -314,7 +314,7 @@ export const StudentDashboardDocumentsSection = ({
             <Button
               size="md"
               variant="flat"
-              className="flex w-full items-center justify-center text-sm bg-fuchsia-300/20 text-fuchsia-700 hover:bg-fuchsia-300/20 dark:text-fuchsia-300 dark:hover:text-fuchsia-200 sm:w-auto"
+              className="font-semibold flex w-full items-center justify-center text-sm bg-fuchsia-300/20 text-fuchsia-700 hover:bg-fuchsia-300/20 dark:text-fuchsia-300 dark:hover:text-fuchsia-200 sm:w-auto"
               aria-label="Subir documentos secundarios"
               onPress={handleSecondaryUploadClick}
               isLoading={isSecondaryLoading}

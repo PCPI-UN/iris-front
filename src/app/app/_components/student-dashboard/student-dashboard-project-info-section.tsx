@@ -88,7 +88,7 @@ export const StudentDashboardProjectInfoSection = ({
       action={
         canEdit && !isEditing ? (
           <Button
-            size="sm"
+            size="md"
             variant="flat"
             className="mt-2 flex w-full items-center justify-center gap-1.5 text-sm bg-sky-200/20 text-sky-300 hover:bg-sky-300/20 dark:hover:text-sky-400 sm:w-auto"
             aria-label="Editar nombre y descripcion del proyecto"
@@ -100,20 +100,20 @@ export const StudentDashboardProjectInfoSection = ({
         ) : isEditing ? (
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
             <Button
-              size="sm"
+              size="md"
               variant="flat"
-              className="flex w-full items-center justify-center gap-1.5 text-md bg-sky-200/20 text-sky-300 hover:bg-sky-300/20 dark:hover:text-sky-400 sm:w-auto"
+              className="flex w-full items-center justify-center gap-1.5 text-sm font-semibold bg-sky-200/20 text-sky-300 hover:bg-sky-300/20 dark:hover:text-sky-400 sm:w-auto"
               onPress={handleSave}
               isLoading={updateProjectMutation.isPending}
               disabled={updateProjectMutation.isPending}
             >
-              <Check className="h-3 w-3" />
+              <Check className="size-4" />
               Guardar
             </Button>
             <Button
-              size="sm"
+              size="md"
               variant="flat"
-              className="flex w-full items-center justify-center gap-1.5 text-md bg-red-400/20 text-red-300  dark:hover:text-red-400 sm:w-auto"
+              className="flex w-full items-center font-semibold justify-center gap-1.5 text-sm bg-red-400/20 text-red-300  dark:hover:text-red-400 sm:w-auto"
               onPress={handleCancel}
               disabled={updateProjectMutation.isPending}
             >

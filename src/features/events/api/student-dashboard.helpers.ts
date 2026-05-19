@@ -41,14 +41,14 @@ export const SEMESTER_OPTIONS = [
 ];
 
 export const CAREER_OPTIONS = [
-  { label: "Ing Civil", value: "Ingeniería Civil" },
-  { label: "Ing de Sistemas", value: "Ingeniería de Sistemas y Computación" },
-  { label: "Ing Electrónica", value: "Ingeniería Electrónica" },
-  { label: "Ing Eléctrica", value: "Ingeniería Eléctrica" },
-  { label: "Ing Industrial", value: "Ingeniería Industrial" },
-  { label: "Ing Mecánica", value: "Ingeniería Mecánica" },
-  { label: "Ing Biomédica", value: "Ingeniería Biomédica" },
-  { label: "Ciencia de Datos", value: "Ciencia de Datos" },
+  { label: "Ingeniería Civil", value: "ingenieria_civil" },
+  { label: "Ingeniería de Sistemas y Computación", value: "ingenieria_sistemas" },
+  { label: "Ingeniería Electrónica", value: "ingenieria_electronica" },
+  { label: "Ingeniería Eléctrica", value: "ingenieria_electrica" },
+  { label: "Ingeniería Industrial", value: "ingenieria_industrial" },
+  { label: "Ingeniería Mecánica", value: "ingenieria_mecanica" },
+  { label: "Ingeniería Biomédica", value: "ingenieria_biomedica" },
+  { label: "Ciencia de Datos", value: "ciencia_de_datos" },
 ];
 
 export const statusParticipantOptions = [
@@ -68,7 +68,6 @@ export const normalizeParticipantStatus = (
   status?: string | number,
 ): ParticipantApiStatus => {
   const normalizedStatus = normalizeStatusKey(status);
-  console.log("normalizeParticipantStatus", { status, normalizedStatus });
   if (normalizedStatus === "1" || normalizedStatus === "PENDING") return 1;
   if (normalizedStatus === "2" || normalizedStatus === "INVITED") return 2;
   if (normalizedStatus === "3" || normalizedStatus === "JOINED") return 3;
