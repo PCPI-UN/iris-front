@@ -103,7 +103,7 @@ export const EventCardExpanded = ({
                 ) : (
                   <>
                     <Award className="h-4 w-4 text-default-400" />
-                    <span>Mi Proyecto</span>
+                    <span>{roleName === "Juror" ? "Proyecto" : "Mi equipo"}</span>
                   </>
                 )}
               </span>

@@ -13,10 +13,22 @@ export type GetProjectInput = z.infer<typeof getProjectInputSchema>;
 
 export const getProject = async ({
   projectId,
-}: GetProjectInput): Promise<Project> => {
+}: GetProjectInput): Promise<Project | null> => {
   const validatedInput = getProjectInputSchema.parse({ projectId });
-  const response = await api.get<{ data: Project }>(`/projects/${validatedInput.projectId}`);
-  return response.data;
+  const response = await api.get<{ data?: Project } | Project | null>(
+    `/projects/${validatedInput.projectId}`
+  );
+
+  if (!response) {
+    return null;
+  }
+
+  const envelope = response as { data?: Project };
+  if (typeof response === "object" && response !== null && "data" in envelope) {
+    return envelope.data ?? null;
+  }
+
+  return response as Project;
 };
 
 export const getProjectQueryOptions = (projectId: string) => {

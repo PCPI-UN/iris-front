@@ -169,7 +169,7 @@ export function ProjectCard({ project, showProjectCode = false }: { project: any
                                                     key={String(index)}
                                                     startContent={<FileText className="h-4 w-4 text-primary" />}
                                                     description={doc?.type}
-                                                    className="data-[hover=true]:bg-primary/10"
+                                                    className="data-[hover=true]:bg-primary/10 w-[full] truncate"
                                                 >
                                                     {getDocumentLabel(doc, index)}
                                                 </DropdownItem>
