@@ -17,6 +17,7 @@ import { useAcceptInvitation } from "../api/accept-jury";
 import { Input } from "@/components/ui/input";
 import type { JuryInvitation } from "@/types/api";
 import { useQueryClient } from "@tanstack/react-query";
+import { useUser } from "@/lib/auth";
 
 type AcceptInvitationModalProps = {
   invitation: JuryInvitation;
@@ -28,6 +29,8 @@ export const AcceptInvitationModal = ({
   const { addNotification } = useNotifications();
   const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
   const queryClient = useQueryClient();
+  const user = useUser();
+  const studentCode = user.data?.studentCode;
 
   const acceptInvitationMutation = useAcceptInvitation({
     mutationConfig: {
@@ -72,11 +75,12 @@ export const AcceptInvitationModal = ({
                 const form = e.target as HTMLFormElement;
                 const formData = new FormData(form);
 
-                const data = {
+                const data: any = {
                   token: invitation.token,
                   password: formData.get("password") as string,
                   firstName: formData.get("firstName") as string,
                   lastName: formData.get("lastName") as string,
+                  ...(studentCode ? { studentCode } : {}),
                 };
 
                 if (!data.password || !data.firstName || !data.lastName) {

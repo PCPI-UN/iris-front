@@ -3,6 +3,7 @@ import { api } from "@/lib/api-client";
 
 type AcceptInvitationInput = {
   token: string;
+  studentCode?: string;
 };
 
 export const acceptInvitation = async (

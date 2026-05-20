@@ -37,6 +37,7 @@ export type User = {
   lastName: string;
   email: string;
   phone?: string;
+  studentCode?: string;
   active: boolean;
   status: string;
   platformRoles: PlatformRole[];
