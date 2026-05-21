@@ -176,6 +176,7 @@ export type ProjectParticipant = Entity<{
   career?: string;
   studentCode?: string;
   project: Project;
+  status: string;
 }>;
 
 export type ProjectAssignment = Entity<{
