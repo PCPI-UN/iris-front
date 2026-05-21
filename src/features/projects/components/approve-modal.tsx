@@ -4,7 +4,7 @@ import { useDisclosure } from "@/hooks/use-disclosure";
 import { useNotifications } from "@/components/ui/notifications";
 import { useApproveProject } from "../api/approve-project";
 
-export const ApproveProjectModal = ({ projectId, isOpenTable, onOpenChangeTable }: { projectId: number, isOpenTable?: boolean; onOpenChangeTable?: (open: boolean) => void; }) => {
+export const ApproveProjectModal = ({ projectId, eventType, isOpenTable, onOpenChangeTable }: { projectId: number, eventType?: string, isOpenTable?: boolean; onOpenChangeTable?: (open: boolean) => void; }) => {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const { addNotification } = useNotifications();
   const approveMutation = useApproveProject();
@@ -36,7 +36,7 @@ export const ApproveProjectModal = ({ projectId, isOpenTable, onOpenChangeTable 
                   isLoading={ approveMutation.isPending }
                   isDisabled={ approveMutation.isPending }
                   onPress={() =>
-                    approveMutation.mutate(projectId, {
+                    approveMutation.mutate({ projectId, eventType }, {
                       onSuccess: (res) => {
                         addNotification({ type: "success", title: "Proyecto aprobado", message: res.message });
                         onClose();

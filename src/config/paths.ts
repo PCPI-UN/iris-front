@@ -95,10 +95,6 @@ export const paths = {
     administrators: {
       getHref: () => "/app/administrators",
     },
-    courses: {
-      getHref: () => "/app/courses",
-      roles: ["Admin"],
-    },
     categories: {
       getHref: () => "/app/categories",
       roles: ["Admin"],

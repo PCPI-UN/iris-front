@@ -4,6 +4,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { Spinner } from "@/components/ui/spinner";
 import { Pagination } from "@/components/ui/pagination";
 import { useProjects } from "../api/get-projects";
+import { useEvents } from "@/features/events/api/get-events";
 import { ApproveProjectModal } from "./approve-modal";
 import { RejectProjectModal } from "./reject-modal";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,7 @@ import { columnsProject } from "./columns-project-table";
 import React from "react";
 import { readCategoryIdFromSearchParams } from "@/lib/compat/category-legacy";
 import { ParticipantsDetails } from "./participants-details";
+import { toEventTypeLabel } from "@/features/events/utils/event-enums";
 
 
 export const ProjectList = () => {
@@ -33,6 +35,9 @@ export const ProjectList = () => {
   const projectsQuery = useProjects({ page, eventId, state, categoryId });
   const projects = projectsQuery.data?.data;
   const meta = projectsQuery.data?.meta;
+  const eventsQuery = useEvents({ page: 1 });
+  const selectedEvent = eventsQuery.data?.data?.find((event) => event.id === eventId);
+  const selectedEventType = selectedEvent ? toEventTypeLabel(selectedEvent.eventType) : undefined;
 
   
   {/* ======================== ACTIONS APPROVE, REJECT, REQUEST FOR TABLE ======================== */}
@@ -159,7 +164,7 @@ export const ProjectList = () => {
 
                       {/* Lista de documentos */}
                       <div className="space-y-3 pt-2">
-                        {project.documents.map((doc) => {
+                        {project.documents.map((doc, index) => {
                           const readableType =
                             doc.type === "POSTER"
                               ? "Poster"
@@ -169,7 +174,7 @@ export const ProjectList = () => {
 
                           return (
                             <div
-                              key={doc.url}
+                              key={index}
                               className="w-full flex items-center justify-between p-3 rounded-lg border border-muted/20 bg-muted/5 hover:bg-muted/10 transition-colors cursor-pointer"
                               onClick={() => window.open(doc.url, "_blank")}
                             >
@@ -199,7 +204,7 @@ export const ProjectList = () => {
                       <div className="grid md:grid-cols-3 gap-2 mb-2">
                         <RejectProjectModal projectId={project.id} />
                         <RequestProjectModal projectId={project.id}/>
-                        <ApproveProjectModal projectId={project.id} />
+                        <ApproveProjectModal projectId={project.id} eventType={selectedEventType} />
                       </div>
                     )}
                       <div className="flex justify-center items-center">
@@ -223,6 +228,7 @@ export const ProjectList = () => {
           <>
             <ApproveProjectModal
               projectId={selectedId}
+              eventType={selectedEventType}
               isOpenTable={action === "approve"}
               onOpenChangeTable={(open) => {
                 if (!open) setAction(null);

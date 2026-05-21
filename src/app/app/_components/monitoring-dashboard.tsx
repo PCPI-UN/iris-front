@@ -23,6 +23,11 @@ import {
 } from '@/components/ui/table';
 import { Spinner } from '@/components/ui/spinner';
 import { useUser } from '@/lib/auth';
+import {
+  categoryQueryParamKeys,
+  normalizeCategoryId,
+  readCategoryIdFromSearchParams,
+} from '@/lib/compat/category-legacy';
 import { getProjectEvaluationStats, type ProjectEvaluationStats } from '@/features/evaluations/api/get-project-evaluation-stats';
 import { useEvents } from '@/features/events/api/get-events';
 import { useCategoriesDropdown } from '@/features/courses/api/get-categories-dropdown';
@@ -88,7 +93,7 @@ export const MonitoringDashboard = ({ initialEventId, onBack, eventData }: Monit
     currentPage,
     itemsPerPage: 10,
     eventId: selectedEventId,
-    courseId: selectedCourseId,
+    categoryId: selectedCategoryId,
     state: selectedState === 'ALL' ? undefined : selectedState,
     q: projectSearch.trim() || undefined,
     queryConfig: { enabled: projectQueryEnabled && activeTab === 'projects' },
@@ -177,8 +182,11 @@ export const MonitoringDashboard = ({ initialEventId, onBack, eventData }: Monit
   }, [allProjectEvaluationStatsQueries, allProjects]);
 
   const statisticsProjects = useMemo(
-    () => (selectedCourseId ? allProjects.filter((project) => project.courseId === selectedCourseId) : allProjects),
-    [allProjects, selectedCourseId],
+    () =>
+      selectedCategoryId
+        ? allProjects.filter((project) => Number(normalizeCategoryId(project)) === selectedCategoryId)
+        : allProjects,
+    [allProjects, selectedCategoryId],
   );
 
   const projectTotals = useMemo(

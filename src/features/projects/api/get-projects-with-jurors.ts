@@ -1,6 +1,7 @@
 import { queryOptions, useQuery } from '@tanstack/react-query';
 
 import { api } from '@/lib/api-client';
+import { withLegacyCourseIdParam } from '@/lib/compat/category-legacy';
 import { QueryConfig } from '@/lib/react-query';
 import { Meta, Project } from '@/types/api';
 
@@ -37,7 +38,7 @@ export type GetProjectsByEventWithJurorsParams = {
   itemsPerPage?: number;
   eventId?: number;
   state?: string;
-  courseId?: number;
+  categoryId?: number;
   q?: string;
 };
 
@@ -52,7 +53,7 @@ export const getProjectsWithJurors = async (
     itemsPerPage = 10,
     eventId,
     state,
-    courseId,
+    categoryId,
     q,
   }: GetProjectsByEventWithJurorsParams = { currentPage: 1, itemsPerPage: 10 },
 ): Promise<GetProjectsByEventWithJurorsResponse> => {
@@ -67,7 +68,7 @@ export const getProjectsWithJurors = async (
       currentPage,
       itemsPerPage,
       state,
-      courseId,
+      ...withLegacyCourseIdParam(categoryId),
       q,
     },
   });
@@ -87,13 +88,13 @@ export const getProjectsWithJurorsQueryOptions = ({
   itemsPerPage = 10,
   eventId,
   state,
-  courseId,
+  categoryId,
   q,
 }: GetProjectsByEventWithJurorsParams = {}) => {
   return queryOptions({
     queryKey: [
       'projects-with-jurors',
-      { currentPage, itemsPerPage, eventId, state, courseId, q },
+      { currentPage, itemsPerPage, eventId, state, categoryId, q },
     ],
     queryFn: () =>
       getProjectsWithJurors({
@@ -101,7 +102,7 @@ export const getProjectsWithJurorsQueryOptions = ({
         itemsPerPage,
         eventId,
         state,
-        courseId,
+        categoryId,
         q,
       }),
   });
@@ -112,7 +113,7 @@ type UseProjectsWithJurorsOptions = {
   itemsPerPage?: number;
   eventId?: number;
   state?: string;
-  courseId?: number;
+  categoryId?: number;
   q?: string;
   queryConfig?: QueryConfig<typeof getProjectsWithJurorsQueryOptions>;
 };
@@ -123,7 +124,7 @@ export const useProjectsWithJurors = ({
   itemsPerPage,
   eventId,
   state,
-  courseId,
+  categoryId,
   q,
 }: UseProjectsWithJurorsOptions = {}) => {
   return useQuery({
@@ -132,7 +133,7 @@ export const useProjectsWithJurors = ({
       itemsPerPage,
       eventId,
       state,
-      courseId,
+      categoryId,
       q,
     }),
     ...queryConfig,

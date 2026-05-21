@@ -155,7 +155,7 @@ function DistributionCardContent() {
 
   const categoriesDropdownQuery = useCategoriesDropdown({ eventId: selectedEventId, queryConfig: { enabled: Boolean(selectedEventId) } });
 
-  const projectsQuery = useProjectsWithJurors({ currentPage: 1, itemsPerPage: 10000, eventId: selectedEventId, courseId: selectedCategoryId, queryConfig: { enabled: Boolean(selectedEventId) } });
+  const projectsQuery = useProjectsWithJurors({ currentPage: 1, itemsPerPage: 10000, eventId: selectedEventId, categoryId: selectedCategoryId, queryConfig: { enabled: Boolean(selectedEventId) } });
   const projects = projectsQuery.data?.data ?? [];
 
   const projectTotals = useMemo(() => {

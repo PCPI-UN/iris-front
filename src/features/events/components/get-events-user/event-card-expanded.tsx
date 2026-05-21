@@ -95,20 +95,35 @@ export const EventCardExpanded = ({
                 {event.eventType === EventType.Competition ? (
                   <>
                     {getEventKindIcon(event.eventType)}
-                    Mi equipo
+                    {roleName === "Juror" ? "Ver equipos" : "Mi equipo"}
                   </>
                 ) : (
                   <>
                     <Award className="h-4 w-4 text-default-400" />
-                    Mi proyecto
+                    {roleName === "Juror" ? "Ver proyectos" : "Mi proyecto"}
                   </>
                 )}
               </h4>
 
-              <p className="text-sm text-default-500">
-                Aqui puedes mostrar la informacion del equipo/proyecto cuando
-                conectes ese detalle por evento.
-              </p>
+              {roleName === "Juror" ? (
+                event.eventType === EventType.Exposition ? (
+                  <p className="text-sm text-default-500">
+                    Como jurado, accede a los proyectos asignados para evaluar según los criterios establecidos y
+                    dejar retroalimentación constructiva.
+                  </p>
+                ) : (
+                  <p className="text-sm text-default-500">
+                    Como jurado, accede a los equipos inscritos para evaluar
+                    según los criterios establecidos y dejar retroalimentación
+                    constructiva.
+                  </p>
+                )
+              ) : (
+                <p className="text-sm text-default-500">
+                  Aqui puedes mostrar la informacion del equipo/proyecto cuando
+                  conectes ese detalle por evento.
+                </p>
+              )}
 
               <div className="mt-4 inline-flex items-center gap-2">
                 {/* <FileText className="h-4 w-4" /> */}
@@ -117,15 +132,19 @@ export const EventCardExpanded = ({
                   onPress={() => onGoDashboard(String(event.id))}
                   color={event.active ? "primary" : "default"}
                   className={`w-full md:w-fit ${
-                    event.active
-                      ? "hover:scale-[1.01]"
-                      : "opacity-70 cursor-not-allowed"
-                  }`}
+                      event.active
+                        ? "hover:scale-[1.01]"
+                        : "opacity-70 cursor-not-allowed"
+                    }`}
                   isDisabled={!event.active}
                 >
-                  {event.active
-                    ? getMainButtonLabel(roleName)
-                    : "Evento Inactivo "}
+                    {event.active
+                      ? (
+                          roleName === 'Juror'
+                            ? (event.eventType === EventType.Competition ? 'Ver equipos' : 'Ver proyectos')
+                            : getMainButtonLabel(roleName)
+                        )
+                      : "Evento Inactivo " }
                 </Button>
 
                 {/* <ExternalLink className="h-3 w-3" /> */}
