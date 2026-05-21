@@ -22,7 +22,7 @@ export async function fetchEventReportData(eventId: number): Promise<EventReport
   const categories: CategoryCount[] = dataEvent.categories?.map(category => {
     return {
       category: category.name,
-      count: data.filter(proj => proj.courseId === category.id).length
+      count: data.filter(proj => proj.categoryId === category.id).length
     }
   }) ?? [];
 
@@ -74,10 +74,10 @@ export async function fetchEventReportData(eventId: number): Promise<EventReport
   const projects: Project[] = data.map(proj => ({
     id: proj.id,
     eventId: proj.eventId,
-    categoryId: proj.courseId,
+    categoryId: proj.categoryId,
     number: proj.projectCode ?? "#",
     name: proj.name,
-    category: dataEvent.categories?.find(cat => proj.courseId === cat.id)?.name ?? "NaN",
+    category: dataEvent.categories?.find(cat => proj.categoryId === cat.id)?.name ?? "NaN",
     status: proj.state,
     members: participants(proj).length,
     documents: proj.documents,
