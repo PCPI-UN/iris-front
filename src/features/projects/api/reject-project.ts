@@ -4,6 +4,7 @@ import { api } from "@/lib/api-client";
 export type RejectPayload = {
   projectId: number;
   reason: string;
+  eventType: string;
 };
 
 export type RejectResponse = {
@@ -11,10 +12,11 @@ export type RejectResponse = {
   reason: string;
 };
 
-export const RejectProject = async ({ projectId, reason }: RejectPayload): Promise<RejectResponse> => {
+export const RejectProject = async ({ projectId, reason, eventType }: RejectPayload): Promise<RejectResponse> => {
   const res = await api.patch<RejectResponse>(`/projects/${projectId}/reject`, { 
     state: "REJECTED",
-    reason: reason
+    reason,
+    eventType,
   });
   return res;
 
@@ -29,7 +31,7 @@ export const useRejectProject = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ projectId, reason }: RejectPayload) => RejectProject({ projectId, reason }),
+    mutationFn: ({ projectId, reason, eventType }: RejectPayload) => RejectProject({ projectId, reason, eventType }),
     onSuccess: (data, variables) => {
       // Refrescar la lista de proyectos
       queryClient.invalidateQueries({ queryKey: ["projects"] });
