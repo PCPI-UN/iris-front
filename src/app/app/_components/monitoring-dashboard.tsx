@@ -23,11 +23,7 @@ import {
 } from '@/components/ui/table';
 import { Spinner } from '@/components/ui/spinner';
 import { useUser } from '@/lib/auth';
-import {
-  categoryQueryParamKeys,
-  normalizeCategoryId,
-  readCategoryIdFromSearchParams,
-} from '@/lib/compat/category-legacy';
+import { normalizeCategoryId } from '@/lib/compat/category-legacy';
 import { getProjectEvaluationStats, type ProjectEvaluationStats } from '@/features/evaluations/api/get-project-evaluation-stats';
 import { useEvents } from '@/features/events/api/get-events';
 import { useCategoriesDropdown } from '@/features/courses/api/get-categories-dropdown';
@@ -55,14 +51,14 @@ export const MonitoringDashboard = ({ initialEventId, onBack, eventData }: Monit
   const {
     activeTab,
     currentPage,
-    handleCourseChange,
+    handleCategoryChange,
     handleEventChange,
     handlePageChange,
     handleProjectSearchChange,
     handleTabChange,
     isPastEventMode,
     projectSearch,
-    selectedCourseId,
+    selectedCategoryId,
     selectedEventIdFromUrl,
     selectedState,
     sortOrder,
@@ -183,9 +179,14 @@ export const MonitoringDashboard = ({ initialEventId, onBack, eventData }: Monit
 
   const statisticsProjects = useMemo(
     () =>
-      selectedCategoryId
-        ? allProjects.filter((project) => Number(normalizeCategoryId(project)) === selectedCategoryId)
-        : allProjects,
+      (selectedCategoryId
+        ? allProjects.filter(
+            (project): project is ProjectWithJurors & { categoryId: number } =>
+              Number(normalizeCategoryId(project)) === selectedCategoryId,
+          )
+        : allProjects.filter(
+            (project): project is ProjectWithJurors & { categoryId: number } => project.categoryId !== undefined,
+          )) as Array<{ id: number; categoryId: number; evaluated?: boolean } & ProjectWithJurors>,
     [allProjects, selectedCategoryId],
   );
 
@@ -369,11 +370,11 @@ export const MonitoringDashboard = ({ initialEventId, onBack, eventData }: Monit
             isPastEventMode={isPastEventMode}
             selectedEventId={selectedEventId}
             selectedEventName={selectedEvent?.name}
-            selectedCourseId={selectedCourseId}
+            selectedCategoryId={selectedCategoryId}
             categories={categoriesDropdownQuery.data?.data ?? []}
             categoriesLoading={categoriesDropdownQuery.isLoading}
             onEventChange={handleEventChange}
-            onCourseChange={handleCourseChange}
+            onCategoryChange={handleCategoryChange}
           />
 
           <MonitoringDashboardTabs activeTab={activeTab} onTabChange={handleTabChange} />

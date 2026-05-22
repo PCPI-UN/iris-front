@@ -7,7 +7,7 @@ import type { CategoryEvaluationStats } from '../types';
 
 type StatisticsTabProps = {
     criterions: Array<{ category: string; name: string }>;
-    statisticsProjects: Array<{ id: number; courseId: number; evaluated?: boolean }>;
+    statisticsProjects: Array<{ id: number; categoryId: number; evaluated?: boolean }>;
     allProjectStatsById: Map<string, ProjectEvaluationStats | undefined>;
     projectTotals: {
         uniqueJurorsCount: number;
@@ -196,7 +196,7 @@ export const StatisticsTab = ({
 
                                     return (
                                         <div
-                                            key={category.courseId}
+                                            key={category.categoryId}
                                             className="space-y-2 rounded-2xl border border-default-200/70 bg-background/80 p-4"
                                         >
                                             <div className="flex flex-wrap items-start justify-between gap-3">

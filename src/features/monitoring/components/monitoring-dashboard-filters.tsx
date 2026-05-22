@@ -9,11 +9,11 @@ type MonitoringDashboardFiltersProps = {
   isPastEventMode: boolean;
   selectedEventId?: number;
   selectedEventName?: string;
-  selectedCourseId?: number;
+  selectedCategoryId?: number;
   categories: Array<{ id: number; code: string }>;
   categoriesLoading: boolean;
   onEventChange: (value: string) => void;
-  onCourseChange: (keys: Set<string>) => void;
+  onCategoryChange: (keys: Set<string>) => void;
 };
 
 export const MonitoringDashboardFilters = ({
@@ -22,11 +22,11 @@ export const MonitoringDashboardFilters = ({
   isPastEventMode,
   selectedEventId,
   selectedEventName,
-  selectedCourseId,
+  selectedCategoryId,
   categories,
   categoriesLoading,
   onEventChange,
-  onCourseChange,
+  onCategoryChange,
 }: MonitoringDashboardFiltersProps) => {
   return (
     <div className="flex flex-col gap-4 lg:flex-row lg:gap-4">
@@ -61,8 +61,8 @@ export const MonitoringDashboardFilters = ({
               ? 'Todas las categorías'
               : 'Selecciona un evento primero'
           }
-          selectedKeys={selectedCourseId ? [String(selectedCourseId)] : []}
-          onSelectionChange={(keys) => onCourseChange(keys as Set<string>)}
+          selectedKeys={selectedCategoryId ? [String(selectedCategoryId)] : []}
+          onSelectionChange={(keys) => onCategoryChange(keys as Set<string>)}
           isDisabled={!selectedEventId}
           isLoading={categoriesLoading}
         >

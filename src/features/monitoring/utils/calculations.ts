@@ -34,15 +34,15 @@ export const buildCategoryEvaluationStats = (
   courses: { id: number; code: string; description?: string }[],
   statsByProjectId: Map<string, ProjectEvaluationStats | undefined>,
 ) => {
-  const courseMap = new Map(courses.map((course) => [course.id, course]));
+  const categoryMap = new Map(courses.map((course) => [course.id, course]));
   const statsMap = new Map<number, CategoryEvaluationStats>();
 
   projects.forEach((project) => {
-    const courseId = project.courseId;
-    const course = courseMap.get(courseId);
-    const current = statsMap.get(courseId) ?? {
-      courseId,
-      label: course ? getCourseLabel(course, courseId) : `Categoría ${courseId}`,
+    const categoryId = project.categoryId;
+    const category = categoryMap.get(categoryId);
+    const current = statsMap.get(categoryId) ?? {
+      categoryId,
+      label: category ? getCourseLabel(category, categoryId) : `Categoría ${categoryId}`,
       totalProjects: 0,
       evaluatedProjects: 0,
       pendingProjects: 0,
@@ -58,7 +58,7 @@ export const buildCategoryEvaluationStats = (
       current.pendingProjects += 1;
     }
 
-    statsMap.set(courseId, current);
+    statsMap.set(categoryId, current);
   });
 
   return Array.from(statsMap.values()).sort((left, right) => right.totalProjects - left.totalProjects);

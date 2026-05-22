@@ -20,7 +20,7 @@ export type ProjectEvaluationProgress = {
 export type ProjectEvaluationSummary = ProjectEvaluationStats | undefined;
 
 export type CategoryEvaluationStats = {
-  courseId: number;
+  categoryId: number;
   label: string;
   totalProjects: number;
   evaluatedProjects: number;

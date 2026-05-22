@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import type { MonitoringTab, ProjectFilterState, SortOrder } from '../types';
+import { readCategoryIdFromSearchParams } from '@/lib/compat/category-legacy';
 import { isProjectState, parseOptionalId, parsePage } from '../utils/parsers';
 
 type UseMonitoringFiltersParams = {
@@ -13,7 +14,7 @@ type UseMonitoringFiltersResult = {
   selectedEventIdFromUrl: number;
   activeTab: MonitoringTab;
   currentPage: number;
-  selectedCourseId?: number;
+  selectedCategoryId?: number;
   selectedState: ProjectFilterState;
   projectSearch: string;
   sortOrder: SortOrder;
@@ -21,7 +22,7 @@ type UseMonitoringFiltersResult = {
   handleEventChange: (value: string) => void;
   handleTabChange: (tab: MonitoringTab) => void;
   handleStateChange: (state: ProjectFilterState) => void;
-  handleCourseChange: (keys: Set<string>) => void;
+  handleCategoryChange: (keys: Set<string>) => void;
   handlePageChange: (page: number) => void;
   handleProjectSearchChange: (value: string) => void;
   isPastEventMode: boolean;
@@ -39,7 +40,10 @@ export const useMonitoringFilters = ({ initialEventId }: UseMonitoringFiltersPar
     return (viewParam === 'projects' ? 'projects' : viewParam === 'ranking' ? 'ranking' : 'statistics') as MonitoringTab;
   }, [searchParams]);
   const currentPage = useMemo(() => parsePage(searchParams?.get('page')), [searchParams]);
-  const selectedCourseId = useMemo(() => parseOptionalId(searchParams?.get('courseId')), [searchParams]);
+  const selectedCategoryId = useMemo(
+    () => parseOptionalId(readCategoryIdFromSearchParams(searchParams)),
+    [searchParams],
+  );
   const stateParam = searchParams?.get('state');
   const selectedState: ProjectFilterState = isProjectState(stateParam) ? stateParam : 'ALL';
   const isPastEventMode = initialEventId !== undefined;
@@ -68,7 +72,7 @@ export const useMonitoringFilters = ({ initialEventId }: UseMonitoringFiltersPar
 
   const handleEventChange = (value: string) => {
     setProjectSearch('');
-    updateParams({ event: value, courseId: null }, { resetPage: true });
+    updateParams({ event: value, categoryId: null }, { resetPage: true });
   };
 
   const handleTabChange = (tab: MonitoringTab) => {
@@ -79,9 +83,9 @@ export const useMonitoringFilters = ({ initialEventId }: UseMonitoringFiltersPar
     updateParams({ state: state === 'ALL' ? null : state }, { resetPage: true });
   };
 
-  const handleCourseChange = (keys: Set<string>) => {
+  const handleCategoryChange = (keys: Set<string>) => {
     const selected = Array.from(keys)[0];
-    updateParams({ courseId: selected ? Number(selected) : null }, { resetPage: true });
+    updateParams({ categoryId: selected ? Number(selected) : null }, { resetPage: true });
   };
 
   const handlePageChange = (page: number) => {
@@ -100,7 +104,7 @@ export const useMonitoringFilters = ({ initialEventId }: UseMonitoringFiltersPar
     selectedEventIdFromUrl,
     activeTab,
     currentPage,
-    selectedCourseId,
+    selectedCategoryId,
     selectedState,
     projectSearch,
     sortOrder,
@@ -108,7 +112,7 @@ export const useMonitoringFilters = ({ initialEventId }: UseMonitoringFiltersPar
     handleEventChange,
     handleTabChange,
     handleStateChange,
-    handleCourseChange,
+    handleCategoryChange,
     handlePageChange,
     handleProjectSearchChange,
     isPastEventMode,

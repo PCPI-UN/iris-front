@@ -48,7 +48,7 @@ export const PastEventDashboard = ({ event, onBack }: Props) => {
 
     const [projectSearch, setProjectSearch] = useState<string>('');
 
-    const projectsQuery = useProjectsWithJurors({ currentPage: 1, itemsPerPage: 10000, eventId: event.id, courseId: selectedCategoryId, queryConfig: { enabled: Boolean(event.id) } });
+    const projectsQuery = useProjectsWithJurors({ currentPage: 1, itemsPerPage: 10000, eventId: event.id, categoryId: selectedCategoryId, queryConfig: { enabled: Boolean(event.id) } });
     const projects = projectsQuery.data?.data ?? [];
 
     const categoriesQuery = useCategoriesDropdown({ eventId: event.id, queryConfig: { enabled: Boolean(event.id) } });
@@ -79,7 +79,7 @@ export const PastEventDashboard = ({ event, onBack }: Props) => {
         const projectsByCategory = new Map<number, number>();
 
         projects.forEach((project) => {
-            const categoryId = project.courseId;
+            const categoryId = project.courseId ?? 0;
             projectsByCategory.set(categoryId, (projectsByCategory.get(categoryId) ?? 0) + 1);
 
             if (!participantsByCategory.has(categoryId)) {
@@ -199,9 +199,10 @@ export const PastEventDashboard = ({ event, onBack }: Props) => {
         const term = normalizeText(rankingSearch);
         const byCategory = Array.from(
             projects.reduce((acc, project) => {
-                const list = acc.get(project.courseId) ?? [];
+                const key = project.courseId ?? 0;
+                const list = acc.get(key) ?? [];
                 list.push(project);
-                acc.set(project.courseId, list);
+                acc.set(key, list);
                 return acc;
             }, new Map<number, typeof projects>()),
         );

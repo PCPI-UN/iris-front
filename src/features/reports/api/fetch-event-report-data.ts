@@ -74,7 +74,7 @@ export async function fetchEventReportData(eventId: number): Promise<EventReport
   const projects: Project[] = data.map(proj => ({
     id: proj.id,
     eventId: proj.eventId,
-    categoryId: proj.courseId,
+    categoryId: proj.courseId ?? 0,
     number: proj.projectCode ?? "#",
     name: proj.name,
     category: dataEvent.categories?.find(cat => proj.courseId === cat.id)?.name ?? "NaN",
