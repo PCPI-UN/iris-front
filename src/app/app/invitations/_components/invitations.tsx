@@ -8,7 +8,6 @@ import { Button } from "@heroui/button";
 import { Calendar, MapPin, Clock } from "lucide-react";
 import { Chip } from "@/components/ui/chip";
 import { useNotifications } from "@/components/ui/notifications";
-import { useUser } from "@/lib/auth";
 import dayjs from "dayjs";
 
 export const formatDateShort = (date: string | number) => {
@@ -22,28 +21,10 @@ export const Invitations = () => {
   const { data, isLoading, error } = useInvitations({ status: "PENDING" });
   const acceptMutation = useAcceptInvitation();
   const { addNotification } = useNotifications();
-  const user = useUser();
-  const studentCode = user.data?.studentCode;
 
   const handleAccept = async (invitation: any) => {
-    const needsStudentCode = invitation?.targetType === "PROJECT";
-
-    if (needsStudentCode && !studentCode) {
-      addNotification({
-        type: "error",
-        title: "Falta código estudiantil",
-        message:
-          "Por favor agrega tu código estudiantil en tu perfil antes de aceptar la invitación",
-      });
-      return;
-    }
-
     try {
-      const payload = needsStudentCode
-        ? { token: invitation.token, studentCode }
-        : { token: invitation.token };
-
-      await acceptMutation.mutateAsync(payload);
+      await acceptMutation.mutateAsync({ token: invitation.token });
 
       addNotification({
         type: "success",
