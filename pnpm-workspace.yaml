@@ -1,0 +1,8 @@
+allowBuilds:
+  '@heroui/shared-utils': true
+  '@tailwindcss/oxide': true
+  core-js-pure: true
+  esbuild: true
+  msw: true
+  sharp: true
+  unrs-resolver: true
