@@ -58,7 +58,7 @@ export const getLocationLabel = (
 };
 
 export const getMainButtonLabel = (role?: RoleName) => {
-  if (role === "Juror") return "Ver proyectos";
+  if (role === "Juror") return "Ver proyecto";
   return "Ver mi proyecto";
 };
 
