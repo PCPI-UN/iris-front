@@ -216,18 +216,16 @@ export const StudentDashboardDocumentsSection = ({
       ariaLabel="Documentacion del proyecto"
       className="space-y-4"
       action={
-        canEdit ? (
-          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-end">
-            <input
-              ref={fileInputRef}
-              type="file"
-              onChange={handleFileChange}
-              className="hidden"
-              accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.png"
-              aria-label="Seleccionar archivo de documento"
-            />
-          </div>
-        ) : null
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-end">
+          <input
+            ref={fileInputRef}
+            type="file"
+            onChange={handleFileChange}
+            className="hidden"
+            accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.png"
+            aria-label="Seleccionar archivo de documento"
+          />
+        </div>
       }
     >
       <div className="space-y-3 border-t border-default-200/60 pt-4 mb-8">
@@ -235,24 +233,23 @@ export const StudentDashboardDocumentsSection = ({
           <p className="text-md font-semibold text-default-600">
             Documento principal
           </p>
-          {canEdit && (
-            <Button
-              size="md"
-              variant="flat"
-              className="flex w-full items-center justify-center gap-1.5 text-sm font-semibold bg-sky-200/20 text-sky-300 hover:bg-sky-300/20 dark:hover:text-sky-400 sm:w-auto selected"
-              aria-label="Subir documentos del proyecto"
-              onPress={handleUploadClick}
-              isLoading={isLoading}
-              disabled={isLoading}
-            >
-              <Upload className="size-4" />
-              {isLoading
-                ? "Subiendo..."
-                : primaryDocument
-                  ? "Subir Poster"
-                  : "Subir Poster"}
-            </Button>
-          )}
+
+          <Button
+            size="md"
+            variant="flat"
+            className="flex w-full items-center justify-center gap-1.5 text-sm font-semibold bg-sky-200/20 text-sky-300 hover:bg-sky-300/20 dark:hover:text-sky-400 sm:w-auto selected"
+            aria-label="Subir documentos del proyecto"
+            onPress={handleUploadClick}
+            isLoading={isLoading}
+            disabled={isLoading}
+          >
+            <Upload className="size-4" />
+            {isLoading
+              ? "Subiendo..."
+              : primaryDocument
+                ? "Subir Poster"
+                : "Subir Poster"}
+          </Button>
         </div>
 
         {primaryDocument ? (
@@ -293,47 +290,45 @@ export const StudentDashboardDocumentsSection = ({
         )}
       </div>
 
-      {canEdit && (
-        <div className="flex items-center justify-between gap-3 xs:flex-col xs:items-start">
-          <div className="sm:flex xs:flex-col justify-between w-full">
-            <p className="text-md font-semibold text-default-600 w-full">
-              Documentos secundarios
-            </p>
-            <input
-              ref={secondaryFileInputRef}
-              type="file"
-              multiple
-              onChange={handleSecondaryFilesChange}
-              className="hidden"
-              accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.png"
-              aria-label="Seleccionar documentos secundarios"
-            />
+      <div className="flex items-center justify-between gap-3 xs:flex-col xs:items-start">
+        <div className="sm:flex xs:flex-col justify-between w-full">
+          <p className="text-md font-semibold text-default-600 w-full">
+            Documentos secundarios
+          </p>
+          <input
+            ref={secondaryFileInputRef}
+            type="file"
+            multiple
+            onChange={handleSecondaryFilesChange}
+            className="hidden"
+            accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.png"
+            aria-label="Seleccionar documentos secundarios"
+          />
 
-            <input
-              ref={secondaryReplaceInputRef}
-              type="file"
-              onChange={handleReplaceSecondaryFileChange}
-              className="hidden"
-              accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.png"
-              aria-label="Seleccionar archivo de reemplazo"
-            />
-            <Button
-              size="md"
-              variant="flat"
-              className="font-semibold flex w-full items-center justify-center text-sm bg-fuchsia-300/20 text-fuchsia-700 hover:bg-fuchsia-300/20 dark:text-fuchsia-300 dark:hover:text-fuchsia-200 sm:w-auto px-10"
-              aria-label="Subir documentos secundarios"
-              onPress={handleSecondaryUploadClick}
-              isLoading={isSecondaryLoading}
-              disabled={isSecondaryLoading}
-            >
-              <div className="flex items-center gap-1.5 p-2.5">
-                <Upload className="size-4" />
-                {isSecondaryLoading ? "Subiendo..." : "Subir secundarios"}
-              </div>
-            </Button>
-          </div>
+          <input
+            ref={secondaryReplaceInputRef}
+            type="file"
+            onChange={handleReplaceSecondaryFileChange}
+            className="hidden"
+            accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.png"
+            aria-label="Seleccionar archivo de reemplazo"
+          />
+          <Button
+            size="md"
+            variant="flat"
+            className="font-semibold flex w-full items-center justify-center text-sm bg-fuchsia-300/20 text-fuchsia-700 hover:bg-fuchsia-300/20 dark:text-fuchsia-300 dark:hover:text-fuchsia-200 sm:w-auto px-10"
+            aria-label="Subir documentos secundarios"
+            onPress={handleSecondaryUploadClick}
+            isLoading={isSecondaryLoading}
+            disabled={isSecondaryLoading}
+          >
+            <div className="flex items-center gap-1.5 p-2.5">
+              <Upload className="size-4" />
+              {isSecondaryLoading ? "Subiendo..." : "Subir secundarios"}
+            </div>
+          </Button>
         </div>
-      )}
+      </div>
       <div className="space-y-3 border-t border-default-200/60 pt-4">
         {orderedSecondaryDocuments.length > 0 ? (
           <ul className="space-y-3">
@@ -366,29 +361,27 @@ export const StudentDashboardDocumentsSection = ({
                     </div>
                   </a>
 
-                  {canEdit ? (
-                    <div className="flex items-center gap-2">
-                      <Button
-                        isIconOnly
-                        size="sm"
-                        variant="flat"
-                        aria-label={`Reemplazar documento secundario ${document.type || document.id}`}
-                        onPress={() =>
-                          handleReplaceSecondaryFileClick(document.id)
-                        }
-                        isLoading={
-                          replacingDocumentId === document.id &&
-                          isSecondaryLoading
-                        }
-                        disabled={
-                          replacingDocumentId === document.id &&
-                          isSecondaryLoading
-                        }
-                      >
-                        <Upload className="size-4" />
-                      </Button>
-                    </div>
-                  ) : null}
+                  <div className="flex items-center gap-2">
+                    <Button
+                      isIconOnly
+                      size="sm"
+                      variant="flat"
+                      aria-label={`Reemplazar documento secundario ${document.type || document.id}`}
+                      onPress={() =>
+                        handleReplaceSecondaryFileClick(document.id)
+                      }
+                      isLoading={
+                        replacingDocumentId === document.id &&
+                        isSecondaryLoading
+                      }
+                      disabled={
+                        replacingDocumentId === document.id &&
+                        isSecondaryLoading
+                      }
+                    >
+                      <Upload className="size-4" />
+                    </Button>
+                  </div>
                 </article>
               </li>
             ))}

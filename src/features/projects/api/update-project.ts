@@ -2,21 +2,40 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 
 import { api } from "@/lib/api-client";
-import { withLegacyCourseIdParam } from "@/lib/compat/category-legacy";
 import { MutationConfig } from "@/lib/react-query";
 import { Project } from "@/types/api";
 
 export const updateProjectInputSchema = z.object({
-  eventNumber: z.string().nullable().optional(),
-  courseId: z.coerce.number().int().optional(),
+  eventId: z.string().optional(),
+  categoryId: z.string().optional(),
   name: z.string().max(255, "El nombre no puede exceder 255 caracteres").optional(),
-  description: z
-    .string()
-    .max(3000, "La descripción no puede exceder 3000 caracteres")
-    .nullable()
+  logo: z.string().optional(),
+  description: z.string().max(3000, "La descripción no puede exceder 3000 caracteres").optional(),
+  state: z.string().optional(),
+  documents: z
+    .array(
+      z.object({
+        type: z.string(),
+        url: z.string(),
+      })
+    )
     .optional(),
-  state: z
-    .enum(["PENDING", "APPROVED", "REJECTED", "REQUEST_CHANGES"])
+  participants: z
+    .array(
+      z.object({
+        firstName: z.string(),
+        lastName: z.string(),
+        email: z.string(),
+        studentCode: z.string().optional(),
+      })
+    )
+    .optional(),
+  jurorAssignments: z
+    .array(
+      z.object({
+        memberUserId: z.string(),
+      })
+    )
     .optional(),
 });
 
