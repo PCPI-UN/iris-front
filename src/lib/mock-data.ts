@@ -1,0 +1,92 @@
+import type { EventReportData } from "../types/report-types";
+
+export const MOCK_EVENT_REPORT: EventReportData = {
+  eventId: 1,
+  eventName: "Feria de Innovación 2025",
+  reportDate: new Date().toISOString(),
+  dashboard: {
+    totalProjects: 12,
+    approved: 4,
+    underReview: 3,
+    rejected: 1,
+    changesRequired: 2,
+    projectsByCategory: [
+      { category: "Ingeniería de Software", count: 5 },
+      { category: "Inteligencia Artificial", count: 3 },
+      { category: "Robótica", count: 2 },
+      { category: "Ciencia de Datos", count: 2 },
+    ],
+    participants: {noStudents_confirmed: 70, ingIndustrial: 10, ingSistemas: 50, ingMecanica: 10},
+    totalJuries: 0
+  },
+  projects: [
+    {
+      id: 1,
+      eventId: 1,
+      categoryId: 1,
+      number: "PRY-001",
+      name: "SmartCampus AI",
+      category: "Inteligencia Artificial",
+      status: "APPROVED",
+      members: 4,
+      description: "cc",
+      documents: [],
+      jurors: [],
+      createdAt: "2025-03-01T10:00:00Z",
+      participants: [
+        { name: "Ana García", email: "ana@uni.edu", career: "Ing. de Sistemas", semester: "2", status: "3" },
+        { name: "Luis Pérez", email: "luis@uni.edu", career: "Ing. de Sistemas", semester: "2", status: "3" },
+        { name: "María López", email: "maria@uni.edu", career: "Ciencias de Datos", semester: "4", status: "3" },
+        { name: "Carlos Ruiz", email: "carlos@uni.edu", career: "Ing. de Software", semester: "7", status: "3" },
+      ],
+      jurorAssignments: [
+        { name: "Dr. Hernández", email: "hernandez@uni.edu", evaluated: true },
+        { name: "Dra. Montoya", email: "montoya@uni.edu", evaluated: false },
+      ],
+    },
+    {
+      id: 2,
+      eventId: 2,
+      categoryId: 2,
+      number: "PRY-002",
+      name: "RoboGuard 3000",
+      category: "Robótica",
+      status: "UNDER_REVIEW",
+      members: 3,
+      description: "ll",
+      documents: [],
+      jurors: [],
+      createdAt: "2025-03-02T11:30:00Z",
+      participants: [
+        { name: "Pedro Jiménez", email: "pedro@uni.edu", career: "Mecatrónica", semester: "4", status: "3" },
+        { name: "Sofía Torres", email: "sofia@uni.edu", career: "Mecatrónica", semester: "4", status: "3" },
+        { name: "Andrés Silva", email: "andres@uni.edu", career: "Electrónica", semester: "2", status: "3" },
+      ],
+      jurorAssignments: [
+        { name: "Ing. Vargas", email: "vargas@uni.edu", evaluated: false },
+      ],
+    },
+    {
+      id: 3,
+      eventId: 3,
+      categoryId: 3,
+      number: "PRY-003",
+      name: "DataViz Platform",
+      category: "Ciencia de Datos",
+      status: "REQUEST_CHANGES",
+      members: 2,
+      description: "LL",
+      documents: [],
+      jurors: [],
+      createdAt: "2025-03-03T08:00:00Z",
+      participants: [
+        { name: "Valentina Ríos", email: "vrios@uni.edu", career: "Ciencias de Datos", semester: "7", status: "3" },
+        { name: "Diego Moreno", email: "dmoreno@uni.edu", career: "Estadística", semester: "7", status: "3" },
+      ],
+      jurorAssignments: [
+        { name: "Dr. Castillo", email: "castillo@uni.edu", evaluated: true },
+        { name: "Dra. Fuentes", email: "fuentes@uni.edu", evaluated: true },
+      ],
+    },
+  ],
+};

@@ -45,7 +45,7 @@ export const ViewDetails = ({project} : {project: Project}) => {
                     <div className="space-y-2 pt-2">
                       {/* Lista de documentos */}
                       <div className="space-y-3 pt-2">
-                        {project.documents.map((doc) => {
+                        {project.documents.map((doc, index) => {
                           const readableType =
                             doc.type === "POSTER"
                               ? "Poster"
@@ -55,7 +55,7 @@ export const ViewDetails = ({project} : {project: Project}) => {
 
                           return (
                             <div
-                              key={doc.url}
+                              key={index}
                               className="w-full flex items-center justify-between p-3 hover:bg-gradient-to-br from-cyan-400/10 to-cyan-400/5 rounded-lg border border-gray-100/20 transition-all duration-500 cursor-pointer"
                               onClick={() => window.open(doc.url, "_blank")}
                             >
