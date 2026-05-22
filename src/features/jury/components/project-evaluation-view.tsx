@@ -226,13 +226,13 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
                 <div className="hidden sm:block">
                   <AvatarGroup
                     participants={
-                      project.pendingParticipants?.length > 0
-                        ? project.pendingParticipants
+                      project?.pendingParticipants?.length > 0
+                        ? project?.pendingParticipants
                             .filter((p: any) => p?.firstName && p?.lastName)
                             .map((p: any) => ({
                               name: `${String(p.firstName ?? "").trim()} ${String(p.lastName ?? "").trim()}`.trim(),
                             }))
-                        : project.participants
+                        : project?.participants
                             ?.filter((p: any) => p?.firstName && p?.lastName)
                             .map((p: any) => ({
                               name: `${String(p.firstName ?? "").trim()} ${String(p.lastName ?? "").trim()}`.trim(),
@@ -243,7 +243,7 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
                 </div>
 
                 <div className="sm:hidden space-y-2">
-                  {(project.pendingParticipants?.length > 0 ? project.pendingParticipants : project.participants)
+                  {(project?.pendingParticipants?.length > 0 ? project?.pendingParticipants : project?.participants)
                     ?.filter((p: any) => p?.firstName && p?.lastName)
                     .map((participant: any, idx: number) => {
                       const firstName = String(participant.firstName ?? "").trim()
