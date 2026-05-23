@@ -163,6 +163,7 @@ export const CriteriaList = () => {
     queryConfig: { enabled: !!selectedEventKey },
   });
   const componentsQuery = useComponents({
+    eventId: selectedEventId,
     queryConfig: { enabled: !!selectedEventKey },
   });
 
@@ -505,11 +506,14 @@ export const CriteriaList = () => {
 
       for (const component of savedSnapshot.components) {
         if (!currentComponentsById.has(component.id)) {
+          if (!selectedEventId) continue; // Skip if no event selected
+          
           const response = await createComponent({
             data: {
               name: component.name,
               description: component.description ?? "",
               weight: component.weight,
+              eventId: selectedEventId,
             },
           });
           const restored = (response as any)?.data ?? response;
@@ -623,6 +627,7 @@ export const CriteriaList = () => {
     refetchCriteriaState,
     savedSnapshotByEvent,
     selectedEventKey,
+    selectedEventId,
   ]);
 
   const doSwitchEvent = useCallback((eventKey: string) => {
@@ -662,6 +667,16 @@ export const CriteriaList = () => {
     setHasUnsavedChangesByEvent((prev) => ({
       ...prev,
       [selectedEventKey]: false,
+    }));
+    // Reset refs for next iteration
+    mergedComponentIdsRef.current[selectedEventKey] = new Set();
+    setCreatedComponentsByEvent((prev) => ({
+      ...prev,
+      [selectedEventKey]: [],
+    }));
+    setEventComponentIds((prev) => ({
+      ...prev,
+      [selectedEventKey]: snapshot.components.map((c) => c.id),
     }));
     snapshotCapturedRef.current[selectedEventKey] = false;
     setIsEventSwitchModalOpen(false);
@@ -1005,6 +1020,7 @@ export const CriteriaList = () => {
           )}
           <CreateComponent
             isDisabled={!selectedEventKey}
+            eventId={selectedEventId}
             onCreated={(component) => {
               if (!selectedEventKey) return;
               markUnsavedChanges();
@@ -1078,6 +1094,16 @@ export const CriteriaList = () => {
                 ...prev,
                 [selectedEventKey]: false,
               }));
+              // Reset refs for next iteration
+              mergedComponentIdsRef.current[selectedEventKey] = new Set();
+              setCreatedComponentsByEvent((prev) => ({
+                ...prev,
+                [selectedEventKey]: [],
+              }));
+              setEventComponentIds((prev) => ({
+                ...prev,
+                [selectedEventKey]: snapshot.components.map((c) => c.id),
+              }));
               // Allow re-capture on next load after a real save
               snapshotCapturedRef.current[selectedEventKey] = false;
               addNotification({
@@ -1103,6 +1129,7 @@ export const CriteriaList = () => {
           }
         }}
         hideTrigger
+        eventId={selectedEventId}
         onCreated={(component) => {
           registerCreatedComponent(component);
           if (pendingInlineAssignmentCriterionId) {
@@ -1237,6 +1264,7 @@ export const CriteriaList = () => {
                         />
                         <CreateComponent
                           componentToEdit={component}
+                          eventId={selectedEventId}
                           onUpdated={(updatedComponent) => {
                             markUnsavedChanges();
                             setCreatedComponentsByEvent((prev) => {

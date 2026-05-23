@@ -277,6 +277,7 @@ export type CriterionComponent = {
   name: string;
   description?: string;
   weight: number;
+  eventId?: number;
 };
 
 export type CriterionCategory = Entity<{

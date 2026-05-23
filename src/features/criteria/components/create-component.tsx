@@ -35,6 +35,7 @@ type CreateComponentProps = {
   isOpen?: boolean;
   onOpenChange?: (isOpen: boolean) => void;
   hideTrigger?: boolean;
+  eventId?: number;
 };
 
 export const CreateComponent = ({
@@ -45,6 +46,7 @@ export const CreateComponent = ({
   isOpen: isOpenProp,
   onOpenChange,
   hideTrigger = false,
+  eventId,
 }: CreateComponentProps) => {
   const { addNotification } = useNotifications();
   const disclosure = useDisclosure();
@@ -70,6 +72,7 @@ export const CreateComponent = ({
           name: String(component?.name ?? componentToEdit?.name ?? "").trim(),
           description: component?.description ?? componentToEdit?.description,
           weight: Number(component?.weight ?? componentToEdit?.weight ?? 0),
+          eventId: component?.eventId ?? componentToEdit?.eventId ?? eventId,
         }
       : null;
   };
@@ -152,6 +155,16 @@ export const CreateComponent = ({
               id={isEditing ? "update-component" : "create-component"}
               onSubmit={async (event) => {
                 event.preventDefault();
+                
+                if (!eventId) {
+                  addNotification({
+                    type: "error",
+                    title: "Error",
+                    message: "Debes seleccionar un evento primero.",
+                  });
+                  return;
+                }
+
                 const form = event.target as HTMLFormElement;
                 const formData = new FormData(form);
                 const rawData = Object.fromEntries(formData);
@@ -163,6 +176,7 @@ export const CreateComponent = ({
                   // Send the minimal allowed weight (0.01) so creation succeeds
                   // while the UI ignores component weight for calculations.
                   weight: 0.01,
+                  eventId,
                 };
 
                 try {
