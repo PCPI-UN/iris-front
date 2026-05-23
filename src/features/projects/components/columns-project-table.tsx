@@ -66,6 +66,7 @@ return [
   {
     title: "Código",
     field: "projectCode",
+    sortable: true,
     Cell: ({ entry }) => (
       <span className="text-sm text-muted-foreground">
         {entry.projectCode ?? "—"}
@@ -81,20 +82,6 @@ return [
       </div>
     ),
   },
-  {
-    title: "Descripción",
-    field: "description",
-    Cell: ({entry}) => (
-        <>
-            {entry.description && (
-          <p className="text-sm text-muted-foreground line-clamp-2">
-            {entry.description}
-          </p>
-        )}
-        </>
-    )
-  },
-
   {
     title: "Estado",
     field: "state",
