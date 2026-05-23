@@ -31,6 +31,7 @@ import {
 } from "../api/update-criteria";
 
 const ALL_CATEGORIES_KEY = "__all_categories__";
+const CRITERION_NAME_MAX_LENGTH = 100;
 
 type CreateCriteriaContextualProps = {
   defaultEventId?: string;
@@ -107,6 +108,9 @@ export const CreateCriteriaContextual = ({
   const [weightPercent, setWeightPercent] = useState(
     criterionToEdit ? normalizeForUI(criterionToEdit.weight) : 25,
   );
+  const [nameLength, setNameLength] = useState(
+    criterionToEdit?.name.length ?? 0,
+  );
   const [weightError, setWeightError] = useState<string | null>(null);
   const [hasInitializedCategories, setHasInitializedCategories] =
     useState(false);
@@ -133,7 +137,10 @@ export const CreateCriteriaContextual = ({
           : "",
     );
     setSelectedCategoryKeys(toKeySet(criterionToEdit?.categoryIds));
-    setWeightPercent(criterionToEdit ? normalizeForUI(criterionToEdit.weight) : 25);
+    setWeightPercent(
+      criterionToEdit ? normalizeForUI(criterionToEdit.weight) : 25,
+    );
+    setNameLength(criterionToEdit?.name.length ?? 0);
     setHasInitializedCategories(false);
   }, [criterionToEdit, defaultEventId, fixedComponent, isOpen]);
 
@@ -256,8 +263,7 @@ export const CreateCriteriaContextual = ({
     (!!fixedComponent && !isEditing);
 
   const isPending =
-    createCriteriaMutation.isPending ||
-    updateCriteriaMutation.isPending;
+    createCriteriaMutation.isPending || updateCriteriaMutation.isPending;
 
   const handleCategorySelectionChange = (keys: unknown) => {
     const nextKeys =
@@ -310,14 +316,25 @@ export const CreateCriteriaContextual = ({
         size={buttonSize}
         color={buttonColor}
         variant={buttonVariant}
+        isIconOnly={isEditing}
+        aria-label={isEditing ? "Editar criterio" : undefined}
         onPress={onOpen}
         isDisabled={buttonDisabled}
       >
         {isEditing ? <Pencil size={16} /> : <Plus size={16} />}
-        {isEditing ? "Editar" : buttonLabel}
+        {!isEditing && buttonLabel}
       </Button>
 
-      <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="sm">
+      <Modal
+        isOpen={isOpen}
+        onOpenChange={onOpenChange}
+        size="sm"
+        scrollBehavior="inside"
+        classNames={{
+          base: "mx-3 my-4 max-h-[88dvh] sm:mx-0 sm:my-0 sm:max-h-none",
+          body: "max-h-[60dvh] overflow-y-auto px-4 sm:max-h-none sm:overflow-visible sm:px-6",
+        }}
+      >
         <ModalContent>
           {(closeModal) => (
             <Form
@@ -332,6 +349,16 @@ export const CreateCriteriaContextual = ({
                 const form = event.target as HTMLFormElement;
                 const formData = new FormData(form);
                 const rawData = Object.fromEntries(formData);
+                const rawName = String(rawData.name || "");
+
+                if (rawName.length > CRITERION_NAME_MAX_LENGTH) {
+                  addNotification({
+                    type: "error",
+                    title: "Nombre muy largo",
+                    message: `El nombre del criterio no puede superar ${CRITERION_NAME_MAX_LENGTH} caracteres.`,
+                  });
+                  return;
+                }
 
                 if (!selectedEventKey) {
                   addNotification({
@@ -352,7 +379,11 @@ export const CreateCriteriaContextual = ({
                   return;
                 }
 
-                if (needsComponent && requireComponentSelection && !resolvedComponentId) {
+                if (
+                  needsComponent &&
+                  requireComponentSelection &&
+                  !resolvedComponentId
+                ) {
                   addNotification({
                     type: "error",
                     title: "Componente requerido",
@@ -369,7 +400,7 @@ export const CreateCriteriaContextual = ({
 
                 const payload = {
                   eventId: Number(selectedEventKey),
-                  name: String(rawData.name || "").trim(),
+                  name: rawName.trim(),
                   description: String(rawData.description || "").trim(),
                   weight: normalizedWeightPercent / 100,
                   categoryIds: Array.from(selectedCategoryKeys)
@@ -402,22 +433,42 @@ export const CreateCriteriaContextual = ({
                 }
               }}
             >
-              <ModalHeader className="flex flex-col gap-1">
-                {isEditing ? "Editar criterio" : "Crear criterio"}
-                <p className="text-sm font-normal text-default-500">
-                  {isEditing
-                    ? "Actualiza la información del criterio de evaluación."
-                    : "Completa la información para agregar un nuevo criterio de evaluación."}
-                </p>
+              <ModalHeader className="px-4 pb-1 sm:px-6">
+                <div className="mx-auto flex w-full max-w-sm flex-col gap-1">
+                  <span>
+                    {isEditing ? "Editar criterio" : "Crear criterio"}
+                  </span>
+                  <p className="text-sm font-normal leading-snug text-default-500">
+                    {isEditing ? (
+                      "Actualiza la información del criterio de evaluación."
+                    ) : (
+                      <>
+                        Agregar
+                        <br />
+                        un nuevo criterio de evaluación.
+                      </>
+                    )}
+                  </p>
+                </div>
               </ModalHeader>
 
-              <ModalBody className="py-1 sm:py-2">
-                <div className="mx-auto flex w-full max-w-sm sm:max-w-md lg:max-w-lg flex-col gap-1">
-                  <Input
+              <ModalBody className="py-2">
+                <div className="mx-auto flex w-full max-w-sm flex-col gap-2.5">
+                  <Textarea
                     name="name"
                     label="Nombre"
                     placeholder="Ej: Calidad técnica"
                     defaultValue={criterionToEdit?.name ?? ""}
+                    maxLength={CRITERION_NAME_MAX_LENGTH}
+                    minRows={2}
+                    maxRows={3}
+                    description={`${nameLength}/${CRITERION_NAME_MAX_LENGTH} caracteres`}
+                    isInvalid={nameLength > CRITERION_NAME_MAX_LENGTH}
+                    errorMessage={`Máximo ${CRITERION_NAME_MAX_LENGTH} caracteres`}
+                    onChange={(event) =>
+                      setNameLength(event.target.value.length)
+                    }
+                    classNames={{ input: "max-h-24 overflow-y-auto" }}
                     isRequired
                   />
 
@@ -441,7 +492,6 @@ export const CreateCriteriaContextual = ({
                     ))}
                   </Select>
 
-                  {/* FIX 1: renderValue collapses the list to "Todas" when all are selected */}
                   <Select
                     label="Categorías"
                     placeholder={
@@ -472,9 +522,6 @@ export const CreateCriteriaContextual = ({
                     )}
                   </Select>
 
-                  {/* FIX 2: show component selector whenever there are components available,
-                      not only when requireComponentSelection is true.
-                      If fixedComponent is set and not editing, show readonly input instead. */}
                   {fixedComponent && !isEditing ? (
                     <Input
                       label="Componente"
@@ -509,11 +556,18 @@ export const CreateCriteriaContextual = ({
                     label="Descripción"
                     placeholder="Descripción breve del criterio"
                     defaultValue={criterionToEdit?.description ?? ""}
+                    minRows={2}
+                    maxRows={3}
+                    classNames={{ input: "max-h-24 overflow-y-auto" }}
                   />
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-default-600">Peso (sobre el total del evento)</span>
-                      <span className="font-semibold text-default-800">{weightPercent}%</span>
+                      <span className="text-default-600">
+                        Peso (sobre el total del evento)
+                      </span>
+                      <span className="font-semibold text-default-800">
+                        {weightPercent}%
+                      </span>
                     </div>
                     <div className="flex items-center gap-3">
                       <input
@@ -522,7 +576,9 @@ export const CreateCriteriaContextual = ({
                         max={100}
                         step={1}
                         value={weightPercent}
-                        onChange={(event) => setWeightPercent(Number(event.target.value))}
+                        onChange={(event) =>
+                          setWeightPercent(Number(event.target.value))
+                        }
                         className="w-full accent-primary"
                         aria-label="Peso del criterio"
                         aria-valuemin={0}
@@ -544,16 +600,21 @@ export const CreateCriteriaContextual = ({
                           }
                         }}
                         onBlur={() => {
-                          if (!Number.isFinite(Number(weightPercent))) return setWeightPercent(0);
+                          if (!Number.isFinite(Number(weightPercent)))
+                            return setWeightPercent(0);
                           if (weightPercent < 0) setWeightPercent(0);
                           if (weightPercent > 100) setWeightPercent(100);
                         }}
                         className="w-20"
                       />
                     </div>
-                    <p className="text-xs text-default-500">Rango permitido: 0% a 100%.</p>
+                    <p className="text-xs text-default-500">
+                      Rango permitido: 0% a 100%.
+                    </p>
                     {typeof availableWeightPercent === "number" && (
-                      <p className="text-xs text-default-500">Disponible: {availableWeightPercent.toFixed(0)}%</p>
+                      <p className="text-xs text-default-500">
+                        Disponible: {availableWeightPercent.toFixed(0)}%
+                      </p>
                     )}
                     {weightError && (
                       <p className="text-xs text-danger">{weightError}</p>
@@ -562,24 +623,28 @@ export const CreateCriteriaContextual = ({
                 </div>
               </ModalBody>
 
-              <ModalFooter>
-                <Button
-                  color="danger"
-                  variant="flat"
-                  onPress={closeModal}
-                  isDisabled={isPending}
-                >
-                  Cancelar
-                </Button>
-                <Button type="submit" color="primary" isLoading={isPending} isDisabled={isPending || !!weightError}>
-                  {isEditing ? "Guardar cambios" : "Crear criterio"}
-                </Button>
-              </ModalFooter>
+             <ModalFooter className="px-4 pt-2 sm:px-6">
+  <Button
+    color="danger"
+    variant="flat"
+    onPress={closeModal}
+    isDisabled={isPending}
+  >
+    Cancelar
+  </Button>
+  <Button
+    type="submit"
+    color="primary"
+    isLoading={isPending}
+    isDisabled={isPending || !!weightError || nameLength > CRITERION_NAME_MAX_LENGTH}
+  >
+    {isEditing ? "Guardar cambios" : "Crear criterio"}
+  </Button>
+</ModalFooter>
             </Form>
           )}
         </ModalContent>
       </Modal>
-
     </>
   );
 };

@@ -1,12 +1,11 @@
 "use client";
 
 import { Pencil, Plus } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Modal,
   ModalBody,
@@ -15,6 +14,8 @@ import {
   ModalHeader,
 } from "@/components/ui/modal";
 import { useNotifications } from "@/components/ui/notifications";
+import { Select, SelectItem } from "@/components/ui/select";
+import { useEventsDropdown } from "@/features/events/api/get-events-dropdown";
 import { useDisclosure } from "@/hooks/use-disclosure";
 import { CriterionComponent } from "@/types/api";
 
@@ -53,12 +54,38 @@ export const CreateComponent = ({
   const isEditing = !!componentToEdit;
   const isControlled = typeof isOpenProp === "boolean";
   const isOpen = isControlled ? isOpenProp : disclosure.isOpen;
-  const openModal = isControlled ? () => onOpenChange?.(true) : disclosure.onOpen;
-  const closeModal = isControlled ? () => onOpenChange?.(false) : disclosure.onClose;
-  const handleOpenChange = isControlled ? (nextOpen: boolean) => onOpenChange?.(nextOpen) : disclosure.onOpenChange;
+  const openModal = isControlled
+    ? () => onOpenChange?.(true)
+    : disclosure.onOpen;
+  const closeModal = isControlled
+    ? () => onOpenChange?.(false)
+    : disclosure.onClose;
+  const handleOpenChange = isControlled
+    ? (nextOpen: boolean) => onOpenChange?.(nextOpen)
+    : disclosure.onOpenChange;
+  const [selectedEventKey, setSelectedEventKey] = useState<string>(
+    componentToEdit?.eventId
+      ? String(componentToEdit.eventId)
+      : eventId
+        ? String(eventId)
+        : "",
+  );
+  const eventsQuery = useEventsDropdown();
+  const events = eventsQuery.data?.data ?? [];
   // Components no longer have a weight editable from the UI. The backend may
   // still expose a weight field; the UI will ignore it and send 0 when creating
   // or updating to avoid influencing calculations on the server.
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setSelectedEventKey(
+      componentToEdit?.eventId
+        ? String(componentToEdit.eventId)
+        : eventId
+          ? String(eventId)
+          : "",
+    );
+  }, [componentToEdit, eventId, isOpen]);
 
   const normalizeComponent = (
     componentResponse: any,
@@ -72,7 +99,10 @@ export const CreateComponent = ({
           name: String(component?.name ?? componentToEdit?.name ?? "").trim(),
           description: component?.description ?? componentToEdit?.description,
           weight: Number(component?.weight ?? componentToEdit?.weight ?? 0),
-          eventId: component?.eventId ?? componentToEdit?.eventId ?? eventId,
+          eventId:
+            component?.eventId ??
+            componentToEdit?.eventId ??
+            Number(selectedEventKey || eventId),
         }
       : null;
   };
@@ -139,15 +169,26 @@ export const CreateComponent = ({
           size="sm"
           variant="flat"
           color="secondary"
+          isIconOnly={isEditing}
+          aria-label={isEditing ? "Editar componente" : undefined}
           onPress={openModal}
           isDisabled={isDisabled}
         >
           {isEditing ? <Pencil size={16} /> : <Plus size={16} />}
-          {isEditing ? "Editar" : "Agregar componente"}
+          {!isEditing && "Agregar componente"}
         </Button>
       )}
 
-      <Modal isOpen={isOpen} onOpenChange={handleOpenChange} size="sm">
+      <Modal
+        isOpen={isOpen}
+        onOpenChange={handleOpenChange}
+        size="sm"
+        placement="center"
+        classNames={{
+          base: "mx-3 my-auto sm:mx-0",
+          body: "items-center",
+        }}
+      >
         <ModalContent>
           {(closeModal) => (
             <Form
@@ -155,8 +196,8 @@ export const CreateComponent = ({
               id={isEditing ? "update-component" : "create-component"}
               onSubmit={async (event) => {
                 event.preventDefault();
-                
-                if (!eventId) {
+
+                if (!selectedEventKey) {
                   addNotification({
                     type: "error",
                     title: "Error",
@@ -171,12 +212,11 @@ export const CreateComponent = ({
 
                 const payload = {
                   name: String(rawData.name || "").trim(),
-                  description: String(rawData.description || "").trim(),
                   // The backend requires a small positive weight for components.
                   // Send the minimal allowed weight (0.01) so creation succeeds
                   // while the UI ignores component weight for calculations.
                   weight: 0.01,
-                  eventId,
+                  eventId: Number(selectedEventKey),
                 };
 
                 try {
@@ -211,7 +251,26 @@ export const CreateComponent = ({
               </ModalHeader>
 
               <ModalBody className="py-2 sm:py-4">
-                <div className="mx-auto flex w-full max-w-md sm:max-w-lg lg:max-w-xl flex-col gap-2">
+                <div className="mx-auto flex w-full max-w-sm flex-col gap-2 sm:max-w-md">
+                  <Select
+                    label="Evento"
+                    placeholder="Selecciona un evento"
+                    selectedKeys={selectedEventKey ? [selectedEventKey] : []}
+                    onSelectionChange={(keys) => {
+                      const selected = Array.from(keys)[0];
+                      setSelectedEventKey(selected ? String(selected) : "");
+                    }}
+                    isLoading={eventsQuery.isLoading}
+                    isDisabled={!!eventId}
+                    isRequired
+                  >
+                    {events.map((eventOption) => (
+                      <SelectItem key={String(eventOption.id)}>
+                        {eventOption.name}
+                      </SelectItem>
+                    ))}
+                  </Select>
+
                   <Input
                     name="name"
                     label="Nombre"
@@ -219,15 +278,6 @@ export const CreateComponent = ({
                     defaultValue={componentToEdit?.name ?? ""}
                     isRequired
                   />
-
-                  <Textarea
-                    name="description"
-                    label="Descripción"
-                    placeholder="Descripción breve (opcional)"
-                    defaultValue={componentToEdit?.description ?? ""}
-                  />
-
-              
                 </div>
               </ModalBody>
 
@@ -240,7 +290,12 @@ export const CreateComponent = ({
                 >
                   Cancelar
                 </Button>
-                <Button type="submit" color="primary" isLoading={isPending} isDisabled={isPending}>
+                <Button
+                  type="submit"
+                  color="primary"
+                  isLoading={isPending}
+                  isDisabled={isPending}
+                >
                   {isEditing ? "Guardar cambios" : "Crear componente"}
                 </Button>
               </ModalFooter>
