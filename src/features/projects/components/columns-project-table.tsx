@@ -64,6 +64,15 @@ const getActions = (entry: Project) => {
 
 return [
   {
+    title: "Código",
+    field: "projectCode",
+    Cell: ({ entry }) => (
+      <span className="text-sm text-muted-foreground">
+        {entry.projectCode ?? "—"}
+      </span>
+    ),
+  },
+  {
     title: "Proyecto",
     field: "name",
     Cell: ({ entry }) => (
