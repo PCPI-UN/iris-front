@@ -72,9 +72,7 @@ export const CreateComponent = ({
   );
   const eventsQuery = useEventsDropdown();
   const events = eventsQuery.data?.data ?? [];
-  // Components no longer have a weight editable from the UI. The backend may
-  // still expose a weight field; the UI will ignore it and send 0 when creating
-  // or updating to avoid influencing calculations on the server.
+ 
 
   useEffect(() => {
     if (!isOpen) return;
@@ -179,16 +177,7 @@ export const CreateComponent = ({
         </Button>
       )}
 
-      <Modal
-        isOpen={isOpen}
-        onOpenChange={handleOpenChange}
-        size="sm"
-        placement="center"
-        classNames={{
-          base: "mx-3 my-auto sm:mx-0",
-          body: "items-center",
-        }}
-      >
+      <Modal isOpen={isOpen} onOpenChange={handleOpenChange} size="sm">
         <ModalContent>
           {(closeModal) => (
             <Form
@@ -251,7 +240,7 @@ export const CreateComponent = ({
               </ModalHeader>
 
               <ModalBody className="py-2 sm:py-4">
-                <div className="mx-auto flex w-full max-w-sm flex-col gap-2 sm:max-w-md">
+                <div className="mx-auto flex w-full max-w-md sm:max-w-lg lg:max-w-xl flex-col gap-2">
                   <Select
                     label="Evento"
                     placeholder="Selecciona un evento"
