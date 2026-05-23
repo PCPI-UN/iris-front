@@ -21,6 +21,27 @@ type ParticipantRow = Omit<ProjectParticipant, "status"> & {
   keyId: string;
 };
 
+const normalizeParticipantStatus = (
+  status: unknown,
+  fallback: "CONFIRMED" | "PENDING",
+): "CONFIRMED" | "PENDING" => {
+  if (typeof status === "number") {
+    if (status === 3) return "CONFIRMED";
+    if (status === 1 || status === 2) return "PENDING";
+    return fallback;
+  }
+
+  const normalized = String(status ?? "").trim().toUpperCase();
+  if (normalized === "JOINED" || normalized === "CONFIRMED" || normalized === "3") {
+    return "CONFIRMED";
+  }
+  if (normalized === "PENDING" || normalized === "INVITED" || normalized === "1" || normalized === "2") {
+    return "PENDING";
+  }
+
+  return fallback;
+};
+
 const getInitials = (name: string) =>
   name
     .trim()
@@ -40,7 +61,7 @@ export const ParticipantsDetails = ({
 
   const participants = useMemo<ParticipantRow[]>(() => {
     // Helper function to validate and map participants
-    const mapParticipants = (items: ProjectParticipant[], status: "CONFIRMED" | "PENDING") =>
+    const mapParticipants = (items: ProjectParticipant[], fallbackStatus: "CONFIRMED" | "PENDING") =>
       items
         .filter((p) => {
           // Filter out invalid participants
@@ -51,10 +72,11 @@ export const ParticipantsDetails = ({
           const firstName = String(participant.firstName ?? "").trim();
           const lastName = String(participant.lastName ?? "").trim();
           const displayName = `${firstName} ${lastName}`.trim();
+          const resolvedStatus = normalizeParticipantStatus(_participantStatus, fallbackStatus);
 
           return {
             ...participantData,
-            status,
+            status: resolvedStatus,
             displayName: displayName || "N/A",
             displaySemester:
               participant.semester !== undefined &&
@@ -70,7 +92,18 @@ export const ParticipantsDetails = ({
     const confirmed = mapParticipants(confirmedParticipants, "CONFIRMED");
     const pending = mapParticipants(pendingParticipants, "PENDING");
 
-    return [...pending, ...confirmed];
+    const deduped = new Map<string, ParticipantRow>();
+    [...pending, ...confirmed].forEach((participant) => {
+      const existing = deduped.get(participant.keyId);
+      if (!existing || participant.status === "CONFIRMED") {
+        deduped.set(participant.keyId, participant);
+      }
+    });
+
+    return Array.from(deduped.values()).sort((a, b) => {
+      if (a.status === b.status) return 0;
+      return a.status === "PENDING" ? -1 : 1;
+    });
   }, [confirmedParticipants, pendingParticipants]);
 
   if (participants.length === 0) {
