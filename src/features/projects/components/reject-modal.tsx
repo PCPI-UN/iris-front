@@ -8,7 +8,7 @@ import { useNotifications } from "@/components/ui/notifications";
 import { useState } from "react";
 import { useRejectProject } from "../api/reject-project";
 
-export const RejectProjectModal = ({ projectId, isOpenTable, onOpenChangeTable }: { projectId: number, isOpenTable?: boolean; onOpenChangeTable?: (open: boolean) => void; }) => {
+export const RejectProjectModal = ({ projectId, eventType, isOpenTable, onOpenChangeTable }: { projectId: number; eventType?: string; isOpenTable?: boolean; onOpenChangeTable?: (open: boolean) => void; }) => {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const { addNotification } = useNotifications();
   const rejectMutation = useRejectProject();
@@ -69,8 +69,16 @@ export const RejectProjectModal = ({ projectId, isOpenTable, onOpenChangeTable }
                       });
                       return;
                     }
+                    if (!eventType) {
+                      addNotification({
+                        type: "error",
+                        title: "Error",
+                        message: "No se pudo resolver el tipo de evento",
+                      });
+                      return;
+                    }
                     rejectMutation.mutate(
-                      { projectId, reason },
+                      { projectId, reason, eventType },
                       {
                         onSuccess: (res) => {
                           addNotification({

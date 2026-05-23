@@ -7,10 +7,10 @@ const Project = ({ eventId }: { eventId: string }) => {
         <div className='space-y-6'>
             <div className="space-y-2">
                 <h1 className="text-3xl font-bold">
-                    Project Jury
+                    Evaluacion de proyectos
                 </h1>
                 <p className="text-muted-foreground">
-                    Review and evaluate projects
+                    En esta sección podrás evaluar los proyectos presentados en el evento. Revisa cada proyecto, asigna puntuaciones y proporciona retroalimentación constructiva para ayudar a los participantes a mejorar sus ideas y presentaciones.
                 </p>
             </div>
             <ProjectListView eventId={eventId} />

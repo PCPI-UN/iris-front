@@ -164,7 +164,7 @@ export const ProjectList = () => {
 
                       {/* Lista de documentos */}
                       <div className="space-y-3 pt-2">
-                        {project.documents.map((doc) => {
+                        {project.documents.map((doc, index) => {
                           const readableType =
                             doc.type === "POSTER"
                               ? "Poster"
@@ -174,7 +174,7 @@ export const ProjectList = () => {
 
                           return (
                             <div
-                              key={doc.url}
+                              key={index}
                               className="w-full flex items-center justify-between p-3 rounded-lg border border-muted/20 bg-muted/5 hover:bg-muted/10 transition-colors cursor-pointer"
                               onClick={() => window.open(doc.url, "_blank")}
                             >
@@ -202,7 +202,7 @@ export const ProjectList = () => {
                   <div className="pt-2">
                     {project.state === "UNDER_REVIEW" && (
                       <div className="grid md:grid-cols-3 gap-2 mb-2">
-                        <RejectProjectModal projectId={project.id} />
+                        <RejectProjectModal projectId={project.id} eventType={selectedEventType} />
                         <RequestProjectModal projectId={project.id}/>
                         <ApproveProjectModal projectId={project.id} eventType={selectedEventType} />
                       </div>
@@ -237,6 +237,7 @@ export const ProjectList = () => {
 
             <RejectProjectModal
               projectId={selectedId}
+              eventType={selectedEventType}
               isOpenTable={action === "reject"}
               onOpenChangeTable={(open) => {
                 if (!open) setAction(null);

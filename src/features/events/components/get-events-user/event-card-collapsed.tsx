@@ -40,13 +40,7 @@ export const EventCardCollapsed = ({
   onToggle,
 }: EventCardCollapsedProps) => {
   const roleName = event.role?.name as RoleName | undefined;
-  const metaItems = getCollapsedMetaItems({
-    eventType: event.eventType,
-    startDate: event.startDate,
-    location: event.location,
-    locationDetails: event.locationDetails,
-  });
-
+  
   return (
     <Card
       shadow="sm"
@@ -90,13 +84,7 @@ export const EventCardCollapsed = ({
               <ChevronDown className="h-5 w-5 text-default-400 flex-shrink-0" />
             )}
           </div>
-          {!isExpanded && (
-            <div className="mt-4 space-y-2">
-              <p className="text-sm text-default-500 line-clamp-2">
-                {event.description}
-              </p>
-            </div>
-          )}
+          
         </button>
       </CardBody>
     </Card>
