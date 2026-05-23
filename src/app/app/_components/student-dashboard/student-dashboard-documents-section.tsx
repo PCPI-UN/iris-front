@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@heroui/button";
 import {
   ExternalLink,
@@ -14,7 +15,6 @@ import { ProjectDocument } from "@/types/api";
 import { StudentDashboardSectionCard } from "./student-dashboard-section-card";
 import { useNotifications } from "@/components/ui/notifications";
 import { api } from "@/lib/api-client";
-import { useRouter } from "next/dist/client/components/navigation";
 import ca from "zod/v4/locales/ca.cjs";
 
 type StudentDashboardDocumentsSectionProps = {
@@ -30,7 +30,7 @@ export const StudentDashboardDocumentsSection = ({
   projectId,
   eventId,
 }: StudentDashboardDocumentsSectionProps) => {
-  const router = useRouter();
+  const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const secondaryFileInputRef = useRef<HTMLInputElement>(null);
   const secondaryReplaceInputRef = useRef<HTMLInputElement>(null);
@@ -92,6 +92,10 @@ export const StudentDashboardDocumentsSection = ({
           "El documento será revisado, necesitará confirmar los cambios.",
       });
 
+      await queryClient.invalidateQueries({
+        queryKey: ["my-project", String(eventId)],
+      });
+
       // Limpiar input para permitir subir el mismo archivo de nuevo
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
@@ -139,7 +143,9 @@ export const StudentDashboardDocumentsSection = ({
         message: "Los documentos se han subido correctamente.",
       });
 
-      router.push(`/app/events/${eventId}/dashboard`);
+      await queryClient.invalidateQueries({
+        queryKey: ["my-project", String(eventId)],
+      });
 
       if (secondaryFileInputRef.current) {
         secondaryFileInputRef.current.value = "";

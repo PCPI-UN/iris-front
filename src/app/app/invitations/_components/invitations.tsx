@@ -22,9 +22,10 @@ export const Invitations = () => {
   const acceptMutation = useAcceptInvitation();
   const { addNotification } = useNotifications();
 
-  const handleAccept = async (token: string) => {
+  const handleAccept = async (invitation: any) => {
     try {
-      await acceptMutation.mutateAsync({ token });
+      await acceptMutation.mutateAsync({ token: invitation.token });
+
       addNotification({
         type: "success",
         title: "Invitación aceptada",
@@ -161,7 +162,7 @@ export const Invitations = () => {
 
                 <div className="mt-auto pt-2">
                   <Button
-                    onPress={() => handleAccept(invitation.token)}
+                    onPress={() => handleAccept(invitation)}
                     color="primary"
                     className="w-full transition-transform hover:scale-[1.01] md:text-base text-sm md:py-3 py-2 rounded-xl font-medium"
                     isLoading={acceptMutation.isPending}

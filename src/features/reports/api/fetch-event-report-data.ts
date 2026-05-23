@@ -93,8 +93,8 @@ export async function fetchEventReportData(eventId: number): Promise<EventReport
       name: `${participant.firstName ?? ""} ${participant.lastName ?? ""}`.trim(),
       email: participant.email ?? "",
       career: participant.career ?? "",
-      semester: participant.semester ?? "",
-      status: participant.status ?? "",
+      semester: String(participant.semester ?? ""),
+      status: String(participant.status ?? ""),
     })) ?? [],
     jurorAssignments: jurorsInfo(proj, dataJuries),
   }));
