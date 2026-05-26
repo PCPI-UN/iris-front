@@ -14,7 +14,7 @@ import { getCategoriesDropdownQueryOptions } from "@/features/courses/api/get-ca
 import { getPublicEventDetailQueryOptions } from "@/features/events/api/get-public-event-detail";
 import {
   extractEventIdFromSlug,
-  isUserRegisteredInEvent,
+  resolveJoinTarget,
 } from "@/features/events/utils/resolve-join-target";
 import { toPublicEventType } from "@/features/events/utils/normalize-event-type";
 import { useUser } from "@/lib/auth";
@@ -87,11 +87,14 @@ const PublicProjectPage = ({
       setIsCheckingRegistration(true);
 
       try {
-        const isAlreadyRegistered = await isUserRegisteredInEvent(eventId);
+        const targetHref = await resolveJoinTarget({
+          eventId,
+          user: user.data,
+        });
 
-        if (isMounted && isAlreadyRegistered) {
+        if (isMounted && targetHref === paths.app.dashboard.getHref()) {
           setIsRedirectingRegistered(true);
-          router.replace(paths.app.dashboard.getHref());
+          router.replace(targetHref);
           return;
         }
       } finally {

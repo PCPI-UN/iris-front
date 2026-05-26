@@ -1,5 +1,6 @@
 import { paths } from '@/config/paths';
 import { api } from '@/lib/api-client';
+import { getProject } from '@/features/projects/api/get-project-user-event';
 
 type JoinUser = {
   id?: string | number | null;
@@ -85,6 +86,20 @@ const buildProjectHref = (
   return paths.public.project.getHref(normalizedEventId);
 };
 
+export const getUserProjectStateInEvent = async (
+  eventId: string | number,
+): Promise<string | null> => {
+  try {
+    const { project } = await getProject({ eventId: String(eventId) });
+
+    return typeof project?.state === 'string'
+      ? project.state.trim().toUpperCase()
+      : null;
+  } catch {
+    return null;
+  }
+};
+
 export const isUserRegisteredInEvent = async (
   eventId: string | number,
 ): Promise<boolean> => {
@@ -153,6 +168,14 @@ export const resolveJoinTarget = async ({
   }
 
   try {
+    const projectState = await getUserProjectStateInEvent(normalizedEventId);
+
+    if (projectState) {
+      return projectState === 'REJECTED'
+        ? joinHref
+        : paths.app.dashboard.getHref();
+    }
+
     const isAlreadyRegistered = await isUserRegisteredInEvent(normalizedEventId);
 
     if (isAlreadyRegistered) {
