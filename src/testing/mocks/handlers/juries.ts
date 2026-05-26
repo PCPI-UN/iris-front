@@ -10,7 +10,91 @@ type JuryBody = {
   projectIds: string[];
 };
 
+const PAGE_SIZE = 10;
+
+const getInvitationStatusCode = (status: string): 0 | 1 | 2 | 3 => {
+  switch (status) {
+    case "accepted":
+      return 1;
+    case "declined":
+      return 2;
+    case "pending":
+    default:
+      return 0;
+  }
+};
+
+const calculatePagination = (total: number, page: number, pageSize: number = PAGE_SIZE) => {
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  return {
+    page: Math.min(Math.max(1, Math.floor(page)) || 1, totalPages),
+    total,
+    totalPages,
+  };
+};
+
 export const juriesHandlers = [
+  http.get(`${env.API_URL}/invitations/events/:eventId`, async ({ cookies, request, params }) => {
+    await networkDelay();
+
+    try {
+      const { error } = requireAuth(cookies);
+      if (error) {
+        return HttpResponse.json({ message: error }, { status: 401 });
+      }
+
+      const url = new URL(request.url);
+      const page = Number(url.searchParams.get("page") || 1);
+      const limit = Number(url.searchParams.get("limit") || PAGE_SIZE);
+      const roleId = Number(url.searchParams.get("roleId") || 4);
+      const eventId = String(params.eventId ?? "");
+
+      if (roleId !== 4 || !eventId) {
+        return HttpResponse.json({ invitations: [], meta: { total: 0, itemsOnCurrentPage: 0, itemsPerPage: limit, currentPage: 1, totalPages: 1 } });
+      }
+
+      const invitations = db.jury
+        .getAll()
+        .filter((jury) => (jury.eventIds ?? []).some((id) => String(id) === eventId))
+        .map((jury) => ({
+          id: String(jury.id),
+          token: `jury-${String(jury.id)}`,
+          email: jury.email,
+          targetType: "EVENT",
+          targetId: Number(eventId),
+          status: getInvitationStatusCode(String(jury.invitationStatus ?? "pending")),
+          expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString(),
+          invitedByUserId: 1,
+          invitedUserId: null,
+          roleIds: [4],
+          createdAt: new Date(jury.createdAt ?? Date.now()).toISOString(),
+          roles: [],
+          event: null,
+          project: null,
+        }));
+
+      const pagination = calculatePagination(invitations.length, page, limit);
+      const start = limit * (pagination.page - 1);
+      const end = start + limit;
+
+      return HttpResponse.json({
+        invitations: invitations.slice(start, end),
+        meta: {
+          total: pagination.total,
+          itemsOnCurrentPage: invitations.slice(start, end).length,
+          itemsPerPage: limit,
+          currentPage: pagination.page,
+          totalPages: pagination.totalPages,
+        },
+      });
+    } catch (error: any) {
+      return HttpResponse.json(
+        { message: error?.message || "Server Error" },
+        { status: 500 }
+      );
+    }
+  }),
+
   http.get(`${env.API_URL}/juries`, async ({ cookies, request }) => {
     await networkDelay();
 

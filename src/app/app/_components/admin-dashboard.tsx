@@ -1,12 +1,16 @@
 'use client';
 
 import { useUser } from '@/lib/auth';
-import { Calendar, Folder, FileCheck, ShieldCheck, Users, Award } from 'lucide-react';
+import { Award, Calendar, Clock3, Folder, FileCheck, ShieldCheck, UserCheck, Users } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Select, SelectItem } from '@/components/ui/select/select';
 import { useEvents } from '@/features/events/api/get-events';
+import { api } from '@/lib/api-client';
+import { normalizeParticipantStatus } from '@/features/events/api/student-dashboard.helpers';
 import { useCategoriesDropdown } from '@/features/courses/api/get-categories-dropdown';
 import { useProjectsWithJurors } from '@/features/projects/api/get-projects-with-jurors';
+import { useEventJuries } from '@/features/juries/api/get-event-juries';
+import { useJuryInvitationSummary } from '@/features/juries/api/get-juries';
 import { Card, CardHeader, CardBody } from '@/components/ui/card';
 import { useDashboardStats } from '@/features/dashboard/api/get-dashboard-stats';
 import { Spinner } from '@/components/ui/spinner';
@@ -155,30 +159,51 @@ function DistributionCardContent() {
 
   const categoriesDropdownQuery = useCategoriesDropdown({ eventId: selectedEventId, queryConfig: { enabled: Boolean(selectedEventId) } });
 
-  const projectsQuery = useProjectsWithJurors({ currentPage: 1, itemsPerPage: 10000, eventId: selectedEventId, categoryId: selectedCategoryId, queryConfig: { enabled: Boolean(selectedEventId) } });
+  const projectsQuery = useProjectsWithJurors({ currentPage: 1, itemsPerPage: 10000, eventId: selectedEventId, queryConfig: { enabled: Boolean(selectedEventId) } });
   const projects = projectsQuery.data?.data ?? [];
+  const eventJuriesQuery = useEventJuries({ eventId: selectedEventId, queryConfig: { enabled: Boolean(selectedEventId) } });
+  const juryInvitationSummaryQuery = useJuryInvitationSummary({ eventId: selectedEventId, queryConfig: { enabled: Boolean(selectedEventId) } });
+  
+  const filteredProjects = useMemo(() => {
+    if (!selectedCategoryId) {
+      return projects;
+    }
 
-  const projectTotals = useMemo(() => {
-    const uniqueJurorKeys = new Set<string>();
-    const uniqueParticipantKeys = new Set<string>();
+    return projects.filter((project) => String(project.categoryId ?? project.courseId ?? '') === String(selectedCategoryId));
+  }, [projects, selectedCategoryId]);
 
-    projects.forEach((project) => {
-      getUniqueJurors(project.jurors ?? []).forEach((juror) => uniqueJurorKeys.add(getJurorKey(juror)));
-      // only count confirmed participants (exclude pendingParticipants)
-      getUniqueParticipants(project.participants ?? []).forEach((p) => uniqueParticipantKeys.add(getParticipantKey(p)));
+  const eventParticipantTotals = useMemo(() => {
+    const registeredParticipantKeys = new Set<string>();
+
+    // Usar `filteredProjects` para respetar selección de categoría/evento
+    filteredProjects.forEach((project) => {
+      (project.participants ?? []).forEach((participant) => {
+        registeredParticipantKeys.add(getParticipantKey(participant));
+      });
     });
 
     return {
-      total: projects.length,
-      underReview: projects.filter((p) => p.state === 'UNDER_REVIEW').length,
-      requestChanges: projects.filter((p) => p.state === 'REQUEST_CHANGES').length,
-      approved: projects.filter((p) => p.state === 'APPROVED').length,
-      rejected: projects.filter((p) => p.state === 'REJECTED').length,
-      uniqueJurorsCount: uniqueJurorKeys.size,
-      uniqueParticipantsCount: uniqueParticipantKeys.size,
+      registeredParticipantsCount: registeredParticipantKeys.size,
+    };
+  }, [filteredProjects]);
+
+  const jurors = eventJuriesQuery.data?.data ?? eventJuriesQuery.data?.jurors ?? [];
+  const uniqueJurorsCount = useMemo(() => getUniqueJurors(jurors).length, [jurors]);
+  const pendingJuryInvitationsCount = juryInvitationSummaryQuery.data?.pendingCount ?? 0;
+
+  const projectTotals = useMemo(() => {
+    return {
+      total: filteredProjects.length,
+      underReview: filteredProjects.filter((p) => p.state === 'UNDER_REVIEW').length,
+      requestChanges: filteredProjects.filter((p) => p.state === 'REQUEST_CHANGES').length,
+      approved: filteredProjects.filter((p) => p.state === 'APPROVED').length,
+      rejected: filteredProjects.filter((p) => p.state === 'REJECTED').length,
+      uniqueJurorsCount,
+      registeredParticipantsCount: eventParticipantTotals.registeredParticipantsCount,
+      pendingJuryInvitationsCount,
       jurorAssignments: projects.reduce((sum, project) => sum + getUniqueJurors(project.jurors ?? []).length, 0),
     };
-  }, [projects]);
+    }, [eventParticipantTotals.registeredParticipantsCount, filteredProjects, pendingJuryInvitationsCount, projects, uniqueJurorsCount]);
 
   const projectStateSeries = [
     { key: 'UNDER_REVIEW', label: 'En revisión', count: projectTotals.underReview, icon: FileCheck, textColor: 'text-amber-500', bgColor: 'bg-amber-500' },
@@ -228,6 +253,7 @@ function DistributionCardContent() {
             )}
           </Select>
         </div>
+
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -264,29 +290,31 @@ function DistributionCardContent() {
         {/* Right column: Participants and Jurors */}
         <div className="space-y-3">
           <h4 className="text-sm font-semibold text-default-600 mb-3">Participación del evento</h4>
-          <Card className="glass-card shadow-sm">
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between gap-2 w-full">
-                <div className="space-y-0.5 flex-1 min-w-0">
-                  <p className="text-xs md:text-sm font-medium text-default-500">Participantes</p>
-                  <h3 className="text-xl md:text-2xl font-bold">{projectTotals.uniqueParticipantsCount ?? 0}</h3>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Card className="glass-card shadow-sm">
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between gap-2 w-full">
+                  <div className="space-y-0.5 flex-1 min-w-0">
+                    <p className="text-xs md:text-sm font-medium text-default-500">Participantes inscritos</p>
+                    <h3 className="text-xl md:text-2xl font-bold">{projectTotals.registeredParticipantsCount}</h3>
+                  </div>
+                  <Users className="h-5 w-5 md:h-6 md:w-6 flex-shrink-0 text-violet-500" />
                 </div>
-                <Users className="h-5 w-5 md:h-6 md:w-6 flex-shrink-0 text-violet-500" />
-              </div>
-            </CardHeader>
-          </Card>
+              </CardHeader>
+            </Card>
 
-          <Card className="glass-card shadow-sm">
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between gap-2 w-full">
-                <div className="space-y-0.5 flex-1 min-w-0">
-                  <p className="text-xs md:text-sm font-medium text-default-500">Jurados</p>
-                  <h3 className="text-xl md:text-2xl font-bold">{projectTotals.uniqueJurorsCount}</h3>
+            <Card className="glass-card shadow-sm">
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between gap-2 w-full">
+                  <div className="space-y-0.5 flex-1 min-w-0">
+                    <p className="text-xs md:text-sm font-medium text-default-500">Jurados</p>
+                    <h3 className="text-xl md:text-2xl font-bold">{projectTotals.uniqueJurorsCount}</h3>
+                  </div>
+                  <Award className="h-5 w-5 md:h-6 md:w-6 flex-shrink-0 text-sky-500" />
                 </div>
-                <Award className="h-5 w-5 md:h-6 md:w-6 flex-shrink-0 text-amber-500" />
-              </div>
-            </CardHeader>
-          </Card>
+              </CardHeader>
+            </Card>
+          </div>
         </div>
       </div>
     </div>
