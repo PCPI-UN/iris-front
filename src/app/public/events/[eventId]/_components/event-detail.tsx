@@ -351,13 +351,13 @@ return (
             <div className="glass-card rounded-2xl p-5 sm:p-6 space-y-4 relative overflow-hidden">
             <div className="event-cta-overlay" />
             <div className="relative z-10 space-y-4">
-                {!isInscriptionClosed && (
-                <p className="text-sm font-semibold text-foreground/70">¿Listo para participar?</p>
-                )}
+                <p className="text-sm text-muted-foreground">
+                Mantenimiento: Las inscripciones se retomarán en corto.
+                </p>
                 {!isInscriptionClosed && (
                 <Button
                 onPress={handleJoin}
-                isDisabled={isUserStatusResolving}
+                isDisabled={true}
                 fullWidth
                 size="lg"
                 className="event-button event-glow font-black text-base sm:text-lg tracking-wider uppercase py-6"
@@ -366,15 +366,6 @@ return (
                 >
                 {isAlreadyRegistered ? 'Ir al dashboard' : 'Inscríbete ya'}
                 </Button>
-                )}
-                {!isInscriptionClosed && (
-                <p className="text-xs text-muted-foreground text-center">
-                {!user?.id
-                    ? 'Necesitas iniciar sesión para inscribirte'
-                    : isAlreadyRegistered
-                    ? '✓ Ya estás inscrito en este evento'
-                    : '✓ Tu cuenta está lista para inscribirse'}
-                </p>
                 )}
                 {event.inscriptionDeadline && (
                 <div className="event-deadline-box rounded-xl p-3 flex items-center gap-3">
@@ -661,34 +652,6 @@ return (
             {event.aboutOurAllies}
         </p>
         </div>
-    </section>
-    )}
-
-    {!isInscriptionClosed && (
-    <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-12 pb-10 lg:pb-16">
-    <div className="event-cta-footer-card glass-card rounded-2xl p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6">
-        <div className="space-y-1 text-center sm:text-left">
-        <p className="text-lg sm:text-xl font-bold">¿Listo para unirte?</p>
-        <p className="text-sm text-muted-foreground">
-            {!user?.id
-            ? 'Inicia sesión y registra tu proyecto en este evento.'
-            : isAlreadyRegistered
-                ? 'Ya estás inscrito. Ve al dashboard para continuar.'
-                : 'Tu cuenta está lista. Completa tu inscripción ahora.'}
-        </p>
-        </div>
-        {!isInscriptionClosed && (
-        <Button
-        onPress={handleJoin}
-        isDisabled={isUserStatusResolving}
-        size="lg"
-        className="event-button event-glow font-black tracking-wider uppercase shrink-0 min-w-44"
-        startContent={<Rocket className="h-5 w-5" />}
-        >
-        {isAlreadyRegistered ? 'Ir al dashboard' : 'Inscríbete'}
-        </Button>
-        )}
-    </div>
     </section>
     )}
 
