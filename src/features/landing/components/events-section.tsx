@@ -1,11 +1,12 @@
 'use client';
 
-import { type RefObject, useEffect, useMemo, useState } from 'react';
+import { type CSSProperties, type RefObject, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Calendar,
   Clock,
   MapPin,
+  ArrowRight,
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
@@ -13,7 +14,13 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { GlassCard } from './glass-card';
 import { Button } from '@/components/ui/button';
 import { useEventsPublic } from '@/features/events/api/get-event-public';
+import { useMyEvents } from '@/features/events/api/get-my-events';
 import { Spinner } from '@/components/ui/spinner';
+import { useUser } from '@/lib/auth';
+import {
+  getUserProjectStateInEvent,
+  resolveJoinTarget,
+} from '@/features/events/utils/resolve-join-target';
 import { hasInscriptionDeadlinePassed } from '@/features/events/utils/inscription-deadline';
 import { paths } from '@/config/paths';
 import { landingContent } from '../content';
@@ -141,6 +148,19 @@ const isEventExpired = (endDate?: string | null) => {
 export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
   const router = useRouter();
   const eventsQuery = useEventsPublic({ page: 1 });
+  const {
+    data: user,
+    isLoading: isUserLoading,
+    isFetching: isUserFetching,
+  } = useUser();
+  const myEventsQuery = useMyEvents({
+    page: 1,
+    queryConfig: {
+      enabled: Boolean(user?.id),
+    },
+  });
+
+  const isUserStatusResolving = isUserLoading || isUserFetching;
   const [currentPage, setCurrentPage] = useState(0);
   const [cardsPerView, setCardsPerView] = useState(3);
   const [uniformCardHeight, setUniformCardHeight] = useState<number | null>(null);
@@ -177,6 +197,23 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
       ScrollTrigger.refresh();
     });
   }, [eventsQuery.isLoading, eventsQuery.data?.data?.length, cardsPerView]);
+
+  const handleJoin = async (
+    eventId: string | number,
+    eventName?: string,
+  ) => {
+    if (isUserStatusResolving) {
+      return;
+    }
+
+    const targetHref = await resolveJoinTarget({
+      eventId,
+      eventName,
+      user,
+    });
+
+    router.push(targetHref);
+  };
 
   const events = useMemo(
     () => (eventsQuery.data?.data || []).filter((event) => !isEventExpired(event.endDate)),
@@ -216,6 +253,13 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
 
   const eventsToRender = sortedEvents;
   const totalPages = Math.ceil(eventsToRender.length / cardsPerView);
+  const registeredEventIds = useMemo(() => {
+    return new Set(
+      (myEventsQuery.data?.data ?? []).map((event) => String(event.id)),
+    );
+  }, [myEventsQuery.data?.data]);
+
+  const [projectStateByEventId, setProjectStateByEventId] = useState<Record<string, string | null>>({});
 
   const pages = useMemo(() => {
     return Array.from({ length: totalPages }, (_, pageIndex) => {
@@ -223,6 +267,43 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
       return eventsToRender.slice(start, start + cardsPerView);
     });
   }, [eventsToRender, totalPages, cardsPerView]);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    const loadProjectStates = async () => {
+      if (!user?.id || !registeredEventIds.size) {
+        setProjectStateByEventId({});
+        return;
+      }
+
+      const start = currentPage * cardsPerView;
+      const visibleEvents = eventsToRender.slice(start, start + cardsPerView);
+      const visibleRegisteredEvents = visibleEvents.filter((event) =>
+        registeredEventIds.has(String(event.id)),
+      );
+
+      const entries = await Promise.all(
+        visibleRegisteredEvents.map(async (event) => {
+          const state = await getUserProjectStateInEvent(event.id);
+          return [String(event.id), state] as const;
+        }),
+      );
+
+      if (!isCancelled) {
+        setProjectStateByEventId((previous) => ({
+          ...previous,
+          ...Object.fromEntries(entries),
+        }));
+      }
+    };
+
+    void loadProjectStates();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [cardsPerView, currentPage, eventsToRender, registeredEventIds, user?.id]);
 
   useEffect(() => {
     setCurrentPage(0);
@@ -309,15 +390,6 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
           <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
             {landingContent.events.subtitle}
           </p>
-
-          <div className="mx-auto mt-6 max-w-2xl rounded-2xl border border-white/15 bg-white/8 px-4 py-3 text-left shadow-[0_0_30px_rgba(255,255,255,0.06)] backdrop-blur-md">
-            <p className="text-sm sm:text-base font-semibold text-foreground">
-              {landingContent.events.maintenance.title}
-            </p>
-            <p className="mt-1 text-sm sm:text-base text-muted-foreground">
-              {landingContent.events.maintenance.message}
-            </p>
-          </div>
         </div>
 
         {eventsToRender.length === 0 ? (
@@ -354,6 +426,9 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
                         const dateRange = formatDateRange(event.startDate, event.endDate);
                         const status = getStatusText(event.statusName);
                         const isInscriptionClosed = hasInscriptionDeadlinePassed(event.inscriptionDeadline);
+                        const projectState = projectStateByEventId[String(event.id)];
+                        const isRejectedProject = projectState === 'REJECTED';
+                        const isAlreadyRegistered = registeredEventIds.has(String(event.id)) && !isRejectedProject;
                         const cardStatusText = isInscriptionClosed ? 'Inscripciones Cerradas' : status;
 
                         return (
@@ -469,7 +544,13 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
                                 </div>
                               </div>
 
-                              <div className={isInscriptionClosed ? 'mt-auto flex justify-center' : 'mt-auto flex justify-center'}>
+                              <div
+                                className={
+                                  isInscriptionClosed
+                                    ? 'mt-auto flex justify-center'
+                                    : 'mt-auto grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3'
+                                }
+                              >
                                 <Button
                                   onClick={() => {
                                     const eventIdString = String(event.id);
@@ -488,7 +569,6 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
                                   Ver más
                                 </Button>
 
-                                {/*
                                 {!isInscriptionClosed && (
                                   <Button
                                     onPress={() => {
@@ -504,13 +584,12 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
                                       } as CSSProperties
                                     }
                                   >
-                                    {registeredEventIds.has(String(event.id))
-                                      ? 'Ir al dashboard'
-                                      : 'Inscribirse'}
+                                      {isAlreadyRegistered
+                                        ? 'Ir al dashboard'
+                                        : 'Inscribirse'}
                                     <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                                   </Button>
                                 )}
-                                */}
                               </div>
                             </div>
                           </GlassCard>
