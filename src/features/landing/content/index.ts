@@ -99,8 +99,8 @@ export const landingContent = {
     titleHighlight: 'Eventos',
     subtitle: 'Regístrate, participa o explora los eventos activos en la plataforma',
     maintenance: {
-      title: 'Estamos teniendo dificultades técnicas',
-      message: 'Las inscripciones se retomarán en corto. Mientras tanto, puedes revisar los eventos y ver más detalles.',
+      title: '* Mantenimiento',
+      message: 'Inscripciones volverán en unos momentos.',
     },
     cta: {
       open: 'Inscribirse',
