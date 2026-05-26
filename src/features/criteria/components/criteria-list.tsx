@@ -124,11 +124,16 @@ export const CriteriaList = () => {
   const [assignPendingId, setAssignPendingId] = useState<number | null>(null);
   const [deletePendingId, setDeletePendingId] = useState<number | null>(null);
   const [inlineComponentFormOpen, setInlineComponentFormOpen] = useState(false);
-  const [pendingInlineAssignmentCriterionId, setPendingInlineAssignmentCriterionId] = useState<number | null>(null);
+  const [
+    pendingInlineAssignmentCriterionId,
+    setPendingInlineAssignmentCriterionId,
+  ] = useState<number | null>(null);
   const [deleteComponentMode, setDeleteComponentMode] =
     useState<DeleteComponentMode>("reassign");
   const [isCancelChangesOpen, setIsCancelChangesOpen] = useState(false);
   const [isRollbackPending, setIsRollbackPending] = useState(false);
+  const [pendingEventKey, setPendingEventKey] = useState<string>("");
+  const [isEventSwitchModalOpen, setIsEventSwitchModalOpen] = useState(false);
   const [savedSnapshotByEvent, setSavedSnapshotByEvent] = useState<
     Record<string, SavedCriteriaSnapshot>
   >({});
@@ -161,6 +166,7 @@ export const CriteriaList = () => {
     queryConfig: { enabled: !!selectedEventKey },
   });
   const componentsQuery = useComponents({
+    eventId: selectedEventId,
     queryConfig: { enabled: !!selectedEventKey },
   });
 
@@ -313,9 +319,6 @@ export const CriteriaList = () => {
     selectedEventKey,
   ]);
 
-  // Capture the initial snapshot once per event, only after all queries settle.
-  // Uses a ref to ensure we only capture once and never re-run due to derived
-  // value changes — this is the main fix for the update cycle.
   useEffect(() => {
     if (!selectedEventKey) return;
     if (hasUnsavedChangesByEvent[selectedEventKey]) return;
@@ -323,7 +326,8 @@ export const CriteriaList = () => {
       criteriaQuery.isLoading ||
       allEventCriteriaQuery.isLoading ||
       componentsQuery.isLoading
-    ) return;
+    )
+      return;
     if (snapshotCapturedRef.current[selectedEventKey]) return;
 
     snapshotCapturedRef.current[selectedEventKey] = true;
@@ -335,7 +339,7 @@ export const CriteriaList = () => {
         components: availableComponents,
       },
     }));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     selectedEventKey,
     criteriaQuery.isLoading,
@@ -361,12 +365,12 @@ export const CriteriaList = () => {
   const totalWeightPercent = useMemo(
     () =>
       criteria.reduce(
-        (total, criterion) => total + Math.round(Number(criterion.weight || 0) * 100),
+        (total, criterion) =>
+          total + Math.round(Number(criterion.weight || 0) * 100),
         0,
       ),
     [criteria],
   );
-
 
   const availableWeightForNewCriterion = useMemo(
     () => Math.max(0, 100 - totalWeightPercent),
@@ -406,7 +410,8 @@ export const CriteriaList = () => {
   const hasValidationErrors = hasComponentsAvailable && looseCount > 0;
   const weightDeltaTo100 = 100 - totalWeightPercent;
   const hasExactWeight100 = totalWeightPercent === 100;
-  const canSave = hasUnsavedChanges && !hasValidationErrors && hasExactWeight100;
+  const canSave =
+    hasUnsavedChanges && !hasValidationErrors && hasExactWeight100;
 
   const markUnsavedChanges = useCallback(() => {
     if (!selectedEventKey) return;
@@ -456,8 +461,12 @@ export const CriteriaList = () => {
   // Capture a fresh snapshot using refs to avoid stale closures
   const allEventCriteriaRef = useRef(allEventCriteria);
   const availableComponentsRef = useRef(availableComponents);
-  useEffect(() => { allEventCriteriaRef.current = allEventCriteria; }, [allEventCriteria]);
-  useEffect(() => { availableComponentsRef.current = availableComponents; }, [availableComponents]);
+  useEffect(() => {
+    allEventCriteriaRef.current = allEventCriteria;
+  }, [allEventCriteria]);
+  useEffect(() => {
+    availableComponentsRef.current = availableComponents;
+  }, [availableComponents]);
 
   const buildSnapshot = useCallback(
     (): SavedCriteriaSnapshot => ({
@@ -467,165 +476,174 @@ export const CriteriaList = () => {
     [],
   );
 
-  const handleCancelChanges = useCallback(async () => {
-    if (!selectedEventKey) return;
+  const handleCancelChanges = useCallback(
+    async (afterSuccess?: () => void) => {
+      if (!selectedEventKey) return;
 
-    const savedSnapshot = savedSnapshotByEvent[selectedEventKey];
-    if (!savedSnapshot) {
-      addNotification({
-        type: "error",
-        title: "Sin punto de restauración",
-        message: "No hay un estado guardado reciente para restaurar.",
-      });
-      return;
-    }
-
-    setIsRollbackPending(true);
-    try {
-      const currentSnapshot = buildSnapshot();
-      const savedCriteriaById = new Map(
-        savedSnapshot.criteria.map((c) => [c.id, c]),
-      );
-      const currentCriteriaById = new Map(
-        currentSnapshot.criteria.map((c) => [c.id, c]),
-      );
-      const savedComponentsById = new Map(
-        savedSnapshot.components.map((c) => [c.id, c]),
-      );
-      const currentComponentsById = new Map(
-        currentSnapshot.components.map((c) => [c.id, c]),
-      );
-      const restoredComponentIdByOldId = new Map<number, number>();
-
-      for (const c of currentSnapshot.criteria) {
-        if (!savedCriteriaById.has(c.id)) {
-          await deleteCriteria({ criterionId: c.id });
-        }
+      const savedSnapshot = savedSnapshotByEvent[selectedEventKey];
+      if (!savedSnapshot) {
+        addNotification({
+          type: "error",
+          title: "Sin punto de restauración",
+          message: "No hay un estado guardado reciente para restaurar.",
+        });
+        return;
       }
 
-      for (const component of savedSnapshot.components) {
-        if (!currentComponentsById.has(component.id)) {
-          const response = await createComponent({
-            data: {
-              name: component.name,
-              description: component.description ?? "",
-              weight: component.weight,
-            },
-          });
-          const restored = (response as any)?.data ?? response;
-          const restoredId = Number(restored?.id);
-          if (Number.isFinite(restoredId) && restoredId > 0) {
-            restoredComponentIdByOldId.set(component.id, restoredId);
+      setIsRollbackPending(true);
+      try {
+        const currentSnapshot = buildSnapshot();
+        const savedCriteriaById = new Map(
+          savedSnapshot.criteria.map((c) => [c.id, c]),
+        );
+        const currentCriteriaById = new Map(
+          currentSnapshot.criteria.map((c) => [c.id, c]),
+        );
+        const savedComponentsById = new Map(
+          savedSnapshot.components.map((c) => [c.id, c]),
+        );
+        const currentComponentsById = new Map(
+          currentSnapshot.components.map((c) => [c.id, c]),
+        );
+        const restoredComponentIdByOldId = new Map<number, number>();
+
+        for (const c of currentSnapshot.criteria) {
+          if (!savedCriteriaById.has(c.id)) {
+            await deleteCriteria({ criterionId: c.id });
           }
         }
-      }
 
-      for (const component of savedSnapshot.components) {
-        const current = currentComponentsById.get(component.id);
-        if (!current) continue;
-        if (
-          JSON.stringify(normalizeComponentForCompare(component)) !==
-          JSON.stringify(normalizeComponentForCompare(current))
-        ) {
-          await updateComponent({
-            componentId: component.id,
-            data: {
-              name: component.name,
-              description: component.description ?? "",
-              weight: component.weight,
-            },
-          });
-        }
-      }
+        for (const component of savedSnapshot.components) {
+          if (!currentComponentsById.has(component.id)) {
+            if (!selectedEventId) continue; // Skip if no event selected
 
-      for (const criterion of savedSnapshot.criteria) {
-        const current = currentCriteriaById.get(criterion.id);
-        const restoredComponentId = criterion.component?.id
-          ? (restoredComponentIdByOldId.get(criterion.component.id) ??
-            criterion.component.id)
-          : undefined;
-
-        const payload = {
-          eventId: criterion.eventId,
-          name: criterion.name,
-          description: criterion.description ?? "",
-          weight: criterion.weight,
-          categoryIds: criterion.categoryIds,
-          componentId: restoredComponentId ?? null,
-        };
-
-        if (!current) {
-          await createCriteria({
-            data: {
-              eventId: payload.eventId,
-              name: payload.name,
-              description: payload.description,
-              weight: payload.weight,
-              categoryIds: payload.categoryIds,
-              ...(restoredComponentId ? { componentId: restoredComponentId } : {}),
-            },
-          });
-          continue;
+            const response = await createComponent({
+              data: {
+                name: component.name,
+                description: component.description ?? "",
+                weight: component.weight,
+                eventId: selectedEventId,
+              },
+            });
+            const restored = (response as any)?.data ?? response;
+            const restoredId = Number(restored?.id);
+            if (Number.isFinite(restoredId) && restoredId > 0) {
+              restoredComponentIdByOldId.set(component.id, restoredId);
+            }
+          }
         }
 
-        if (
-          JSON.stringify(normalizeCriterionForCompare(criterion)) !==
-          JSON.stringify(normalizeCriterionForCompare(current))
-        ) {
-          await updateCriteria({ criterionId: current.id, data: payload });
+        for (const component of savedSnapshot.components) {
+          const current = currentComponentsById.get(component.id);
+          if (!current) continue;
+          if (
+            JSON.stringify(normalizeComponentForCompare(component)) !==
+            JSON.stringify(normalizeComponentForCompare(current))
+          ) {
+            await updateComponent({
+              componentId: component.id,
+              data: {
+                name: component.name,
+                description: component.description ?? "",
+                weight: component.weight,
+              },
+            });
+          }
         }
-      }
 
-      for (const component of currentSnapshot.components) {
-        if (!savedComponentsById.has(component.id)) {
-          await deleteComponent({ componentId: component.id });
+        for (const criterion of savedSnapshot.criteria) {
+          const current = currentCriteriaById.get(criterion.id);
+          const restoredComponentId = criterion.component?.id
+            ? (restoredComponentIdByOldId.get(criterion.component.id) ??
+              criterion.component.id)
+            : undefined;
+
+          const payload = {
+            eventId: criterion.eventId,
+            name: criterion.name,
+            description: criterion.description ?? "",
+            weight: criterion.weight,
+            categoryIds: criterion.categoryIds,
+            componentId: restoredComponentId ?? null,
+          };
+
+          if (!current) {
+            await createCriteria({
+              data: {
+                eventId: payload.eventId,
+                name: payload.name,
+                description: payload.description,
+                weight: payload.weight,
+                categoryIds: payload.categoryIds,
+                ...(restoredComponentId
+                  ? { componentId: restoredComponentId }
+                  : {}),
+              },
+            });
+            continue;
+          }
+
+          if (
+            JSON.stringify(normalizeCriterionForCompare(criterion)) !==
+            JSON.stringify(normalizeCriterionForCompare(current))
+          ) {
+            await updateCriteria({ criterionId: current.id, data: payload });
+          }
         }
+
+        for (const component of currentSnapshot.components) {
+          if (!savedComponentsById.has(component.id)) {
+            await deleteComponent({ componentId: component.id });
+          }
+        }
+
+        setHasUnsavedChangesByEvent((prev) => ({
+          ...prev,
+          [selectedEventKey]: false,
+        }));
+        setCreatedComponentsByEvent((prev) => ({
+          ...prev,
+          [selectedEventKey]: [],
+        }));
+        setEventComponentIds((prev) => ({
+          ...prev,
+          [selectedEventKey]: savedSnapshot.components.map((c) => c.id),
+        }));
+        // Reset snapshot capture guard so a fresh one is taken after refetch
+        snapshotCapturedRef.current[selectedEventKey] = false;
+        mergedComponentIdsRef.current[selectedEventKey] = new Set();
+
+        setIsCancelChangesOpen(false);
+        afterSuccess?.();
+        await refetchCriteriaState();
+        addNotification({
+          type: "success",
+          title: "Cambios descartados",
+          message: "La vista se restauró al último estado guardado.",
+        });
+      } catch (error: any) {
+        addNotification({
+          type: "error",
+          title: "No se pudieron cancelar los cambios",
+          message:
+            error?.message ||
+            "Alguna operación de restauración fue rechazada por el servidor.",
+        });
+      } finally {
+        setIsRollbackPending(false);
       }
+    },
+    [
+      addNotification,
+      buildSnapshot,
+      refetchCriteriaState,
+      savedSnapshotByEvent,
+      selectedEventKey,
+      selectedEventId,
+    ],
+  );
 
-      setHasUnsavedChangesByEvent((prev) => ({
-        ...prev,
-        [selectedEventKey]: false,
-      }));
-      setCreatedComponentsByEvent((prev) => ({
-        ...prev,
-        [selectedEventKey]: [],
-      }));
-      setEventComponentIds((prev) => ({
-        ...prev,
-        [selectedEventKey]: savedSnapshot.components.map((c) => c.id),
-      }));
-      // Reset snapshot capture guard so a fresh one is taken after refetch
-      snapshotCapturedRef.current[selectedEventKey] = false;
-      mergedComponentIdsRef.current[selectedEventKey] = new Set();
-
-      setIsCancelChangesOpen(false);
-      await refetchCriteriaState();
-      addNotification({
-        type: "success",
-        title: "Cambios descartados",
-        message: "La vista se restauró al último estado guardado.",
-      });
-    } catch (error: any) {
-      addNotification({
-        type: "error",
-        title: "No se pudieron cancelar los cambios",
-        message:
-          error?.message ||
-          "Alguna operación de restauración fue rechazada por el servidor.",
-      });
-    } finally {
-      setIsRollbackPending(false);
-    }
-  }, [
-    addNotification,
-    buildSnapshot,
-    refetchCriteriaState,
-    savedSnapshotByEvent,
-    selectedEventKey,
-  ]);
-
-  const handleEventChange = useCallback((keys: any) => {
-    const eventKey = getSingleSelectionKey(keys);
+  const doSwitchEvent = useCallback((eventKey: string) => {
     const validEventId = toPositiveInt(eventKey);
     if (!validEventId) {
       setSelectedEventKey("");
@@ -638,9 +656,72 @@ export const CriteriaList = () => {
     setAssignmentByCriterion({});
   }, []);
 
+  const handleEventChange = useCallback(
+    (keys: any) => {
+      const eventKey = getSingleSelectionKey(keys);
+      if (eventKey === selectedEventKey) return;
+      if (selectedEventKey && hasUnsavedChanges) {
+        setPendingEventKey(eventKey);
+        setIsEventSwitchModalOpen(true);
+        return;
+      }
+      doSwitchEvent(eventKey);
+    },
+    [selectedEventKey, hasUnsavedChanges, doSwitchEvent],
+  );
+
+  const handleSaveAndSwitch = useCallback(() => {
+    if (!canSave) return;
+    const snapshot = buildSnapshot();
+    setSavedSnapshotByEvent((prev) => ({
+      ...prev,
+      [selectedEventKey]: snapshot,
+    }));
+    setHasUnsavedChangesByEvent((prev) => ({
+      ...prev,
+      [selectedEventKey]: false,
+    }));
+    // Reset refs for next iteration
+    mergedComponentIdsRef.current[selectedEventKey] = new Set();
+    setCreatedComponentsByEvent((prev) => ({
+      ...prev,
+      [selectedEventKey]: [],
+    }));
+    setEventComponentIds((prev) => ({
+      ...prev,
+      [selectedEventKey]: snapshot.components.map((c) => c.id),
+    }));
+    snapshotCapturedRef.current[selectedEventKey] = false;
+    setIsEventSwitchModalOpen(false);
+    addNotification({
+      type: "success",
+      title: "Configuración guardada",
+      message: "La configuración quedó marcada como guardada.",
+    });
+    doSwitchEvent(pendingEventKey);
+  }, [
+    canSave,
+    buildSnapshot,
+    selectedEventKey,
+    addNotification,
+    doSwitchEvent,
+    pendingEventKey,
+  ]);
+
+  const handleDiscardAndSwitch = useCallback(() => {
+    const targetKey = pendingEventKey;
+    handleCancelChanges(() => {
+      setIsEventSwitchModalOpen(false);
+      doSwitchEvent(targetKey);
+    });
+  }, [handleCancelChanges, pendingEventKey, doSwitchEvent]);
+
   const handleCategoryChange = useCallback((keys: any) => {
     const nextKey = getSingleSelectionKey(keys);
-    if (!nextKey) { setSelectedCategoryKey(""); return; }
+    if (!nextKey) {
+      setSelectedCategoryKey("");
+      return;
+    }
     const validId = toPositiveInt(nextKey);
     setSelectedCategoryKey(validId ? String(validId) : "");
   }, []);
@@ -658,9 +739,13 @@ export const CriteriaList = () => {
             categoryIds: criterion.categoryIds,
             eventId: criterion.eventId,
             ...(criterion.name ? { name: criterion.name } : {}),
-            ...(criterion.description ? { description: criterion.description } : {}),
+            ...(criterion.description
+              ? { description: criterion.description }
+              : {}),
             ...(criterion.category ? { category: criterion.category } : {}),
-            ...(typeof criterion.weight === "number" ? { weight: criterion.weight } : {}),
+            ...(typeof criterion.weight === "number"
+              ? { weight: criterion.weight }
+              : {}),
           },
         });
         setAssignmentByCriterion((prev) => {
@@ -684,11 +769,19 @@ export const CriteriaList = () => {
         setAssignPendingId(null);
       }
     },
-    [addNotification, assignmentByCriterion, markUnsavedChanges, updateCriteriaMutation],
+    [
+      addNotification,
+      assignmentByCriterion,
+      markUnsavedChanges,
+      updateCriteriaMutation,
+    ],
   );
 
   const handleDeleteComponent = useCallback(
-    async (component: CriterionComponent, mode: DeleteComponentMode = "reassign") => {
+    async (
+      component: CriterionComponent,
+      mode: DeleteComponentMode = "reassign",
+    ) => {
       setDeletePendingId(component.id);
       try {
         const assignedCriteria = allEventCriteria.filter(
@@ -699,7 +792,9 @@ export const CriteriaList = () => {
             await deleteCriteria({ criterionId: c.id });
           }
         }
-        await deleteComponentMutation.mutateAsync({ componentId: component.id });
+        await deleteComponentMutation.mutateAsync({
+          componentId: component.id,
+        });
 
         if (selectedEventKey) {
           setCreatedComponentsByEvent((prev) => ({
@@ -766,23 +861,29 @@ export const CriteriaList = () => {
       <Card
         shadow="sm"
         key={criterion.id}
-        className={emphasizeLoose ? "border-danger/30 bg-danger/5" : "glass-card"}
+        className={
+          emphasizeLoose ? "border-danger/30 bg-danger/5" : "glass-card"
+        }
       >
         <CardBody className={compact ? "p-3 sm:p-4" : "p-4 sm:p-6"}>
           <div className="flex flex-col gap-3">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div className="space-y-1 min-w-0">
-                <h3 className="text-sm sm:text-base font-semibold line-clamp-2">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0 flex-1 space-y-1.5">
+                <h3 className="break-words text-sm font-semibold leading-snug [overflow-wrap:anywhere] sm:line-clamp-3 sm:text-base">
                   {criterion.name}
                 </h3>
-                <p className="text-xs sm:text-sm text-default-500 line-clamp-2">
-                  {criterion.description || "Sin descripción"}
-                </p>
+                {criterion.description && (
+                  <p className="line-clamp-2 text-xs text-default-500 sm:text-sm">
+                    {criterion.description}
+                  </p>
+                )}
                 <div className="flex flex-wrap items-center gap-2 text-xs">
                   {criterion.category && (
                     <span className="text-default-500">
                       Categoría:{" "}
-                      <span className="font-semibold">{criterion.category}</span>
+                      <span className="font-semibold">
+                        {criterion.category}
+                      </span>
                     </span>
                   )}
                   {!!criterion.component?.name && !hideComponentBadge && (
@@ -793,7 +894,7 @@ export const CriteriaList = () => {
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2 sm:self-start">
+              <div className="flex shrink-0 flex-col items-end gap-1.5 sm:flex-row sm:items-center sm:justify-end sm:gap-2">
                 <Chip size="sm" color="primary" variant="flat">
                   {(Number(criterion.weight || 0) * 100).toFixed(0)}%
                 </Chip>
@@ -802,7 +903,9 @@ export const CriteriaList = () => {
                   availableComponents={availableComponents}
                   requireComponentSelection={hasComponentsAvailable}
                   criterionToEdit={criterion}
-                  availableWeightPercent={availableWeightForCriterionEdit(criterion.id)}
+                  availableWeightPercent={availableWeightForCriterionEdit(
+                    criterion.id,
+                  )}
                   buttonVariant="flat"
                   buttonColor="default"
                   onUpdated={() => {
@@ -828,7 +931,9 @@ export const CriteriaList = () => {
                       size="sm"
                       label="Asignar a componente"
                       placeholder="Selecciona un componente"
-                      selectedKeys={selectedAssignment ? [selectedAssignment] : []}
+                      selectedKeys={
+                        selectedAssignment ? [selectedAssignment] : []
+                      }
                       onSelectionChange={(keys) => {
                         const selected = Array.from(keys)[0];
                         if (selected === ADD_COMPONENT_KEY) {
@@ -921,7 +1026,9 @@ export const CriteriaList = () => {
         <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-3">
           <Card className="glass-card shadow-sm">
             <CardHeader className="pb-2 justify-center">
-              <p className="text-xs font-medium text-default-500">Total de criterios</p>
+              <p className="text-xs font-medium text-default-500">
+                Total de criterios
+              </p>
             </CardHeader>
             <CardBody className="pt-0 text-center">
               <p className="text-2xl font-bold">{criteria.length}</p>
@@ -929,7 +1036,9 @@ export const CriteriaList = () => {
           </Card>
           <Card className="glass-card shadow-sm">
             <CardHeader className="pb-2 justify-center">
-              <p className="text-xs font-medium text-default-500">Total de componentes</p>
+              <p className="text-xs font-medium text-default-500">
+                Total de componentes
+              </p>
             </CardHeader>
             <CardBody className="pt-0 text-center">
               <p className="text-2xl font-bold">{availableComponents.length}</p>
@@ -955,11 +1064,13 @@ export const CriteriaList = () => {
           )}
           <CreateComponent
             isDisabled={!selectedEventKey}
+            eventId={selectedEventId}
             onCreated={(component) => {
               if (!selectedEventKey) return;
               markUnsavedChanges();
               mergedComponentIdsRef.current[selectedEventKey] = new Set([
-                ...(mergedComponentIdsRef.current[selectedEventKey] ?? new Set()),
+                ...(mergedComponentIdsRef.current[selectedEventKey] ??
+                  new Set()),
                 component.id,
               ]);
               setEventComponentIds((prev) => ({
@@ -1002,44 +1113,54 @@ export const CriteriaList = () => {
             </p>
           )}
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
-          {hasUnsavedChanges && (
+            {hasUnsavedChanges && (
+              <Button
+                variant="flat"
+                color="danger"
+                onPress={() => setIsCancelChangesOpen(true)}
+                isDisabled={isRollbackPending}
+              >
+                <RotateCcw className="size-4" />
+                Cancelar cambios
+              </Button>
+            )}
             <Button
-              variant="flat"
-              color="danger"
-              onPress={() => setIsCancelChangesOpen(true)}
-              isDisabled={isRollbackPending}
+              color="primary"
+              variant="shadow"
+              isDisabled={!canSave}
+              onPress={() => {
+                if (!canSave) return;
+                const snapshot = buildSnapshot();
+                setSavedSnapshotByEvent((prev) => ({
+                  ...prev,
+                  [selectedEventKey]: snapshot,
+                }));
+                setHasUnsavedChangesByEvent((prev) => ({
+                  ...prev,
+                  [selectedEventKey]: false,
+                }));
+                // Reset refs for next iteration
+                mergedComponentIdsRef.current[selectedEventKey] = new Set();
+                setCreatedComponentsByEvent((prev) => ({
+                  ...prev,
+                  [selectedEventKey]: [],
+                }));
+                setEventComponentIds((prev) => ({
+                  ...prev,
+                  [selectedEventKey]: snapshot.components.map((c) => c.id),
+                }));
+                // Allow re-capture on next load after a real save
+                snapshotCapturedRef.current[selectedEventKey] = false;
+                addNotification({
+                  type: "success",
+                  title: "Configuración guardada",
+                  message: "La configuración quedó marcada como guardada.",
+                });
+              }}
             >
-              <RotateCcw className="size-4" />
-              Cancelar cambios
+              <Save className="size-4" />
+              Guardar configuración
             </Button>
-          )}
-          <Button
-            color="primary"
-            variant="shadow"
-            isDisabled={!canSave}
-            onPress={() => {
-              if (!canSave) return;
-              const snapshot = buildSnapshot();
-              setSavedSnapshotByEvent((prev) => ({
-                ...prev,
-                [selectedEventKey]: snapshot,
-              }));
-              setHasUnsavedChangesByEvent((prev) => ({
-                ...prev,
-                [selectedEventKey]: false,
-              }));
-              // Allow re-capture on next load after a real save
-              snapshotCapturedRef.current[selectedEventKey] = false;
-              addNotification({
-                type: "success",
-                title: "Configuración guardada",
-                message: "La configuración quedó marcada como guardada.",
-              });
-            }}
-          >
-            <Save className="size-4" />
-            Guardar configuración
-          </Button>
           </div>
         </div>
       </div>
@@ -1053,6 +1174,7 @@ export const CriteriaList = () => {
           }
         }}
         hideTrigger
+        eventId={selectedEventId}
         onCreated={(component) => {
           registerCreatedComponent(component);
           if (pendingInlineAssignmentCriterionId) {
@@ -1080,24 +1202,27 @@ export const CriteriaList = () => {
               aria-label="Tabla de componentes"
               classNames={{ wrapper: "shadow-none p-0 bg-transparent" }}
             >
-                  <TableHeader>
-                    <TableColumn>COMPONENTE</TableColumn>
-                    <TableColumn align="center">CRITERIOS</TableColumn>
-                    <TableColumn align="center">PESO CRITERIOS</TableColumn>
-                  </TableHeader>
-                  <TableBody items={componentSummaryRows} emptyContent="Cargando componentes...">
-                    {(row) => (
-                      <TableRow key={row.id}>
-                        <TableCell>{row.name}</TableCell>
-                        <TableCell align="center">{row.criteriaCount}</TableCell>
-                        <TableCell align="center">
-                          <Chip size="sm" color="default" variant="flat">
-                            {row.criteriaWeightPercent.toFixed(0)}%
-                          </Chip>
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
+              <TableHeader>
+                <TableColumn>COMPONENTE</TableColumn>
+                <TableColumn align="center">CRITERIOS</TableColumn>
+                <TableColumn align="center">PESO CRITERIOS</TableColumn>
+              </TableHeader>
+              <TableBody
+                items={componentSummaryRows}
+                emptyContent="Cargando componentes..."
+              >
+                {(row) => (
+                  <TableRow key={row.id}>
+                    <TableCell>{row.name}</TableCell>
+                    <TableCell align="center">{row.criteriaCount}</TableCell>
+                    <TableCell align="center">
+                      <Chip size="sm" color="default" variant="flat">
+                        {row.criteriaWeightPercent.toFixed(0)}%
+                      </Chip>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
             </Table>
           </CardBody>
         </Card>
@@ -1114,9 +1239,12 @@ export const CriteriaList = () => {
       ) : mode === "neutral" ? (
         <Card className="glass-card">
           <CardBody className="py-10 text-center text-default-500">
-            <p className="text-base font-medium">No hay criterios ni componentes aún</p>
+            <p className="text-base font-medium">
+              No hay criterios ni componentes aún
+            </p>
             <p className="text-sm mt-1">
-              Usa los botones de arriba para iniciar la configuración de evaluación.
+              Usa los botones de arriba para iniciar la configuración de
+              evaluación.
             </p>
           </CardBody>
         </Card>
@@ -1125,7 +1253,8 @@ export const CriteriaList = () => {
           {looseCount > 0 && (
             <div className="space-y-2">
               <div className="rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger">
-                Hay criterios sueltos. Asígnalos a un componente para poder guardar la configuración.
+                Hay criterios sueltos. Asígnalos a un componente para poder
+                guardar la configuración.
               </div>
               {criteria
                 .filter((c) => !c.component?.id)
@@ -1140,7 +1269,8 @@ export const CriteriaList = () => {
           )}
 
           {availableComponents.map((component) => {
-            const componentCriteria = criteriaByComponent.get(component.id) ?? [];
+            const componentCriteria =
+              criteriaByComponent.get(component.id) ?? [];
             const isOpen = openByComponent[component.id] ?? true;
 
             return (
@@ -1148,20 +1278,28 @@ export const CriteriaList = () => {
                 key={component.id}
                 open={isOpen}
                 onOpenChange={(nextOpen) =>
-                  persistOpenState({ ...openByComponent, [component.id]: nextOpen })
+                  persistOpenState({
+                    ...openByComponent,
+                    [component.id]: nextOpen,
+                  })
                 }
               >
                 <Card className="glass-card">
                   <CardBody className="space-y-3 p-4">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                       <CollapsibleTrigger asChild>
-                        <Button variant="light" className="justify-start h-auto px-0 py-0">
+                        <Button
+                          variant="light"
+                          className="justify-start h-auto px-0 py-0"
+                        >
                           <div className="flex items-center gap-3">
                             <ChevronDown
                               className={`size-4 transition-transform ${isOpen ? "rotate-180" : "rotate-0"}`}
                             />
                             <div className="text-left">
-                              <p className="font-semibold text-sm sm:text-base">{component.name}</p>
+                              <p className="font-semibold text-sm sm:text-base">
+                                {component.name}
+                              </p>
                               <p className="text-xs text-default-500">
                                 {componentCriteria.length} criterio(s)
                               </p>
@@ -1179,7 +1317,9 @@ export const CriteriaList = () => {
                           buttonLabel="Agregar criterio"
                           buttonVariant="flat"
                           buttonColor="primary"
-                          availableWeightPercent={availableWeightForNewCriterion}
+                          availableWeightPercent={
+                            availableWeightForNewCriterion
+                          }
                           onCreated={() => {
                             markUnsavedChanges();
                             refetchCriteriaState();
@@ -1187,6 +1327,7 @@ export const CriteriaList = () => {
                         />
                         <CreateComponent
                           componentToEdit={component}
+                          eventId={selectedEventId}
                           onUpdated={(updatedComponent) => {
                             markUnsavedChanges();
                             setCreatedComponentsByEvent((prev) => {
@@ -1194,7 +1335,9 @@ export const CriteriaList = () => {
                               return {
                                 ...prev,
                                 [selectedEventKey]: [
-                                  ...current.filter((item) => item.id !== updatedComponent.id),
+                                  ...current.filter(
+                                    (item) => item.id !== updatedComponent.id,
+                                  ),
                                   updatedComponent,
                                 ],
                               };
@@ -1207,6 +1350,8 @@ export const CriteriaList = () => {
                           size="sm"
                           variant="flat"
                           color="danger"
+                          isIconOnly
+                          aria-label="Eliminar componente"
                           isLoading={deletePendingId === component.id}
                           onPress={() => {
                             setDeleteComponentMode("reassign");
@@ -1214,7 +1359,6 @@ export const CriteriaList = () => {
                           }}
                         >
                           <Trash className="size-4" />
-                          Eliminar
                         </Button>
                       </div>
                     </div>
@@ -1256,7 +1400,9 @@ export const CriteriaList = () => {
 
       <Modal
         isOpen={!!componentToDelete}
-        onOpenChange={(open) => { if (!open) setComponentToDelete(null); }}
+        onOpenChange={(open) => {
+          if (!open) setComponentToDelete(null);
+        }}
         size="md"
       >
         <ModalContent>
@@ -1279,8 +1425,9 @@ export const CriteriaList = () => {
                   {criteriaCount > 0 ? (
                     <>
                       <p>
-                        Este componente tiene {criteriaCount} criterio(s) asignado(s).
-                        Elige qué hacer con ellos antes de eliminar el componente.
+                        Este componente tiene {criteriaCount} criterio(s)
+                        asignado(s). Elige qué hacer con ellos antes de eliminar
+                        el componente.
                       </p>
                       <div className="grid gap-2">
                         <button
@@ -1292,9 +1439,12 @@ export const CriteriaList = () => {
                           }`}
                           onClick={() => setDeleteComponentMode("reassign")}
                         >
-                          <span className="block text-sm font-semibold">Reasignarlos después</span>
+                          <span className="block text-sm font-semibold">
+                            Reasignarlos después
+                          </span>
                           <span className="block text-xs">
-                            Los criterios quedarán sueltos con el selector de asignación visible.
+                            Los criterios quedarán sueltos con el selector de
+                            asignación visible.
                           </span>
                         </button>
                         <button
@@ -1304,7 +1454,9 @@ export const CriteriaList = () => {
                               ? "border-danger bg-danger/10 text-danger"
                               : "border-default-200 bg-default-50 text-default-700"
                           }`}
-                          onClick={() => setDeleteComponentMode("delete-criteria")}
+                          onClick={() =>
+                            setDeleteComponentMode("delete-criteria")
+                          }
                         >
                           <span className="block text-sm font-semibold">
                             Eliminarlos junto con el componente
@@ -1317,8 +1469,8 @@ export const CriteriaList = () => {
                     </>
                   ) : (
                     <p>
-                      Este componente está vacío. ¿Deseas eliminarlo? Esta acción
-                      se aplicará en el backend inmediatamente.
+                      Este componente está vacío. ¿Deseas eliminarlo? Esta
+                      acción se aplicará en el backend inmediatamente.
                     </p>
                   )}
                 </ModalBody>
@@ -1351,7 +1503,82 @@ export const CriteriaList = () => {
         </ModalContent>
       </Modal>
 
-      <Modal isOpen={isCancelChangesOpen} onOpenChange={setIsCancelChangesOpen} size="md">
+      <Modal
+        isOpen={isEventSwitchModalOpen}
+        onOpenChange={(open) => {
+          if (!isRollbackPending) setIsEventSwitchModalOpen(open);
+        }}
+        size="md"
+        isDismissable={!isRollbackPending}
+      >
+        <ModalContent>
+          {(closeModal) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1">
+                Cambios sin guardar
+                <p className="text-sm font-normal text-default-500">
+                  Tienes cambios sin guardar en el evento actual.
+                </p>
+              </ModalHeader>
+              <ModalBody className="text-sm text-default-600">
+                <p>
+                  Si cambias de evento perderás los cambios no guardados. ¿Qué
+                  deseas hacer?
+                </p>
+                {!canSave && hasUnsavedChanges && (
+                  <p className="rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-warning">
+                    No puedes guardar aún:{" "}
+                    {[
+                      !hasExactWeight100 && "el peso total debe ser 100%",
+                      hasValidationErrors &&
+                        "todos los criterios deben estar asignados a un componente",
+                    ]
+                      .filter(Boolean)
+                      .join(" y ")}
+                    .
+                  </p>
+                )}
+              </ModalBody>
+              <ModalFooter className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                <Button
+                  variant="light"
+                  onPress={closeModal}
+                  isDisabled={isRollbackPending}
+                  className="w-full sm:w-auto"
+                >
+                  Seguir editando
+                </Button>
+                <Button
+                  variant="flat"
+                  color="danger"
+                  isLoading={isRollbackPending}
+                  onPress={handleDiscardAndSwitch}
+                  className="w-full sm:w-auto"
+                >
+                  <RotateCcw className="size-4" />
+                  Cancelar cambios
+                </Button>
+                <Button
+                  color="primary"
+                  variant="shadow"
+                  isDisabled={!canSave || isRollbackPending}
+                  onPress={handleSaveAndSwitch}
+                  className="w-full sm:w-auto"
+                >
+                  <Save className="size-4" />
+                  Guardar cambios
+                </Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        isOpen={isCancelChangesOpen}
+        onOpenChange={setIsCancelChangesOpen}
+        size="md"
+      >
         <ModalContent>
           {(closeModal) => (
             <>
@@ -1363,16 +1590,26 @@ export const CriteriaList = () => {
               </ModalHeader>
               <ModalBody className="space-y-2 text-sm text-default-600">
                 <p>
-                  Esto puede deshacer criterios y componentes creados, editados o eliminados
-                  desde el último guardado. Algunas operaciones requieren llamadas de
-                  restauración al servidor.
+                  Esto puede deshacer criterios y componentes creados, editados
+                  o eliminados desde el último guardado. Algunas operaciones
+                  requieren llamadas de restauración al servidor.
                 </p>
               </ModalBody>
               <ModalFooter>
-                <Button variant="light" onPress={closeModal} isDisabled={isRollbackPending}>
+                <Button
+                  variant="light"
+                  onPress={closeModal}
+                  isDisabled={isRollbackPending}
+                >
                   Mantener cambios
                 </Button>
-                <Button color="danger" isLoading={isRollbackPending} onPress={handleCancelChanges}>
+                <Button
+                  color="danger"
+                  isLoading={isRollbackPending}
+                  onPress={() => {
+                    void handleCancelChanges();
+                  }}
+                >
                   Descartar cambios
                 </Button>
               </ModalFooter>

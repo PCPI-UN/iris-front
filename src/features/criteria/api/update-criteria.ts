@@ -12,7 +12,11 @@ import { Criterion } from "@/types/api";
 import { getCriterionQueryOptions } from "./get-criterion";
 
 export const updateCriteriaInputSchema = z.object({
-  name: z.string().min(1, "Required").optional(),
+  name: z
+    .string()
+    .min(1, "Required")
+    .max(100, "Maximum 100 characters")
+    .optional(),
   description: z.string().optional(),
   weight: z
     .number()

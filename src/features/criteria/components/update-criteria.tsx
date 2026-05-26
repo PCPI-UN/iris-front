@@ -31,12 +31,17 @@ type UpdateCriteriaProps = {
   availableWeightPercent?: number;
 };
 
-export const UpdateCriteria = ({ criterionId, availableWeightPercent }: UpdateCriteriaProps) => {
+const CRITERION_NAME_MAX_LENGTH = 100;
+
+export const UpdateCriteria = ({
+  criterionId,
+  availableWeightPercent,
+}: UpdateCriteriaProps) => {
   const { addNotification } = useNotifications();
   const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
   const [selectedEvent, setSelectedEvent] = useState<string>("");
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(
-    new Set()
+    new Set(),
   );
   const normalizeForUI = (raw?: number) => {
     const val = Number(raw ?? 0);
@@ -44,6 +49,7 @@ export const UpdateCriteria = ({ criterionId, availableWeightPercent }: UpdateCr
     return Math.round(val * 100);
   };
   const [weightPercent, setWeightPercent] = useState(0);
+  const [nameLength, setNameLength] = useState(0);
   const [weightError, setWeightError] = useState<string | null>(null);
 
   const criterionQuery = useCriterion({ criterionId });
@@ -79,6 +85,7 @@ export const UpdateCriteria = ({ criterionId, availableWeightPercent }: UpdateCr
         : new Set<string>();
       setSelectedCategories(preselected);
       setWeightPercent(normalizeForUI(criterion.weight));
+      setNameLength(criterion.name?.length ?? 0);
     }
   }, [isOpen, criterion]);
 
@@ -86,7 +93,9 @@ export const UpdateCriteria = ({ criterionId, availableWeightPercent }: UpdateCr
     const available = availableWeightPercent;
     if (typeof available === "number") {
       if (weightPercent > available) {
-        setWeightError(`El peso excede el disponible. Disponible: ${available.toFixed(0)}%`);
+        setWeightError(
+          `El peso excede el disponible. Disponible: ${available.toFixed(0)}%`,
+        );
       } else {
         setWeightError(null);
       }
@@ -109,15 +118,25 @@ export const UpdateCriteria = ({ criterionId, availableWeightPercent }: UpdateCr
         className="w-full"
         variant="shadow"
         size="sm"
+        isIconOnly
+        aria-label="Editar criterio"
         onPress={() => {
           criterionQuery.refetch();
           onOpen();
         }}
-        startContent={<SquarePen size={16} />}
       >
-        Edit
+        <SquarePen size={16} />
       </Button>
-      <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="sm">
+      <Modal
+        isOpen={isOpen}
+        onOpenChange={onOpenChange}
+        size="md"
+        scrollBehavior="inside"
+        classNames={{
+          base: "mx-3 my-4 max-h-[86dvh] sm:mx-0 sm:my-0 sm:max-h-none",
+          body: "max-h-[58dvh] overflow-y-auto sm:max-h-none sm:overflow-visible",
+        }}
+      >
         <ModalContent>
           {(onClose) => {
             if (criterionQuery.isLoading) {
@@ -155,9 +174,19 @@ export const UpdateCriteria = ({ criterionId, availableWeightPercent }: UpdateCr
                   const formData = new FormData(form);
 
                   const rawData = Object.fromEntries(formData);
+                  const rawName = String(rawData.name || "");
+
+                  if (rawName.length > CRITERION_NAME_MAX_LENGTH) {
+                    addNotification({
+                      type: "error",
+                      title: "Nombre muy largo",
+                      message: `El nombre del criterio no puede superar ${CRITERION_NAME_MAX_LENGTH} caracteres.`,
+                    });
+                    return;
+                  }
 
                   const data: any = {};
-                  if (rawData.name) data.name = rawData.name;
+                  if (rawName) data.name = rawName;
                   if (rawData.description)
                     data.description = rawData.description;
                   // Normalize and clamp weightPercent to integer 0..100 before sending.
@@ -169,8 +198,8 @@ export const UpdateCriteria = ({ criterionId, availableWeightPercent }: UpdateCr
                   data.weight = normalizedWeightPercent / 100;
                   if (selectedEvent) data.eventId = Number(selectedEvent);
                   if (selectedCategories && selectedCategories.size) {
-                    data.categoryIds = Array.from(selectedCategories).map((id) =>
-                      Number(id)
+                    data.categoryIds = Array.from(selectedCategories).map(
+                      (id) => Number(id),
                     );
                   }
 
@@ -192,8 +221,8 @@ export const UpdateCriteria = ({ criterionId, availableWeightPercent }: UpdateCr
                     Update the evaluation criteria
                   </p>
                 </ModalHeader>
-                <ModalBody className="py-2 sm:py-4">
-                  <div className="mx-auto flex w-full max-w-sm sm:max-w-md lg:max-w-lg flex-col gap-2">
+                <ModalBody className="py-2">
+                  <div className="mx-auto flex w-full max-w-sm flex-col gap-2 sm:max-w-md">
                     <Select
                       label="Event"
                       placeholder="Select an event"
@@ -224,7 +253,9 @@ export const UpdateCriteria = ({ criterionId, availableWeightPercent }: UpdateCr
                       selectedKeys={selectedCategories}
                       onSelectionChange={(keys) => {
                         const set =
-                          keys instanceof Set ? keys : new Set(Array.from(keys));
+                          keys instanceof Set
+                            ? keys
+                            : new Set(Array.from(keys));
                         setSelectedCategories(set as Set<string>);
                       }}
                       isDisabled={!selectedEvent}
@@ -246,11 +277,21 @@ export const UpdateCriteria = ({ criterionId, availableWeightPercent }: UpdateCr
                         </SelectItem>
                       )}
                     </Select>
-                    <Input
+                    <Textarea
                       label="Name"
                       name="name"
                       defaultValue={criterion?.name ?? ""}
                       placeholder="e.g., Technical Quality"
+                      maxLength={CRITERION_NAME_MAX_LENGTH}
+                      minRows={2}
+                      maxRows={3}
+                      description={`${nameLength}/${CRITERION_NAME_MAX_LENGTH} caracteres`}
+                      isInvalid={nameLength > CRITERION_NAME_MAX_LENGTH}
+                      errorMessage={`Máximo ${CRITERION_NAME_MAX_LENGTH} caracteres`}
+                      onChange={(event) =>
+                        setNameLength(event.target.value.length)
+                      }
+                      classNames={{ input: "max-h-24 overflow-y-auto" }}
                     />
 
                     <Textarea
@@ -258,12 +299,19 @@ export const UpdateCriteria = ({ criterionId, availableWeightPercent }: UpdateCr
                       name="description"
                       defaultValue={criterion?.description ?? ""}
                       placeholder="Brief description of the criteria"
+                      minRows={2}
+                      maxRows={3}
+                      classNames={{ input: "max-h-24 overflow-y-auto" }}
                     />
 
                     <div className="space-y-1.5">
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-default-600">Peso (sobre el total del evento)</span>
-                        <span className="font-semibold text-default-800">{weightPercent}%</span>
+                        <span className="text-default-600">
+                          Peso (sobre el total del evento)
+                        </span>
+                        <span className="font-semibold text-default-800">
+                          {weightPercent}%
+                        </span>
                       </div>
                       <div className="flex items-center gap-3">
                         <input
@@ -272,7 +320,9 @@ export const UpdateCriteria = ({ criterionId, availableWeightPercent }: UpdateCr
                           max={100}
                           step={1}
                           value={weightPercent}
-                          onChange={(event) => setWeightPercent(Number(event.target.value))}
+                          onChange={(event) =>
+                            setWeightPercent(Number(event.target.value))
+                          }
                           className="w-full accent-primary"
                           aria-label="Peso del criterio"
                           aria-valuemin={0}
@@ -294,16 +344,21 @@ export const UpdateCriteria = ({ criterionId, availableWeightPercent }: UpdateCr
                             }
                           }}
                           onBlur={() => {
-                            if (!Number.isFinite(Number(weightPercent))) return setWeightPercent(0);
+                            if (!Number.isFinite(Number(weightPercent)))
+                              return setWeightPercent(0);
                             if (weightPercent < 0) setWeightPercent(0);
                             if (weightPercent > 100) setWeightPercent(100);
                           }}
                           className="w-20"
                         />
                       </div>
-                      <p className="text-xs text-default-500">Rango permitido: 0% a 100%.</p>
+                      <p className="text-xs text-default-500">
+                        Rango permitido: 0% a 100%.
+                      </p>
                       {typeof availableWeightPercent === "number" && (
-                        <p className="text-xs text-default-500">Disponible: {availableWeightPercent.toFixed(0)}%</p>
+                        <p className="text-xs text-default-500">
+                          Disponible: {availableWeightPercent.toFixed(0)}%
+                        </p>
                       )}
                       {weightError && (
                         <p className="text-xs text-danger">{weightError}</p>
@@ -318,7 +373,11 @@ export const UpdateCriteria = ({ criterionId, availableWeightPercent }: UpdateCr
                   <Button
                     type="submit"
                     isLoading={updateCriteriaMutation.isPending}
-                    disabled={updateCriteriaMutation.isPending || !!weightError}
+                    disabled={
+                      updateCriteriaMutation.isPending ||
+                      !!weightError ||
+                      nameLength > CRITERION_NAME_MAX_LENGTH
+                    }
                   >
                     Save Changes
                   </Button>
