@@ -352,12 +352,9 @@ return (
             <div className="event-cta-overlay" />
             <div className="relative z-10 space-y-4">
                 {!isInscriptionClosed && (
-                <p className="text-sm font-semibold text-foreground/70">¿Listo para participar?</p>
-                )}
-                {!isInscriptionClosed && (
                 <Button
                 onPress={handleJoin}
-                isDisabled={isUserStatusResolving}
+                isDisabled={true}
                 fullWidth
                 size="lg"
                 className="event-button event-glow font-black text-base sm:text-lg tracking-wider uppercase py-6"
@@ -366,15 +363,6 @@ return (
                 >
                 {isAlreadyRegistered ? 'Ir al dashboard' : 'Inscríbete ya'}
                 </Button>
-                )}
-                {!isInscriptionClosed && (
-                <p className="text-xs text-muted-foreground text-center">
-                {!user?.id
-                    ? 'Necesitas iniciar sesión para inscribirte'
-                    : isAlreadyRegistered
-                    ? '✓ Ya estás inscrito en este evento'
-                    : '✓ Tu cuenta está lista para inscribirse'}
-                </p>
                 )}
                 {event.inscriptionDeadline && (
                 <div className="event-deadline-box rounded-xl p-3 flex items-center gap-3">
