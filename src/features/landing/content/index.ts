@@ -98,6 +98,10 @@ export const landingContent = {
     title: 'Próximos',
     titleHighlight: 'Eventos',
     subtitle: 'Regístrate, participa o explora los eventos activos en la plataforma',
+    maintenance: {
+      title: '* Mantenimiento',
+      message: 'Inscripciones volverán en unos momentos.',
+    },
     cta: {
       open: 'Inscribirse',
       default: 'Más información',
