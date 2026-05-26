@@ -406,7 +406,7 @@ return (
                 {!user?.id
                     ? 'Necesitas iniciar sesión para inscribirte'
                     : projectState === 'REJECTED'
-                    ? 'Tu proyecto fue rechazado. Puedes inscribirte nuevamente.'
+                    ? 'Tu proyecto anterior fue rechazado. Puedes inscribirte nuevamente.'
                     : isAlreadyRegistered
                     ? '✓ Ya estás inscrito en este evento'
                     : '✓ Tu cuenta está lista para inscribirse'}
