@@ -664,34 +664,6 @@ return (
     </section>
     )}
 
-    {!isInscriptionClosed && (
-    <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-12 pb-10 lg:pb-16">
-    <div className="event-cta-footer-card glass-card rounded-2xl p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6">
-        <div className="space-y-1 text-center sm:text-left">
-        <p className="text-lg sm:text-xl font-bold">¿Listo para unirte?</p>
-        <p className="text-sm text-muted-foreground">
-            {!user?.id
-            ? 'Inicia sesión y registra tu proyecto en este evento.'
-            : isAlreadyRegistered
-                ? 'Ya estás inscrito. Ve al dashboard para continuar.'
-                : 'Tu cuenta está lista. Completa tu inscripción ahora.'}
-        </p>
-        </div>
-        {!isInscriptionClosed && (
-        <Button
-        onPress={handleJoin}
-        isDisabled={isUserStatusResolving}
-        size="lg"
-        className="event-button event-glow font-black tracking-wider uppercase shrink-0 min-w-44"
-        startContent={<Rocket className="h-5 w-5" />}
-        >
-        {isAlreadyRegistered ? 'Ir al dashboard' : 'Inscríbete'}
-        </Button>
-        )}
-    </div>
-    </section>
-    )}
-
     <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-12 pb-8 lg:pb-12">
         <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6">
         {isGripEvent && (
