@@ -351,6 +351,9 @@ return (
             <div className="glass-card rounded-2xl p-5 sm:p-6 space-y-4 relative overflow-hidden">
             <div className="event-cta-overlay" />
             <div className="relative z-10 space-y-4">
+                <p className="text-sm text-muted-foreground">
+                Mantenimiento: Las inscripciones se retomarán en corto.
+                </p>
                 {!isInscriptionClosed && (
                 <Button
                 onPress={handleJoin}
