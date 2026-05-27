@@ -22,18 +22,28 @@ type ProjectByEventResponse =
 
 export const getProject = async ({
   eventId,
-}: GetProjectInput): Promise<ProjectByEventPayload> => {
+}: GetProjectInput): Promise<ProjectByEventPayload | null> => {
   const validatedInput = getProjectInputSchema.parse({ eventId });
-  const response = await api.get<ProjectByEventResponse>(
-    `/events/${validatedInput.eventId}/my-project`,
-  );
+  try {
+    const response = await api.get<ProjectByEventResponse>(
+      `/events/${validatedInput.eventId}/my-project`,
+      { suppressErrorNotification: true },
+    );
+    const payload = "data" in response ? response.data : response;
 
-  const payload = "data" in response ? response.data : response;
+    if (!payload?.project || !payload?.event) {
+      throw new Error("Invalid project response");
+    }
 
-  if (!payload?.project || !payload?.event) {
-    throw new Error("Invalid project response");
+    return payload;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (message === "No project found for this user in the specified event") {
+      return null;
+    }
+
+    throw error;
   }
-  return payload;
 };
 
 export const getProjectQueryOptions = (eventId: string) => {
