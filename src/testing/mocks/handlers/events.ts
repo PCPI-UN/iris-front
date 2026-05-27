@@ -426,6 +426,110 @@ export const eventsHandlers = [
     }
   }),
 
+  http.get(`${env.API_URL}/events/public/past`, async ({ request }) => {
+    await networkDelay();
+
+    try {
+      const url = new URL(request.url);
+      const page = Number(url.searchParams.get("page") || 1);
+      const validPage = validatePage(page);
+
+      const pastEvents = db.event.findMany({
+        where: {
+          isPubliclyJoinable: {
+            equals: true,
+          },
+        },
+      });
+
+      const total = pastEvents.length;
+      const pagination = calculatePagination(total, validPage);
+      const startIndex = PAGE_SIZE * (pagination.page - 1);
+      const endIndex = startIndex + PAGE_SIZE;
+
+      const events = pastEvents
+        .slice(startIndex, endIndex)
+        .map((event) => mapEventToPublicDTO(event));
+
+      return HttpResponse.json({
+        events,
+        meta: {
+          total,
+          itemsOnCurrentPage: events.length,
+          itemsPerPage: PAGE_SIZE,
+          currentPage: pagination.page,
+          totalPages: pagination.totalPages,
+        },
+      });
+    } catch (error: any) {
+      return HttpResponse.json(
+        { message: error?.message || "Server Error" },
+        { status: 500 }
+      );
+    }
+  }),
+
+  http.get(`${env.API_URL}/events/public/past/:eventId`, async ({ params }) => {
+    await networkDelay();
+
+    try {
+      const eventId = toInternalPrefixedId(String(params.eventId), "event");
+
+      const event = db.event.findFirst({
+        where: {
+          id: {
+            equals: eventId,
+          },
+        },
+      });
+
+      if (!event) {
+        return HttpResponse.json(
+          { message: "Event not found" },
+          { status: 404 }
+        );
+      }
+
+      if (event.status !== 4) {
+        return HttpResponse.json(
+          { message: "Event is not a past event" },
+          { status: 403 }
+        );
+      }
+
+      const eventProjects = db.project.findMany({
+        where: {
+          eventId: {
+            equals: event.id,
+          },
+        },
+      });
+
+      const participants = eventProjects
+        .flatMap((project) => project.participants ?? [])
+        .map((participant: any) => {
+          const firstName = participant?.firstName ?? "";
+          const lastName = participant?.lastName ?? "";
+          return `${firstName} ${lastName}`.trim() || participant?.email || "";
+        })
+        .filter(Boolean);
+
+      const uniqueParticipants = [...new Set(participants)];
+
+      return HttpResponse.json({
+        data: {
+          ...mapEventToPublicDTO(event),
+          participants: uniqueParticipants,
+        },
+      });
+    } catch (error: any) {
+      return HttpResponse.json(
+        { message: error?.message || "Server Error" },
+        { status: 500 }
+      );
+    }
+  }),
+
   http.get(`${env.API_URL}/events/public/:eventId`, async ({ params }) => {
     await networkDelay();
 
@@ -681,6 +785,97 @@ export const eventsHandlers = [
       });
 
       return HttpResponse.json({ data: events });
+    } catch (error: any) {
+      return HttpResponse.json(
+        { message: error?.message || "Server Error" },
+        { status: 500 }
+      );
+    }
+  }),
+
+  http.get(`${env.API_URL}/events/:eventId/jurors`, async ({ params, cookies }) => {
+    await networkDelay();
+
+    try {
+      const { error } = requireAuth(cookies);
+      if (error) {
+        return HttpResponse.json({ message: error }, { status: 401 });
+      }
+
+      const rawEventId = String(params.eventId ?? "");
+      if (!rawEventId) {
+        return HttpResponse.json({ jurors: [], meta: { total: 0, itemsOnCurrentPage: 0, itemsPerPage: 0, currentPage: 1, totalPages: 1 } });
+      }
+
+      const eventId = toInternalPrefixedId(rawEventId, "event");
+      const jurorMap = new Map<string, { id: string; firstName: string; lastName: string; email: string; assignedProjects: Array<{ id: number; evaluated: boolean }> }>();
+
+      const memberships = db.eventMembership?.findMany({
+        where: {
+          eventId: { equals: eventId },
+          eventRole: { equals: "JURY" },
+        },
+      }) || [];
+
+      memberships.forEach((membership) => {
+        const user = db.user.findFirst({
+          where: { id: { equals: String(membership.userId) } },
+        });
+
+        if (!user) {
+          return;
+        }
+
+        jurorMap.set(String(user.id), {
+          id: String(user.id),
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          assignedProjects: [],
+        });
+      });
+
+      if (jurorMap.size === 0) {
+        db.project
+          .getAll()
+          .filter((project) => String(project.eventId) === String(eventId))
+          .forEach((project) => {
+            (project.jurorAssignments ?? []).forEach((assignment: any) => {
+              const user = db.user.findFirst({
+                where: { id: { equals: String(assignment?.memberUserId ?? "") } },
+              });
+
+              if (!user) {
+                return;
+              }
+
+              const currentJuror = jurorMap.get(String(user.id)) ?? {
+                id: String(user.id),
+                firstName: user.firstName,
+                lastName: user.lastName,
+                email: user.email,
+                assignedProjects: [],
+              };
+
+              currentJuror.assignedProjects.push({ id: Number(project.id), evaluated: Boolean((project as any).evaluated) });
+              jurorMap.set(String(user.id), currentJuror);
+            });
+          });
+      }
+
+      const jurors = Array.from(jurorMap.values());
+
+      return HttpResponse.json({
+        jurors,
+        data: jurors,
+        meta: {
+          total: jurors.length,
+          itemsOnCurrentPage: jurors.length,
+          itemsPerPage: jurors.length || 1,
+          currentPage: 1,
+          totalPages: 1,
+        },
+      });
     } catch (error: any) {
       return HttpResponse.json(
         { message: error?.message || "Server Error" },

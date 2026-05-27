@@ -22,7 +22,7 @@ export async function fetchEventReportData(eventId: number): Promise<EventReport
   const categories: CategoryCount[] = dataEvent.categories?.map(category => {
     return {
       category: category.name,
-      count: data.filter(proj => proj.courseId === category.id).length
+      count: data.filter(proj => proj.categoryId === category.id).length
     }
   }) ?? [];
 
@@ -74,10 +74,10 @@ export async function fetchEventReportData(eventId: number): Promise<EventReport
   const projects: Project[] = data.map(proj => ({
     id: proj.id,
     eventId: proj.eventId,
-    categoryId: proj.courseId ?? 0,
+    categoryId: proj.categoryId,
     number: proj.projectCode ?? "#",
     name: proj.name,
-    category: dataEvent.categories?.find(cat => proj.courseId === cat.id)?.name ?? "NaN",
+    category: dataEvent.categories?.find(cat => proj.categoryId === cat.id)?.name ?? "NaN",
     status: proj.state,
     members: participants(proj).length,
     documents: proj.documents,
@@ -93,8 +93,8 @@ export async function fetchEventReportData(eventId: number): Promise<EventReport
       name: `${participant.firstName ?? ""} ${participant.lastName ?? ""}`.trim(),
       email: participant.email ?? "",
       career: participant.career ?? "",
-      semester: participant.semester ?? "",
-      status: participant.status ?? "",
+      semester: String(participant.semester ?? ""),
+      status: String(participant.status ?? ""),
     })) ?? [],
     jurorAssignments: jurorsInfo(proj, dataJuries),
   }));

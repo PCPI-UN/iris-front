@@ -44,7 +44,7 @@ export const EventDashboard = ({ eventId }: EventDashboardProps) => {
   }
 
   if (currentEvent?.role?.name === 'Participant') {
-    return <StudentDashboard eventId={normalizedEventId || eventId} />;
+    return <StudentDashboard eventId={parseInt(eventId)} />;
   }
 
   // Si no tiene rol definido en el evento

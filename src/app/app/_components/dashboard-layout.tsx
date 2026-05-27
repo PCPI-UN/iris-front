@@ -54,8 +54,8 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
               </div>
             </div>
           </header>
-          <main className="flex-1 p-4 sm:p-6 md:p-8 overflow-x-hidden">
-            <div className="mx-auto w-full max-w-7xl">
+          <main className="flex-1 w-[90vw] sm:w-[70vw] lg:w-[80vw] justify-center items-start self-center p-0">
+            <div className="w-full p-4 sm:p- md:p-8 lg:p-12 xl:p-16 2xl:p-20 self-center">
               {children}
             </div>
           </main>

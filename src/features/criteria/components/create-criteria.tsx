@@ -30,21 +30,27 @@ type CreateCriteriaProps = {
   availableWeightPercent?: number;
 };
 
-export const CreateCriteria = ({ availableWeightPercent }: CreateCriteriaProps) => {
+const CRITERION_NAME_MAX_LENGTH = 100;
+
+export const CreateCriteria = ({
+  availableWeightPercent,
+}: CreateCriteriaProps) => {
   const { addNotification } = useNotifications();
   const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
   const [selectedEventKey, setSelectedEventKey] = useState<string>("");
   const [selectedCategoryKeys, setSelectedCategoryKeys] = useState<Set<string>>(
-    new Set()
+    new Set(),
   );
   const user = useUser();
 
   const normalizeForUI = (raw?: number) => {
     const val = Number(raw ?? 0);
     if (val > 1) return Math.round(val);
-    return Math.round(val * 100);
+    return Number((val * 100).toFixed(3));
   };
-  const [weightPercent, setWeightPercent] = useState(25);
+  const [weightPercent, setWeightPercent] = useState<number>(25);
+  const [weightInput, setWeightInput] = useState<string>(String(25));
+  const [nameLength, setNameLength] = useState(0);
   const [weightError, setWeightError] = useState<string | null>(null);
   const createCriteriaMutation = useCreateCriteria({
     mutationConfig: {
@@ -56,6 +62,7 @@ export const CreateCriteria = ({ availableWeightPercent }: CreateCriteriaProps) 
         });
         setSelectedEventKey("");
         setSelectedCategoryKeys(new Set());
+        setNameLength(0);
         onClose();
       },
       onError: (error: any) => {
@@ -92,13 +99,42 @@ export const CreateCriteria = ({ availableWeightPercent }: CreateCriteriaProps) 
     }
   }, [weightPercent, availableWeightPercent]);
 
+  const validateWeightInput = (raw: string) => {
+    if (!/^[0-9.,]*$/.test(raw)) {
+      return "Solo se permiten números, punto o coma";
+    }
+    const dotCount = (raw.match(/\./g) || []).length;
+    const commaCount = (raw.match(/,/g) || []).length;
+    if (dotCount > 1 || commaCount > 1) {
+      return "No puede tener más de un punto o más de una coma";
+    }
+    if (dotCount > 0 && commaCount > 0) {
+      return "No puede mezclar punto y coma";
+    }
+    return null;
+  };
+
+  useEffect(() => {
+    // keep input in sync if weightPercent changes programmatically
+    setWeightInput(String(weightPercent));
+  }, [weightPercent]);
+
   return (
     <>
       <Button size="sm" onPress={() => onOpen()}>
         <Plus size={16} />
         Crear Criterio
       </Button>
-      <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="sm">
+      <Modal
+        isOpen={isOpen}
+        onOpenChange={onOpenChange}
+        size="md"
+        scrollBehavior="inside"
+        classNames={{
+          base: "mx-3 my-4 max-h-[86dvh] sm:mx-0 sm:my-0 sm:max-h-none",
+          body: "max-h-[58dvh] overflow-y-auto sm:max-h-none sm:overflow-visible",
+        }}
+      >
         <ModalContent>
           {(onClose) => (
             <Form
@@ -109,6 +145,16 @@ export const CreateCriteria = ({ availableWeightPercent }: CreateCriteriaProps) 
                 const formData = new FormData(form);
 
                 const rawData = Object.fromEntries(formData);
+                const rawName = String(rawData.name || "");
+
+                if (rawName.length > CRITERION_NAME_MAX_LENGTH) {
+                  addNotification({
+                    type: "error",
+                    title: "Nombre muy largo",
+                    message: `El nombre del criterio no puede superar ${CRITERION_NAME_MAX_LENGTH} caracteres.`,
+                  });
+                  return;
+                }
 
                 if (!selectedEventKey) {
                   addNotification({
@@ -128,15 +174,18 @@ export const CreateCriteria = ({ availableWeightPercent }: CreateCriteriaProps) 
                   return;
                 }
 
-                // Normalize and clamp weightPercent to integer 0..100 before sending.
-                const normalizedWeightPercent = Math.max(
+                // Normalize and clamp weightPercent to 0..100 with up to 3 decimals.
+                let normalizedWeightPercent = Math.max(
                   0,
-                  Math.min(100, Math.round(Number(weightPercent) || 0)),
+                  Math.min(100, Number(weightPercent) || 0),
+                );
+                normalizedWeightPercent = Number(
+                  normalizedWeightPercent.toFixed(3),
                 );
 
                 const data = {
                   eventId: Number(selectedEventKey),
-                  name: rawData.name as string,
+                  name: rawName,
                   description: rawData.description as string,
                   weight: normalizedWeightPercent / 100,
                   categoryIds: Array.from(selectedCategoryKeys).map(Number),
@@ -161,8 +210,8 @@ export const CreateCriteria = ({ availableWeightPercent }: CreateCriteriaProps) 
                   Agrega un nuevo criterio de evaluación
                 </p>
               </ModalHeader>
-              <ModalBody className="py-1 sm:py-2">
-                <div className="mx-auto flex w-full max-w-sm sm:max-w-md lg:max-w-lg flex-col gap-1">
+              <ModalBody className="py-2">
+                <div className="mx-auto flex w-full max-w-sm min-w-0 flex-col gap-2 sm:max-w-md">
                   <Select
                     label="Evento"
                     placeholder="Selecciona un evento"
@@ -176,7 +225,9 @@ export const CreateCriteria = ({ availableWeightPercent }: CreateCriteriaProps) 
                     isLoading={eventsQuery.isLoading}
                   >
                     {events.map((event) => (
-                      <SelectItem key={String(event.id)}>{event.name}</SelectItem>
+                      <SelectItem key={String(event.id)}>
+                        {event.name}
+                      </SelectItem>
                     ))}
                   </Select>
 
@@ -210,10 +261,20 @@ export const CreateCriteria = ({ availableWeightPercent }: CreateCriteriaProps) 
                       </SelectItem>
                     )}
                   </Select>
-                  <Input
+                  <Textarea
                     label="Nombre"
                     name="name"
                     placeholder="ej: Calidad Técnica"
+                    maxLength={CRITERION_NAME_MAX_LENGTH}
+                    minRows={2}
+                    maxRows={3}
+                    description={`${nameLength}/${CRITERION_NAME_MAX_LENGTH} caracteres`}
+                    isInvalid={nameLength > CRITERION_NAME_MAX_LENGTH}
+                    errorMessage={`Máximo ${CRITERION_NAME_MAX_LENGTH} caracteres`}
+                    onChange={(event) =>
+                      setNameLength(event.target.value.length)
+                    }
+                    classNames={{ input: "max-h-24 overflow-y-auto" }}
                     isRequired
                   />
 
@@ -221,53 +282,83 @@ export const CreateCriteria = ({ availableWeightPercent }: CreateCriteriaProps) 
                     label="Descripción"
                     name="description"
                     placeholder="Breve descripción del criterio"
+                    minRows={2}
+                    maxRows={3}
+                    classNames={{ input: "max-h-24 overflow-y-auto" }}
                     isRequired
                   />
 
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-default-600">Peso (sobre el total del evento)</span>
-                      <span className="font-semibold text-default-800">{weightPercent}%</span>
+                      <span className="text-default-600">
+                        Peso (sobre el total del evento)
+                      </span>
+                      <span className="font-semibold text-default-800">
+                        {weightPercent}%
+                      </span>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
                       <input
                         type="range"
                         min={0}
                         max={100}
                         step={1}
-                        value={weightPercent}
-                        onChange={(event) => setWeightPercent(Number(event.target.value))}
+                        value={Math.round(Number(weightPercent) || 0)}
+                        onChange={(event) => {
+                          const intVal = Math.round(Number(event.target.value));
+                          setWeightPercent(intVal);
+                          setWeightInput(String(intVal));
+                        }}
                         className="w-full accent-primary"
                         aria-label="Peso del criterio"
                         aria-valuemin={0}
                         aria-valuemax={100}
-                        aria-valuenow={weightPercent}
+                        aria-valuenow={Math.round(Number(weightPercent) || 0)}
                       />
                       <Input
-                        type="number"
-                        min={0}
-                        max={100}
-                        step={1}
-                        value={String(weightPercent)}
-                        inputMode="numeric"
-                        pattern="[0-9]*"
+                        type="text"
+                        inputMode="decimal"
+                        pattern="[0-9.,]*"
+                        value={weightInput}
                         onChange={(e: any) => {
-                          const next = e.target.value;
-                          if (/^-?\d*$/.test(next)) {
-                            setWeightPercent(next === "" ? 0 : Number(next));
+                          const raw = String(e.target.value);
+                          const error = validateWeightInput(raw);
+                          setWeightInput(raw);
+                          setWeightError(error);
+                          if (error) return;
+                          const numeric = raw.replace(",", ".");
+                          if (/^\d+(?:\.\d*)?$/.test(numeric)) {
+                            const parts = numeric.split(".");
+                            if (parts[1] && parts[1].length > 3) return;
+                            const parsed = Number(numeric);
+                            if (!Number.isNaN(parsed)) setWeightPercent(parsed);
                           }
                         }}
                         onBlur={() => {
-                          if (!Number.isFinite(Number(weightPercent))) return setWeightPercent(0);
-                          if (weightPercent < 0) setWeightPercent(0);
-                          if (weightPercent > 100) setWeightPercent(100);
+                          const error = validateWeightInput(weightInput);
+                          if (error) {
+                            setWeightError(error);
+                            return;
+                          }
+                          const normalized = weightInput.replace(",", ".");
+                          let parsed = Number(normalized);
+                          if (!Number.isFinite(parsed)) parsed = 0;
+                          parsed = Math.max(0, Math.min(100, parsed));
+                          parsed = Number(parsed.toFixed(3));
+                          setWeightPercent(parsed);
+                          setWeightInput(String(parsed));
+                          setWeightError(null);
                         }}
-                        className="w-20"
+                        className="w-28 min-w-0 flex-shrink-0"
                       />
                     </div>
-                    <p className="text-xs text-default-500">Rango permitido: 0% a 100%.</p>
+                    <p className="text-xs text-default-500">
+                      Rango permitido: 0% a 100%.
+                    </p>
                     {typeof availableWeightPercent === "number" && (
-                      <p className="text-xs text-default-500">Disponible: {availableWeightPercent.toFixed(0)}%</p>
+                      <p className="text-xs text-default-500">
+                        Disponible: {availableWeightPercent.toFixed(0)}%
+                      </p>
                     )}
                     {weightError && (
                       <p className="text-xs text-danger">{weightError}</p>
@@ -287,7 +378,8 @@ export const CreateCriteria = ({ availableWeightPercent }: CreateCriteriaProps) 
                     createCriteriaMutation.isPending ||
                     !selectedEventKey ||
                     selectedCategoryKeys.size === 0 ||
-                    !!weightError
+                    !!weightError ||
+                    nameLength > CRITERION_NAME_MAX_LENGTH
                   }
                 >
                   Crear Criterio

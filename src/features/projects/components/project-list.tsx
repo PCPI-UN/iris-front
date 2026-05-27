@@ -202,7 +202,7 @@ export const ProjectList = () => {
                   <div className="pt-2">
                     {project.state === "UNDER_REVIEW" && (
                       <div className="grid md:grid-cols-3 gap-2 mb-2">
-                        <RejectProjectModal projectId={project.id} />
+                        <RejectProjectModal projectId={project.id} eventType={selectedEventType} />
                         <RequestProjectModal projectId={project.id}/>
                         <ApproveProjectModal projectId={project.id} eventType={selectedEventType} />
                       </div>
@@ -237,6 +237,7 @@ export const ProjectList = () => {
 
             <RejectProjectModal
               projectId={selectedId}
+              eventType={selectedEventType}
               isOpenTable={action === "reject"}
               onOpenChangeTable={(open) => {
                 if (!open) setAction(null);

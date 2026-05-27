@@ -17,7 +17,10 @@ import { useEventsPublic } from '@/features/events/api/get-event-public';
 import { useMyEvents } from '@/features/events/api/get-my-events';
 import { Spinner } from '@/components/ui/spinner';
 import { useUser } from '@/lib/auth';
-import { resolveJoinTarget } from '@/features/events/utils/resolve-join-target';
+import {
+  getUserProjectStateInEvent,
+  resolveJoinTarget,
+} from '@/features/events/utils/resolve-join-target';
 import { hasInscriptionDeadlinePassed } from '@/features/events/utils/inscription-deadline';
 import { paths } from '@/config/paths';
 import { landingContent } from '../content';
@@ -256,12 +259,51 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
     );
   }, [myEventsQuery.data?.data]);
 
+  const [projectStateByEventId, setProjectStateByEventId] = useState<Record<string, string | null>>({});
+
   const pages = useMemo(() => {
     return Array.from({ length: totalPages }, (_, pageIndex) => {
       const start = pageIndex * cardsPerView;
       return eventsToRender.slice(start, start + cardsPerView);
     });
   }, [eventsToRender, totalPages, cardsPerView]);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    const loadProjectStates = async () => {
+      if (!user?.id || !registeredEventIds.size) {
+        setProjectStateByEventId({});
+        return;
+      }
+
+      const start = currentPage * cardsPerView;
+      const visibleEvents = eventsToRender.slice(start, start + cardsPerView);
+      const visibleRegisteredEvents = visibleEvents.filter((event) =>
+        registeredEventIds.has(String(event.id)),
+      );
+
+      const entries = await Promise.all(
+        visibleRegisteredEvents.map(async (event) => {
+          const state = await getUserProjectStateInEvent(event.id);
+          return [String(event.id), state] as const;
+        }),
+      );
+
+      if (!isCancelled) {
+        setProjectStateByEventId((previous) => ({
+          ...previous,
+          ...Object.fromEntries(entries),
+        }));
+      }
+    };
+
+    void loadProjectStates();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [cardsPerView, currentPage, eventsToRender, registeredEventIds, user?.id]);
 
   useEffect(() => {
     setCurrentPage(0);
@@ -384,6 +426,9 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
                         const dateRange = formatDateRange(event.startDate, event.endDate);
                         const status = getStatusText(event.statusName);
                         const isInscriptionClosed = hasInscriptionDeadlinePassed(event.inscriptionDeadline);
+                        const projectState = projectStateByEventId[String(event.id)];
+                        const isRejectedProject = projectState === 'REJECTED';
+                        const isAlreadyRegistered = registeredEventIds.has(String(event.id)) && !isRejectedProject;
                         const cardStatusText = isInscriptionClosed ? 'Inscripciones Cerradas' : status;
 
                         return (
@@ -539,7 +584,7 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
                                       } as CSSProperties
                                     }
                                   >
-                                      {registeredEventIds.has(String(event.id))
+                                      {isAlreadyRegistered
                                         ? 'Ir al dashboard'
                                         : 'Inscribirse'}
                                     <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />

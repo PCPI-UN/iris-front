@@ -37,6 +37,7 @@ export type User = {
   lastName: string;
   email: string;
   phone?: string;
+  studentCode?: string;
   active: boolean;
   status: string;
   platformRoles: PlatformRole[];
@@ -172,12 +173,18 @@ export type ProjectParticipant = Entity<{
   email: string;
   projectId: string;
   ParticipantCode?: string;
-  semester?: string;
-  career?: string;
   studentCode?: string;
   project: Project;
-  status: string;
+  semester: number;
+  career: string;
+  status: 1;
 }>;
+
+/* const enum ParticipantStatus {
+  PENDING = 1,
+  INVITED = 2,
+  JOINED = 3,
+} */
 
 export type ProjectAssignment = Entity<{
   projectId: string;
@@ -276,6 +283,7 @@ export type CriterionComponent = {
   name: string;
   description?: string;
   weight: number;
+  eventId?: number;
 };
 
 export type CriterionCategory = Entity<{

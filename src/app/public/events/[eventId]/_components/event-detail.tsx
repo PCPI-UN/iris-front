@@ -23,6 +23,7 @@ import { usePublicEventDetail } from '@/features/events/api/get-public-event-det
 import { normalizeEventType } from '@/features/events/utils/normalize-event-type';
 import { hasInscriptionDeadlinePassed } from '@/features/events/utils/inscription-deadline';
 import {
+    getUserProjectStateInEvent,
     isUserRegisteredInEvent,
     resolveJoinTarget,
 } from '@/features/events/utils/resolve-join-target';
@@ -126,6 +127,7 @@ return event.participants;
 }, [event?.participants]);
 
 const [isRegisteredByMembership, setIsRegisteredByMembership] = useState(false);
+const [projectState, setProjectState] = useState<string | null>(null);
 
 useEffect(() => {
 let isCancelled = false;
@@ -150,7 +152,38 @@ return () => {
 };
 }, [event?.id, user?.id]);
 
+useEffect(() => {
+let isCancelled = false;
+
+const loadProjectState = async () => {
+    if (!user?.id || !event?.id) {
+    setProjectState(null);
+    return;
+    }
+
+    const state = await getUserProjectStateInEvent(event.id);
+
+    if (!isCancelled) {
+    setProjectState(state);
+    }
+};
+
+void loadProjectState();
+
+return () => {
+    isCancelled = true;
+};
+}, [event?.id, user?.id]);
+
 const isAlreadyRegistered = useMemo(() => {
+if (projectState === 'REJECTED') {
+    return false;
+}
+
+if (projectState && projectState !== 'REJECTED') {
+    return true;
+}
+
 if (!user?.id || !participants.length) {
     return isRegisteredByMembership;
 }
@@ -173,6 +206,7 @@ return participants.some((participant) => {
 }, [
 participants,
 isRegisteredByMembership,
+projectState,
 user?.email,
 user?.firstName,
 user?.id,
@@ -371,6 +405,8 @@ return (
                 <p className="text-xs text-muted-foreground text-center">
                 {!user?.id
                     ? 'Necesitas iniciar sesión para inscribirte'
+                    : projectState === 'REJECTED'
+                    ? 'Tu proyecto anterior fue rechazado. Puedes inscribirte nuevamente.'
                     : isAlreadyRegistered
                     ? '✓ Ya estás inscrito en este evento'
                     : '✓ Tu cuenta está lista para inscribirse'}

@@ -152,7 +152,18 @@ async function fetchApi<T>(
   }
 
   if (!response.ok) {
-    const message = (await response.json()).message || response.statusText;
+    // Try to parse error body, but handle empty responses gracefully
+    let message = response.statusText;
+    try {
+      const text = await response.text();
+      if (text) {
+        const json = JSON.parse(text);
+        message = json.message || response.statusText;
+      }
+    } catch (err) {
+      // ignore parse errors and keep statusText
+    }
+
     const shouldNotify =
       typeof window !== 'undefined' &&
       !suppressErrorNotification &&
@@ -168,7 +179,16 @@ async function fetchApi<T>(
     throw new Error(message);
   }
 
-  return response.json();
+  // Read body as text first to handle empty responses
+  const text = await response.text();
+  if (!text) return {} as T;
+
+  try {
+    return JSON.parse(text) as T;
+  } catch (err) {
+    // If response isn't JSON, return raw text
+    return (text as unknown) as T;
+  }
 }
 
 export const api = {

@@ -1,12 +1,4 @@
-import {
-  Award,
-  Calendar,
-  Clock,
-  ExternalLink,
-  FileText,
-  Link,
-  MapPin,
-} from "lucide-react";
+import { Award, Calendar, Clock, MapPin, Eye } from "lucide-react";
 import { Button } from "@heroui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { Event, EventType } from "@/types/api";
@@ -22,7 +14,7 @@ import {
   getStatusTone,
 } from "./helpers";
 import { getStatusBadge } from "./event-card-collapsed";
-import { is } from "zod/v4/locales";
+import { ExpandableText } from "@/app/app/_components/expandable-text";
 
 type EventCardExpandedProps = {
   event: Event;
@@ -54,6 +46,17 @@ export const EventCardExpanded = ({
           <div className="space-y-4">
             <h4 className="text-sm font-semibold">Informacion del evento</h4>
 
+            <div className="flex items-center justify-between ">
+              <span className="text-sm text-default-400">
+                Estado del evento:
+              </span>
+              <span
+                className={`text-sm font-medium ${event.active ? "text-success" : "text-danger"}`}
+              >
+                {getStatusBadge(event.active)}
+              </span>
+            </div>
+
             <div className="space-y-2 text-sm text-default-400">
               <div className="flex items-center gap-2">
                 {getEventKindIcon(event.eventType)}
@@ -83,15 +86,15 @@ export const EventCardExpanded = ({
               <span className="text-xs text-default-400 block mb-1">
                 Descripcion
               </span>
-              <p className="text-sm text-default-500 leading-relaxed">
-                {event.description}
-              </p>
+              <span className="text-sm text-default-500 leading-relaxed">
+                {<ExpandableText text={event.description} maxLines={2} />}
+              </span>
             </div>
           </div>
 
-          <div className="lg:col-span-2 space-y-4">
-            <div className="rounded-lg border border-default-200 p-4 bg-content1/30">
-              <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+          <div className="flex space-y-4 w-full ">
+            <div className="rounded-lg border items-center justify-between border-default-200 w-fbg-content1/30 flex flex-col lg:flex-row self-center p-2 w-full">
+              <span className="text-md font-semibold m-3 flex items-center gap-2 sm:text-small ">
                 {event.eventType === EventType.Competition ? (
                   <>
                     {getEventKindIcon(event.eventType)}
@@ -100,66 +103,35 @@ export const EventCardExpanded = ({
                 ) : (
                   <>
                     <Award className="h-4 w-4 text-default-400" />
-                    {roleName === "Juror" ? "Ver proyectos" : "Mi proyecto"}
+                    <span>{roleName === "Juror" ? "Proyecto" : "Mi equipo"}</span>
                   </>
                 )}
-              </h4>
-
-              {roleName === "Juror" ? (
-                event.eventType === EventType.Exposition ? (
-                  <p className="text-sm text-default-500">
-                    Como jurado, accede a los proyectos asignados para evaluar según los criterios establecidos y
-                    dejar retroalimentación constructiva.
-                  </p>
-                ) : (
-                  <p className="text-sm text-default-500">
-                    Como jurado, accede a los equipos inscritos para evaluar
-                    según los criterios establecidos y dejar retroalimentación
-                    constructiva.
-                  </p>
-                )
-              ) : (
-                <p className="text-sm text-default-500">
-                  Aqui puedes mostrar la informacion del equipo/proyecto cuando
-                  conectes ese detalle por evento.
-                </p>
-              )}
-
-              <div className="mt-4 inline-flex items-center gap-2">
-                {/* <FileText className="h-4 w-4" /> */}
+              </span>
 
                 <Button
                   onPress={() => onGoDashboard(String(event.id))}
+                  variant="faded"
                   color={event.active ? "primary" : "default"}
-                  className={`w-full md:w-fit ${
-                      event.active
-                        ? "hover:scale-[1.01]"
-                        : "opacity-70 cursor-not-allowed"
-                    }`}
+                  className={`w-full md:w-fit bg-primary/20 hover:bg-primary/40 font-semibold focus-visible:ring-primary/50                     
+                    ${
+                    event.active
+                      ? "hover:scale-[1.01]"
+                      : "opacity-70 cursor-not-allowed"
+                  }`}
                   isDisabled={!event.active}
                 >
-                    {event.active
-                      ? (
-                          roleName === 'Juror'
-                            ? (event.eventType === EventType.Competition ? 'Ver equipos' : 'Ver proyectos')
-                            : getMainButtonLabel(roleName)
-                        )
-                      : "Evento Inactivo " }
+                  {event.active
+                    ? roleName === "Juror"
+                      ? event.eventType === EventType.Competition
+                        ? "Ver equipos"
+                        : "Ver proyectos"
+                      : getMainButtonLabel(roleName)
+                    : "Evento Inactivo "}
                 </Button>
 
                 {/* <ExternalLink className="h-3 w-3" /> */}
               </div>
             </div>
-
-            <div className="flex items-center justify-between p-1">
-              <span className="text-sm text-default-400">
-                Estado del evento:
-              </span>
-              <span className={`text-sm font-medium ${event.active}`}>
-                {getStatusBadge(event.active)}
-              </span>
-            </div>
-          </div>
         </motion.div>
       )}
     </div>

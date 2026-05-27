@@ -30,7 +30,7 @@ export function HeroSection({
         </div>
 
         <div ref={heroTextRef} className="mb-6 sm:mb-8" style={{ perspective: '1000px' }}>
-          <h1 className="text-5xl sm:text-6xl md:text-8xl lg:text-9xl xl:text-[12rem] font-black leading-none">
+          <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl xl:text-[10rem] font-black leading-none">
             {landingContent.hero.title.split('').map((letter, i) => (
               <span
                 key={i}
