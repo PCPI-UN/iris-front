@@ -117,13 +117,20 @@ export const StudentDashboard = ({ eventId }: StudentDashboardProps) => {
         </p>
       )}
 
-      {eventId && projectQuery.isError && (
+      {eventId && !projectQuery.isLoading && !projectQuery.isError && !project && (
         <p className="px-4 py-12 text-center text-xl text-muted-foreground sm:text-2xl lg:text-3xl">
           No encontramos tu proyecto para este evento.
         </p>
       )}
+      {/* Error real al cargar proyecto */}
+      {eventId && projectQuery.isError && (
+        <p className="px-4 py-12 text-center text-xl text-muted-foreground sm:text-2xl lg:text-3xl">
+          Ocurrió un error al cargar tu proyecto.
+        </p>
+      )}
 
-      {project && event && project.projectCode && (
+      {/* Contenido principal */}
+      {project && event && (
         <div className="mx-4 space-y-6 sm:mx-6 lg:mx-8">
           <form
             aria-label="Informacion del proyecto"
@@ -153,7 +160,7 @@ export const StudentDashboard = ({ eventId }: StudentDashboardProps) => {
                 projectDescription={project.description}
                 canEdit={isEditMode}
                 projectId={String(project.id)}
-                projectCode={project.projectCode}
+                projectCode={project.projectCode ?? undefined}
               />
             )}
 

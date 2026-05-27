@@ -90,7 +90,8 @@ export const getUserProjectStateInEvent = async (
   eventId: string | number,
 ): Promise<string | null> => {
   try {
-    const { project } = await getProject({ eventId: String(eventId) });
+    const projectResponse = await getProject({ eventId: String(eventId) });
+    const project = projectResponse?.project;
 
     return typeof project?.state === 'string'
       ? project.state.trim().toUpperCase()
