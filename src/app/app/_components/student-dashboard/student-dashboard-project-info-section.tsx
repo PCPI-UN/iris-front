@@ -183,7 +183,9 @@ export const StudentDashboardProjectInfoSection = ({
               variant="bordered"
               isDisabled={!isEditing}
               classNames={{
-                input: "font-semibold text-default-900",
+                input: isEditing
+                  ? "font-semibold text-default-900 text-[2rem]"
+                  : "font-semibold text-default-900",
                 inputWrapper:
                   "bg-default-50 border-default-200 data-[hover=true]:border-default-300 text-md",
               }}
@@ -266,7 +268,9 @@ export const StudentDashboardProjectInfoSection = ({
                     variant="bordered"
                     isDisabled={!isEditing}
                     classNames={{
-                      input: "font-semibold text-default-900",
+                      input: isEditing
+                        ? "font-semibold text-default-900 text-[1rem]"
+                        : "font-semibold text-default-900",
                       inputWrapper:
                         "bg-default-50 border-default-200 data-[hover=true]:border-default-300 text-md",
                     }}
@@ -339,7 +343,7 @@ export const StudentDashboardProjectInfoSection = ({
                     classNames={{
                       input: "font-semibold text-[1rem]",
                       inputWrapper:
-                        "border border-default-400 bg-default-50 text-md",
+                        "border border-default-400 bg-default-50 text-lg",
                     }}
                   />
 
