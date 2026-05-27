@@ -43,6 +43,31 @@ export const RegisterForm = ({
 
   return (
     <div className="space-y-4">
+
+      <div className="w-full flex items-center justify-center mb-4 mt-2">
+        <a className="text-sm font-medium text-gray-400 text-center">
+          Si eres usuario Uninorte, puedes:
+        </a>
+      </div>
+      <Button
+        className="w-full mb-4"
+        onClick={handleMicrosoftLogin}
+        type="button"
+      >
+        <img
+          src="/microsoft.webp"
+          alt="Microsoft Logo"
+          className="inline-block w-7 h-7"
+        />
+        Ingresar con Outlook
+      </Button>
+
+      <div className="flex items-center my-2 mb-6">
+        <hr className="flex-grow border-t border-gray-500 opacity-50" />
+        <span className="mx-3 text-sm text-gray-500 opacity-50">o</span>
+        <hr className="flex-grow border-t border-gray-500 opacity-50" />
+      </div>
+
       <Form
         onSubmit={async (e) => {
           e.preventDefault();
@@ -119,25 +144,7 @@ export const RegisterForm = ({
             
       </Form>
 
-            <div className="w-full flex items-center justify-center mb-2 mt-2">
-        <a className="text-sm font-medium text-gray-400 text-center">
-          Si eres usuario Uninorte, puedes:
-        </a>
-      </div>
-      <Button
-        className="w-full mb-4"
-        onClick={handleMicrosoftLogin}
-        type="button"
-      >
-        <img
-          src="/microsoft.webp"
-          alt="Microsoft Logo"
-          className="inline-block w-7 h-7"
-        />
-        Ingresar con Outlook
-      </Button>
-          
-            <div className="mt-4 flex items-center justify-center">
+      <div className="mt-4 flex items-center justify-center">
         <div className="text-sm">
           ¿Ya tienes cuenta?
           <NextLink
@@ -148,6 +155,18 @@ export const RegisterForm = ({
           </NextLink>
         </div>
       </div>
+
+      <p className="text-xs text-gray-400 mt-2 text-center">
+        Al registrarte, aceptas nuestra{' '}
+        <a
+          href="https://www.uninorte.edu.co/politica-de-privacidad-de-datos"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-primary hover:underline"
+        >
+          Política de Privacidad y tratamiento de datos
+        </a>.
+      </p>
 
     </div>
   );
