@@ -46,9 +46,10 @@ export const CreateCriteria = ({
   const normalizeForUI = (raw?: number) => {
     const val = Number(raw ?? 0);
     if (val > 1) return Math.round(val);
-    return Math.round(val * 100);
+    return Number((val * 100).toFixed(3));
   };
-  const [weightPercent, setWeightPercent] = useState(25);
+  const [weightPercent, setWeightPercent] = useState<number>(25);
+  const [weightInput, setWeightInput] = useState<string>(String(25));
   const [nameLength, setNameLength] = useState(0);
   const [weightError, setWeightError] = useState<string | null>(null);
   const createCriteriaMutation = useCreateCriteria({
@@ -97,6 +98,26 @@ export const CreateCriteria = ({
       setWeightError(null);
     }
   }, [weightPercent, availableWeightPercent]);
+
+  const validateWeightInput = (raw: string) => {
+    if (!/^[0-9.,]*$/.test(raw)) {
+      return "Solo se permiten números, punto o coma";
+    }
+    const dotCount = (raw.match(/\./g) || []).length;
+    const commaCount = (raw.match(/,/g) || []).length;
+    if (dotCount > 1 || commaCount > 1) {
+      return "No puede tener más de un punto o más de una coma";
+    }
+    if (dotCount > 0 && commaCount > 0) {
+      return "No puede mezclar punto y coma";
+    }
+    return null;
+  };
+
+  useEffect(() => {
+    // keep input in sync if weightPercent changes programmatically
+    setWeightInput(String(weightPercent));
+  }, [weightPercent]);
 
   return (
     <>
@@ -153,10 +174,13 @@ export const CreateCriteria = ({
                   return;
                 }
 
-                // Normalize and clamp weightPercent to integer 0..100 before sending.
-                const normalizedWeightPercent = Math.max(
+                // Normalize and clamp weightPercent to 0..100 with up to 3 decimals.
+                let normalizedWeightPercent = Math.max(
                   0,
-                  Math.min(100, Math.round(Number(weightPercent) || 0)),
+                  Math.min(100, Number(weightPercent) || 0),
+                );
+                normalizedWeightPercent = Number(
+                  normalizedWeightPercent.toFixed(3),
                 );
 
                 const data = {
@@ -187,7 +211,7 @@ export const CreateCriteria = ({
                 </p>
               </ModalHeader>
               <ModalBody className="py-2">
-                <div className="mx-auto flex w-full max-w-sm flex-col gap-2 sm:max-w-md">
+                <div className="mx-auto flex w-full max-w-sm min-w-0 flex-col gap-2 sm:max-w-md">
                   <Select
                     label="Evento"
                     placeholder="Selecciona un evento"
@@ -273,43 +297,59 @@ export const CreateCriteria = ({
                         {weightPercent}%
                       </span>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
                       <input
                         type="range"
                         min={0}
                         max={100}
                         step={1}
-                        value={weightPercent}
-                        onChange={(event) =>
-                          setWeightPercent(Number(event.target.value))
-                        }
+                        value={Math.round(Number(weightPercent) || 0)}
+                        onChange={(event) => {
+                          const intVal = Math.round(Number(event.target.value));
+                          setWeightPercent(intVal);
+                          setWeightInput(String(intVal));
+                        }}
                         className="w-full accent-primary"
                         aria-label="Peso del criterio"
                         aria-valuemin={0}
                         aria-valuemax={100}
-                        aria-valuenow={weightPercent}
+                        aria-valuenow={Math.round(Number(weightPercent) || 0)}
                       />
                       <Input
-                        type="number"
-                        min={0}
-                        max={100}
-                        step={1}
-                        value={String(weightPercent)}
-                        inputMode="numeric"
-                        pattern="[0-9]*"
+                        type="text"
+                        inputMode="decimal"
+                        pattern="[0-9.,]*"
+                        value={weightInput}
                         onChange={(e: any) => {
-                          const next = e.target.value;
-                          if (/^-?\d*$/.test(next)) {
-                            setWeightPercent(next === "" ? 0 : Number(next));
+                          const raw = String(e.target.value);
+                          const error = validateWeightInput(raw);
+                          setWeightInput(raw);
+                          setWeightError(error);
+                          if (error) return;
+                          const numeric = raw.replace(",", ".");
+                          if (/^\d+(?:\.\d*)?$/.test(numeric)) {
+                            const parts = numeric.split(".");
+                            if (parts[1] && parts[1].length > 3) return;
+                            const parsed = Number(numeric);
+                            if (!Number.isNaN(parsed)) setWeightPercent(parsed);
                           }
                         }}
                         onBlur={() => {
-                          if (!Number.isFinite(Number(weightPercent)))
-                            return setWeightPercent(0);
-                          if (weightPercent < 0) setWeightPercent(0);
-                          if (weightPercent > 100) setWeightPercent(100);
+                          const error = validateWeightInput(weightInput);
+                          if (error) {
+                            setWeightError(error);
+                            return;
+                          }
+                          const normalized = weightInput.replace(",", ".");
+                          let parsed = Number(normalized);
+                          if (!Number.isFinite(parsed)) parsed = 0;
+                          parsed = Math.max(0, Math.min(100, parsed));
+                          parsed = Number(parsed.toFixed(3));
+                          setWeightPercent(parsed);
+                          setWeightInput(String(parsed));
+                          setWeightError(null);
                         }}
-                        className="w-20"
+                        className="w-28 min-w-0 flex-shrink-0"
                       />
                     </div>
                     <p className="text-xs text-default-500">

@@ -896,7 +896,7 @@ export const CriteriaList = () => {
 
               <div className="flex shrink-0 flex-col items-end gap-1.5 sm:flex-row sm:items-center sm:justify-end sm:gap-2">
                 <Chip size="sm" color="primary" variant="flat">
-                  {(Number(criterion.weight || 0) * 100).toFixed(0)}%
+                    {(Number(criterion.weight || 0) * 100).toFixed(1)}%
                 </Chip>
                 <CreateCriteriaContextual
                   defaultEventId={selectedEventKey}
@@ -1217,7 +1217,7 @@ export const CriteriaList = () => {
                     <TableCell align="center">{row.criteriaCount}</TableCell>
                     <TableCell align="center">
                       <Chip size="sm" color="default" variant="flat">
-                        {row.criteriaWeightPercent.toFixed(0)}%
+                        {row.criteriaWeightPercent.toFixed(1)}%
                       </Chip>
                     </TableCell>
                   </TableRow>
