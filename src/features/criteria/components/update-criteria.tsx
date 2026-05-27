@@ -45,12 +45,29 @@ export const UpdateCriteria = ({
   );
   const normalizeForUI = (raw?: number) => {
     const val = Number(raw ?? 0);
-    if (val > 1) return Math.round(val);
-    return Math.round(val * 100);
+    if (val > 1) return Number(val.toFixed(3));
+    return Number((val * 100).toFixed(3));
   };
-  const [weightPercent, setWeightPercent] = useState(0);
+  // weightPercent may have up to 3 decimals; weightInput preserves raw typed text
+  const [weightPercent, setWeightPercent] = useState<number>(0);
+  const [weightInput, setWeightInput] = useState<string>("0");
   const [nameLength, setNameLength] = useState(0);
   const [weightError, setWeightError] = useState<string | null>(null);
+
+  const validateWeightInput = (raw: string) => {
+    if (!/^[0-9.,]*$/.test(raw)) {
+      return "Solo se permiten números, punto o coma";
+    }
+    const dotCount = (raw.match(/\./g) || []).length;
+    const commaCount = (raw.match(/,/g) || []).length;
+    if (dotCount > 1 || commaCount > 1) {
+      return "No puede tener más de un punto o más de una coma";
+    }
+    if (dotCount > 0 && commaCount > 0) {
+      return "No puede mezclar punto y coma";
+    }
+    return null;
+  };
 
   const criterionQuery = useCriterion({ criterionId });
   const updateCriteriaMutation = useUpdateCriteria({
@@ -84,7 +101,9 @@ export const UpdateCriteria = ({
         ? new Set(criterion.categoryIds.map((id) => String(id)))
         : new Set<string>();
       setSelectedCategories(preselected);
-      setWeightPercent(normalizeForUI(criterion.weight));
+      const initial = normalizeForUI(criterion.weight);
+      setWeightPercent(initial);
+      setWeightInput(String(initial));
       setNameLength(criterion.name?.length ?? 0);
     }
   }, [isOpen, criterion]);
@@ -189,10 +208,13 @@ export const UpdateCriteria = ({
                   if (rawName) data.name = rawName;
                   if (rawData.description)
                     data.description = rawData.description;
-                  // Normalize and clamp weightPercent to integer 0..100 before sending.
-                  const normalizedWeightPercent = Math.max(
+                  // Normalize and clamp weightPercent to 0..100 with up to 3 decimals.
+                  let normalizedWeightPercent = Math.max(
                     0,
-                    Math.min(100, Math.round(Number(weightPercent) || 0)),
+                    Math.min(100, Number(weightPercent) || 0),
+                  );
+                  normalizedWeightPercent = Number(
+                    normalizedWeightPercent.toFixed(3),
                   );
 
                   data.weight = normalizedWeightPercent / 100;
@@ -222,7 +244,7 @@ export const UpdateCriteria = ({
                   </p>
                 </ModalHeader>
                 <ModalBody className="py-2">
-                  <div className="mx-auto flex w-full max-w-sm flex-col gap-2 sm:max-w-md">
+                  <div className="mx-auto flex w-full max-w-sm min-w-0 flex-col gap-2 sm:max-w-md">
                     <Select
                       label="Event"
                       placeholder="Select an event"
@@ -313,45 +335,61 @@ export const UpdateCriteria = ({
                           {weightPercent}%
                         </span>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="range"
-                          min={0}
-                          max={100}
-                          step={1}
-                          value={weightPercent}
-                          onChange={(event) =>
-                            setWeightPercent(Number(event.target.value))
-                          }
-                          className="w-full accent-primary"
-                          aria-label="Peso del criterio"
-                          aria-valuemin={0}
-                          aria-valuemax={100}
-                          aria-valuenow={weightPercent}
-                        />
-                        <Input
-                          type="number"
-                          min={0}
-                          max={100}
-                          step={1}
-                          value={String(weightPercent)}
-                          inputMode="numeric"
-                          pattern="[0-9]*"
-                          onChange={(e: any) => {
-                            const next = e.target.value;
-                            if (/^-?\d*$/.test(next)) {
-                              setWeightPercent(next === "" ? 0 : Number(next));
-                            }
-                          }}
-                          onBlur={() => {
-                            if (!Number.isFinite(Number(weightPercent)))
-                              return setWeightPercent(0);
-                            if (weightPercent < 0) setWeightPercent(0);
-                            if (weightPercent > 100) setWeightPercent(100);
-                          }}
-                          className="w-20"
-                        />
-                      </div>
+                        <div className="flex items-center gap-3 min-w-0">
+                          <input
+                            type="range"
+                            min={0}
+                            max={100}
+                            step={1}
+                            value={Math.round(Number(weightPercent) || 0)}
+                            onChange={(event) => {
+                              const intVal = Math.round(Number(event.target.value));
+                              setWeightPercent(intVal);
+                              setWeightInput(String(intVal));
+                            }}
+                            className="w-full accent-primary"
+                            aria-label="Peso del criterio"
+                            aria-valuemin={0}
+                            aria-valuemax={100}
+                            aria-valuenow={Math.round(Number(weightPercent) || 0)}
+                          />
+                          <Input
+                            type="text"
+                            inputMode="decimal"
+                            pattern="[0-9.,]*"
+                            value={weightInput}
+                            onChange={(e: any) => {
+                              const raw = String(e.target.value);
+                              const error = validateWeightInput(raw);
+                              setWeightInput(raw);
+                              setWeightError(error);
+                              if (error) return;
+                              const numeric = raw.replace(",", ".");
+                              if (/^\d+(?:\.\d*)?$/.test(numeric)) {
+                                const parts = numeric.split(".");
+                                if (parts[1] && parts[1].length > 3) return;
+                                const parsed = Number(numeric);
+                                if (!Number.isNaN(parsed)) setWeightPercent(parsed);
+                              }
+                            }}
+                            onBlur={() => {
+                              const error = validateWeightInput(weightInput);
+                              if (error) {
+                                setWeightError(error);
+                                return;
+                              }
+                              const normalized = weightInput.replace(",", ".");
+                              let parsed = Number(normalized);
+                              if (!Number.isFinite(parsed)) parsed = 0;
+                              parsed = Math.max(0, Math.min(100, parsed));
+                              parsed = Number(parsed.toFixed(3));
+                              setWeightPercent(parsed);
+                              setWeightInput(String(parsed));
+                              setWeightError(null);
+                            }}
+                            className="w-28 min-w-0 flex-shrink-0"
+                          />
+                        </div>
                       <p className="text-xs text-default-500">
                         Rango permitido: 0% a 100%.
                       </p>
