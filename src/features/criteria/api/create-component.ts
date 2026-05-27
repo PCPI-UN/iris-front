@@ -7,6 +7,7 @@ import { CriterionComponent } from "@/types/api";
 
 export const createComponentInputSchema = z.object({
   name: z.string().min(1, "Required"),
+  eventId: z.number().int().positive("Event ID is required"),
   description: z.string().optional(),
   weight: z
     .number()

@@ -8,7 +8,7 @@ import { Criterion } from "@/types/api";
 
 export const createCriteriaInputSchema = z.object({
   eventId: z.number().min(1, "Event is required"),
-  name: z.string().min(1, "Required"),
+  name: z.string().min(1, "Required").max(100, "Maximum 100 characters"),
   description: z.string().optional(),
   weight: z
     .number()

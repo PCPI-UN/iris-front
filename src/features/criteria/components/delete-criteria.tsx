@@ -53,10 +53,11 @@ export const DeleteCriteria = ({
         variant="flat"
         size="sm"
         color="danger"
+        isIconOnly
+        aria-label="Eliminar criterio"
         onPress={() => onOpen()}
-        startContent={<Trash size={16} />}
       >
-        Eliminar
+        <Trash size={16} />
       </Button>
       <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="sm">
         <ModalContent>
