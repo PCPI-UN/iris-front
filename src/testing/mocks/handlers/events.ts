@@ -689,6 +689,97 @@ export const eventsHandlers = [
     }
   }),
 
+  http.get(`${env.API_URL}/events/:eventId/jurors`, async ({ params, cookies }) => {
+    await networkDelay();
+
+    try {
+      const { error } = requireAuth(cookies);
+      if (error) {
+        return HttpResponse.json({ message: error }, { status: 401 });
+      }
+
+      const rawEventId = String(params.eventId ?? "");
+      if (!rawEventId) {
+        return HttpResponse.json({ jurors: [], meta: { total: 0, itemsOnCurrentPage: 0, itemsPerPage: 0, currentPage: 1, totalPages: 1 } });
+      }
+
+      const eventId = toInternalPrefixedId(rawEventId, "event");
+      const jurorMap = new Map<string, { id: string; firstName: string; lastName: string; email: string; assignedProjects: Array<{ id: number; evaluated: boolean }> }>();
+
+      const memberships = db.eventMembership?.findMany({
+        where: {
+          eventId: { equals: eventId },
+          eventRole: { equals: "JURY" },
+        },
+      }) || [];
+
+      memberships.forEach((membership) => {
+        const user = db.user.findFirst({
+          where: { id: { equals: String(membership.userId) } },
+        });
+
+        if (!user) {
+          return;
+        }
+
+        jurorMap.set(String(user.id), {
+          id: String(user.id),
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          assignedProjects: [],
+        });
+      });
+
+      if (jurorMap.size === 0) {
+        db.project
+          .getAll()
+          .filter((project) => String(project.eventId) === String(eventId))
+          .forEach((project) => {
+            (project.jurorAssignments ?? []).forEach((assignment: any) => {
+              const user = db.user.findFirst({
+                where: { id: { equals: String(assignment?.memberUserId ?? "") } },
+              });
+
+              if (!user) {
+                return;
+              }
+
+              const currentJuror = jurorMap.get(String(user.id)) ?? {
+                id: String(user.id),
+                firstName: user.firstName,
+                lastName: user.lastName,
+                email: user.email,
+                assignedProjects: [],
+              };
+
+              currentJuror.assignedProjects.push({ id: Number(project.id), evaluated: Boolean((project as any).evaluated) });
+              jurorMap.set(String(user.id), currentJuror);
+            });
+          });
+      }
+
+      const jurors = Array.from(jurorMap.values());
+
+      return HttpResponse.json({
+        jurors,
+        data: jurors,
+        meta: {
+          total: jurors.length,
+          itemsOnCurrentPage: jurors.length,
+          itemsPerPage: jurors.length || 1,
+          currentPage: 1,
+          totalPages: 1,
+        },
+      });
+    } catch (error: any) {
+      return HttpResponse.json(
+        { message: error?.message || "Server Error" },
+        { status: 500 }
+      );
+    }
+  }),
+
   http.get(`${env.API_URL}/events/:eventId`, async ({ params, cookies }) => {
     await networkDelay();
 
