@@ -8,6 +8,7 @@ import { Project } from "@/types/api";
 export const updateProjectInputSchema = z.object({
   eventId: z.string().optional(),
   categoryId: z.string().optional(),
+  projectCode: z.string().max(255, "El código no puede exceder 255 caracteres").optional(),
   name: z.string().max(255, "El nombre no puede exceder 255 caracteres").optional(),
   logo: z.string().optional(),
   description: z.string().max(3000, "La descripción no puede exceder 3000 caracteres").optional(),
@@ -48,7 +49,17 @@ export const updateProject = ({
   data: UpdateProjectInput;
   projectId: string;
 }): Promise<{ data: Project }> => {
-  return api.patch(`/projects/${projectId}/info`, data);
+  const { projectCode, ...projectInfo } = data;
+
+  return api
+    .patch<{ data: Project }>(`/projects/${projectId}/info`, projectInfo)
+    .then(async (response) => {
+      if (projectCode !== undefined) {
+        await api.patch(`/projects/${projectId}/code`, { projectCode });
+      }
+
+      return response;
+    });
 };
 
 type UseUpdateProjectOptions = {
