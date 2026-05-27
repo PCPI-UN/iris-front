@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Edit2, FolderOpen, Check, X } from "lucide-react";
 import { useNotifications } from "@/components/ui/notifications";
-import { useUpdateProject } from "@/features/projects/api/update-project";
+import { updateProject } from "@/features/projects/api/update-project";
 import { StudentDashboardSectionCard } from "./student-dashboard-section-card";
 
 type StudentDashboardProjectInfoSectionProps = {
@@ -29,17 +30,20 @@ export const StudentDashboardProjectInfoSection = ({
   const [editedDescription, setEditedDescription] = useState(
     projectDescription || "Sin descripcion registrada",
   );
+  const [editedProjectCode, setEditedProjectCode] = useState(projectCode || "");
   const { addNotification } = useNotifications();
-  const updateProjectMutation = useUpdateProject({
-    mutationConfig: {
-      onSuccess: () => {
-        addNotification({
-          type: "success",
-          title: "Proyecto actualizado",
-          message: "Los cambios se guardaron correctamente",
-        });
-        setIsEditing(false);
-      },
+  const queryClient = useQueryClient();
+  const updateProjectMutation = useMutation({
+    mutationFn: updateProject,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["my-project"], exact: false });
+      addNotification({
+        type: "success",
+        title: "Proyecto actualizado",
+        message: "Los cambios se guardaron correctamente",
+      });
+      setIsEditing(false);
     },
   });
 
@@ -50,6 +54,7 @@ export const StudentDashboardProjectInfoSection = ({
         data: {
           name: editedName,
           description: editedDescription,
+          projectCode: editedProjectCode,
         },
       });
     } catch (error) {
@@ -85,6 +90,7 @@ export const StudentDashboardProjectInfoSection = ({
   const handleCancel = () => {
     setEditedName(projectName || "Sin nombre");
     setEditedDescription(projectDescription || "Sin descripcion registrada");
+    setEditedProjectCode(projectCode || "");
     setIsEditing(false);
   };
 
@@ -170,14 +176,16 @@ export const StudentDashboardProjectInfoSection = ({
 
             <Input
               id="project-code"
-              value={projectCode || ""}
+              value={editedProjectCode}
+              onValueChange={setEditedProjectCode}
               placeholder="Sin codigo asignado"
-              isReadOnly
+              isReadOnly={!isEditing}
               variant="bordered"
+              isDisabled={!isEditing}
               classNames={{
-                input: "font-semibold text-default-700",
+                input: "font-semibold text-default-900",
                 inputWrapper:
-                  "bg-default-50/50 border-default-200 data-[hover=true]:border-default-300 text-md",
+                  "bg-default-50 border-default-200 data-[hover=true]:border-default-300 text-md",
               }}
             />
 
@@ -202,7 +210,7 @@ export const StudentDashboardProjectInfoSection = ({
                 rows={1}
               />
             ) : (
-              <div className="min-h-[72px] w-full rounded-xl border border-default-200 bg-default-50/50 px-4 py-3 text-md leading-relaxed text-default-600">
+              <div className="min-h-[72px] w-full rounded-xl border border-default-300 bg-default-50/50 px-4 py-3 text-md leading-relaxed text-default-600">
                 {editedDescription || "Sin descripcion registrada"}
               </div>
             )}
@@ -251,14 +259,16 @@ export const StudentDashboardProjectInfoSection = ({
 
                   <Input
                     id="project-code"
-                    value={projectCode || ""}
+                    value={editedProjectCode}
+                    onValueChange={setEditedProjectCode}
                     placeholder="Sin codigo asignado"
-                    isReadOnly
+                    isReadOnly={!isEditing}
                     variant="bordered"
+                    isDisabled={!isEditing}
                     classNames={{
-                      input: "font-semibold text-default-700",
+                      input: "font-semibold text-default-900",
                       inputWrapper:
-                        "bg-default-50/50 border-default-200 data-[hover=true]:border-default-300 text-md",
+                        "bg-default-50 border-default-200 data-[hover=true]:border-default-300 text-md",
                     }}
                   />
 
@@ -278,7 +288,7 @@ export const StudentDashboardProjectInfoSection = ({
                     value={editedDescription}
                     onChange={(e) => setEditedDescription(e.target.value)}
                     onInput={adjustTextareaHeight}
-                    className="w-full rounded-xl border min-h-[20rem] border-default-200 bg-default-50/50 px-4 py-3 text-md leading-relaxed text-default-600 focus:outline-none focus:ring-2 focus:white focus:ring-offset-1 resize-none"
+                    className="w-full rounded-xl border min-h-[10rem] border-default-200 bg-default-50/50 px-4 py-3 text-md leading-relaxed text-default-600 focus:outline-none focus:ring-2 focus:white focus:ring-offset-1 resize-none"
                     maxLength={3000}
                     rows={1}
                   />
@@ -320,14 +330,16 @@ export const StudentDashboardProjectInfoSection = ({
 
                   <Input
                     id="project-code"
-                    value={projectCode || ""}
+                    value={editedProjectCode}
+                    onValueChange={setEditedProjectCode}
                     placeholder="Sin codigo asignado"
-                    isReadOnly
-                    variant="bordered"
+                    isReadOnly={!isEditing}
+                    variant="flat"
+                    isDisabled={!isEditing}
                     classNames={{
-                      input: "font-semibold text-default-700",
+                      input: "font-semibold text-[1rem]",
                       inputWrapper:
-                        "bg-default-50/50 border-default-200 data-[hover=true]:border-default-300 text-md",
+                        "border border-default-400 bg-default-50 text-md",
                     }}
                   />
 
