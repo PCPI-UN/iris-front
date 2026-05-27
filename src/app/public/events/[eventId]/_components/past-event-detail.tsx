@@ -34,6 +34,7 @@ import {
   useProjectsWithJurors,
   type ProjectWithJurors,
 } from '@/features/projects/api/get-projects-with-jurors';
+import { normalizeCategoryId } from '@/lib/compat/category-legacy';
 type RankedProject = any;
 
 const normalizeText = (value: string) =>
@@ -42,8 +43,15 @@ const normalizeText = (value: string) =>
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
     .trim();
+
+const truncateText = (value: string, maxLength: number) => {
+  if (value.length <= maxLength) return value;
+  return `${value.slice(0, maxLength).trimEnd()}…`;
+};
+
 import { Footer } from '@/features/landing/components/cta-footer';
 import { EventType } from '@/types/api';
+import { PRISMATIC_GRADIENT } from '@/features/landing/components/events-section.utils';
 
 type ThemeKey = 'cyan' | 'pink' | 'yellow';
 
@@ -53,18 +61,28 @@ type EventDetailProps = {
 
 const parseLocalDate = (value?: string) => {
   if (!value) return null;
-  const datePart = value.split('T')[0];
-  const [year, month, day] = datePart.split('-').map(Number);
-  if (!year || !month || !day) {
-    const parsed = new Date(value);
-    return Number.isNaN(parsed.getTime()) ? null : parsed;
-  }
-  return new Date(year, month - 1, day);
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed;
 };
 
 const formatDateShort = (date?: string) => {
   const parsed = parseLocalDate(date);
   if (!parsed) return 'Por confirmar';
+
+  // Detect if original value included a meaningful time (not midnight)
+  const hasTime = !!date && /T\d{2}:\d{2}/.test(date) && !/T00:00(:00)?(Z|$)/.test(date);
+
+  if (hasTime) {
+    return parsed.toLocaleString('es', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  }
+
   return parsed.toLocaleDateString('es', {
     day: 'numeric',
     month: 'short',
@@ -75,6 +93,19 @@ const formatDateShort = (date?: string) => {
 const formatDate = (date?: string) => {
   const parsed = parseLocalDate(date);
   if (!parsed) return 'Fecha por confirmar';
+
+  const hasTime = !!date && /T\d{2}:\d{2}/.test(date) && !/T00:00(:00)?(Z|$)/.test(date);
+
+  if (hasTime) {
+    return parsed.toLocaleString('es', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  }
+
   return parsed.toLocaleDateString('es', {
     day: 'numeric',
     month: 'long',
@@ -125,7 +156,7 @@ type WinnerCardProps = {
   isExposition: boolean;
 };
 
-const VISIBLE_MEMBERS_LIMIT = 4;
+const VISIBLE_MEMBERS_LIMIT = 8;
 
 const toAwardRanking = (awards: any[], fallbackCategoryId?: number) => {
   const rankingByCategory = new Map<number, RankedProject[]>();
@@ -180,80 +211,108 @@ const WinnerCard = ({ ranked, categoryLabel, isExposition }: WinnerCardProps) =>
         ? '2° Lugar'
         : '3° Lugar';
 
+  const positionBadgeClass =
+    ranked.position === 1 ? 'award-position-badge first' :
+    ranked.position === 2 ? 'award-position-badge second' :
+    'award-position-badge third';
   const visibleMembers = membersExpanded ? members : members.slice(0, VISIBLE_MEMBERS_LIMIT);
   const hiddenCount = members.length - VISIBLE_MEMBERS_LIMIT;
 
   return (
-    <div className="event-awards-card rounded-2xl p-6 sm:p-8 relative overflow-hidden feature-card">
-      <div className="event-awards-blob pointer-events-none absolute top-0 right-0 h-40 w-40 rounded-full blur-3xl opacity-20" />
-      <div className="relative z-10 space-y-5">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="event-date-badge text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">
-            {categoryLabel}
-          </span>
-          <span className="event-date-badge text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">
-            {positionLabel}
-          </span>
-        </div>
+    <div className="event-awards-card rounded-3xl p-8 sm:p-10 lg:p-10 relative overflow-hidden feature-card shadow-2xl border border-border/20 bg-gradient-to-br from-background/5 to-background/10 mx-auto max-w-6xl w-full">
+      <div className="event-awards-blob pointer-events-none absolute top-0 right-0 h-48 w-48 rounded-full blur-3xl opacity-18" />
 
-        <div>
-          <h3 className="text-xl sm:text-2xl font-black text-foreground leading-snug">
-            {ranked.project.name}
-          </h3>
-          {hasText(ranked.project.description) && (
-            <p className="mt-2 text-sm sm:text-base text-foreground/70 leading-relaxed">
-              {ranked.project.description}
-            </p>
-          )}
-        </div>
-
-        {members.length > 0 && (
-          <div>
-            <div className="flex items-center gap-2 mb-3">
-              <Users className="event-section-title h-4 w-4 shrink-0" />
-              <span className="text-xs uppercase tracking-widest font-bold text-muted-foreground">
-                Equipo
+      <div className="relative z-10 flex flex-col lg:flex-row items-start gap-6 w-full">
+        <div className="flex-1 space-y-4">
+          <div className="flex items-start justify-between gap-3 w-full">
+            <div className="flex items-center gap-3">
+              <span className="event-date-badge text-sm font-bold px-3 py-1 rounded-full uppercase tracking-wide">
+                {categoryLabel}
+              </span>
+              <span
+                className={`${positionBadgeClass} text-sm font-bold px-3 py-1 rounded-full uppercase tracking-wide`}
+                title={positionLabel}
+                aria-label={`Posición ${ranked.position}: ${positionLabel}`}
+              >
+                {positionLabel}
               </span>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {visibleMembers.map((name, i) => (
-                <Chip
-                  key={`${name}-${i}`}
-                  size="sm"
-                  variant="flat"
-                  classNames={{
-                    base: 'bg-background/30 border border-border/30',
-                    content: 'text-xs font-medium',
-                  }}
-                >
-                  {name}
-                </Chip>
-              ))}
-              {!membersExpanded && hiddenCount > 0 && (
-                <button
-                  onClick={() => setMembersExpanded(true)}
-                  className="text-xs font-semibold event-section-title underline underline-offset-2 hover:opacity-80 transition-opacity"
-                >
-                  +{hiddenCount} más
-                </button>
-              )}
-            </div>
-          </div>
-        )}
 
-        {posterUrl && (
-          <div>
-            <a
-              href={posterUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-sm font-semibold event-section-title border border-current/30 rounded-lg px-4 py-2 hover:bg-background/20 transition-colors"
-            >
-              <ExternalLink className="h-4 w-4" />
-              Ver poster
-            </a>
+            {posterUrl && (
+              <a
+                href={posterUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hidden lg:inline-flex winner-cta items-center gap-2 text-sm font-semibold rounded-md px-4 py-2 bg-gradient-to-r from-cyan-500 to-pink-500 text-white shadow-lg"
+                aria-label={`Ver póster de ${ranked.project.name}`}
+                title={`Ver póster de ${ranked.project.name}`}
+              >
+                <ExternalLink className="h-4 w-4" />
+                Ver póster
+              </a>
+            )}
           </div>
-        )}
+
+          {posterUrl && (
+            <div className="mt-3 lg:hidden">
+              <a
+                href={posterUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="winner-cta inline-flex items-center justify-center gap-2 w-full text-sm font-semibold rounded-md px-4 py-3 bg-gradient-to-r from-cyan-500 to-pink-500 text-white shadow-lg"
+                aria-label={`Ver póster de ${ranked.project.name}`}
+              >
+                <ExternalLink className="h-4 w-4" />
+                Ver póster
+              </a>
+            </div>
+          )}
+
+          <div>
+            <h3 className="winner-title text-3xl sm:text-4xl lg:text-5xl font-extrabold text-foreground leading-tight">
+              {ranked.project.name}
+            </h3>
+            {hasText(ranked.project.description) && (
+              <p className="mt-3 text-sm sm:text-base text-foreground/85 leading-relaxed description">
+                {ranked.project.description}
+              </p>
+            )}
+          </div>
+
+          {members.length > 0 && (
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <Users className="event-section-title h-4 w-4 shrink-0" />
+                <span className="text-sm uppercase tracking-widest font-bold text-muted-foreground">
+                  Equipo
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-2 items-center">
+                {visibleMembers.map((name, i) => (
+                  <Chip
+                    key={`${name}-${i}`}
+                    size="sm"
+                    variant="flat"
+                    classNames={{
+                      base: 'bg-background/30 border border-border/30 py-2 px-3',
+                      content: 'text-sm font-medium',
+                    }}
+                  >
+                    {name}
+                  </Chip>
+                ))}
+                {!membersExpanded && hiddenCount > 0 && (
+                  <button
+                    onClick={() => setMembersExpanded(true)}
+                    className="text-sm font-semibold event-section-title underline underline-offset-2 hover:opacity-80 transition-opacity"
+                  >
+                    +{hiddenCount} más
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -263,12 +322,14 @@ type WinnersSectionProps = {
   categories: { id: number; name: string }[];
   rankingByCategory: Map<number, RankedProject[]>;
   isExposition: boolean;
+  projects?: ProjectWithJurors[];
 };
 
 const WinnersSection = ({
   categories,
   rankingByCategory,
   isExposition,
+  projects = [],
 }: WinnersSectionProps) => {
   const hasMultipleCategories = categories.length > 1;
 
@@ -281,9 +342,31 @@ const WinnersSection = ({
     hasMultipleCategories ? selectedCategoryId : (categories[0]?.id ?? 0),
   );
 
-  const ranked: RankedProject | undefined = hasMultipleCategories
+  let ranked: RankedProject | undefined = hasMultipleCategories
     ? firstCategoryRanking?.[0]
     : firstCategoryRanking?.[selectedPosition - 1];
+
+  // Try to enrich ranked.project with full project data from `projects` when available
+  if (ranked && projects.length > 0) {
+    const projectCandidate = ranked.project as any;
+    let matched: ProjectWithJurors | undefined;
+
+    // prefer numeric id match
+    if (projectCandidate && (projectCandidate.id || projectCandidate.projectId)) {
+      const pid = projectCandidate.id ?? projectCandidate.projectId;
+      matched = projects.find((p) => Number(p.id) === Number(pid));
+    }
+
+    // fallback to name match (normalized)
+    if (!matched && projectCandidate && projectCandidate.name) {
+      const targetName = normalizeText(String(projectCandidate.name));
+      matched = projects.find((p) => normalizeText(String(p.name ?? '')) === targetName);
+    }
+
+    if (matched) {
+      ranked = { ...ranked, project: matched } as RankedProject;
+    }
+  }
 
   const categoryLabel = hasMultipleCategories
     ? categories.find((c) => c.id === selectedCategoryId)?.name ?? 'Categoría'
@@ -298,25 +381,25 @@ const WinnersSection = ({
   return (
     <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-12 py-10 lg:py-16">
       <div className="flex items-center gap-4 mb-8 lg:mb-12">
-        <div className="event-section-icon w-10 h-10 rounded-xl flex items-center justify-center shrink-0">
-          <Trophy className="h-5 w-5" />
+        <div className="event-section-icon w-12 h-12 rounded-xl flex items-center justify-center shrink-0">
+          <Trophy className="h-6 w-6" />
         </div>
-        <h2 className="event-section-title text-2xl sm:text-3xl lg:text-4xl font-black uppercase tracking-tight">
+        <h2 className="event-section-title prismatic-text text-3xl sm:text-4xl lg:text-5xl font-black uppercase tracking-tight mx-auto text-center">
           Proyectos Ganadores
         </h2>
         <Divider className="event-divider flex-1" />
       </div>
 
-      <div className="flex flex-wrap gap-3 mb-8">
+      <div className="flex items-center overflow-x-auto gap-3 mb-8 py-2 hide-scrollbar">
         {hasMultipleCategories
           ? categories.map((cat) => (
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategoryId(cat.id)}
-                className={`px-5 py-2 rounded-full text-sm font-semibold border transition-all duration-200 ${
+                className={`category-button px-5 py-2 rounded-full text-sm font-semibold border transition-all duration-200 flex-shrink-0 ${
                   selectedCategoryId === cat.id
-                    ? 'event-button'
-                    : 'border-border/40 text-foreground/70 hover:border-border hover:text-foreground'
+                    ? 'prismatic-border prismatic-text selected-category'
+                    : 'prismatic-text border-white/20 text-white/90 hover:border-white/40 hover:bg-white/5'
                 }`}
               >
                 {cat.name}
@@ -326,23 +409,24 @@ const WinnersSection = ({
               <button
                 key={pos}
                 onClick={() => setSelectedPosition(pos)}
-                className={`px-5 py-2 rounded-full text-sm font-semibold border transition-all duration-200 ${
+                className={`category-button px-5 py-2 rounded-full text-sm font-semibold border transition-all duration-200 flex-shrink-0 ${
                   selectedPosition === pos
-                    ? 'event-button'
-                    : 'border-border/40 text-foreground/70 hover:border-border hover:text-foreground'
+                    ? 'prismatic-border prismatic-text selected-category'
+                    : 'prismatic-text border-white/20 text-white/90 hover:border-white/40 hover:bg-white/5'
                 }`}
               >
                 Top {pos}
               </button>
             ))}
       </div>
-
       {ranked ? (
-        <WinnerCard
-          ranked={ranked}
-          categoryLabel={categoryLabel}
-          isExposition={isExposition}
-        />
+        <div className="winner-grid">
+          <WinnerCard
+            ranked={ranked}
+            categoryLabel={categoryLabel}
+            isExposition={isExposition}
+          />
+        </div>
       ) : (
         <div className="flex items-center justify-center h-32 rounded-2xl border border-dashed border-border/40 text-sm text-muted-foreground">
           No hay información disponible para esta selección.
@@ -356,14 +440,19 @@ type ParticipantsPopupProps = {
   project: ProjectWithJurors;
   isOpen: boolean;
   onClose: () => void;
+  categoryName?: string;
+  showPoster?: boolean;
 };
 
 const ParticipantsPopup = ({
   project,
   isOpen,
   onClose,
+  categoryName,
+  showPoster = true,
 }: ParticipantsPopupProps) => {
   const members = getParticipantLabels(project);
+  const posterUrl = getPosterUrl(project);
 
   if (!isOpen) return null;
 
@@ -377,50 +466,63 @@ const ParticipantsPopup = ({
     >
       <div className="absolute inset-0 bg-black/10 backdrop-blur-sm" />
 
-      <div className="absolute left-1/2 top-1/2 w-[92vw] max-w-xl -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-border/50 bg-background/30 shadow-2xl backdrop-blur-xl p-5 sm:p-6 glass-card">
+      <div className="absolute left-1/2 top-1/2 w-[94vw] max-w-2xl -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-border/50 bg-background/30 shadow-2xl backdrop-blur-xl p-5 sm:p-6 glass-card">
         <div className="flex items-start justify-between gap-3 mb-4">
-          <div>
-            <p className="text-xs uppercase tracking-widest font-bold text-muted-foreground">
-              Participantes
-            </p>
-            <p className="text-base font-bold text-foreground mt-1 line-clamp-1">
-              {project.name}
-            </p>
+          <div className="min-w-0">
+            <p className="text-xs uppercase tracking-widest font-bold text-muted-foreground">Proyecto</p>
+            <h3 className="text-lg font-bold text-foreground mt-1">{project.name}</h3>
+            {categoryName && <p className="text-sm text-muted-foreground mt-1">{categoryName}</p>}
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-full p-2 hover:bg-background/20 transition-colors"
-            aria-label="Cerrar"
-          >
+          <button type="button" onClick={onClose} className="rounded-full p-2 hover:bg-background/20 transition-colors" aria-label="Cerrar">
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        {members.length > 0 ? (
-          <div className="flex flex-wrap gap-2">
-            {members.map((name, i) => (
-              <Chip
-                key={`${name}-${i}`}
-                size="sm"
-                variant="flat"
-                classNames={{
-                  base: 'bg-background/30 border border-border/30',
-                  content: 'text-xs font-medium',
-                }}
-              >
-                {name}
-              </Chip>
-            ))}
+        {hasText(project.description) && (
+          <div className="mb-4">
+            <p className="text-sm text-foreground/85 leading-relaxed">{project.description}</p>
           </div>
-        ) : (
-          <p className="text-sm text-muted-foreground">
-            Sin participantes registrados.
-          </p>
         )}
 
-        <div className="mt-6 flex justify-end">
+        <div className="mb-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Users className="h-4 w-4" />
+            <span className="text-sm uppercase tracking-widest font-bold text-muted-foreground">Participantes</span>
+          </div>
+          {members.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {members.map((name, i) => (
+                <Chip key={`${name}-${i}`} size="sm" variant="flat" classNames={{ base: 'bg-background/30 border border-border/30 py-2 px-3', content: 'text-sm font-medium' }}>
+                  {name}
+                </Chip>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">Sin participantes registrados.</p>
+          )}
         </div>
+
+        {showPoster && posterUrl && (
+          <div className="mt-2">
+            <a
+              href={posterUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-3 text-sm font-semibold rounded-lg px-4 py-2 text-white shadow-lg"
+              style={{
+                backgroundImage: PRISMATIC_GRADIENT,
+                backgroundSize: '200% auto',
+                animation: 'prismatic-shift 8s ease-in-out infinite',
+              }}
+              aria-label={`Ver póster de ${project.name}`}
+            >
+              <ExternalLink className="h-4 w-4" />
+              Ver póster
+            </a>
+          </div>
+        )}
+
+        <div className="mt-6 flex justify-end"></div>
       </div>
     </div>
   );
@@ -432,6 +534,7 @@ type ProjectsTableSectionProps = {
   isExposition: boolean;
   isLoading: boolean;
   isError: boolean;
+  categories?: { id: number; name: string }[];
 };
 
 const ProjectsTableSection = ({
@@ -439,9 +542,22 @@ const ProjectsTableSection = ({
   isExposition,
   isLoading,
   isError,
+  categories = [],
 }: ProjectsTableSectionProps) => {
   const [search, setSearch] = useState<string>('');
   const [openProject, setOpenProject] = useState<ProjectWithJurors | null>(null);
+
+  const findCategoryName = (project: ProjectWithJurors) => {
+    const categoryId = normalizeCategoryId(project) ?? (project as any).category?.id ?? null;
+    if (categoryId) {
+      const found = categories.find((c) => c.id === Number(categoryId));
+      if (found) return found.name;
+      // If not found in categories array, return formatted categoryId
+      return `Categoría ${categoryId}`;
+    }
+    if ((project as any).categoryName) return (project as any).categoryName;
+    return '—';
+  };
 
   const filtered = useMemo(() => {
     const term = normalizeText(search);
@@ -449,10 +565,10 @@ const ProjectsTableSection = ({
     return projects.filter((project) => {
       const memberText = getParticipantLabels(project).join(' ');
       return normalizeText(
-        [project.name, project.description ?? '', memberText].join(' '),
+        [project.name, project.description ?? '', memberText, findCategoryName(project)].join(' '),
       ).includes(term);
     });
-  }, [projects, search]);
+  }, [projects, search, categories]);
 
   return (
     <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-12 py-10 lg:py-16">
@@ -460,7 +576,7 @@ const ProjectsTableSection = ({
         <div className="event-section-icon w-10 h-10 rounded-xl flex items-center justify-center shrink-0">
           <Users className="h-5 w-5" />
         </div>
-        <h2 className="event-section-title text-2xl sm:text-3xl lg:text-4xl font-black uppercase tracking-tight">
+        <h2 className="event-section-title prismatic-text text-2xl sm:text-3xl lg:text-4xl font-black uppercase tracking-tight">
           Proyectos Participantes
         </h2>
         <Divider className="event-divider flex-1" />
@@ -495,87 +611,100 @@ const ProjectsTableSection = ({
           No se encontraron proyectos que coincidan con la búsqueda.
         </div>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-border/30">
-          {isExposition ? (
-            <Table aria-label="Proyectos participantes" selectionMode="none">
-              <TableHeader>
-                <TableColumn>Nombre del Proyecto</TableColumn>
-                <TableColumn>Descripción</TableColumn>
-                <TableColumn className="w-28 text-center">Poster</TableColumn>
-                <TableColumn className="w-24 text-center">Ver más</TableColumn>
-              </TableHeader>
-              <TableBody items={filtered}>
-                {(project) => (
-                  <TableRow key={project.id}>
-                    <TableCell>
-                      <p className="font-semibold text-foreground">{project.name}</p>
-                    </TableCell>
-                    <TableCell>
-                      <p className="text-sm text-foreground/70 line-clamp-2">
-                        {project.description ?? '—'}
-                      </p>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      {getPosterUrl(project) ? (
-                        <a
-                          href={getPosterUrl(project)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-xs font-semibold event-section-title hover:opacity-80 transition-opacity"
-                          aria-label={`Ver poster de ${project.name}`}
+        <div className="rounded-2xl border border-border/20 bg-background/10 overflow-hidden">
+          <div className="max-h-[56vh] overflow-auto">
+            {isExposition ? (
+              <Table aria-label="Proyectos participantes" selectionMode="none">
+                <TableHeader>
+                  <TableColumn>Categoría</TableColumn>
+                  <TableColumn>Nombre del Proyecto</TableColumn>
+                  <TableColumn>Descripción</TableColumn>
+                  <TableColumn className="w-28 text-center">Poster</TableColumn>
+                  <TableColumn className="w-24 text-center">Ver más</TableColumn>
+                </TableHeader>
+                <TableBody items={filtered}>
+                  {(project) => (
+                    <TableRow key={project.id}>
+                      <TableCell>
+                        <p className="text-sm text-foreground/75">
+                          {truncateText(findCategoryName(project), 70)}
+                        </p>
+                      </TableCell>
+                      <TableCell>
+                        <p className="font-semibold text-foreground">{project.name}</p>
+                      </TableCell>
+                      <TableCell>
+                        <p className="text-sm text-foreground/70 line-clamp-2">
+                          {truncateText(project.description ?? '—', 270)}
+                        </p>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {getPosterUrl(project) ? (
+                          <a
+                            href={getPosterUrl(project)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center justify-center rounded-full w-8 h-8 bg-gradient-to-br from-cyan-500/20 to-pink-500/20 border border-cyan-500/30 event-section-title hover:from-cyan-500/30 hover:to-pink-500/30 transition-all"
+                            aria-label={`Ver poster de ${project.name}`}
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                          </a>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <button
+                          onClick={() => setOpenProject(project)}
+                          className="inline-flex items-center justify-center rounded-full w-8 h-8 bg-background/20 border border-border/30 event-section-title hover:bg-background/40 hover:border-border/60 transition-all"
+                          aria-label={`Ver más sobre ${project.name}`}
                         >
-                          <ExternalLink className="h-3.5 w-3.5" />
-                          Poster
-                        </a>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">—</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <button
-                        onClick={() => setOpenProject(project)}
-                        className="inline-flex items-center gap-1.5 rounded-full border border-border/40 px-3 py-1.5 text-xs font-semibold event-section-title hover:bg-background/20 hover:border-border transition-colors"
-                        aria-label={`Ver más sobre ${project.name}`}
-                      >
-                        <Eye className="h-3.5 w-3.5" />
-                      </button>
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          ) : (
-            <Table aria-label="Proyectos participantes" selectionMode="none">
-              <TableHeader>
-                <TableColumn>Nombre del Proyecto</TableColumn>
-                <TableColumn>Descripción</TableColumn>
-                <TableColumn className="w-24 text-center">Ver más</TableColumn>
-              </TableHeader>
-              <TableBody items={filtered}>
-                {(project) => (
-                  <TableRow key={project.id}>
-                    <TableCell>
-                      <p className="font-semibold text-foreground">{project.name}</p>
-                    </TableCell>
-                    <TableCell>
-                      <p className="text-sm text-foreground/70 line-clamp-2">
-                        {project.description ?? '—'}
-                      </p>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <button
-                        onClick={() => setOpenProject(project)}
-                        className="inline-flex items-center gap-1.5 rounded-full border border-border/40 px-3 py-1.5 text-xs font-semibold event-section-title hover:bg-background/20 hover:border-border transition-colors"
-                        aria-label={`Ver más sobre ${project.name}`}
-                      >
-                        <Eye className="h-3.5 w-3.5" />
-                      </button>
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          )}
+                          <Eye className="h-3.5 w-3.5" />
+                        </button>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            ) : (
+              <Table aria-label="Proyectos participantes" selectionMode="none">
+                <TableHeader>
+                  <TableColumn>Categoría</TableColumn>
+                  <TableColumn>Nombre del Proyecto</TableColumn>
+                  <TableColumn>Descripción</TableColumn>
+                  <TableColumn className="w-24 text-center">Ver más</TableColumn>
+                </TableHeader>
+                <TableBody items={filtered}>
+                  {(project) => (
+                    <TableRow key={project.id}>
+                      <TableCell>
+                        <p className="text-sm text-foreground/75">
+                          {truncateText(findCategoryName(project), 70)}
+                        </p>
+                      </TableCell>
+                      <TableCell>
+                        <p className="font-semibold text-foreground">{project.name}</p>
+                      </TableCell>
+                      <TableCell>
+                        <p className="text-sm text-foreground/70 line-clamp-2">
+                          {truncateText(project.description ?? '—', 270)}
+                        </p>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <button
+                          onClick={() => setOpenProject(project)}
+                          className="inline-flex items-center justify-center rounded-full w-8 h-8 bg-background/20 border border-border/30 event-section-title hover:bg-background/40 hover:border-border/60 transition-all"
+                          aria-label={`Ver más sobre ${project.name}`}
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                        </button>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            )}
+          </div>
         </div>
       )}
 
@@ -584,6 +713,8 @@ const ProjectsTableSection = ({
           project={openProject}
           isOpen={Boolean(openProject)}
           onClose={() => setOpenProject(null)}
+          categoryName={findCategoryName(openProject)}
+          showPoster={isExposition}
         />
       )}
     </section>
@@ -620,21 +751,33 @@ export const PastEventDetail = ({ eventId }: EventDetailProps) => {
   const isExposition = event?.eventType === EventType.Exposition;
 
   const categories = useMemo(() => {
+    const categoryMap = new Map<number, string>();
+
+    // First, add categories from event
     if (event?.categories?.length) {
-      return event.categories.map((c) => ({
-        id: c.id,
-        name: c.name || c.description || `Categoría ${c.id}`,
-      }));
+      event.categories.forEach((c) => {
+        categoryMap.set(c.id, c.name || c.description || `Categoría ${c.id}`);
+      });
     }
 
-    const uniqueIds = [
-      ...new Set((event?.awards ?? []).map((award) => Number(award.categoryId))),
-    ];
+    // Then, add categories from awards
+    (event?.awards ?? []).forEach((award) => {
+      const id = Number(award?.categoryId);
+      if (Number.isFinite(id) && !categoryMap.has(id)) {
+        categoryMap.set(id, `Categoría ${id}`);
+      }
+    });
 
-    return uniqueIds
-      .filter((id) => Number.isFinite(id))
-      .map((id) => ({ id, name: `Categoría ${id}` }));
-  }, [event?.categories, event?.awards]);
+    // Finally, add categories from projects
+    projects.forEach((project) => {
+      const id = Number(project?.categoryId);
+      if (Number.isFinite(id) && !categoryMap.has(id)) {
+        categoryMap.set(id, `Categoría ${id}`);
+      }
+    });
+
+    return Array.from(categoryMap, ([id, name]) => ({ id, name }));
+  }, [event?.categories, event?.awards, projects]);
 
   const rankingByCategory = useMemo(() => {
     if (!event?.awards?.length) {
@@ -731,7 +874,7 @@ export const PastEventDetail = ({ eventId }: EventDetailProps) => {
             </p>
           </div>
 
-          <h1 className="text-4xl sm:text-6xl lg:text-7xl xl:text-8xl font-black tracking-tighter leading-none prismatic-text uppercase mb-6 lg:mb-8">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-black tracking-tighter leading-none prismatic-text uppercase mb-6 lg:mb-8 text-center">
             {event.name}
           </h1>
 
@@ -774,29 +917,36 @@ export const PastEventDetail = ({ eventId }: EventDetailProps) => {
                   </div>
                   <Divider className="event-divider" />
 
-                  <div className="grid grid-cols-1 gap-4">
-                    {hasText(primaryOrganizer) && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {organizers.length > 0 && (
                       <div>
                         <p className="text-xs uppercase tracking-widest font-bold text-muted-foreground mb-1">
-                          Organización
+                          Organizaciones
                         </p>
-                        <p className="text-sm font-semibold text-foreground/85">
-                          {primaryOrganizer}
-                        </p>
+                        <div className="flex flex-col gap-1">
+                          {organizers.map((o, idx) => (
+                            <p key={`org-${idx}`} className="text-sm font-semibold text-foreground/85">
+                              {o}
+                            </p>
+                          ))}
+                        </div>
                       </div>
                     )}
 
-                    {hasText(primaryCollaborator) &&
-                      primaryCollaborator !== primaryOrganizer && (
-                        <div>
-                          <p className="text-xs uppercase tracking-widest font-bold text-muted-foreground mb-1">
-                            Empresa Colaboradora
-                          </p>
-                          <p className="text-sm font-semibold text-foreground/85">
-                            {primaryCollaborator}
-                          </p>
+                    {collaborators.length > 0 && (
+                      <div>
+                        <p className="text-xs uppercase tracking-widest font-bold text-muted-foreground mb-1">
+                          Empresas Colaboradoras
+                        </p>
+                        <div className="flex flex-col gap-1">
+                          {collaborators.map((c, idx) => (
+                            <p key={`col-${idx}`} className="text-sm font-semibold text-foreground/85">
+                              {c}
+                            </p>
+                          ))}
                         </div>
-                      )}
+                      </div>
+                    )}
 
                     {eventTypeLabel && (
                       <div>
@@ -871,6 +1021,7 @@ export const PastEventDetail = ({ eventId }: EventDetailProps) => {
           categories={categories}
           rankingByCategory={rankingByCategory}
           isExposition={isExposition}
+          projects={projects}
         />
       )}
 
@@ -883,6 +1034,7 @@ export const PastEventDetail = ({ eventId }: EventDetailProps) => {
           isExposition={isExposition}
           isLoading={isProjectsLoading}
           isError={isProjectsError}
+          categories={categories}
         />
       </>
 
@@ -896,7 +1048,7 @@ export const PastEventDetail = ({ eventId }: EventDetailProps) => {
               <div className="event-section-icon w-10 h-10 rounded-xl flex items-center justify-center shrink-0">
                 <Star className="h-5 w-5" />
               </div>
-              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black uppercase tracking-tight">
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black uppercase tracking-tight prismatic-text">
                 Sobre Nuestros Aliados
               </h2>
               <Divider className="event-divider flex-1" />
