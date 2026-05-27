@@ -59,13 +59,15 @@ export function HorizontalScrollSection({
         {/* Panel 3 - Recorrido */}
         <div className="horizontal-panel min-w-full h-full flex items-center justify-center px-6 sm:px-8 md:px-12 overflow-y-auto">
           <div className="max-w-4xl w-full py-8 sm:py-12">
-            <div className="text-center mb-8 sm:mb-10 md:mb-12">
-              <div className="mb-6 inline-flex text-accent font-mono text-sm">{panels[2].badge}</div>
-              <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6 leading-none">
-                {panels[2].title}
-                <span className="prismatic-text">{panels[2].titleHighlight}</span>
+            <div className="text-center mb-10 sm:mb-12 md:mb-14">
+              <div className="mb-6 inline-flex items-center gap-2 glass-effect px-4 py-2 rounded-full text-sm text-primary">
+                <span className="font-semibold">{panels[2].badge}</span>
+              </div>
+              <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black mb-6 sm:mb-8 leading-tight text-balance">
+                <span className="prismatic-text">{panels[2].title}</span>
+                <span className="text-white"> {panels[2].titleHighlight}</span>
               </h2>
-              <p className="text-base sm:text-lg md:text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto">
+              <p className="text-base sm:text-lg md:text-xl text-muted-foreground leading-relaxed max-w-3xl mx-auto">
                 {panels[2].description}
               </p>
             </div>

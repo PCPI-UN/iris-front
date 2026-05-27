@@ -93,7 +93,7 @@ export function PastEventsSection() {
   const pastEventsQuery = usePastEventsPublic({ page: 1 });
 
   const [currentPage, setCurrentPage] = useState(0);
-  const [cardsPerView, setCardsPerView] = useState(3);
+  const [cardsPerView, setCardsPerView] = useState(2);
   const [uniformCardHeight, setUniformCardHeight] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -104,12 +104,7 @@ export function PastEventsSection() {
         return;
       }
 
-      if (window.innerWidth < 1024) {
-        setCardsPerView(2);
-        return;
-      }
-
-      setCardsPerView(3);
+      setCardsPerView(2);
     };
 
     updateCardsPerView();
@@ -239,10 +234,10 @@ export function PastEventsSection() {
             {pages.map((page, pageIndex) => (
               <div key={`past-events-page-${pageIndex}`} className="min-w-full overflow-hidden">
                 <div
-                  className={`grid gap-4 sm:gap-6 md:gap-8 ${
+                  className={`grid gap-3 sm:gap-4 md:gap-5 ${
                     page.length < cardsPerView
-                      ? 'grid-cols-[repeat(auto-fit,minmax(25px,420px))] justify-center'
-                      : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
+                      ? 'grid-cols-[repeat(auto-fit,minmax(300px,1fr))] justify-center'
+                      : 'grid-cols-1 md:grid-cols-2'
                   }`}
                 >
                   {page.map((event, index) => {
@@ -257,85 +252,84 @@ export function PastEventsSection() {
                     const dateRange = formatDateRange(event.startDate, event.endDate);
 
                     return (
-                      <GlassCard
+      <GlassCard
                         key={event.id}
                         className="past-event-card group cursor-pointer transition-all duration-500 relative overflow-hidden h-full w-full"
                         style={
                           uniformCardHeight
-                            ? { minHeight: `${uniformCardHeight}px` }
-                            : undefined
+                            ? { minHeight: `${Math.min(uniformCardHeight, 200)}px` }
+                            : { minHeight: '160px' }
                         }
                       >
                         <div
                           className={`absolute inset-0 bg-gradient-to-br ${eventTheme.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`}
                         />
 
-                        <div className="relative z-10 flex h-full flex-col">
-                          <div className="flex items-center justify-end mb-4">
+                        <div className="relative z-10 flex h-full flex-col p-3 sm:p-4">
+                          <div className="flex items-start justify-between gap-2 mb-2">
+                            <h3 className="text-lg sm:text-xl font-bold group-hover:text-primary transition-colors leading-tight flex-1">
+                              {event.name}
+                            </h3>
                             <div
-                              className="w-10 h-10 rounded-lg flex items-center justify-center transition-transform"
+                              className="w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 transition-transform"
                               style={{
                                 background: `color-mix(in oklch, ${eventTheme.color}, transparent 80%)`,
-                                boxShadow: `0 0 30px ${eventTheme.color}`,
-                                borderRadius: '0.5rem',
+                                boxShadow: `0 0 20px ${eventTheme.color}`,
+                                borderRadius: '0.375rem',
                               }}
                             >
                               <Calendar
-                                className="w-5 h-5"
+                                className="w-3.5 h-3.5"
                                 style={{ color: eventTheme.color }}
                               />
                             </div>
                           </div>
 
-                          <h3 className="text-xl sm:text-2xl font-bold mb-2 sm:mb-3 group-hover:text-primary transition-colors leading-tight">
-                            {event.name}
-                          </h3>
-
-                          <p className="text-sm text-muted-foreground mb-4 sm:mb-5 leading-relaxed break-words overflow-hidden [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:3] sm:[-webkit-line-clamp:2]">
+                          <p className="text-xs sm:text-sm text-muted-foreground mb-2 leading-relaxed overflow-hidden [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:1]">
                             {shortDescription}
                           </p>
 
-                          <div className="space-y-3 mb-8 sm:mb-8 flex-1">
-                            <div className="flex items-center gap-3 text-sm">
+                          <div className="space-y-1 mb-2 flex-1">
+                            <div className="flex items-center gap-1.5 text-xs">
                               <div
-                                className="w-8 h-8 rounded-lg flex items-center justify-center"
+                                className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0"
                                 style={{
                                   background: `color-mix(in oklch, ${eventTheme.color}, transparent 90%)`,
-                                  borderRadius: '0.5rem',
+                                  borderRadius: '0.25rem',
                                 }}
                               >
                                 <Calendar
-                                  className="w-4 h-4"
+                                  className="w-3 h-3"
                                   style={{ color: eventTheme.color }}
                                 />
                               </div>
 
-                              <span className="text-muted-foreground">
+                              <span className="text-muted-foreground truncate">
                                 {dateRange}
                               </span>
                             </div>
 
-                            <div className="flex items-center gap-3 text-sm">
+                            <div className="flex items-center gap-1.5 text-xs">
                               <div
-                                className="w-8 h-8 rounded-lg flex items-center justify-center"
+                                className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0"
                                 style={{
                                   background: `color-mix(in oklch, ${eventTheme.color}, transparent 90%)`,
-                                  borderRadius: '0.5rem',
+                                  borderRadius: '0.25rem',
                                 }}
                               >
                                 <MapPin
-                                  className="w-4 h-4"
+                                  className="w-3 h-3"
                                   style={{ color: eventTheme.color }}
                                 />
                               </div>
 
-                              <span className="text-muted-foreground">
+                              <span className="text-muted-foreground truncate">
                                 {eventLocation}
                               </span>
                             </div>
                           </div>
 
-                          <div className="mt-auto flex justify-center">
+                          <div className="mt-auto flex justify-center pt-2">
                             <Button
                               onClick={() => {
                                 const eventIdString = String(event.id);
@@ -348,7 +342,7 @@ export function PastEventsSection() {
                                   }),
                                 );
                               }}
-                              className="w-full sm:w-auto group-hover:scale-102 transition-transform"
+                              className="w-full sm:w-auto text-xs sm:text-sm py-1.5 group-hover:scale-102 transition-transform"
                               style={
                                 {
                                   '--button-bg': eventTheme.color,

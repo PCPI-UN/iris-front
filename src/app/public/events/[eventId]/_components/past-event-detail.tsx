@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
   Calendar,
   Trophy,
@@ -35,6 +35,7 @@ import {
   type ProjectWithJurors,
 } from '@/features/projects/api/get-projects-with-jurors';
 import { normalizeCategoryId } from '@/lib/compat/category-legacy';
+import { PastEventWinnersTop } from './past-event-winners-top';
 type RankedProject = any;
 
 const normalizeText = (value: string) =>
@@ -1017,12 +1018,23 @@ export const PastEventDetail = ({ eventId }: EventDetailProps) => {
           <Spinner size="md" />
         </div>
       ) : (
-        <WinnersSection
-          categories={categories}
-          rankingByCategory={rankingByCategory}
-          isExposition={isExposition}
-          projects={projects}
-        />
+        <>
+          <PastEventWinnersTop
+            rankingByCategory={rankingByCategory}
+            categories={categories}
+          />
+
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-12">
+            <Divider className="event-divider" />
+          </div>
+
+          {/* <WinnersSection
+            categories={categories}
+            rankingByCategory={rankingByCategory}
+            isExposition={isExposition}
+            projects={projects}
+          /> */}
+        </>
       )}
 
       <>
