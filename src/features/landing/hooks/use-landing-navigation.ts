@@ -108,7 +108,7 @@ const smoothScrollToTarget = (targetId: LandingTarget, closeMobileMenu: () => vo
       const progress = maxIndex > 0 ? targetPanelIndex / maxIndex : 0;
 
       const target = resolveHorizontalTarget(targetId, horizontalSection, progress);
-      scrollToPosition(target);
+      scrollToPosition(target - getScrollOffset());
 
       html.style.scrollBehavior = originalBehavior;
       return;

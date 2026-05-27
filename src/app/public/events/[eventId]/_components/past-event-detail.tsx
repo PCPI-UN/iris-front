@@ -310,7 +310,7 @@ const WinnerCard = ({ ranked, categoryLabel, isExposition }: WinnerCardProps) =>
           )}
 
           <div>
-            <h3 className="winner-title text-3xl sm:text-4xl lg:text-5xl font-extrabold text-foreground leading-tight">
+            <h3 className="winner-title text-3xl sm:text-4xl lg:text-5xl font-extrabold text-foreground leading-none">
               {ranked.project.name}
             </h3>
             {hasText(ranked.project.description) && (
@@ -431,13 +431,14 @@ const WinnersSection = ({
         <Divider className="event-divider flex-1" />
       </div>
 
-      <div className="flex items-center overflow-x-auto gap-3 mb-8 py-2 hide-scrollbar">
+      <div className="w-full overflow-x-auto overscroll-x-contain scroll-smooth pb-2 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0 hide-scrollbar">
+        <div className="flex w-max min-w-full items-center gap-3 py-2">
         {hasMultipleCategories
           ? categories.map((cat) => (
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategoryId(cat.id)}
-                className={`category-button px-5 py-2 rounded-full text-sm font-semibold border transition-all duration-200 flex-shrink-0 ${
+                className={`category-button whitespace-nowrap snap-start px-4 sm:px-5 py-2 rounded-full text-sm font-semibold border transition-all duration-200 flex-shrink-0 ${
                   selectedCategoryId === cat.id
                     ? 'prismatic-border prismatic-text selected-category'
                     : 'prismatic-text border-white/20 text-white/90 hover:border-white/40 hover:bg-white/5'
@@ -450,7 +451,7 @@ const WinnersSection = ({
               <button
                 key={pos}
                 onClick={() => setSelectedPosition(pos)}
-                className={`category-button px-5 py-2 rounded-full text-sm font-semibold border transition-all duration-200 flex-shrink-0 ${
+                className={`category-button whitespace-nowrap snap-start px-4 sm:px-5 py-2 rounded-full text-sm font-semibold border transition-all duration-200 flex-shrink-0 ${
                   selectedPosition === pos
                     ? 'prismatic-border prismatic-text selected-category'
                     : 'prismatic-text border-white/20 text-white/90 hover:border-white/40 hover:bg-white/5'
@@ -459,6 +460,7 @@ const WinnersSection = ({
                 Top {pos}
               </button>
             ))}
+        </div>
       </div>
       {ranked ? (
         <div className="winner-grid">
@@ -507,33 +509,54 @@ const ParticipantsPopup = ({
     >
       <div className="absolute inset-0 bg-black/10 backdrop-blur-sm" />
 
-      <div className="absolute left-1/2 top-1/2 w-[94vw] max-w-2xl -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-border/50 bg-background/30 shadow-2xl backdrop-blur-xl p-5 sm:p-6 glass-card">
+      <div
+        className="absolute left-1/2 top-1/2 w-[94vw] max-w-2xl -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-border/40 bg-background/20 shadow-2xl backdrop-blur-xl p-6 glass-card prismatic-border"
+        style={{ backgroundColor: 'rgba(17, 24, 39, 0.22)' }}
+      >
         <div className="flex items-start justify-between gap-3 mb-4">
           <div className="min-w-0">
             <p className="text-xs uppercase tracking-widest font-bold text-muted-foreground">Proyecto</p>
-            <h3 className="text-lg font-bold text-foreground mt-1">{project.name}</h3>
-            {categoryName && <p className="text-sm text-muted-foreground mt-1">{categoryName}</p>}
+            <h3 className="text-2xl font-extrabold prismatic-text mt-1 leading-none">{project.name}</h3>
+            {categoryName && (
+              <div className="mt-3 mb-5 max-w-full">
+                <Chip
+                  variant="flat"
+                  size="sm"
+                  classNames={{
+                    base: 'event-date-badge inline-flex items-start justify-start px-3 py-2.5 rounded-[1.25rem] max-w-full h-auto',
+                    content: 'text-xs font-semibold break-words whitespace-normal leading-relaxed text-left',
+                  }}
+                >
+                  {categoryName}
+                </Chip>
+              </div>
+            )}
           </div>
-          <button type="button" onClick={onClose} className="rounded-full p-2 hover:bg-background/20 transition-colors" aria-label="Cerrar">
+          <button type="button" onClick={onClose} className="rounded-full p-2 border border-border/30 hover:bg-background/20 transition-colors" aria-label="Cerrar">
             <X className="h-5 w-5" />
           </button>
         </div>
 
         {hasText(project.description) && (
           <div className="mb-4">
-            <p className="text-sm text-foreground/85 leading-relaxed">{project.description}</p>
+            <p className="text-sm text-foreground/80 leading-relaxed">{project.description}</p>
           </div>
         )}
 
         <div className="mb-4">
-          <div className="flex items-center gap-2 mb-2">
+          <div className="flex items-center gap-2 mb-3">
             <Users className="h-4 w-4" />
             <span className="text-sm uppercase tracking-widest font-bold text-muted-foreground">Participantes</span>
           </div>
           {members.length > 0 ? (
             <div className="flex flex-wrap gap-2">
               {members.map((name, i) => (
-                <Chip key={`${name}-${i}`} size="sm" variant="flat" classNames={{ base: 'bg-background/30 border border-border/30 py-2 px-3', content: 'text-sm font-medium' }}>
+                <Chip
+                  key={`${name}-${i}`}
+                  size="sm"
+                  variant="flat"
+                  classNames={{ base: 'bg-background/30 border border-border/30 py-2 px-3', content: 'text-sm font-medium' }}
+                >
                   {name}
                 </Chip>
               ))}
@@ -544,12 +567,12 @@ const ParticipantsPopup = ({
         </div>
 
         {showPoster && posterUrl && (
-          <div className="mt-2">
+          <div className="mt-4">
             <a
               href={posterUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-3 text-sm font-semibold rounded-lg px-4 py-2 text-white shadow-lg"
+              className="inline-flex items-center justify-center gap-3 w-full text-sm font-semibold rounded-xl px-4 py-3 text-white shadow-lg"
               style={{
                 backgroundImage: PRISMATIC_GRADIENT,
                 backgroundSize: '200% auto',
@@ -833,25 +856,7 @@ export const PastEventDetail = ({ eventId }: EventDetailProps) => {
     [event?.eventType],
   );
 
-  const program = useMemo(() => {
-    const items: { label: string; date: string }[] = [];
-    if (event?.inscriptionDeadline)
-      items.push({
-        label: 'Cierre de inscripciones',
-        date: formatDateShort(event.inscriptionDeadline),
-      });
-    if (event?.startDate)
-      items.push({
-        label: 'Inicio del evento',
-        date: formatDateShort(event.startDate),
-      });
-    if (event?.endDate)
-      items.push({
-        label: 'Fin del evento',
-        date: formatDateShort(event.endDate),
-      });
-    return items;
-  }, [event?.endDate, event?.inscriptionDeadline, event?.startDate]);
+  
 
   const organizers = Array.isArray(event?.organizers)
     ? event.organizers.filter(hasText)
@@ -915,9 +920,25 @@ export const PastEventDetail = ({ eventId }: EventDetailProps) => {
             </p>
           </div>
 
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-black tracking-tighter leading-none prismatic-text uppercase mb-6 lg:mb-8 text-left">
+          <h1 className="text-5xl sm:text-6xl lg:text-7xl xl:text-7xl font-black tracking-tighter leading-none prismatic-text uppercase mb-3 lg:mb-4 text-left">
             {event.name}
           </h1>
+
+          <div className="flex items-center gap-3 mb-6">
+            {event?.startDate && (
+              <span className="event-date-badge text-xs font-semibold px-2.5 py-1 rounded-full inline-flex items-center gap-2">
+                <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                {formatDateShort(event.startDate)}
+              </span>
+            )}
+
+            {event?.inscriptionDeadline && (
+              <span className="event-date-badge text-xs font-semibold px-2.5 py-1 rounded-full inline-flex items-center gap-2">
+                <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                Cierre: {formatDateShort(event.inscriptionDeadline)}
+              </span>
+            )}
+          </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 lg:gap-10 items-start">
             <div className="lg:col-span-3 space-y-6">
@@ -926,27 +947,15 @@ export const PastEventDetail = ({ eventId }: EventDetailProps) => {
                   <p className="text-xs uppercase tracking-widest font-bold text-muted-foreground">
                     Sobre el evento
                   </p>
-                  <p className="text-base sm:text-lg lg:text-xl text-foreground/80 leading-relaxed">
+                  <p className="text-sm sm:text-base lg:text-lg text-foreground/80 leading-relaxed">
                     {event.description}
                   </p>
                 </div>
               )}
 
-              {program.length > 0 && (
-                <div className="space-y-3">
-                  {program.map((item) => (
-                    <div key={item.label} className="flex items-center gap-3">
-                      <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
-                      <span className="text-sm text-muted-foreground">
-                        {item.label}:
-                      </span>
-                      <span className="event-date-badge text-xs font-semibold px-2.5 py-1 rounded-lg">
-                        {item.date}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
+              
+
+              
             </div>
 
             {hasGeneralDetails && (
@@ -954,97 +963,48 @@ export const PastEventDetail = ({ eventId }: EventDetailProps) => {
                 <div className="event-info-card glass-card rounded-2xl p-5 sm:p-6 space-y-4">
                   <div className="flex items-center gap-3">
                     <Building2 className="event-section-title h-5 w-5" />
-                    <h3 className="text-base sm:text-lg font-bold">Información General</h3>
+                    <h3 className="text-base sm:text-lg font-bold">Información</h3>
                   </div>
                   <Divider className="event-divider" />
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {organizers.length > 0 && (
-                      <div>
-                        <p className="text-xs uppercase tracking-widest font-bold text-muted-foreground mb-1">
-                          Organizaciones
-                        </p>
-                        <div className="flex flex-col gap-1">
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-xs uppercase tracking-widest font-bold text-muted-foreground mb-2">
+                        ORGANIZACIONES
+                      </p>
+                      {(organizers.length > 0 || collaborators.length > 0) ? (
+                        <ul className="list-disc pl-5 space-y-1">
                           {organizers.map((o, idx) => (
-                            <p key={`org-${idx}`} className="text-sm font-semibold text-foreground/85">
+                            <li key={`org-${idx}`} className="text-sm font-semibold text-foreground/85">
                               {o}
-                            </p>
+                            </li>
                           ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {collaborators.length > 0 && (
-                      <div>
-                        <p className="text-xs uppercase tracking-widest font-bold text-muted-foreground mb-1">
-                          Empresas Colaboradoras
-                        </p>
-                        <div className="flex flex-col gap-1">
                           {collaborators.map((c, idx) => (
-                            <p key={`col-${idx}`} className="text-sm font-semibold text-foreground/85">
+                            <li key={`col-${idx}`} className="text-sm font-semibold text-foreground/85">
                               {c}
-                            </p>
+                            </li>
                           ))}
-                        </div>
-                      </div>
-                    )}
+                        </ul>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">Sin organizaciones registradas.</p>
+                      )}
+                    </div>
 
-                                        {eventTypeLabel && (
-                      <div>
-                        <p className="text-xs uppercase tracking-widest font-bold text-muted-foreground mb-1">
-                          Tipo de Evento
-                        </p>
-                        <Chip
-                          variant="flat"
-                          size="sm"
-                          classNames={{
-                            base: 'bg-background/30 border border-border/30 w-fit',
-                            content: 'text-xs font-semibold uppercase',
-                          }}
-                        >
-                          {eventTypeLabel}
-                        </Chip>
-                      </div>
-                    )}
-                    
-                    {isFreeEvent && (
-                      <div>
-                        <p className="text-xs uppercase tracking-widest font-bold text-muted-foreground mb-1">
-                          Costo
-                        </p>
-                        <Chip
-                          startContent={<span className="text-lg">✓</span>}
-                          variant="flat"
-                          size="sm"
-                          classNames={{
-                            base: 'bg-green-500/10 border border-green-500/30 w-fit',
-                            content: 'text-xs font-bold text-green-600',
-                          }}
-                        >
-                          Inscripción sin costo
-                        </Chip>
-                      </div>
-                    )}
-                  
-                    
-
-                    {hasText(event.location) && (
-                      <div>
-                        <p className="text-xs uppercase tracking-widest font-bold text-muted-foreground mb-1">
-                          Ubicación
-                        </p>
-                        <p className="text-sm font-semibold text-foreground/90">
-                          {event.location}
-                        </p>
-                        {hasText(event.locationDetails) && (
-                          <p className="text-xs text-foreground/70 mt-0.5">
-                            {event.locationDetails}
-                          </p>
-                        )}
-                      </div>
-                    )}
-
-                    
+                    <div>
+                      <p className="text-xs uppercase tracking-widest font-bold text-muted-foreground mb-1">
+                        UBICACIÓN
+                      </p>
+                      {hasText(event.location) ? (
+                        <>
+                          <p className="text-sm font-semibold text-foreground/90">{event.location}</p>
+                          {hasText(event.locationDetails) && (
+                            <p className="text-xs text-foreground/70 mt-0.5">{event.locationDetails}</p>
+                          )}
+                        </>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">Sin ubicación registrada.</p>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>

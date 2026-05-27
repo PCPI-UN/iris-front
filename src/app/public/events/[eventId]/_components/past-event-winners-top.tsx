@@ -124,7 +124,7 @@ const TopWinnerCard = ({ ranked, position, categoryName, isExposition }: { ranke
           )}
 
           <div>
-            <h3 className="winner-title text-3xl sm:text-4xl lg:text-5xl font-extrabold text-foreground leading-tight">
+            <h3 className="winner-title text-3xl sm:text-4xl lg:text-5xl font-extrabold text-foreground leading-none">
               {ranked.project.name}
             </h3>
             {categoryName && (
