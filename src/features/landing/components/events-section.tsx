@@ -408,10 +408,10 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
                 {pages.map((page, pageIndex) => (
                   <div key={`events-page-${pageIndex}`} className="min-w-full overflow-hidden">
                     <div 
-                      className={`grid gap-4 sm:gap-6 md:gap-8 ${
+                      className={`grid gap-3 sm:gap-4 md:gap-5 ${
   page.length < cardsPerView
-    ? 'grid-cols-[repeat(auto-fit,minmax(25px,420px))] justify-center'
-    : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
+    ? 'grid-cols-[repeat(auto-fit,minmax(320px,1fr))] justify-center'
+    : 'grid-cols-1 md:grid-cols-2 xl:grid-cols-2'
 }`}
                     >
                       {page.map((event, index) => {
@@ -434,7 +434,7 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
                         return (
                           <GlassCard
                             key={event.id}
-                            className="event-card group cursor-pointer transition-all duration-500 relative overflow-hidden h-full w-full"
+                            className="event-card group cursor-pointer transition-all duration-500 relative overflow-hidden h-full w-full p-4 sm:p-5"
                             style={
                               uniformCardHeight
                                 ? { minHeight: `${uniformCardHeight}px` }
@@ -446,9 +446,9 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
                             />
 
                             <div className="relative z-10 flex h-full flex-col">
-                              <div className="flex items-center justify-between mb-4">
+                              <div className="flex items-center justify-between mb-3">
                                 <div
-                                  className="px-3 py-1 rounded-full text-xs font-semibold"
+                                  className="px-2.5 py-1 rounded-full text-[11px] font-semibold"
                                   style={{
                                     background: `color-mix(in oklch, ${eventTheme.color}, transparent 85%)`,
                                     color: eventTheme.color,
@@ -459,7 +459,7 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
                                 </div>
 
                                 <div
-                                  className="w-10 h-10 rounded-lg flex items-center justify-center transition-transform"
+                                  className="w-8 h-8 rounded-lg flex items-center justify-center transition-transform"
                                   style={{
                                     background: `color-mix(in oklch, ${eventTheme.color}, transparent 80%)`,
                                     boxShadow: `0 0 30px ${eventTheme.color}`,
@@ -467,55 +467,55 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
                                   }}
                                 >
                                   <Calendar
-                                    className="w-5 h-5"
+                                    className="w-4 h-4"
                                     style={{ color: eventTheme.color }}
                                   />
                                 </div>
                               </div>
 
-                              <h3 className="text-xl sm:text-2xl font-bold mb-2 sm:mb-3 group-hover:text-primary transition-colors leading-tight">
+                              <h3 className="text-lg sm:text-xl md:text-2xl font-bold mb-2 group-hover:text-primary transition-colors leading-tight text-balance">
                                 {event.name}
                               </h3>
 
-                              <p className="text-sm text-muted-foreground mb-4 sm:mb-5 leading-relaxed break-words overflow-hidden [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:3] sm:[-webkit-line-clamp:2]">
+                              <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4 leading-relaxed break-words overflow-hidden [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]">
                                 {shortDescription}
                               </p>
 
-                              <div className="space-y-3 mb-8 sm:mb-8 flex-1">
-                                <div className="flex items-center gap-3 text-sm">
+                              <div className="space-y-2.5 mb-5 sm:mb-6 flex-1">
+                                <div className="flex items-center gap-2 text-sm">
                                   <div
-                                    className="w-8 h-8 rounded-lg flex items-center justify-center"
+                                    className="w-7 h-7 rounded-lg flex items-center justify-center"
                                     style={{
                                       background: `color-mix(in oklch, ${eventTheme.color}, transparent 90%)`,
                                       borderRadius: '0.5rem',
                                     }}
                                   >
                                     <Calendar
-                                      className="w-4 h-4"
+                                      className="w-3.5 h-3.5"
                                       style={{ color: eventTheme.color }}
                                     />
                                   </div>
 
-                                  <span className="text-muted-foreground">
+                                  <span className="text-xs sm:text-sm text-muted-foreground">
                                     {dateRange}
                                   </span>
                                 </div>
 
-                                <div className="flex items-center gap-3 text-sm">
+                                <div className="flex items-center gap-2 text-sm">
                                   <div
-                                    className="w-8 h-8 rounded-lg flex items-center justify-center"
+                                    className="w-7 h-7 rounded-lg flex items-center justify-center"
                                     style={{
                                       background: `color-mix(in oklch, ${eventTheme.color}, transparent 90%)`,
                                       borderRadius: '0.5rem',
                                     }}
                                   >
                                     <Clock
-                                      className="w-4 h-4"
+                                      className="w-3.5 h-3.5"
                                       style={{ color: eventTheme.color }}
                                     />
                                   </div>
 
-                                  <span className="text-muted-foreground">
+                                  <span className="text-xs sm:text-sm text-muted-foreground">
                                     {parseLocalDate(event.inscriptionDeadline).toLocaleDateString('es', {
                                       day: 'numeric',
                                       month: 'long',
@@ -524,21 +524,21 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
                                   </span>
                                 </div>
 
-                                <div className="flex items-center gap-3 text-sm">
+                                <div className="flex items-center gap-2 text-sm">
                                   <div
-                                    className="w-8 h-8 rounded-lg flex items-center justify-center"
+                                    className="w-7 h-7 rounded-lg flex items-center justify-center"
                                     style={{
                                       background: `color-mix(in oklch, ${eventTheme.color}, transparent 90%)`,
                                       borderRadius: '0.5rem',
                                     }}
                                   >
                                     <MapPin
-                                      className="w-4 h-4"
+                                      className="w-3.5 h-3.5"
                                       style={{ color: eventTheme.color }}
                                     />
                                   </div>
 
-                                  <span className="text-muted-foreground">
+                                  <span className="text-xs sm:text-sm text-muted-foreground">
                                     {eventLocation}
                                   </span>
                                 </div>
@@ -575,7 +575,7 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
                                       void handleJoin(event.id, event.name);
                                     }}
                                     isDisabled={isUserStatusResolving}
-                                    className="w-full group-hover:scale-102 transition-transform event-button"
+                                    className="w-full group-hover:scale-102 transition-transform event-button text-sm"
                                     style={
                                       {
                                         '--button-bg': eventTheme.color,
