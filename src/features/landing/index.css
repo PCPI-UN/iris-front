@@ -401,6 +401,20 @@
   transform: translateY(0) !important;
 }
 
+/* Utility to hide scrollbars while preserving scroll behavior */
+.no-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none; /* Safari and Chrome */
+}
+
+/* Make sure panels that use this utility still allow scrolling */
+.no-scrollbar {
+  overflow: auto;
+}
+
 /* Winners / Awards enhancements */
 .winner-grid {
   display: grid;

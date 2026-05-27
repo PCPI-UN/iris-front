@@ -197,9 +197,9 @@ export function PastEventsSection() {
   }
 
   return (
-    <div className="space-y-6 sm:space-y-8">
+    <div className="space-y-3 sm:space-y-4">
       {pastEventsQuery.data?.data && pastEventsQuery.data.data.length > 0 && (
-        <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg px-4 py-3">
+        <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg px-4 py-2">
           <Search className="w-4 h-4 text-muted-foreground flex-shrink-0" />
           <input
             type="text"
@@ -234,7 +234,7 @@ export function PastEventsSection() {
             {pages.map((page, pageIndex) => (
               <div key={`past-events-page-${pageIndex}`} className="min-w-full overflow-hidden">
                 <div
-                  className={`grid gap-3 sm:gap-4 md:gap-5 ${
+                  className={`grid gap-2 sm:gap-3 md:gap-4 ${
                     page.length < cardsPerView
                       ? 'grid-cols-[repeat(auto-fit,minmax(300px,1fr))] justify-center'
                       : 'grid-cols-1 md:grid-cols-2'

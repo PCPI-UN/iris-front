@@ -5,7 +5,6 @@ import {
 } from '@tanstack/react-query';
 
 import { PublicLayout } from '@/components/layouts/public-layout';
-import { Navbar } from '@/components/layouts/navbar';
 import { getPublicEventDetailQueryOptions } from '@/features/events/api/get-public-event-detail';
 import { getPublicPastEventDetailQueryOptions } from '@/features/events/api/get-public-past-event-detail';
 import { Event } from '@/types/api';
@@ -88,8 +87,7 @@ const PublicEventDetailPage = async ({
   const dehydratedState = dehydrate(queryClient);
 
   return (
-    <PublicLayout showNavLinks={false}>
-      <Navbar />
+    <PublicLayout showNavLinks={true}>
       <HydrationBoundary state={dehydratedState}>
         <div className="landing-page relative z-10">
           {shouldRenderPastEvent ? (

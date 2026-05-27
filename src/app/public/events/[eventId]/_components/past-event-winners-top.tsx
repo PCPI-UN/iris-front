@@ -17,27 +17,35 @@ type RankedProject = {
     pendingParticipants?: any[];
     documents?: any[];
   };
+  categoryId?: number;
 };
 
 type PastEventWinnersTopProps = {
   rankingByCategory: Map<number, RankedProject[]>;
   categories: { id: number; name: string }[];
   winnersRef?: RefObject<HTMLElement>;
+  isExposition?: boolean;
 };
 
 const getParticipantLabels = (project: any): string[] => {
-  const pending = (project.pendingParticipants ?? [])
-    .map((p: any) => `${p.firstName ?? ''} ${p.lastName ?? ''}`.trim())
+  const pending = (project?.pendingParticipants ?? [])
+    .map((p: any) => `${p?.firstName ?? ''} ${p?.lastName ?? ''}`.trim())
     .filter((l: string) => l.length > 0);
 
   if (pending.length > 0) return pending;
 
-  return (project.participants ?? []).map((p: any) => {
-    if ('firstName' in p) {
-      const full = `${(p as any).firstName ?? ''} ${(p as any).lastName ?? ''}`.trim();
+  const participantsArr = project?.participants ?? project?.teamMembers ?? [];
+
+  return (participantsArr ?? []).map((p: any) => {
+    if (!p && typeof p !== 'object') return 'Participante';
+    if (typeof p === 'string') return p;
+    if ('firstName' in p || 'lastName' in p) {
+      const full = `${p.firstName ?? ''} ${p.lastName ?? ''}`.trim();
       if (full) return full;
     }
-    if ((p as any).studentCode) return `Código ${(p as any).studentCode}`;
+    if (p.studentCode) return `Código ${p.studentCode}`;
+    if (p.name) return p.name;
+    if (p.fullName) return p.fullName;
     return 'Participante';
   });
 };
@@ -55,10 +63,10 @@ const hasText = (value?: string | null) =>
 
 const VISIBLE_MEMBERS_LIMIT = 8;
 
-const TopWinnerCard = ({ ranked, position }: { ranked: RankedProject; position: 1 | 2 }) => {
+const TopWinnerCard = ({ ranked, position, categoryName, isExposition }: { ranked: RankedProject; position: 1 | 2; categoryName?: string; isExposition?: boolean }) => {
   const [membersExpanded, setMembersExpanded] = useState(false);
   const members = getParticipantLabels(ranked.project);
-  const posterUrl = getPosterUrl(ranked.project);
+  const posterUrl = isExposition ? getPosterUrl(ranked.project) : undefined;
 
   const positionLabel = position === 1 ? '1° Lugar' : '2° Lugar';
   const positionBadgeClass =
@@ -119,6 +127,11 @@ const TopWinnerCard = ({ ranked, position }: { ranked: RankedProject; position: 
             <h3 className="winner-title text-3xl sm:text-4xl lg:text-5xl font-extrabold text-foreground leading-tight">
               {ranked.project.name}
             </h3>
+            {categoryName && (
+              <p className="mt-2 text-sm font-semibold text-cyan-400 uppercase tracking-widest">
+                {categoryName}
+              </p>
+            )}
             {hasText(ranked.project.description) && (
               <p className="mt-3 text-sm sm:text-base text-foreground/85 leading-relaxed description">
                 {ranked.project.description}
@@ -169,14 +182,29 @@ export function PastEventWinnersTop({
   rankingByCategory,
   categories,
   winnersRef,
+  isExposition = false,
 }: PastEventWinnersTopProps) {
   const [currentPage, setCurrentPage] = useState(0);
 
-  // Get all winners across all categories
+  // Create a map of categoryId to category name
+  const categoryMap = useMemo(() => {
+    const map = new Map<number, string>();
+    categories.forEach((cat) => {
+      map.set(cat.id, cat.name);
+    });
+    return map;
+  }, [categories]);
+
+  // Get all winners across all categories with their category info
   const allWinners = useMemo(() => {
     const winners: RankedProject[] = [];
-    for (const [_, categoryWinners] of rankingByCategory.entries()) {
-      winners.push(...categoryWinners);
+    for (const [categoryId, categoryWinners] of rankingByCategory.entries()) {
+      categoryWinners.forEach((winner) => {
+        winners.push({
+          ...winner,
+          categoryId,
+        });
+      });
     }
     return [...winners].sort((a, b) => a.position - b.position);
   }, [rankingByCategory]);
@@ -225,6 +253,8 @@ export function PastEventWinnersTop({
                         key={`winner-${winner.position}`}
                         ranked={winner}
                         position={winner.position as 1 | 2}
+                        categoryName={winner.categoryId ? categoryMap.get(winner.categoryId) : undefined}
+                        isExposition={isExposition}
                       />
                     ))}
                   </div>

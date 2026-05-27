@@ -34,7 +34,7 @@ const PublicPastEventDetailPage = async ({
   const dehydratedState = dehydrate(queryClient);
 
   return (
-    <PublicLayout showNavLinks={false}>
+    <PublicLayout showNavLinks={true}>
       <HydrationBoundary state={dehydratedState}>
         <div className="landing-page relative z-10">
           <PastEventDetail eventId={Number(resolvedEventId)} />

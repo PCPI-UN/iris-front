@@ -126,19 +126,25 @@ const getStoredTheme = (eventId: string): ThemeKey | null => {
   return null;
 };
 
-const getParticipantLabels = (project: ProjectWithJurors): string[] => {
-  const pending = (project.pendingParticipants ?? [])
-    .map((p) => `${p.firstName ?? ''} ${p.lastName ?? ''}`.trim())
-    .filter((l) => l.length > 0);
+const getParticipantLabels = (project: any): string[] => {
+  const pending = (project?.pendingParticipants ?? [])
+    .map((p: any) => `${p?.firstName ?? ''} ${p?.lastName ?? ''}`.trim())
+    .filter((l: string) => l.length > 0);
 
   if (pending.length > 0) return pending;
 
-  return (project.participants ?? []).map((p) => {
-    if ('firstName' in p) {
-      const full = `${(p as any).firstName ?? ''} ${(p as any).lastName ?? ''}`.trim();
+  const participantsArr = project?.participants ?? project?.teamMembers ?? [];
+
+  return (participantsArr ?? []).map((p: any) => {
+    if (!p && typeof p !== 'object') return 'Participante';
+    if (typeof p === 'string') return p;
+    if ('firstName' in p || 'lastName' in p) {
+      const full = `${p.firstName ?? ''} ${p.lastName ?? ''}`.trim();
       if (full) return full;
     }
-    if ((p as any).studentCode) return `Código ${(p as any).studentCode}`;
+    if (p.studentCode) return `Código ${p.studentCode}`;
+    if (p.name) return p.name;
+    if (p.fullName) return p.fullName;
     return 'Participante';
   });
 };
@@ -159,7 +165,7 @@ type WinnerCardProps = {
 
 const VISIBLE_MEMBERS_LIMIT = 8;
 
-const toAwardRanking = (awards: any[], fallbackCategoryId?: number) => {
+const toAwardRanking = (awards: any[], projects: any[] = [], fallbackCategoryId?: number) => {
   const rankingByCategory = new Map<number, RankedProject[]>();
 
   for (const award of awards) {
@@ -176,15 +182,49 @@ const toAwardRanking = (awards: any[], fallbackCategoryId?: number) => {
 
     const current = rankingByCategory.get(categoryId) ?? [];
 
+    // Try to find the full project data from the projects list.
+    let matchedProject: any | undefined = undefined;
+
+    const awardProjectId = award?.projectId ?? award?.project?.id ?? undefined;
+    if (awardProjectId) {
+      matchedProject = projects.find((p) => Number(p?.id) === Number(awardProjectId));
+    }
+
+    if (!matchedProject) {
+      const awardTitle = String(award?.title ?? '').trim().toLowerCase();
+      if (awardTitle) {
+        matchedProject = projects.find((p) => {
+          const names = [p?.name, p?.title, p?.projectTitle]
+            .filter(Boolean)
+            .map((n: any) => String(n).trim().toLowerCase());
+          return names.some((n: string) => n === awardTitle);
+        });
+      }
+    }
+
+    const projectPayload = matchedProject
+      ? (() => {
+          const computedName = (matchedProject.name ?? matchedProject.title ?? matchedProject.projectTitle ?? String(award?.title ?? '').trim()) || `Proyecto #${rawPosition}`;
+          const computedDescription = (matchedProject.description ?? matchedProject.summary ?? String(award?.description ?? '').trim()) || undefined;
+          return {
+            name: computedName,
+            description: computedDescription,
+            participants: matchedProject.participants ?? matchedProject.teamMembers ?? matchedProject.members ?? [],
+            pendingParticipants: matchedProject.pendingParticipants ?? [],
+            documents: matchedProject.documents ?? [],
+          };
+        })()
+      : {
+          name: String(award?.title ?? '').trim() || `Proyecto #${rawPosition}`,
+          description: String(award?.description ?? '').trim() || undefined,
+          participants: [],
+          pendingParticipants: [],
+          documents: [],
+        };
+
     current.push({
       position: rawPosition,
-      project: {
-        name: String(award?.title ?? '').trim() || `Proyecto #${rawPosition}`,
-        description: String(award?.description ?? '').trim() || undefined,
-        participants: [],
-        pendingParticipants: [],
-        documents: [],
-      },
+      project: projectPayload,
     });
 
     rankingByCategory.set(categoryId, current);
@@ -785,8 +825,8 @@ export const PastEventDetail = ({ eventId }: EventDetailProps) => {
       return new Map<number, RankedProject[]>();
     }
 
-    return toAwardRanking(event.awards, categories[0]?.id);
-  }, [event?.awards, categories]);
+    return toAwardRanking(event.awards, projects, categories[0]?.id);
+  }, [event?.awards, categories, projects]);
 
   const eventTypeLabel = useMemo(
     () => normalizeEventType(event?.eventType),
@@ -875,7 +915,7 @@ export const PastEventDetail = ({ eventId }: EventDetailProps) => {
             </p>
           </div>
 
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-black tracking-tighter leading-none prismatic-text uppercase mb-6 lg:mb-8 text-center">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-black tracking-tighter leading-none prismatic-text uppercase mb-6 lg:mb-8 text-left">
             {event.name}
           </h1>
 
@@ -949,7 +989,7 @@ export const PastEventDetail = ({ eventId }: EventDetailProps) => {
                       </div>
                     )}
 
-                    {eventTypeLabel && (
+                                        {eventTypeLabel && (
                       <div>
                         <p className="text-xs uppercase tracking-widest font-bold text-muted-foreground mb-1">
                           Tipo de Evento
@@ -966,7 +1006,7 @@ export const PastEventDetail = ({ eventId }: EventDetailProps) => {
                         </Chip>
                       </div>
                     )}
-
+                    
                     {isFreeEvent && (
                       <div>
                         <p className="text-xs uppercase tracking-widest font-bold text-muted-foreground mb-1">
@@ -985,6 +1025,8 @@ export const PastEventDetail = ({ eventId }: EventDetailProps) => {
                         </Chip>
                       </div>
                     )}
+                  
+                    
 
                     {hasText(event.location) && (
                       <div>
@@ -1001,6 +1043,8 @@ export const PastEventDetail = ({ eventId }: EventDetailProps) => {
                         )}
                       </div>
                     )}
+
+                    
                   </div>
                 </div>
               </div>
@@ -1022,6 +1066,7 @@ export const PastEventDetail = ({ eventId }: EventDetailProps) => {
           <PastEventWinnersTop
             rankingByCategory={rankingByCategory}
             categories={categories}
+            isExposition={isExposition}
           />
 
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-12">

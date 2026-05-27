@@ -39,10 +39,11 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
   const isLandingPage = pathname === '/';
   const isDevelopersPage = pathname === paths.public.developers.getHref();
   const isPublicEventDetail = /^\/public\/events\/[^/]+$/.test(pathname);
+  const isPublicPastEventDetail = /^\/public\/events\/past\/[^/]+$/.test(pathname);
   const isPublicProjectPage = /^\/public\/projects\/[^/]+$/.test(pathname);
   const isLoginPage = pathname === paths.auth.login.getHref();
   const isSignupPage = pathname === paths.auth.signup.getHref();
-  const shouldShowNavLinks = showNavLinks && (isLandingPage || isDevelopersPage);
+  const shouldShowNavLinks = showNavLinks && (isLandingPage || isDevelopersPage || isPublicEventDetail || isPublicPastEventDetail);
   const shouldShowBackButton = isDevelopersPage || isPublicEventDetail || isLoginPage || isSignupPage;
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
