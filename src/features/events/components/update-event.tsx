@@ -562,13 +562,17 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                         </Select>
                         <Select
                           label="Evaluation Type"
-                          selectedKeys={[String(formData.evaluationType)]}
-                          onChange={(e) =>
-                            setFormData((prev) => ({
-                              ...prev,
-                              evaluationType: toEvaluationTypeCode(e.target.value) as UpdateEventFormState["evaluationType"],
-                            }))
-                          }
+                          selectedKeys={new Set([String(formData.evaluationType)])}
+                          onSelectionChange={(keys) => {
+                            const selected = Array.from(keys)[0];
+
+                            if (selected !== undefined) {
+                              setFormData((prev) => ({
+                                ...prev,
+                                evaluationType: toEvaluationTypeCode(selected) as UpdateEventFormState["evaluationType"],
+                              }));
+                            }
+                          }}
                           className="flex-1"
                         >
                           <SelectItem key="1">0 - 5</SelectItem>
