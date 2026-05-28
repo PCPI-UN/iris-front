@@ -50,7 +50,7 @@ export const GetPastEventsAdmin = () => {
             <CardBody className="p-6 space-y-4">
               <div className="space-y-2">
                 <h3 className="text-xl font-semibold">{event.name}</h3>
-                <p className="text-sm text-default-500">{event.description}</p>
+                <p className="text-sm text-default-500 line-clamp-4">{event.description}</p>
               </div>
 
               <div className="flex flex-col gap-2 text-sm">

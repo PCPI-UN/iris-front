@@ -1,11 +1,14 @@
 'use client';
 
-import { Trophy } from 'lucide-react';
+import { useState } from 'react';
+import { Trophy, Eye, Settings } from 'lucide-react';
 import { Card, CardHeader, CardBody } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
 import { Table, TableHeader, TableBody, TableColumn, TableRow, TableCell } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
 import type { ProjectWithJurors } from '@/features/projects/api/get-projects-with-jurors';
 import type { ProjectEvaluationStats } from '@/features/evaluations/api/get-project-evaluation-stats';
+import { RankingConfigModal, type RankingConfigType } from './ranking-config-modal';
 
 type RankingTabProps = {
   selectedEventName?: string;
@@ -15,10 +18,16 @@ type RankingTabProps = {
 };
 
 export const RankingTab = ({ selectedEventName, isLoading, allProjects, allProjectStatsById }: RankingTabProps) => {
+  const [isRankingConfigOpen, setIsRankingConfigOpen] = useState(false);
+  const [rankingConfig, setRankingConfig] = useState<RankingConfigType>({
+    visiblePositions: 0,
+    visibleInLanding: false,
+    visibleScore: true,
+  });
   return (
     <div className="space-y-4">
       <Card className="glass-card border border-default-200/70 shadow-sm">
-        <CardHeader className="pb-2">
+        <CardHeader className="pb-2 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="flex items-center">
               <Trophy className="mr-2 h-8 w-8 text-amber-500" />
@@ -28,6 +37,14 @@ export const RankingTab = ({ selectedEventName, isLoading, allProjects, allProje
               <p className="text-sm text-default-400">{selectedEventName ?? '—'}</p>
             </div>
           </div>
+          <Button
+            className="relative gap-2 border-2 border-default-300 hover:border-primary text-default-600 hover:text-primary hover:scale-105 transition-all duration-300 font-semibold px-4 py-2"
+            variant="bordered"
+            onPress={() => setIsRankingConfigOpen(true)}
+          >
+            <Eye className="h-5 w-5" />
+            <Settings className="h-5 w-5" />
+          </Button>
         </CardHeader>
         <CardBody className="space-y-4 p-5 md:p-6">
           {isLoading ? (
@@ -126,6 +143,14 @@ export const RankingTab = ({ selectedEventName, isLoading, allProjects, allProje
           )}
         </CardBody>
       </Card>
+
+      {/* Modal de configuración del ranking */}
+      <RankingConfigModal
+        isOpen={isRankingConfigOpen}
+        onOpenChange={setIsRankingConfigOpen}
+        config={rankingConfig}
+        onConfigChange={setRankingConfig}
+      />
     </div>
   );
 };

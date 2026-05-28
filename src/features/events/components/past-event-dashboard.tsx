@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState, useEffect } from 'react';
-import { Calendar, Users, Award, Folder, Search, Trophy, Download, Eye } from 'lucide-react';
+import { Calendar, Users, Award, Folder, Search, Trophy, Download, Eye, Settings } from 'lucide-react';
 import { Card, CardHeader } from '@/components/ui/card';
 import { Chip } from '@/components/ui/chip';
 import { Select, SelectItem } from '@/components/ui/select/select';
@@ -19,6 +19,8 @@ import { getUniqueJurors, getJurorKey } from '@/features/monitoring/utils/calcul
 import { normalizeText } from '@/features/monitoring/utils/filters';
 import { getProjectEvaluationStats } from '@/features/evaluations/api/get-project-evaluation-stats';
 import { ParticipantsDetails } from '@/features/projects/components/participants-details';
+import { ExportEventReportButton } from '@/features/reports/components/export-event-report-button';
+import { RankingConfigModal, type RankingConfigType } from '@/features/monitoring/components/ranking-config-modal';
 import type { Event } from '@/types/api';
 
 type Props = {
@@ -50,6 +52,12 @@ export const PastEventDashboard = ({ event, onBack }: Props) => {
     const [selectedProject, setSelectedProject] = useState<any>(null);
     const [isJurorModalOpen, setIsJurorModalOpen] = useState(false);
     const [selectedJuror, setSelectedJuror] = useState<any>(null);
+    const [isRankingConfigOpen, setIsRankingConfigOpen] = useState(false);
+    const [rankingConfig, setRankingConfig] = useState({
+        visiblePositions: 0,
+        visibleInLanding: false,
+        visibleScore: true,
+    });
     const categorySelection = selectedCategoryId !== undefined ? [String(selectedCategoryId)] : ['all'];
 
     const [projectSearch, setProjectSearch] = useState<string>('');
@@ -277,15 +285,9 @@ export const PastEventDashboard = ({ event, onBack }: Props) => {
                     <h1 className="text-2xl font-semibold max-w-full whitespace-normal md:max-w-md">{event.name}</h1>
                     <div className="mt-1 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
                         <p className="text-sm text-default-500 line-clamp-2">{event.description}</p>
-                        <Button
-                            className="shrink-0"
-                            size="sm"
-                            variant="flat"
-                            startContent={<Download className="h-4 w-4" />}
-                            onPress={() => {}}
-                        >
-                            Descargar reporte
-                        </Button>
+                        <div className="shrink-0">
+                            <ExportEventReportButton eventId={event.id} label="Descargar reporte" />
+                        </div>
                     </div>
                     <div className="mt-2 flex flex-col gap-2 text-sm text-default-500 sm:flex-row sm:flex-wrap sm:items-center">
                         <div className="inline-flex items-center gap-2">
@@ -411,7 +413,8 @@ export const PastEventDashboard = ({ event, onBack }: Props) => {
                                                     outerRadius={110}
                                                     innerRadius={55}
                                                     paddingAngle={2}
-                                                    label={({ name, percent }) => `${name} ${Math.round((percent ?? 0) * 100)}%`}
+                                                    label={({ percent }) => `${Math.round((percent ?? 0) * 100)}%`}
+                                                    labelLine={false}
                                                 >
                                                     {chartData.map((entry, index) => (
                                                         <Cell key={String(entry.id)} fill={colors[index % colors.length]} />
@@ -613,8 +616,16 @@ export const PastEventDashboard = ({ event, onBack }: Props) => {
 
                 {activeTab === 'ranking' && (
                     <Card className="glass-card border border-default-200/70 shadow-sm">
-                        <CardHeader className="pb-2 ">
+                        <CardHeader className="pb-2 flex items-center justify-between">
                             <h3 className="text-lg font-semibold">Ranking por Categoría</h3>
+                            <Button
+                                className="relative gap-2 border-2 border-default-300 hover:border-primary text-default-600 hover:text-primary hover:scale-105 transition-all duration-300 font-semibold px-4 py-2"
+                                variant="bordered"
+                                onPress={() => setIsRankingConfigOpen(true)}
+                            >
+                                <Eye className="h-5 w-5" />
+                                <Settings className="h-5 w-5" />
+                            </Button>
                         </CardHeader>
                         <div className="p-5 md:p-6">
                             <div className="mb-4">
@@ -909,6 +920,14 @@ export const PastEventDashboard = ({ event, onBack }: Props) => {
                     )}
                 </ModalContent>
             </Modal>
+
+            {/* Modal de configuración del ranking */}
+            <RankingConfigModal
+                isOpen={isRankingConfigOpen}
+                onOpenChange={setIsRankingConfigOpen}
+                config={rankingConfig}
+                onConfigChange={setRankingConfig}
+            />
         </div>
     );
 };
