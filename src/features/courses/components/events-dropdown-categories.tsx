@@ -3,14 +3,14 @@
 import React, { useEffect } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Select, SelectItem } from "@/components/ui/select";
-import { useEvents } from "@/features/events/api/get-events";
+import { useEventsDropdown } from "@/features/events/api/get-events-dropdown";
 
 export const EventsDropdownForCategories = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
 
-  const eventsQuery = useEvents({ page: 1 });
+  const eventsQuery = useEventsDropdown();
   const events = eventsQuery.data?.data || [];
 
   const [selectedKeys, setSelectedKeys] = React.useState<Set<string>>(

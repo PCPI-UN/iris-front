@@ -7,7 +7,7 @@ export const getCategoriesByEvent = async (eventId?: number) => {
   const response = await api.get<{
     courses: any[];
     nextPageToken?: string;
-  }>(`/events/courses/event/${eventId}`);
+  }>(`/events/courses/dropdown/${eventId}`);
 
   const categories = response.courses || [];
 

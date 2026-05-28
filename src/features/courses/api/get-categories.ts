@@ -24,15 +24,18 @@ export const getCategories = async (
       ...(eventId ? { eventId } : {})
     }
   });
+  console.log(response);
 
-  return {
-    data: response.courses ?? [],
-    meta: {
-      page: page ?? 1,
-      total: response.courses?.length ?? 0,
-      totalPages: 1,
-    }
-  };
+return {
+  data: response.courses ?? [],
+  meta: {
+    page: page ?? 1,
+    total: -1,
+    totalPages: response.nextPageToken
+      ? (page ?? 1) + 1
+      : (page ?? 1),
+  }
+};
 };
 
 export const getCategoriesQueryOptions = (
