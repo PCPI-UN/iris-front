@@ -12,7 +12,6 @@ type ExportState = "idle" | "loading" | "success" | "error";
 interface ExportEventReportButtonProps {
   eventId: number;
   label?: string;
-  onSuccess?: () => void;
   onError?: (err: Error) => void;
 }
 
@@ -21,7 +20,6 @@ interface ExportEventReportButtonProps {
 export function ExportEventReportButton({
   eventId,
   label = "Exportar reporte",
-  onSuccess,
   onError,
 }: ExportEventReportButtonProps) {
   const [state, setState] = useState<ExportState>("idle");
@@ -49,7 +47,6 @@ export function ExportEventReportButton({
       URL.revokeObjectURL(url);
 
       setState("success");
-      onSuccess?.();
 
       // Reset to idle after 3 s
       setTimeout(() => setState("idle"), 3000);

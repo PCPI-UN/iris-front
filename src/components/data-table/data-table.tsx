@@ -26,11 +26,13 @@ export type Column<T> = TableColumn<T>;
 export type DataTableProps<Entry extends { id: string | number }> = {
   data: Entry[];
   columns: TableColumn<Entry>[];
+  styles?: string;
 };
 
 export function DataTable<Entry extends { id: string | number }>({
   data,
   columns,
+  styles,
 }: DataTableProps<Entry>) {
   const [sortState, setSortState] = useState<{
     field: string;
@@ -104,7 +106,7 @@ export function DataTable<Entry extends { id: string | number }>({
   };
 
   return (
-      <Table classNames={{ wrapper: "glass-card" }}>
+      <Table classNames={{ wrapper: "glass-card", table: "max-h-[50vh]"}} className={styles}>
         <TableHeader>
           {columns.map((column, index) => (
             <TableColumn

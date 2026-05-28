@@ -10,12 +10,14 @@ import { useMyEvents } from "../api/get-my-events";
 import { EventCardCollapsed } from "./get-events-user/event-card-collapsed";
 import { EventCardExpanded } from "./get-events-user/event-card-expanded";
 import { Button } from "@heroui/button";
+import { ArrowDownIcon, ArrowUpIcon } from "lucide-react";
 
 export const GetEventsUser = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
 
   const [expandedEventId, setExpandedEventId] = useState<string | null>(null);
+  const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
   const [filter, setFilter] = useState<string>("all");
 
   const page = useMemo(() => {
@@ -35,6 +37,17 @@ export const GetEventsUser = () => {
     if (filter === "participant") return events?.filter((event) => event.role?.name.toLowerCase().includes("participant"));
     return events;
   }, [events, filter]);
+
+  const sortedEvents = useMemo(() => {
+  return [...filteredEvents].sort((a, b) => {
+    const dateA = new Date(a.createdAt).getTime();
+    const dateB = new Date(b.createdAt).getTime();
+
+    return sortOrder === "newest"
+      ? dateB - dateA
+      : dateA - dateB;
+  });
+}, [filteredEvents, sortOrder]);
 
   const handlePageChange = (newPage: number) => {
     const params = new URLSearchParams(searchParams?.toString() ?? "");
@@ -97,10 +110,20 @@ export const GetEventsUser = () => {
         >
           Participante
         </Button>
+        <Button
+          variant="flat"
+          onClick={() =>
+            setSortOrder((prev) =>
+              prev === "newest" ? "oldest" : "newest"
+            )
+          }
+        >
+          {sortOrder === "newest" ? <ArrowUpIcon size={16} /> : <ArrowDownIcon size={16} />}
+        </Button>
       </div>
 
       <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 p-0">
-        {filteredEvents.map((event) => {
+        {sortedEvents.map((event) => {
           const eventId = String(event.id);
           const isExpanded = expandedEventId === eventId;
 

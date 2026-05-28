@@ -47,6 +47,7 @@ import {
 import { useCriterions } from '@/features/criterions/api/get-criterions';
 import { useQueries } from '@tanstack/react-query';
 import '@/features/landing/index.css';
+import { useEventsDropdown } from '@/features/events/api/get-events-dropdown';
 
 type MonitoringTab = 'statistics' | 'projects' | 'ranking';
 type ProjectFilterState = ProjectWithJurors['state'] | 'ALL';
@@ -253,7 +254,7 @@ export const MonitoringDashboard = () => {
   const user = useUser();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { data: eventsData, isLoading: isEventsLoading } = useEvents({ page: 1 });
+  const { data: eventsData, isLoading: isEventsLoading } = useEventsDropdown();
   const [projectSearch, setProjectSearch] = useState('');
 
   const events = eventsData?.data ?? [];

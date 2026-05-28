@@ -24,7 +24,6 @@ export const getCategories = async (
       ...(eventId ? { eventId } : {})
     }
   });
-  console.log(response);
 
 return {
   data: response.courses ?? [],

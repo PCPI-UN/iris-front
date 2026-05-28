@@ -5,6 +5,7 @@ import { columnsProject } from "./columns-project-table";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useProjects } from "@/features/projects/api/get-projects";
 import { Pagination } from "@heroui/pagination";
+import { useProjectsWithJurors } from "@/features/projects/api/get-projects-with-jurors";
 
 export const ProjectsTable = ({
   onSelectProject,
@@ -22,7 +23,7 @@ export const ProjectsTable = ({
   const state = "APPROVED";
   const categoryId = searchParams?.get("categoryId") ? Number(searchParams.get("categoryId")) : 0;
 
-  const projectsQuery = useProjects({ page, eventId, state, categoryId });
+  const projectsQuery = useProjectsWithJurors({ currentPage:page, eventId, state, categoryId });
   const projects = projectsQuery.data?.data;
   const meta = projectsQuery.data?.meta;
   
@@ -39,8 +40,8 @@ export const ProjectsTable = ({
   const columns = columnsProject({onSelectProject, onViewProject});
 
   return (
-    <div className="flex justify-between mr-5">
-      <DataTable data={projects ? projects : []} columns={columns} />
+    <div className="justify-between mr-5">
+      <DataTable data={projects ? projects : []} columns={columns} styles={"max-h-[70vh]"}/>
       {meta && meta.totalPages > 1 && (
         <div className="flex justify-center mt-6">
           <Pagination

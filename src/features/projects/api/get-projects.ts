@@ -18,7 +18,7 @@ export type ProjectWithJurors = Project & {
 };
 
 export const getProjects = async (
-  { page, eventId, state, categoryId }: { page?: number; eventId?: number, state?: string, categoryId?: number } = { page: 1 }
+  { page, eventId, state, categoryId }: { page?: number; limit?: number; eventId?: number, state?: string, categoryId?: number } = { page: 1, limit: 10 }
 ): Promise<{ data: ProjectWithJurors[]; meta: Meta }> => {
   
   const response = await api.get<{
@@ -29,7 +29,6 @@ export const getProjects = async (
     totalPages: number;
 
   }>(`/projects/by-event/${eventId}/with-jurors`, { params: { page, state, ...withLegacyCourseIdParam(categoryId) } });
-
   
   return {
     data: response.items || [],
@@ -44,21 +43,23 @@ export const getProjects = async (
 
 export const getProjectsQueryOptions = ({
   page = 1,
+  limit = 10,
   eventId,
   state,
   categoryId,
-}: { page?: number; eventId?: number; state?: string; categoryId?: number } = {}) => {
+}: { page?: number; limit?: number; eventId?: number; state?: string; categoryId?: number } = {}) => {
   return queryOptions({
     queryKey: [
       "projects",
-      { page, eventId, state, categoryId },
+      { page, limit, eventId, state, categoryId },
     ],
-    queryFn: () => getProjects({ page, eventId, state, categoryId }),
+    queryFn: () => getProjects({ page, limit, eventId, state, categoryId }),
   });
 };
 
 type UseProjectsOptions = {
   page?: number;
+  limit?: number;
   eventId?: number;
   state?: string;
   categoryId?: number;
@@ -68,12 +69,13 @@ type UseProjectsOptions = {
 export const useProjects = ({
   queryConfig,
   page,
+  limit,
   eventId,
   state,
   categoryId
 }: UseProjectsOptions) => {
   return useQuery({
-    ...getProjectsQueryOptions({ page, eventId, state, categoryId }),
+    ...getProjectsQueryOptions({ page, limit, eventId, state, categoryId }),
     ...queryConfig,
   });
 };
