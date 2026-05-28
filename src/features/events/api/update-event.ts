@@ -60,8 +60,9 @@ export const updateEventInputSchema = z.object({
     .union([
       z.literal(1),
       z.literal(2),
-      z.enum(["ZERO_TO_FIVE", "ZERO_TO_HUNDRED"]),
-      z.enum(["0-5", "0-100"]),
+      z.literal(3),
+      z.enum(["ZERO_TO_FIVE", "ZERO_TO_HUNDRED","FINAL_PROJECTS"]),
+      z.enum(["0-5", "0-100","Proyectos Finales"]),
     ])
     .optional(),
 });
