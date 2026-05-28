@@ -1,14 +1,15 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { Calendar, Users, Award, Folder, Search, Trophy, Download } from 'lucide-react';
+import { useMemo, useState, useEffect } from 'react';
+import { Calendar, Users, Award, Folder, Search, Trophy, Download, Eye } from 'lucide-react';
 import { Card, CardHeader } from '@/components/ui/card';
+import { Chip } from '@/components/ui/chip';
 import { Select, SelectItem } from '@/components/ui/select/select';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { StatusBadge } from '@/components/ui/status-badge/status-badge';
-import { Switch } from '@/components/ui/switch';
 import { Table, TableHeader, TableBody, TableColumn, TableRow, TableCell } from '@/components/ui/table';
+import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useQueries } from '@tanstack/react-query';
 // local tabs: Statistics | Projects | Jurors | Ranking
@@ -17,6 +18,7 @@ import { useCategoriesDropdown } from '@/features/courses/api/get-categories-dro
 import { getUniqueJurors, getJurorKey } from '@/features/monitoring/utils/calculations';
 import { normalizeText } from '@/features/monitoring/utils/filters';
 import { getProjectEvaluationStats } from '@/features/evaluations/api/get-project-evaluation-stats';
+import { ParticipantsDetails } from '@/features/projects/components/participants-details';
 import type { Event } from '@/types/api';
 
 type Props = {
@@ -44,6 +46,8 @@ const getUniqueParticipants = (participants: any[] = []) => {
 export const PastEventDashboard = ({ event, onBack }: Props) => {
     const [activeTab, setActiveTab] = useState<'statistics' | 'projects' | 'ranking' | 'jurors'>('statistics');
     const [selectedCategoryId, setSelectedCategoryId] = useState<number | undefined>(undefined);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedProject, setSelectedProject] = useState<any>(null);
     const categorySelection = selectedCategoryId !== undefined ? [String(selectedCategoryId)] : ['all'];
 
     const [projectSearch, setProjectSearch] = useState<string>('');
@@ -194,7 +198,6 @@ export const PastEventDashboard = ({ event, onBack }: Props) => {
     }, [projectSearch, projects]);
 
     const [rankingSearch, setRankingSearch] = useState<string>('');
-    const [isRankingPublic, setIsRankingPublic] = useState<boolean>(false);
     const rankingEntries = useMemo(() => {
         const term = normalizeText(rankingSearch);
         const byCategory = Array.from(
@@ -472,80 +475,53 @@ export const PastEventDashboard = ({ event, onBack }: Props) => {
                                 />
                             </div>
 
-                            {projects.length > 0 ? (
+                {projects.length > 0 ? (
                                 <div className="overflow-hidden rounded-2xl border border-default-200/80">
                                     <Table aria-label="Evaluación de proyectos" selectionMode="none">
                                         <TableHeader>
-                                            <TableColumn className="w-32">Code</TableColumn>
-                                            <TableColumn>Proyecto</TableColumn>
-                                            <TableColumn>Integrantes</TableColumn>
-                                            <TableColumn>Jurados asignados</TableColumn>
+                                            <TableColumn className="w-36">Código</TableColumn>
+                                            <TableColumn>Nombre Proyecto</TableColumn>
+                                            <TableColumn className="w-32 text-center">Acciones</TableColumn>
                                         </TableHeader>
                                         <TableBody items={filteredProjects}>
-                                            {(project) => (
-                                                <TableRow key={project.id}>
-                                                    <TableCell className="w-32 whitespace-nowrap">
-                                                        <p className="font-medium text-default-700">{project.projectCode ?? project.eventNumber ?? '—'}</p>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <div className="flex flex-col gap-1">
-                                                            <p className="text-lg font-semibold text-foreground">{project.name}</p>
-                                                            <p className="text-xs text-default-400">{project.description ?? 'Sin descripción'}</p>
-                                                        </div>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <div className="space-y-1 text-sm leading-tight">
-                                                            {(() => {
-                                                                const pendingLabels = (project.pendingParticipants ?? [])
-                                                                    .map((participant) => `${participant.firstName ?? ''} ${participant.lastName ?? ''}`.trim())
-                                                                    .filter((label) => label.length > 0);
+                                            {(project) => {
+                                                const category = categoryMap.get(project.courseId);
+                                                const categoryLabel = category?.code ?? category?.description;
 
-                                                                const participantLabels = pendingLabels.length > 0
-                                                                    ? pendingLabels
-                                                                    : (project.participants ?? []).map((participant) => {
-                                                                        const fullName = `${participant.firstName ?? ''} ${participant.lastName ?? ''}`.trim();
-
-                                                                        if (fullName) {
-                                                                            return fullName;
-                                                                        }
-
-                                                                        if (participant.studentCode) {
-                                                                            return `Código ${participant.studentCode}`;
-                                                                        }
-
-                                                                        return 'Participante';
-                                                                    });
-
-                                                                return participantLabels.length > 0 ? (
-                                                                    participantLabels.map((label, index) => (
-                                                                        <p key={index} className="text-sm text-default-500">
-                                                                            {label}
-                                                                        </p>
-                                                                    ))
-                                                                ) : (
-                                                                    <p className="text-sm text-default-400">Sin integrantes</p>
-                                                                );
-                                                            })()}
-                                                        </div>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <div className="space-y-1 text-sm">
-                                                            {(() => {
-                                                                const jurorList = getUniqueJurors(project.jurors ?? []);
-                                                                return jurorList.length > 0 ? (
-                                                                    jurorList.map((juror, index) => (
-                                                                        <p key={index} className="text-sm text-default-500">
-                                                                            {juror.firstName} {juror.lastName}
-                                                                        </p>
-                                                                    ))
-                                                                ) : (
-                                                                    <p className="text-sm text-default-400">Sin jurados asignados</p>
-                                                                );
-                                                            })()}
-                                                        </div>
-                                                    </TableCell>
-                                                </TableRow>
-                                            )}
+                                                return (
+                                                    <TableRow key={project.id}>
+                                                        <TableCell className="w-36 whitespace-nowrap">
+                                                            <Chip size="sm" variant="flat">
+                                                                {project.projectCode ?? project.eventNumber ?? '—'}
+                                                            </Chip>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <div className="space-y-1">
+                                                                <p className="font-semibold text-foreground leading-tight">{project.name}</p>
+                                                                {categoryLabel && (
+                                                                    <Chip size="sm" variant="flat" color="secondary" className="text-xs">
+                                                                        {categoryLabel}
+                                                                    </Chip>
+                                                                )}
+                                                            </div>
+                                                        </TableCell>
+                                                        <TableCell className="w-32 text-center">
+                                                            <Button
+                                                                size="sm"
+                                                                variant="bordered"
+                                                                startContent={<Eye className="h-4 w-4" />}
+                                                                className="border-default-300"
+                                                                onPress={() => {
+                                                                    setSelectedProject(project);
+                                                                    setIsModalOpen(true);
+                                                                }}
+                                                            >
+                                                                Ver más
+                                                            </Button>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                );
+                                            }}
                                         </TableBody>
                                     </Table>
                                 </div>
@@ -631,26 +607,8 @@ export const PastEventDashboard = ({ event, onBack }: Props) => {
 
                 {activeTab === 'ranking' && (
                     <Card className="glass-card border border-default-200/70 shadow-sm">
-                        <CardHeader className="pb-2">
-                            <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                                <div>
-                                    <h3 className="text-lg font-semibold">Ranking por Categoría</h3>
-                                    <p className="text-sm text-default-400">Vista visual del ranking con puestos destacados.</p>
-                                </div>
-                                <div className="flex items-center gap-3 rounded-2xl border border-default-200/80 bg-default-50 px-3 py-2">
-                                    <div className="flex flex-col">
-                                        <span className="text-sm font-medium text-foreground">Visible al público</span>
-                                        <span className="text-xs text-default-400">
-                                            {isRankingPublic ? 'Ranking publicado' : 'Ranking oculto'}
-                                        </span>
-                                    </div>
-                                    <Switch
-                                        isSelected={isRankingPublic}
-                                        onValueChange={setIsRankingPublic}
-                                        aria-label="Hacer ranking visible al público"
-                                    />
-                                </div>
-                            </div>
+                        <CardHeader className="pb-2 ">
+                            <h3 className="text-lg font-semibold">Ranking por Categoría</h3>
                         </CardHeader>
                         <div className="p-5 md:p-6">
                             <div className="mb-4">
@@ -753,6 +711,127 @@ export const PastEventDashboard = ({ event, onBack }: Props) => {
                     </Card>
                 )}
             </div>
+
+            {/* Modal de detalles del proyecto */}
+            <Modal
+                isOpen={isModalOpen}
+                onOpenChange={setIsModalOpen}
+                className="m-auto mx-5 lg:max-w-[50vw] max-h-[80vh]"
+                scrollBehavior="inside"
+            >
+                <ModalContent className="rounded-2xl overflow-hidden">
+                    {(onClose) => (
+                        <>
+                            <ModalHeader className="flex flex-col gap-3">
+                                <div className="flex flex-wrap items-center gap-3">
+                                    {(selectedProject?.projectCode || selectedProject?.eventNumber) && (
+                                        <div className="inline-flex items-center rounded-full border border-cyan-400/30 bg-cyan-400/10 px-3 py-1 text-sm font-semibold text-cyan-100 shadow-sm shadow-cyan-400/10">
+                                            <span className="mr-1 text-cyan-200/80">Código:</span>
+                                            <span>{selectedProject?.projectCode ?? selectedProject?.eventNumber}</span>
+                                        </div>
+                                    )}
+                                    <h2 className="text-2xl font-bold">{selectedProject?.name}</h2>
+                                </div>
+                            </ModalHeader>
+
+                            <ModalBody className="space-y-5 overflow-y-auto">
+                                {/* Descripción */}
+                                {selectedProject?.description && (
+                                    <section className="space-y-2">
+                                        <h2 className="font-medium bg-gradient-to-br from-white via-white/80 to-white bg-clip-text text-transparent inline-block">
+                                            Descripción
+                                        </h2>
+                                        <p className="text-sm font-light">{selectedProject.description}</p>
+                                    </section>
+                                )}
+
+                                {/* Integrantes */}
+                                <section className="space-y-2">
+                                    <ParticipantsDetails
+                                        confirmedParticipants={selectedProject?.participants ?? []}
+                                        pendingParticipants={selectedProject?.pendingParticipants ?? []}
+                                    />
+                                </section>
+
+                                {/* Jurados */}
+                                {(() => {
+                                    const jurorList = getUniqueJurors(selectedProject?.jurors ?? []);
+                                    if (jurorList.length === 0) return null;
+                                    return (
+                                        <section className="space-y-3">
+                                            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/5 px-3 py-3 shadow-[0_8px_30px_rgb(0,0,0,0.12)] backdrop-blur-md sm:px-4">
+                                                <div className="min-w-0">
+                                                    <p className="text-xs uppercase tracking-[0.2em] text-white/60">Jurados</p>
+                                                    <h3 className="text-sm font-semibold text-white">
+                                                        {jurorList.length} jurado{jurorList.length === 1 ? '' : 's'}
+                                                    </h3>
+                                                </div>
+                                            </div>
+                                            <div className="overflow-x-auto rounded-2xl border border-white/10 bg-white/5 shadow-[0_8px_30px_rgb(0,0,0,0.12)] backdrop-blur-md">
+                                                <table className="w-full">
+                                                    <thead className="bg-white/5">
+                                                        <tr className="text-left text-xs font-semibold uppercase tracking-[0.18em] text-white/60 border-b border-white/10">
+                                                            <th className="px-4 py-3">Nombre</th>
+                                                            <th className="px-4 py-3">Email</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {jurorList.map((juror: any, index: number) => {
+                                                            const initials = `${juror.firstName?.[0] ?? ''}${juror.lastName?.[0] ?? ''}`.toUpperCase() || '?';
+                                                            return (
+                                                                <tr key={index} className={index !== jurorList.length - 1 ? 'border-b border-white/10' : ''}>
+                                                                    <td className="px-4 py-3 align-top">
+                                                                        <div className="flex items-center gap-3">
+                                                                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-violet-400/10 text-xs font-semibold text-violet-300 ring-1 ring-violet-400/20">
+                                                                                {initials}
+                                                                            </div>
+                                                                            <p className="font-medium text-white whitespace-nowrap">
+                                                                                {juror.firstName} {juror.lastName}
+                                                                            </p>
+                                                                        </div>
+                                                                    </td>
+                                                                    <td className="px-4 py-3 align-top text-sm text-white/70">
+                                                                        {juror.email ?? '—'}
+                                                                    </td>
+                                                                </tr>
+                                                            );
+                                                        })}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </section>
+                                    );
+                                })()}
+
+                                {/* Evaluación */}
+                                {(() => {
+                                    const stats = selectedProject?.id ? projectStatsById.get(String(selectedProject.id)) : null;
+                                    if (!stats) return null;
+                                    return (
+                                        <section className="space-y-2">
+                                            <h2 className="font-medium bg-gradient-to-br from-white via-white/80 to-white bg-clip-text text-transparent inline-block">
+                                                Evaluación
+                                            </h2>
+                                            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 space-y-2 text-sm">
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-white/60">Puntaje Promedio</span>
+                                                    <span className="font-semibold text-white">{stats.averageGrade?.toFixed(2) ?? '—'}</span>
+                                                </div>
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-white/60">Evaluaciones Completadas</span>
+                                                    <span className="font-semibold text-white">{stats.evaluationCount ?? 0}</span>
+                                                </div>
+                                            </div>
+                                        </section>
+                                    );
+                                })()}
+                            </ModalBody>
+
+                            <ModalFooter />
+                        </>
+                    )}
+                </ModalContent>
+            </Modal>
         </div>
     );
 };
