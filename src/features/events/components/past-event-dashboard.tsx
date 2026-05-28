@@ -48,6 +48,8 @@ export const PastEventDashboard = ({ event, onBack }: Props) => {
     const [selectedCategoryId, setSelectedCategoryId] = useState<number | undefined>(undefined);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedProject, setSelectedProject] = useState<any>(null);
+    const [isJurorModalOpen, setIsJurorModalOpen] = useState(false);
+    const [selectedJuror, setSelectedJuror] = useState<any>(null);
     const categorySelection = selectedCategoryId !== undefined ? [String(selectedCategoryId)] : ['all'];
 
     const [projectSearch, setProjectSearch] = useState<string>('');
@@ -564,7 +566,7 @@ export const PastEventDashboard = ({ event, onBack }: Props) => {
                                         <TableHeader>
                                             <TableColumn>Nombre</TableColumn>
                                             <TableColumn>Correo</TableColumn>
-                                            <TableColumn>Proyectos Asignados</TableColumn>
+                                            <TableColumn className="w-40 text-center">Proyectos</TableColumn>
                                         </TableHeader>
                                         <TableBody items={filteredJurors}>
                                             {(juror) => {
@@ -579,16 +581,20 @@ export const PastEventDashboard = ({ event, onBack }: Props) => {
                                                             <div className="text-sm font-semibold text-foreground">{juror.firstName} {juror.lastName}</div>
                                                         </TableCell>
                                                         <TableCell className="text-sm text-default-400">{juror.email ?? '—'}</TableCell>
-                                                        <TableCell>
-                                                            {jurorProjects.length > 0 ? (
-                                                                <div className="space-y-1 text-sm">
-                                                                    {jurorProjects.map((p) => (
-                                                                        <p key={p.id} className="text-sm text-default-500">{p.name}{p.projectCode ? ` (${p.projectCode})` : ''}</p>
-                                                                    ))}
-                                                                </div>
-                                                            ) : (
-                                                                <p className="text-sm text-default-400">Sin proyectos evaluados</p>
-                                                            )}
+                                                        <TableCell className="w-40 text-center">
+                                                            <Button
+                                                                size="sm"
+                                                                variant="bordered"
+                                                                startContent={<Folder className="h-4 w-4" />}
+                                                                className="border-default-300"
+                                                                isDisabled={jurorProjects.length === 0}
+                                                                onPress={() => {
+                                                                    setSelectedJuror({ ...juror, assignedProjects: jurorProjects });
+                                                                    setIsJurorModalOpen(true);
+                                                                }}
+                                                            >
+                                                                {jurorProjects.length > 0 ? `Ver (${jurorProjects.length})` : 'Sin proyectos'}
+                                                            </Button>
                                                         </TableCell>
                                                     </TableRow>
                                                 );
@@ -627,75 +633,64 @@ export const PastEventDashboard = ({ event, onBack }: Props) => {
                                 <div className="overflow-hidden rounded-2xl border border-default-200/80">
                                     <Table aria-label="Ranking por categorías" selectionMode="none">
                                         <TableHeader>
-                                            <TableColumn className="w-36">Categoría</TableColumn>
-                                            <TableColumn className="w-20">Pos.</TableColumn>
-                                            <TableColumn className="w-36">Code</TableColumn>
-                                            <TableColumn>Equipo</TableColumn>
-                                            <TableColumn>Integrantes</TableColumn>
-                                            <TableColumn className="w-32 text-center">Puntaje</TableColumn>
-                                            <TableColumn className="w-32 text-center">Evaluaciones</TableColumn>
+                                            <TableColumn className="w-16 text-center">Pos.</TableColumn>
+                                            <TableColumn className="w-32">Código</TableColumn>
+                                            <TableColumn>Nombre Proyecto</TableColumn>
+                                            <TableColumn className="w-28 text-center">Evaluaciones</TableColumn>
+                                            <TableColumn className="w-28 text-center">Puntaje</TableColumn>
+                                            <TableColumn className="w-28 text-center">Ver más</TableColumn>
                                         </TableHeader>
                                         <TableBody items={rankingEntries}>
                                             {(entry) => (
                                                 <TableRow key={`${entry.project.id}-${entry.category}`}>
-                                                    <TableCell className="w-36">{entry.category}</TableCell>
-                                                    <TableCell className="w-20">
+                                                    <TableCell className="w-16 text-center">
                                                         {entry.position === 1 ? (
-                                                            <div className="inline-flex items-center gap-2">
+                                                            <div className="inline-flex items-center justify-center gap-1">
                                                                 <Trophy className="h-5 w-5 text-amber-500" />
-                                                                <span className="font-semibold">1</span>
+                                                                <span className="font-bold text-amber-500">1</span>
                                                             </div>
                                                         ) : entry.position === 2 ? (
-                                                            <div className="inline-flex items-center gap-2">
-                                                                <div className="h-6 w-6 rounded-full bg-slate-200 text-default-700 flex items-center justify-center">2</div>
-                                                            </div>
+                                                            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-200 text-sm font-semibold text-slate-600 mx-auto">2</div>
                                                         ) : entry.position === 3 ? (
-                                                            <div className="inline-flex items-center gap-2">
-                                                                <div className="h-6 w-6 rounded-full bg-amber-100 text-default-700 flex items-center justify-center">3</div>
-                                                            </div>
+                                                            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-amber-100 text-sm font-semibold text-amber-700 mx-auto">3</div>
                                                         ) : (
-                                                            <div className="text-default-700">{entry.position}</div>
+                                                            <span className="text-sm text-default-500">{entry.position}</span>
                                                         )}
                                                     </TableCell>
-                                                    <TableCell className="w-36 whitespace-nowrap">
-                                                        <p className="font-medium text-default-700">{entry.project.projectCode ?? entry.project.eventNumber ?? '—'}</p>
+                                                    <TableCell className="w-32 whitespace-nowrap">
+                                                        <Chip size="sm" variant="flat">
+                                                            {entry.project.projectCode ?? entry.project.eventNumber ?? '—'}
+                                                        </Chip>
                                                     </TableCell>
                                                     <TableCell>
-                                                        <p className="text-lg font-semibold text-foreground">{entry.project.name}</p>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <div className="space-y-1 text-sm leading-tight">
-                                                            {(() => {
-                                                                const pendingLabels = (entry.project.pendingParticipants ?? [])
-                                                                    .map((participant: any) => `${participant.firstName ?? ''} ${participant.lastName ?? ''}`.trim())
-                                                                    .filter((label: string) => label.length > 0);
-
-                                                                const participantLabels = pendingLabels.length > 0
-                                                                    ? pendingLabels
-                                                                    : (entry.project.participants ?? []).map((participant: any) => {
-                                                                        const fullName = `${participant.firstName ?? ''} ${participant.lastName ?? ''}`.trim();
-                                                                        if (fullName) return fullName;
-                                                                        if (participant.studentCode) return `Código ${participant.studentCode}`;
-                                                                        return 'Participante';
-                                                                    });
-
-                                                                return participantLabels.length > 0 ? (
-                                                                    participantLabels.map((label: string, i: number) => <p key={i} className="text-sm text-default-500">{label}</p>)
-                                                                ) : (
-                                                                    <p className="text-sm text-default-400">Sin integrantes</p>
-                                                                );
-                                                            })()}
+                                                        <div className="space-y-1">
+                                                            <p className="font-semibold text-foreground leading-tight">{entry.project.name}</p>
+                                                            <Chip size="sm" variant="flat" color="secondary" className="text-xs">
+                                                                {entry.category}
+                                                            </Chip>
                                                         </div>
                                                     </TableCell>
-                                                    <TableCell className="w-32 text-center">
-                                                        <div className="flex h-full flex-col items-center justify-center">
-                                                            <p className="text-lg font-semibold">{entry.stats?.averageGrade !== undefined ? entry.stats.averageGrade.toFixed(2) : '—'}</p>
-                                                        </div>
+                                                    <TableCell className="w-28 text-center">
+                                                        <span className="text-sm font-medium text-default-600">{entry.stats?.evaluationCount ?? 0}</span>
                                                     </TableCell>
-                                                    <TableCell className="w-32 text-center">
-                                                        <div className="flex h-full flex-col items-center justify-center">
-                                                            <p className="text-sm">{entry.stats?.evaluationCount ?? 0}</p>
-                                                        </div>
+                                                    <TableCell className="w-28 text-center">
+                                                        <span className="text-base font-bold text-foreground">
+                                                            {entry.stats?.averageGrade !== undefined ? entry.stats.averageGrade.toFixed(2) : '—'}
+                                                        </span>
+                                                    </TableCell>
+                                                    <TableCell className="w-28 text-center">
+                                                        <Button
+                                                            size="sm"
+                                                            variant="bordered"
+                                                            startContent={<Eye className="h-4 w-4" />}
+                                                            className="border-default-300"
+                                                            onPress={() => {
+                                                                setSelectedProject(entry.project);
+                                                                setIsModalOpen(true);
+                                                            }}
+                                                        >
+                                                            Ver más
+                                                        </Button>
                                                     </TableCell>
                                                 </TableRow>
                                             )}
@@ -825,6 +820,88 @@ export const PastEventDashboard = ({ event, onBack }: Props) => {
                                         </section>
                                     );
                                 })()}
+                            </ModalBody>
+
+            <ModalFooter />
+                        </>
+                    )}
+                </ModalContent>
+            </Modal>
+
+            {/* Modal de proyectos del jurado */}
+            <Modal
+                isOpen={isJurorModalOpen}
+                onOpenChange={setIsJurorModalOpen}
+                className="m-auto mx-5 lg:max-w-[45vw] max-h-[75vh]"
+                scrollBehavior="inside"
+            >
+                <ModalContent className="rounded-2xl overflow-hidden">
+                    {() => (
+                        <>
+                            <ModalHeader className="flex flex-col gap-2">
+                                <div className="flex flex-wrap items-center gap-3">
+                                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-violet-400/10 text-xs font-semibold text-violet-300 ring-1 ring-violet-400/20">
+                                        {`${selectedJuror?.firstName?.[0] ?? ''}${selectedJuror?.lastName?.[0] ?? ''}`.toUpperCase() || '?'}
+                                    </div>
+                                    <div>
+                                        <h2 className="text-lg font-bold leading-tight">
+                                            {selectedJuror?.firstName} {selectedJuror?.lastName}
+                                        </h2>
+                                        <p className="text-xs text-white/60">{selectedJuror?.email ?? ''}</p>
+                                    </div>
+                                </div>
+                            </ModalHeader>
+
+                            <ModalBody className="space-y-4 overflow-y-auto pb-4">
+                                <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3 shadow-[0_8px_30px_rgb(0,0,0,0.12)] backdrop-blur-md">
+                                    <div>
+                                        <p className="text-xs uppercase tracking-[0.2em] text-white/60">Proyectos Asignados</p>
+                                        <h3 className="text-sm font-semibold text-white">
+                                            {selectedJuror?.assignedProjects?.length ?? 0} proyecto{(selectedJuror?.assignedProjects?.length ?? 0) === 1 ? '' : 's'}
+                                        </h3>
+                                    </div>
+                                </div>
+
+                                {(selectedJuror?.assignedProjects ?? []).length > 0 ? (
+                                    <div className="overflow-x-auto rounded-2xl border border-white/10 bg-white/5 shadow-[0_8px_30px_rgb(0,0,0,0.12)] backdrop-blur-md">
+                                        <table className="w-full">
+                                            <thead className="bg-white/5">
+                                                <tr className="text-left text-xs font-semibold uppercase tracking-[0.18em] text-white/60 border-b border-white/10">
+                                                    <th className="px-4 py-3 whitespace-nowrap">Código</th>
+                                                    <th className="px-4 py-3">Nombre</th>
+                                                    <th className="px-4 py-3">Categoría</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {(selectedJuror?.assignedProjects ?? []).map((project: any, index: number) => {
+                                                    const category = categoryMap.get(project.courseId);
+                                                    const categoryLabel = category?.code ?? category?.description ?? '—';
+                                                    const code = project.projectCode ?? project.eventNumber ?? '—';
+                                                    const isLast = index === (selectedJuror?.assignedProjects?.length ?? 0) - 1;
+                                                    return (
+                                                        <tr key={project.id} className={!isLast ? 'border-b border-white/10' : ''}>
+                                                            <td className="px-4 py-3 align-top whitespace-nowrap">
+                                                                <span className="inline-flex items-center rounded-full border border-cyan-400/30 bg-cyan-400/10 px-2.5 py-0.5 text-xs font-semibold text-cyan-100">
+                                                                    {code}
+                                                                </span>
+                                                            </td>
+                                                            <td className="px-4 py-3 align-top text-sm font-medium text-white">
+                                                                {project.name}
+                                                            </td>
+                                                            <td className="px-4 py-3 align-top text-sm text-white/70 whitespace-nowrap">
+                                                                {categoryLabel}
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                ) : (
+                                    <div className="flex min-h-[100px] items-center justify-center rounded-2xl border border-dashed border-white/10 text-sm text-white/40">
+                                        Sin proyectos asignados
+                                    </div>
+                                )}
                             </ModalBody>
 
                             <ModalFooter />
