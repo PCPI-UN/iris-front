@@ -88,7 +88,7 @@ export const GetEventsUser = () => {
 
   return (
     <section className="space-y-8">
-      <div className="flex space-x-2">
+      <div className="grid grid-cols-2 gap-2 lg:grid-cols-4 lg:w-1/2">
         <Button
           variant={"flat"}
           onClick={() => handleFilter("all")}

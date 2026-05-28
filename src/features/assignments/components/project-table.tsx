@@ -3,7 +3,6 @@
 import { DataTable } from "@/components/data-table";
 import { columnsProject } from "./columns-project-table";
 import { useSearchParams, useRouter } from "next/navigation";
-import { useProjects } from "@/features/projects/api/get-projects";
 import { Pagination } from "@heroui/pagination";
 import { useProjectsWithJurors } from "@/features/projects/api/get-projects-with-jurors";
 
