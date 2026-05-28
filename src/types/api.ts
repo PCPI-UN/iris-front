@@ -84,6 +84,7 @@ export enum EventType {
 export enum EvaluationType {
   ZERO_TO_FIVE = 1,
   ZERO_TO_HUNDRED = 2,
+  FINAL_PROJECTS = 3,
 }
 
 export type Event = Entity<{
@@ -102,7 +103,7 @@ export type Event = Entity<{
   inscriptionCost?: number;
   inscriptionRequirements?: string;
   aboutOurAllies?: string;
-  evaluationType?: EvaluationType | "ZERO_TO_FIVE" | "ZERO_TO_HUNDRED";
+  evaluationType?: EvaluationType | "ZERO_TO_FIVE" | "ZERO_TO_HUNDRED" | "FINAL_PROJECTS";
   eventType: EventType;
   minimumTeamSize?: number;
   specificInscriptionDetails?: {

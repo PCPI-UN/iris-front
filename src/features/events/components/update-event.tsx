@@ -116,7 +116,7 @@ type UpdateEventFormState = {
   inscriptionCost: string;
   minimumTeamSize: string;
   aboutOurAllies: string;
-  evaluationType: 1 | 2;
+  evaluationType: 1 | 2 | 3;
 };
 
 const INITIAL_FORM_STATE: UpdateEventFormState = {
@@ -202,7 +202,7 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
           ? String(event.minimumTeamSize)
           : "",
       aboutOurAllies: event.aboutOurAllies ?? "",
-      evaluationType: toEvaluationTypeCode(event.evaluationType),
+      evaluationType: toEvaluationTypeCode(event.evaluationType) as UpdateEventFormState["evaluationType"],
     });
 
     setSpecificDetails(
@@ -566,13 +566,14 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                           onChange={(e) =>
                             setFormData((prev) => ({
                               ...prev,
-                              evaluationType: toEvaluationTypeCode(e.target.value),
+                              evaluationType: toEvaluationTypeCode(e.target.value) as UpdateEventFormState["evaluationType"],
                             }))
                           }
                           className="flex-1"
                         >
                           <SelectItem key="1">0 - 5</SelectItem>
                           <SelectItem key="2">0 - 100</SelectItem>
+                          <SelectItem key="3">Proyectos Finales</SelectItem>
                         </Select>
                       </div>
 

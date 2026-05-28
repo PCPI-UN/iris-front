@@ -398,6 +398,7 @@ export const CreateEvent = () => {
                     >
                       <SelectItem key="1">0 - 5</SelectItem>
                       <SelectItem key="2">0 - 100</SelectItem>
+                      <SelectItem key="3">Proyectos Finales</SelectItem>
                     </Select>
 
                     <div className="pt-2 border-t border-default-200">

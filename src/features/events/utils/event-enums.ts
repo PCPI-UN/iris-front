@@ -6,6 +6,7 @@ export const EVENT_TYPE = {
 export const EVALUATION_TYPE = {
   ZERO_TO_FIVE: 1,
   ZERO_TO_HUNDRED: 2,
+  FINAL_PROJECTS: 3,
 } as const;
 
 export type EventTypeCode =
@@ -14,15 +15,18 @@ export type EventTypeCode =
 
 export type EvaluationTypeCode =
   | typeof EVALUATION_TYPE.ZERO_TO_FIVE
-  | typeof EVALUATION_TYPE.ZERO_TO_HUNDRED;
+  | typeof EVALUATION_TYPE.ZERO_TO_HUNDRED
+  | typeof EVALUATION_TYPE.FINAL_PROJECTS;
 
 export type EventTypeInput = EventTypeCode | "Exposition" | "Competition" | string;
 export type EvaluationTypeInput =
   | EvaluationTypeCode
   | "ZERO_TO_FIVE"
   | "ZERO_TO_HUNDRED"
+  | "FINAL_PROJECTS"
   | "0-5"
   | "0-100"
+  | "Proyectos Finales"
   | string;
 
 export const toEventTypeCode = (value: unknown): EventTypeCode => {
@@ -56,7 +60,16 @@ export const toEvaluationTypeCode = (value: unknown): EvaluationTypeCode => {
     return EVALUATION_TYPE.ZERO_TO_HUNDRED;
   }
 
-  return EVALUATION_TYPE.ZERO_TO_FIVE;
+  if (
+    value === EVALUATION_TYPE.FINAL_PROJECTS ||
+    value === "FINAL_PROJECTS" ||
+    value === "Proyectos Finales" ||
+    value === "3"
+  ) {
+    return EVALUATION_TYPE.FINAL_PROJECTS;
+  }
+
+  return EVALUATION_TYPE.FINAL_PROJECTS;
 };
 
 export const toEventTypeLabel = (value: unknown): "Exposition" | "Competition" => {
@@ -67,8 +80,14 @@ export const toEventTypeLabel = (value: unknown): "Exposition" | "Competition" =
 
 export const toEvaluationTypeLabel = (
   value: unknown,
-): "ZERO_TO_FIVE" | "ZERO_TO_HUNDRED" => {
-  return toEvaluationTypeCode(value) === EVALUATION_TYPE.ZERO_TO_HUNDRED
+): "ZERO_TO_FIVE" | "ZERO_TO_HUNDRED" | "FINAL_PROJECTS" => {
+  const evaluationTypeCode = toEvaluationTypeCode(value);
+
+  if (evaluationTypeCode === EVALUATION_TYPE.FINAL_PROJECTS) {
+    return "FINAL_PROJECTS";
+  }
+
+  return evaluationTypeCode === EVALUATION_TYPE.ZERO_TO_HUNDRED
     ? "ZERO_TO_HUNDRED"
     : "ZERO_TO_FIVE";
 };
