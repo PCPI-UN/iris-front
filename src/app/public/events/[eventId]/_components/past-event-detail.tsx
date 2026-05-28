@@ -486,14 +486,7 @@ type ParticipantsPopupProps = {
   categoryName?: string;
   showPoster?: boolean;
 };
-
-const ParticipantsPopup = ({
-  project,
-  isOpen,
-  onClose,
-  categoryName,
-  showPoster = true,
-}: ParticipantsPopupProps) => {
+const ParticipantsPopup = ({ project, isOpen, onClose, categoryName, showPoster = true, }: ParticipantsPopupProps) => {
   const members = getParticipantLabels(project);
   const posterUrl = getPosterUrl(project);
 
@@ -507,86 +500,90 @@ const ParticipantsPopup = ({
       }}
       aria-hidden={false}
     >
-      <div className="absolute inset-0 bg-black/10 backdrop-blur-sm" />
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
 
       <div
-        className="absolute left-1/2 top-1/2 w-[94vw] max-w-2xl -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-border/40 bg-background/20 shadow-2xl backdrop-blur-xl p-6 glass-card prismatic-border"
-        style={{ backgroundColor: 'rgba(17, 24, 39, 0.22)' }}
+        role="dialog"
+        aria-modal="true"
+        className="fixed left-1/2 top-1/2 z-50 w-[94vw] max-w-2xl -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-white/10 shadow-2xl"
+        style={{ backgroundColor: '#202023' }}
       >
-        <div className="flex items-start justify-between gap-3 mb-4">
-          <div className="min-w-0">
-            <p className="text-xs uppercase tracking-widest font-bold text-muted-foreground">Proyecto</p>
-            <h3 className="text-2xl font-extrabold prismatic-text mt-1 leading-none">{project.name}</h3>
-            {categoryName && (
-              <div className="mt-3 mb-5 max-w-full">
-                <Chip
-                  variant="flat"
-                  size="sm"
-                  classNames={{
-                    base: 'event-date-badge inline-flex items-start justify-start px-3 py-2.5 rounded-[1.25rem] max-w-full h-auto',
-                    content: 'text-xs font-semibold break-words whitespace-normal leading-relaxed text-left',
-                  }}
-                >
-                  {categoryName}
-                </Chip>
+        <div className="max-h-[80vh] overflow-y-auto p-6 sm:p-8">
+          <div className="flex items-start justify-between gap-3 mb-4">
+            <div className="min-w-0">
+              <p className="text-xs uppercase tracking-widest font-bold text-muted-foreground">Proyecto</p>
+              <h3 className="text-2xl font-extrabold prismatic-text mt-1 leading-none">{project.name}</h3>
+              {categoryName && (
+                <div className="mt-3 mb-5 max-w-full">
+                  <Chip
+                    variant="flat"
+                    size="sm"
+                    classNames={{
+                      base: 'event-date-badge inline-flex items-start justify-start px-3 py-2.5 rounded-[1.25rem] max-w-full h-auto',
+                      content: 'text-xs font-semibold break-words whitespace-normal leading-relaxed text-left',
+                    }}
+                  >
+                    {categoryName}
+                  </Chip>
+                </div>
+              )}
+            </div>
+            <button type="button" onClick={onClose} className="rounded-full p-2 border border-border/30 hover:bg-background/20 transition-colors" aria-label="Cerrar">
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+
+          {hasText(project.description) && (
+            <div className="mb-4">
+              <p className="text-sm text-foreground/80 leading-relaxed">{project.description}</p>
+            </div>
+          )}
+
+          <div className="mb-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Users className="h-4 w-4" />
+              <span className="text-sm uppercase tracking-widest font-bold text-muted-foreground">Participantes</span>
+            </div>
+            {members.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {members.map((name, i) => (
+                  <Chip
+                    key={`${name}-${i}`}
+                    size="sm"
+                    variant="flat"
+                    classNames={{ base: 'bg-background/30 border border-border/30 py-2 px-3', content: 'text-sm font-medium' }}
+                  >
+                    {name}
+                  </Chip>
+                ))}
               </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">Sin participantes registrados.</p>
             )}
           </div>
-          <button type="button" onClick={onClose} className="rounded-full p-2 border border-border/30 hover:bg-background/20 transition-colors" aria-label="Cerrar">
-            <X className="h-5 w-5" />
-          </button>
-        </div>
 
-        {hasText(project.description) && (
-          <div className="mb-4">
-            <p className="text-sm text-foreground/80 leading-relaxed">{project.description}</p>
-          </div>
-        )}
-
-        <div className="mb-4">
-          <div className="flex items-center gap-2 mb-3">
-            <Users className="h-4 w-4" />
-            <span className="text-sm uppercase tracking-widest font-bold text-muted-foreground">Participantes</span>
-          </div>
-          {members.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {members.map((name, i) => (
-                <Chip
-                  key={`${name}-${i}`}
-                  size="sm"
-                  variant="flat"
-                  classNames={{ base: 'bg-background/30 border border-border/30 py-2 px-3', content: 'text-sm font-medium' }}
-                >
-                  {name}
-                </Chip>
-              ))}
+          {showPoster && posterUrl && (
+            <div className="mt-4">
+              <a
+                href={posterUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-3 w-full text-sm font-semibold rounded-xl px-4 py-3 text-white shadow-lg"
+                style={{
+                  backgroundImage: PRISMATIC_GRADIENT,
+                  backgroundSize: '200% auto',
+                  animation: 'prismatic-shift 8s ease-in-out infinite',
+                }}
+                aria-label={`Ver póster de ${project.name}`}
+              >
+                <ExternalLink className="h-4 w-4" />
+                Ver póster
+              </a>
             </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">Sin participantes registrados.</p>
           )}
+
+          <div className="mt-6 flex justify-end" />
         </div>
-
-        {showPoster && posterUrl && (
-          <div className="mt-4">
-            <a
-              href={posterUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-3 w-full text-sm font-semibold rounded-xl px-4 py-3 text-white shadow-lg"
-              style={{
-                backgroundImage: PRISMATIC_GRADIENT,
-                backgroundSize: '200% auto',
-                animation: 'prismatic-shift 8s ease-in-out infinite',
-              }}
-              aria-label={`Ver póster de ${project.name}`}
-            >
-              <ExternalLink className="h-4 w-4" />
-              Ver póster
-            </a>
-          </div>
-        )}
-
-        <div className="mt-6 flex justify-end"></div>
       </div>
     </div>
   );

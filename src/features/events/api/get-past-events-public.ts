@@ -17,7 +17,29 @@ export const getPastEventsPublic = async (
     }
   );
 
-  return normalizeEventsResponse(response);
+  const normalized = normalizeEventsResponse(response);
+
+  // Cliente: asegurar que solo se muestren eventos que estén activos
+  // y cuyo endDate ya haya pasado. Evitamos tocar el backend; filtramos
+  // sobre los datos normalizados para la vista pública de eventos pasados.
+  const now = Date.now();
+  const filtered = (normalized.data ?? []).filter((ev) => {
+    try {
+      if (!ev) return false;
+      if (!ev.active) return false;
+      if (!ev.endDate) return false;
+      const parsed = Date.parse(ev.endDate);
+      if (Number.isNaN(parsed)) return false;
+      return parsed < now;
+    } catch (e) {
+      return false;
+    }
+  });
+
+  return {
+    data: filtered,
+    meta: normalized.meta,
+  };
 };
 
 export const getPastEventsQueryOptions = ({ page = 1 }: { page?: number } = {}) => {
