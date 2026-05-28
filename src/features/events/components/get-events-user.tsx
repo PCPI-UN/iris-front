@@ -9,11 +9,14 @@ import { Pagination } from "@/components/ui/pagination";
 import { useMyEvents } from "../api/get-my-events";
 import { EventCardCollapsed } from "./get-events-user/event-card-collapsed";
 import { EventCardExpanded } from "./get-events-user/event-card-expanded";
+import { Button } from "@heroui/button";
 
 export const GetEventsUser = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
+
   const [expandedEventId, setExpandedEventId] = useState<string | null>(null);
+  const [filter, setFilter] = useState<string>("all");
 
   const page = useMemo(() => {
     const raw = searchParams?.get("page");
@@ -23,29 +26,15 @@ export const GetEventsUser = () => {
 
   const eventsQuery = useMyEvents({ page });
 
-  if (eventsQuery.isLoading) {
-    return (
-      <div className="flex h-48 w-full items-center justify-center">
-        <Spinner size="lg" />
-      </div>
-    );
-  }
-
-  const events = eventsQuery.data?.data;
+  const events = eventsQuery.data?.data ?? [];
   const meta = eventsQuery.data?.meta;
 
-  if (!events) return null;
-
-  if (events.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center h-64 space-y-4">
-        <p className="text-lg text-default-500">No events found</p>
-        <p className="text-sm text-default-400">
-          You are not enrolled in any events yet
-        </p>
-      </div>
-    );
-  }
+  const filteredEvents = useMemo(() => {
+    if (filter === "all") return events;
+    if (filter === "jury") return events?.filter((event) => event.role?.name.toLowerCase().includes("juror"));
+    if (filter === "participant") return events?.filter((event) => event.role?.name.toLowerCase().includes("participant"));
+    return events;
+  }, [events, filter]);
 
   const handlePageChange = (newPage: number) => {
     const params = new URLSearchParams(searchParams?.toString() ?? "");
@@ -61,12 +50,57 @@ export const GetEventsUser = () => {
     router.push(`/app/events/${eventId}/dashboard`);
   };
 
+  const handleFilter = (filter: string) => {
+    setFilter(filter);
+  };
+
+  if (eventsQuery.isLoading) {
+    return (
+      <div className="flex h-48 w-full items-center justify-center">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
+  
+  if (events.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 space-y-4">
+        <p className="text-lg text-default-500">No events found</p>
+        <p className="text-sm text-default-400">
+          You are not enrolled in any events yet
+        </p>
+      </div>
+    );
+  }
+
   return (
-    <section className="space-y-2 p-0 gap-20">
-      <h2 className="text-white text-xl">Mis eventos</h2>
+    <section className="space-y-8">
+      <div className="flex space-x-2">
+        <Button
+          variant={"flat"}
+          onClick={() => handleFilter("all")}
+          color={filter === "all" ? "primary" : "default"}
+        >
+          Todos
+        </Button>
+        <Button
+          variant={"flat"}
+          onClick={() => handleFilter("jury")}
+          color={filter === "jury" ? "primary" : "default"}
+        >
+          Jurado
+        </Button>
+        <Button
+          variant={"flat"}
+          onClick={() => handleFilter("participant")}
+          color={filter === "participant" ? "primary" : "default"}
+        >
+          Participante
+        </Button>
+      </div>
 
       <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 p-0">
-        {events.map((event) => {
+        {filteredEvents.map((event) => {
           const eventId = String(event.id);
           const isExpanded = expandedEventId === eventId;
 
