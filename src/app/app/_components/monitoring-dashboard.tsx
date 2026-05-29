@@ -415,6 +415,7 @@ export const MonitoringDashboard = ({ initialEventId, onBack, eventData }: Monit
           selectedEventName={selectedEvent?.name}
           evaluationsOpened={selectedEvent?.evaluationsOpened}
           eventStatusName={selectedEvent?.statusName}
+          eventEndDate={selectedEvent?.endDate}
         />
       ) : (
         <Card className="glass-card border border-default-200/70 shadow-sm">

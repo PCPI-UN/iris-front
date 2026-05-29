@@ -48,7 +48,7 @@ import {
 
 function SortableItem({ project, index }: { project: TopProject; index: number }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: project.id,
+    id: String(project.id),
   });
 
   return (
@@ -84,33 +84,16 @@ function buildTiedPool(data: TopProjectsResponse): TopProject[] {
   if (!data.items?.length) return [];
 
   const lastGrade = data.items[data.items.length - 1].averageGrade;
-  const tiedFromItems = data.items.filter((p) => p.averageGrade === lastGrade);
+  const round = (v: number) => Number(v.toFixed(4));
+  const tiedFromItems = data.items.filter((p) => round(p.averageGrade) === round(lastGrade));
+  const disputed = data.disputedProjects ?? [];
 
-  const hasTiebreaks = Boolean(data.tiebreaks?.length);
-  const hasDisputed = Boolean(data.disputedProjects?.length);
-  // Empate DENTRO de los n seleccionados: 2+ proyectos comparten la última posición
-  const hasTieWithinItems = tiedFromItems.length > 1;
+  const hasTie =
+    tiedFromItems.length > 1 || disputed.length > 0 || Boolean(data.tiebreaks?.length);
 
-  if (!hasTiebreaks && !hasDisputed && !hasTieWithinItems) return [];
+  if (!hasTie) return [];
 
-  if (hasTiebreaks) {
-    const itemsMap = new Map(data.items.map((p) => [p.id, p]));
-    const disputedMap = new Map((data.disputedProjects ?? []).map((p) => [p.id, p]));
-    return (data.tiebreaks ?? []).map(
-      (tb) =>
-        itemsMap.get(tb.projectId) ??
-        disputedMap.get(tb.projectId) ?? {
-          id: tb.projectId,
-          name: `Proyecto ${tb.projectId}`,
-          averageGrade: lastGrade,
-          evaluationCount: 0,
-          participants: [],
-        },
-    );
-  }
-
-  // Caso 2: empate dentro del top-n Y/O con disputedProjects fuera del límite
-  return [...tiedFromItems, ...(data.disputedProjects ?? [])];
+  return [...tiedFromItems, ...disputed];
 }
 
 function sortPoolByTiebreaks(pool: TopProject[], tiebreaks: TiebreakRecord[]): TopProject[] {
@@ -144,7 +127,7 @@ function participantLabel(p: {
 
 // --- Main Component ---
 
-const TOP_N_OPTIONS = [3, 5, 10] as const;
+const TOP_N_OPTIONS = [2, 3, 5] as const;
 type TopN = (typeof TOP_N_OPTIONS)[number];
 
 type RankingTabProps = {
@@ -153,6 +136,7 @@ type RankingTabProps = {
   selectedEventName?: string;
   evaluationsOpened?: boolean;
   eventStatusName?: string;
+  eventEndDate?: string;
 };
 
 export const RankingTab = ({
@@ -161,11 +145,12 @@ export const RankingTab = ({
   selectedEventName,
   evaluationsOpened,
   eventStatusName,
+  eventEndDate,
 }: RankingTabProps) => {
   const { addNotification } = useNotifications();
   const queryClient = useQueryClient();
 
-  const [topN, setTopN] = useState<TopN>(10);
+  const [topN, setTopN] = useState<TopN>(5);
   const [orderedPool, setOrderedPool] = useState<TopProject[]>([]);
   const [isDirty, setIsDirty] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -176,34 +161,46 @@ export const RankingTab = ({
 
   const { data, isLoading, isError } = useQuery({
     queryKey,
-    queryFn: () => getTopProjects(selectedCategoryId!, selectedEventId!, topN),
+    queryFn: async () => {
+      const result = await getTopProjects(selectedCategoryId!, selectedEventId!, topN + 1);
+      if (result.items.length <= topN) return result;
+
+      const displayItems = result.items.slice(0, topN);
+      const lastGrade = displayItems[displayItems.length - 1]?.averageGrade;
+      const round = (v: number) => Number(v.toFixed(4));
+      const extraDisputed = result.items
+        .slice(topN)
+        .filter((p) => round(p.averageGrade) === round(lastGrade));
+
+      return {
+        ...result,
+        items: displayItems,
+        disputedProjects: [...(result.disputedProjects ?? []), ...extraDisputed],
+      };
+    },
     enabled: canFetch,
   });
 
   const evaluationsClosed = evaluationsOpened === false;
   const eventFinished = eventStatusName === 'FINISHED';
-  const canResolveTiebreak = evaluationsClosed || eventFinished;
+  const eventEndDatePassed = eventEndDate ? Date.parse(eventEndDate) < Date.now() : false;
+  const canResolveTiebreak = evaluationsClosed || eventFinished || eventEndDatePassed;
 
   const hasTiebreaks = Boolean(data?.tiebreaks?.length);
-  const hasDisputed = Boolean(data?.disputedProjects?.length);
 
-  // Proyectos del pool de empate dentro de los n seleccionados
   const lastGrade = data?.items?.at(-1)?.averageGrade;
-  const tiedItemsAtLastPos = (data?.items ?? []).filter(
-    (p) => p.averageGrade === lastGrade,
+  const round = (v: number) => Number(v.toFixed(4));
+  const tiedItemsAtLastPos = (data?.items ?? []).filter((p) =>
+    lastGrade !== undefined ? round(p.averageGrade) === round(lastGrade) : false,
   );
   const hasTieWithinItems = tiedItemsAtLastPos.length > 1;
 
-  const hasTieConflict = hasTiebreaks || hasDisputed || hasTieWithinItems;
+  const hasTieConflict =
+    hasTiebreaks || Boolean(data?.disputedProjects?.length) || hasTieWithinItems;
 
-  // IDs a marcar con badge "Empate"
   const disputedIds = new Set<number>([
-    // Proyectos dentro del top-n empatados en última posición
-    ...(hasTieWithinItems || hasTiebreaks ? tiedItemsAtLastPos.map((p) => p.id) : []),
-    // Proyectos fuera del top-n que también empatan con la última posición
+    ...(hasTieConflict ? tiedItemsAtLastPos.map((p) => p.id) : []),
     ...(data?.disputedProjects?.map((p) => p.id) ?? []),
-    // Si hay tiebreaks previos, marcar también los involucrados
-    ...(hasTiebreaks ? (data?.tiebreaks ?? []).map((tb) => tb.projectId) : []),
   ]);
 
   // Sync pool when data changes
@@ -230,8 +227,8 @@ export const RankingTab = ({
     const { active, over } = event;
     if (!over || active.id === over.id) return;
     setOrderedPool((prev) => {
-      const from = prev.findIndex((p) => p.id === active.id);
-      const to = prev.findIndex((p) => p.id === over.id);
+      const from = prev.findIndex((p) => String(p.id) === String(active.id));
+      const to = prev.findIndex((p) => String(p.id) === String(over.id));
       return arrayMove(prev, from, to);
     });
     setIsDirty(true);
@@ -242,53 +239,32 @@ export const RankingTab = ({
     setIsSubmitting(true);
 
     try {
-      if (hasTiebreaks && data?.tiebreaks) {
-        // Case 3 — update existing tiebreaks via PUT
-        const tiebreakIdMap = new Map(data.tiebreaks.map((tb) => [tb.projectId, tb.id]));
-        await Promise.all(
-          orderedPool.map((project, index) => {
-            const tbId = tiebreakIdMap.get(project.id);
-            if (tbId === undefined) return Promise.resolve();
+      // Use cached tiebreaks if available, otherwise fetch to detect any pre-existing records
+      const existing =
+        hasTiebreaks && data?.tiebreaks
+          ? data.tiebreaks
+          : await listTiebreaks({ eventId: selectedEventId, categoryId: selectedCategoryId });
+
+      const existingIdMap = new Map(existing.map((tb) => [tb.projectId, tb.id]));
+
+      await Promise.all(
+        orderedPool.map((project, index) => {
+          const tbId = existingIdMap.get(project.id);
+          if (tbId !== undefined) {
             return updateTiebreak(tbId, {
               tiebreakOrder: index + 1,
               projectId: project.id,
               categoryId: selectedCategoryId,
             });
-          }),
-        );
-      } else {
-        // Case 2 — create new tiebreaks via POST, fallback to PUT on 409
-        const results = await Promise.all(
-          orderedPool.map((project, index) =>
-            createTiebreak({
-              projectId: project.id,
-              eventId: selectedEventId,
-              categoryId: selectedCategoryId,
-              tiebreakOrder: index + 1,
-            }),
-          ),
-        );
-
-        const has409 = results.some((r) => r.status === 409);
-        if (has409) {
-          const existing = await listTiebreaks({
+          }
+          return createTiebreak({
+            projectId: project.id,
             eventId: selectedEventId,
             categoryId: selectedCategoryId,
+            tiebreakOrder: index + 1,
           });
-          const existingIdMap = new Map(existing.map((tb) => [tb.projectId, tb.id]));
-          await Promise.all(
-            orderedPool.map((project, index) => {
-              const tbId = existingIdMap.get(project.id);
-              if (tbId === undefined) return Promise.resolve();
-              return updateTiebreak(tbId, {
-                tiebreakOrder: index + 1,
-                projectId: project.id,
-                categoryId: selectedCategoryId,
-              });
-            }),
-          );
-        }
-      }
+        }),
+      );
 
       addNotification({
         type: 'success',
@@ -398,24 +374,21 @@ export const RankingTab = ({
                         <span className="font-bold text-default-500">{item.pos}</span>
                       </TableCell>
                       <TableCell>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="font-semibold text-foreground">{item.name}</span>
-                          {disputedIds.has(item.id) && (
-                            <Chip
-                              size="sm"
-                              color="warning"
-                              variant="flat"
-                              startContent={<AlertTriangle className="h-3 w-3" />}
-                            >
-                              Empate
-                            </Chip>
-                          )}
-                        </div>
+                        <span className="font-semibold text-foreground">{item.name}</span>
                       </TableCell>
                       <TableCell>
                         <div className="space-y-1 text-sm">
-                          {(item.participants?.length ?? 0) > 0 ? (
-                            item.participants!.map((p, idx) => (
+                          {(item.pendingParticipants?.length ?? 0) > 0 ? (
+                            item.pendingParticipants!.map((p, idx) => {
+                              const fullName = [p.firstName, p.lastName].filter(Boolean).join(' ');
+                              return (
+                                <p key={idx} className="text-default-500">
+                                  {fullName || p.studentCode || p.email || 'Participante'}
+                                </p>
+                              );
+                            })
+                          ) : (item.participants?.length ?? 0) > 0 ? (
+                            item.participants.map((p, idx) => (
                               <p key={idx} className="text-default-500">
                                 {participantLabel(p)}
                               </p>
@@ -434,9 +407,20 @@ export const RankingTab = ({
                         <span className="text-sm text-default-500">{item.evaluationCount}</span>
                       </TableCell>
                       <TableCell className="w-24 text-center">
-                        <Chip size="sm" color="success" variant="flat">
-                          OK
-                        </Chip>
+                        {disputedIds.has(item.id) ? (
+                          <Chip
+                            size="sm"
+                            color="warning"
+                            variant="flat"
+                            startContent={<AlertTriangle className="h-3 w-3" />}
+                          >
+                            Empate
+                          </Chip>
+                        ) : (
+                          <Chip size="sm" color="success" variant="flat">
+                            OK
+                          </Chip>
+                        )}
                       </TableCell>
                     </TableRow>
                   )}
@@ -474,7 +458,7 @@ export const RankingTab = ({
                 onDragEnd={handleDragEnd}
               >
                 <SortableContext
-                  items={orderedPool.map((p) => p.id)}
+                  items={orderedPool.map((p) => String(p.id))}
                   strategy={verticalListSortingStrategy}
                 >
                   <div className="space-y-2">

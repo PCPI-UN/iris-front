@@ -9,12 +9,18 @@ export type TiebreakRecord = {
 };
 
 export type TopProjectParticipant = {
+  userId?: number | string;
+  projectId?: number;
+  studentCode?: string;
+  status?: string;
+};
+
+export type PendingParticipant = {
+  pendingId?: number;
   firstName?: string;
   lastName?: string;
-  studentCode?: string;
   email?: string;
-  name?: string;
-  userId?: number | string;
+  studentCode?: string;
 };
 
 export type TopProject = {
@@ -23,6 +29,7 @@ export type TopProject = {
   averageGrade: number;
   evaluationCount: number;
   participants: TopProjectParticipant[];
+  pendingParticipants?: PendingParticipant[];
 };
 
 export type TopProjectsResponse = {
@@ -42,35 +49,41 @@ export const getTopProjects = (
     params: { eventId, limit },
   });
 
-export const createTiebreak = async (body: {
+export const createTiebreak = (body: {
   projectId: number;
   eventId: number;
   categoryId: number;
   tiebreakOrder: number;
-}): Promise<{ ok: boolean; status: number; data: TiebreakRecord | null }> => {
-  const response = await fetch('/api/tiebreaks', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify(body),
-  });
-  const text = await response.text();
-  const data = text ? (JSON.parse(text) as TiebreakRecord) : null;
-  return { ok: response.ok, status: response.status, data };
-};
+}): Promise<TiebreakRecord> =>
+  api.post<TiebreakRecord>('/tiebreaks', body, { suppressErrorNotification: true });
 
 export const updateTiebreak = (
   id: number,
   body: { tiebreakOrder: number; projectId: number; categoryId: number },
-): Promise<TiebreakRecord> => api.put<TiebreakRecord>(`/tiebreaks/${id}`, body);
+): Promise<TiebreakRecord> =>
+  api.put<TiebreakRecord>(`/tiebreaks/${id}`, body, { suppressErrorNotification: true });
 
 export const listTiebreaks = async (params: {
   eventId: number;
   categoryId: number;
 }): Promise<TiebreakRecord[]> => {
-  const result = await api.get<TiebreakRecord[] | { data: TiebreakRecord[] }>(
-    '/tiebreaks',
-    { params },
-  );
-  return Array.isArray(result) ? result : ((result as { data: TiebreakRecord[] }).data ?? []);
+  try {
+    const raw = await api.get<unknown>('/tiebreaks', {
+      params: { eventId: params.eventId, categoryId: params.categoryId },
+      suppressErrorNotification: true,
+    });
+    const candidates = [
+      raw,
+      (raw as any)?.data,
+      (raw as any)?.items,
+      (raw as any)?.data?.data,
+      (raw as any)?.data?.items,
+      (raw as any)?.tiebreaks,
+      (raw as any)?.data?.tiebreaks,
+    ];
+    const found = candidates.find((c) => Array.isArray(c));
+    return (found ?? []) as TiebreakRecord[];
+  } catch {
+    return [];
+  }
 };
