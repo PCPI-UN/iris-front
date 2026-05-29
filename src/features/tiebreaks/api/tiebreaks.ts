@@ -61,6 +61,7 @@ export const updateTiebreak = (
   id: number,
   body: { tiebreakOrder: number; projectId: number; categoryId: number },
 ): Promise<TiebreakRecord> =>
+  
   api.put<TiebreakRecord>(`/tiebreaks/${id}`, body, { suppressErrorNotification: true });
 
 export const listTiebreaks = async (params: {

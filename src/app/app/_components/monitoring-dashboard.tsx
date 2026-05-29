@@ -188,7 +188,7 @@ export const MonitoringDashboard = ({ initialEventId, onBack, eventData }: Monit
               Number(normalizeCategoryId(project)) === selectedCategoryId,
           )
         : allProjects.filter(
-            (project): project is ProjectWithJurors & { categoryId: number } => project.categoryId !== undefined,
+            (project): project is ProjectWithJurors & { categoryId: number } => normalizeCategoryId(project) !== undefined,
           )) as Array<{ id: number; categoryId: number; evaluated?: boolean } & ProjectWithJurors>,
     [allProjects, selectedCategoryId],
   );

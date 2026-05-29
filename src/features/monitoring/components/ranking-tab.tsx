@@ -128,7 +128,7 @@ function participantLabel(p: {
 // --- Main Component ---
 
 const TOP_N_OPTIONS = [2, 3, 5] as const;
-type TopN = (typeof TOP_N_OPTIONS)[number];
+type TopN = (typeof TOP_N_OPTIONS)[number] | 'all';
 
 type RankingTabProps = {
   selectedEventId?: number;
@@ -162,8 +162,10 @@ export const RankingTab = ({
   const { data, isLoading, isError } = useQuery({
     queryKey,
     queryFn: async () => {
-      const result = await getTopProjects(selectedCategoryId!, selectedEventId!, topN + 1);
-      if (result.items.length <= topN) return result;
+      const limit = topN === 'all' ? 0 : topN + 1;
+      const result = await getTopProjects(selectedCategoryId!, selectedEventId!, limit);
+
+      if (topN === 'all' || result.items.length <= topN) return result;
 
       const displayItems = result.items.slice(0, topN);
       const lastGrade = displayItems[displayItems.length - 1]?.averageGrade;
@@ -180,6 +182,8 @@ export const RankingTab = ({
     },
     enabled: canFetch,
   });
+
+  const isAllMode = topN === 'all';
 
   const evaluationsClosed = evaluationsOpened === false;
   const eventFinished = eventStatusName === 'FINISHED';
@@ -311,15 +315,20 @@ export const RankingTab = ({
               label="Mostrar"
               selectedKeys={[String(topN)]}
               onSelectionChange={(keys) => {
-                const val = Number(Array.from(keys)[0]) as TopN;
-                if (TOP_N_OPTIONS.includes(val)) setTopN(val);
+                const raw = String(Array.from(keys)[0]);
+                if (raw === 'all') {
+                  setTopN('all');
+                } else {
+                  const val = Number(raw) as 2 | 3 | 5;
+                  if (TOP_N_OPTIONS.includes(val)) setTopN(val);
+                }
               }}
               isDisabled={!canFetch}
               size="sm"
             >
-              {TOP_N_OPTIONS.map((n) => (
-                <SelectItem key={String(n)} textValue={`Top ${n}`}>
-                  Top {n}
+              {([...TOP_N_OPTIONS, 'all'] as Array<2 | 3 | 5 | 'all'>).map((n) => (
+                <SelectItem key={String(n)} textValue={n === 'all' ? 'Todos' : `Top ${n}`}>
+                  {n === 'all' ? 'Todos' : `Top ${n}`}
                 </SelectItem>
               ))}
             </Select>
@@ -365,7 +374,7 @@ export const RankingTab = ({
                   <TableColumn>Integrantes</TableColumn>
                   <TableColumn className="w-28 text-center">Promedio</TableColumn>
                   <TableColumn className="w-28 text-center">Evaluaciones</TableColumn>
-                  <TableColumn className="w-24 text-center">Estado</TableColumn>
+                  <TableColumn className={isAllMode ? 'hidden' : 'w-24 text-center'}>Estado</TableColumn>
                 </TableHeader>
                 <TableBody items={(data?.items ?? []).map((p, i) => ({ ...p, participants: p.participants ?? [], pos: i + 1 }))}>
                   {(item) => (
@@ -406,7 +415,7 @@ export const RankingTab = ({
                       <TableCell className="w-28 text-center">
                         <span className="text-sm text-default-500">{item.evaluationCount}</span>
                       </TableCell>
-                      <TableCell className="w-24 text-center">
+                      <TableCell className={isAllMode ? 'hidden' : 'w-24 text-center'}>
                         {disputedIds.has(item.id) ? (
                           <Chip
                             size="sm"
@@ -430,7 +439,7 @@ export const RankingTab = ({
           )}
 
           {/* TIEBREAK — read-only notice */}
-          {canFetch && !isLoading && !canResolveTiebreak && hasTieConflict && (
+          {canFetch && !isLoading && !isAllMode && !canResolveTiebreak && hasTieConflict && (
             <div className="flex items-center gap-3 rounded-xl border border-warning-200/60 bg-warning-50/20 px-4 py-3 text-sm text-default-500">
               <AlertTriangle className="h-4 w-4 text-warning-400 shrink-0" />
               Se detectó un empate. La resolución estará disponible cuando las evaluaciones estén
@@ -439,7 +448,7 @@ export const RankingTab = ({
           )}
 
           {/* TIEBREAK — drag & drop resolver */}
-          {canFetch && !isLoading && canResolveTiebreak && hasTieConflict && (
+          {canFetch && !isLoading && !isAllMode && canResolveTiebreak && hasTieConflict && (
             <div className="space-y-4 rounded-2xl border border-warning-200/60 bg-warning-50/10 p-5">
               <div className="flex items-center gap-2">
                 <AlertTriangle className="h-5 w-5 text-warning-500 shrink-0" />

@@ -1,6 +1,7 @@
 import type { ProjectJuror, ProjectWithJurors } from '@/features/projects/api/get-projects-with-jurors';
 import type { CategoryEvaluationStats, ProjectEvaluationStats } from '../types';
 import { getCourseLabel } from './formatting';
+import { normalizeCategoryId } from '@/lib/compat/category-legacy';
 
 export const getJurorKey = (juror: ProjectJuror) => {
   if (juror.id !== undefined && juror.id !== null) {
@@ -38,7 +39,8 @@ export const buildCategoryEvaluationStats = (
   const statsMap = new Map<number, CategoryEvaluationStats>();
 
   projects.forEach((project) => {
-    const categoryId = project.categoryId;
+    const categoryId = Number(normalizeCategoryId(project));
+    if (!categoryId) return;
     const category = categoryMap.get(categoryId);
     const current = statsMap.get(categoryId) ?? {
       categoryId,
