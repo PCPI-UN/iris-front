@@ -4,7 +4,10 @@ import { DataTable } from "@/components/data-table";
 import { columnsProject } from "./columns-project-table";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Pagination } from "@heroui/pagination";
-import { useProjectsWithJurors } from "@/features/projects/api/get-projects-with-jurors";
+import { ProjectWithJurors, useProjectsWithJurors } from "@/features/projects/api/get-projects-with-jurors";
+import { useState } from "react";
+import { SearchProjects } from "@/components/search-project/search_projects";
+import { Spinner } from "@heroui/spinner";
 
 export const ProjectsTable = ({
   onSelectProject,
@@ -23,8 +26,17 @@ export const ProjectsTable = ({
   const categoryId = searchParams?.get("categoryId") ? Number(searchParams.get("categoryId")) : 0;
 
   const projectsQuery = useProjectsWithJurors({ currentPage:page, eventId, state, categoryId });
-  const projects = projectsQuery.data?.data;
   const meta = projectsQuery.data?.meta;
+
+  const [filterValue, setFilterValue] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+
+  const defaultProjects = projectsQuery.data?.data ?? [];
+  
+  const projects: ProjectWithJurors[] = filterValue
+    ? searchResults
+    : defaultProjects;
   
   const handlePageChange = (newPage: number) => {
     const params = new URLSearchParams();
@@ -35,12 +47,27 @@ export const ProjectsTable = ({
     router.push(`?${params.toString()}`);
   };
   
-
   const columns = columnsProject({onSelectProject, onViewProject});
 
   return (
     <div className="justify-between mr-5">
-      <DataTable data={projects ? projects : []} columns={columns} styles={"max-h-[70vh]"}/>
+      <div className="mb-8">
+        <SearchProjects
+          eventId={eventId}
+          state={state}
+          categoryId={categoryId}
+          setSearchResults={setSearchResults}
+          setIsSearching={setIsSearching}
+          setFilterValue={setFilterValue}
+          filterValue={filterValue}
+        />
+      </div>
+      {isSearching ? (
+        <Spinner className="flex justify-center"/>
+      ) : (
+        <DataTable data={projects ? projects : []} columns={columns} styles={"max-h-[70vh]"}/>
+      )}
+      
       {meta && meta.totalPages > 1 && (
         <div className="flex justify-center mt-6">
           <Pagination
@@ -52,6 +79,5 @@ export const ProjectsTable = ({
         </div>
       )}
     </div>
-    
   );
 };

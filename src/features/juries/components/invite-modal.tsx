@@ -66,7 +66,7 @@ export const InviteModal = () => {
 
   return (
     <>
-      <Button size="md" onPress={onOpen} color="primary">
+      <Button onPress={onOpen} color="primary" className="h-full">
         <Plus size={16} />
         Invitar Jurado
       </Button>

@@ -15,11 +15,12 @@ import { RequestProjectModal } from "./request-change-modal";
 import { ViewDetails } from "./view-details";
 import { DataTable } from "@/components/data-table";
 import { columnsProject } from "./columns-project-table";
-import React from "react";
+import { useState } from "react";
 import { readCategoryIdFromSearchParams } from "@/lib/compat/category-legacy";
 import { ParticipantsDetails } from "./participants-details";
 import { toEventTypeLabel } from "@/features/events/utils/event-enums";
-import { useProjectsWithJurors } from "../api/get-projects-with-jurors";
+import { ProjectWithJurors, useProjectsWithJurors } from "../api/get-projects-with-jurors";
+import { SearchProjects } from "../../../components/search-project/search_projects";
 
 
 export const ProjectList = () => {
@@ -33,16 +34,24 @@ export const ProjectList = () => {
   const categoryId = categoryParam ? Number(categoryParam) : undefined;
 
   const projectsQuery = useProjectsWithJurors({ currentPage:page, itemsPerPage: 20, eventId, state, categoryId });
-  const projects = projectsQuery.data?.data;
   const meta = projectsQuery.data?.meta;
   const eventsQuery = useEvents({ page: 1 });
   const selectedEvent = eventsQuery.data?.data?.find((event) => event.id === eventId);
   const selectedEventType = selectedEvent ? toEventTypeLabel(selectedEvent.eventType) : undefined;
 
-  
+  const [filterValue, setFilterValue] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+
+  const defaultProjects = projectsQuery.data?.data ?? [];
+
+  const projects: ProjectWithJurors[] = filterValue
+    ? searchResults
+    : defaultProjects;
+
   {/* ======================== ACTIONS APPROVE, REJECT, REQUEST FOR TABLE ======================== */}
-  const [selectedId, setSelectedId] = React.useState<number | null>(null);
-  const [action, setAction] = React.useState<"approve" | "reject" | "request" | null>(null);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [action, setAction] = useState<"approve" | "reject" | "request" | null>(null);
 
   const handleApprove = (id: number) => {
     setSelectedId(id);
@@ -115,11 +124,21 @@ export const ProjectList = () => {
       </div>
 
       {/* ======================== LOADING ======================== */}
-      {projectsQuery.isLoading && (
+      {(projectsQuery.isLoading || isSearching) && (
         <div className="flex h-48 w-full items-center justify-center">
           <Spinner size="lg" />
         </div>
       )}
+
+      <SearchProjects
+        eventId={eventId}
+        state={state}
+        categoryId={categoryId}
+        setSearchResults={setSearchResults}
+        setIsSearching={setIsSearching}
+        setFilterValue={setFilterValue}
+        filterValue={filterValue}
+      />
 
 
       {/* ======================== PROJECTS GRID ======================== */}
