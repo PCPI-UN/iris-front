@@ -49,6 +49,7 @@ import { ProjectsTab } from '@/features/monitoring/components/projects-tab';
 export const MonitoringDashboard = ({ initialEventId, onBack, eventData }: MonitoringDashboardProps = {}) => {
   const user = useUser();
   const { data: eventsData, isLoading: isEventsLoading } = useEventsDropdown();
+
  
   const {
     activeTab,
@@ -166,7 +167,7 @@ export const MonitoringDashboard = ({ initialEventId, onBack, eventData }: Monit
     queries: (allProjects ?? []).map((project) => ({
       queryKey: ['project-evaluation-stats-all', project.id],
       queryFn: () => getProjectEvaluationStats(String(project.id)),
-      enabled: projectQueryEnabled && (activeTab === 'statistics' || activeTab === 'ranking') && Boolean(project.id),
+      enabled: projectQueryEnabled && activeTab === 'statistics' && Boolean(project.id),
     })),
   });
 
@@ -405,10 +406,12 @@ export const MonitoringDashboard = ({ initialEventId, onBack, eventData }: Monit
         />
       ) : activeTab === 'ranking' ? (
         <RankingTab
+          selectedEventId={selectedEventId}
+          selectedCategoryId={selectedCategoryId}
           selectedEventName={selectedEvent?.name}
-          isLoading={projectQueryEnabled && allProjectEvaluationStatsQueries.some((q) => q.isLoading)}
-          allProjects={allProjects}
-          allProjectStatsById={allProjectStatsById}
+          evaluationsOpened={selectedEvent?.evaluationsOpened}
+          eventStatusName={selectedEvent?.statusName}
+          eventEndDate={selectedEvent?.endDate}
         />
       ) : (
         <Card className="glass-card border border-default-200/70 shadow-sm">
@@ -519,7 +522,7 @@ export const MonitoringDashboard = ({ initialEventId, onBack, eventData }: Monit
                               const pendingLabels = (project.pendingParticipants ?? [])
                                 .map((participant) => `${participant.firstName ?? ''} ${participant.lastName ?? ''}`.trim())
                                 .filter((label) => label.length > 0);
-
+                              console.log(project.pendingParticipants)
                               const participantLabels = pendingLabels.length > 0
                                 ? pendingLabels
                                 : (project.participants ?? []).map((participant) => {

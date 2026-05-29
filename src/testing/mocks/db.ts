@@ -53,6 +53,8 @@ const models = {
     statusName: String,
     location: String,
     locationDetails: String,
+    latitude: Number,
+    longitude: Number,
     eventType: Number,
     inscriptionCost: Number,
     inscriptionRequirements: String,

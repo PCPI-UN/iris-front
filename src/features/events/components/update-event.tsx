@@ -108,6 +108,8 @@ type UpdateEventFormState = {
   inscriptionDeadline: string;
   location: string;
   locationDetails: string;
+  latitude: number;
+  longitude: number;
   evaluationsOpened: boolean;
   isPubliclyJoinable: boolean;
   active: boolean;
@@ -128,6 +130,8 @@ const INITIAL_FORM_STATE: UpdateEventFormState = {
   inscriptionDeadline: "",
   location: "",
   locationDetails: "",
+  latitude: 0,
+  longitude: 0,
   evaluationsOpened: false,
   isPubliclyJoinable: true,
   active: true,
@@ -191,6 +195,8 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
       inscriptionDeadline: ensureDateTimeValue(event.inscriptionDeadline),
       location: event.location ?? "",
       locationDetails: event.locationDetails ?? "",
+      latitude: event.latitude ?? 0,
+      longitude: event.longitude ?? 0,
       evaluationsOpened: Boolean(event.evaluationsOpened),
       isPubliclyJoinable: Boolean(event.isPubliclyJoinable),
       active: Boolean(event.active),
@@ -348,6 +354,8 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
         eventType: formData.eventType,
         location: formData.location || undefined,
         locationDetails: formData.locationDetails || undefined,
+        latitude: formData.latitude,
+        longitude: formData.longitude,
         inscriptionCost: formData.inscriptionCost === "" ? undefined : Number(formData.inscriptionCost),
         inscriptionRequirements: formData.inscriptionRequirements || undefined,
         minimumTeamSize:

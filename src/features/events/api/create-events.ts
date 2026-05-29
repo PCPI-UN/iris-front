@@ -22,6 +22,8 @@ export const createEventInputSchema = z.object({
   active: z.boolean().optional(),
   location: z.string().min(1, 'Required'),
   locationDetails: z.string().optional(),
+  latitude:  z.coerce.number().min(-90).max(90).optional(),
+  longitude: z.coerce.number().min(-180).max(180).optional(),
   eventType: z.union([z.literal(1), z.literal(2), z.enum(["Exposition", "Competition"])]),
   inscriptionCost: z.coerce.number().optional(),
   inscriptionRequirements: z.string().optional(),

@@ -237,6 +237,8 @@ export const CreateEvent = () => {
         eventType: toEventTypeCode(formData.eventType),
         evaluationType: toEvaluationTypeCode(formData.evaluationType),
         locationDetails: formData.locationDetails || undefined,
+        latitude: formData.latitude,
+        longitude: formData.longitude,
         inscriptionCost:
           formData.inscriptionCost === "" || formData.inscriptionCost === undefined
             ? undefined
