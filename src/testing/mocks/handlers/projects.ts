@@ -655,6 +655,98 @@ export const projectsHandlers = [
   ),
 
   http.patch(
+    `${env.API_URL}/projects/:projectId/info`,
+    async ({ cookies, request, params }) => {
+      await networkDelay();
+      try {
+        const { error } = requireAuth(cookies);
+        if (error) {
+          return HttpResponse.json({ message: error }, { status: 401 });
+        }
+
+        const projectId = params.projectId as string;
+        const data = (await request.json()) as Partial<ProjectBody>;
+
+        if (!data || typeof data !== "object") {
+          return HttpResponse.json({ message: "Invalid body" }, { status: 400 });
+        }
+
+        const updateData: Partial<ProjectBody> = {};
+        if (data.eventId) updateData.eventId = data.eventId;
+        if (data.categoryId) {
+          updateData.categoryId = data.categoryId;
+          updateData.courseId = data.categoryId;
+        }
+        if (data.courseId) {
+          updateData.categoryId = data.courseId;
+          updateData.courseId = data.courseId;
+        }
+        if (data.name !== undefined) updateData.name = data.name;
+        if (data.logo !== undefined) updateData.logo = data.logo;
+        if (data.description !== undefined) updateData.description = data.description;
+        if (data.state !== undefined) updateData.state = data.state;
+        if (data.documents !== undefined) updateData.documents = data.documents;
+        if (data.participants !== undefined) updateData.participants = data.participants;
+        if (data.jurorAssignments !== undefined)
+          updateData.jurorAssignments = data.jurorAssignments;
+        if (data.reason !== undefined) updateData.reason = data.reason;
+
+        const project = db.project.update({
+          where: { id: { equals: projectId } },
+          data: updateData,
+        });
+
+        if (!project) {
+          return HttpResponse.json({ message: "Project not found" }, { status: 404 });
+        }
+
+        await persistDb("project");
+        return HttpResponse.json({ data: project });
+      } catch (error: any) {
+        return HttpResponse.json(
+          { message: error?.message || "Server Error" },
+          { status: 500 }
+        );
+      }
+    }
+  ),
+
+  http.patch(
+    `${env.API_URL}/projects/:projectId/code`,
+    async ({ cookies, request, params }) => {
+      await networkDelay();
+      try {
+        const { error } = requireAuth(cookies);
+        if (error) {
+          return HttpResponse.json({ message: error }, { status: 401 });
+        }
+
+        const projectId = params.projectId as string;
+        const { projectCode } = (await request.json()) as { projectCode?: string };
+
+        const project = db.project.update({
+          where: { id: { equals: projectId } },
+          data: {
+            projectCode: projectCode?.trim() || undefined,
+          },
+        });
+
+        if (!project) {
+          return HttpResponse.json({ message: "Project not found" }, { status: 404 });
+        }
+
+        await persistDb("project");
+        return HttpResponse.json({ data: project });
+      } catch (error: any) {
+        return HttpResponse.json(
+          { message: error?.message || "Server Error" },
+          { status: 500 }
+        );
+      }
+    }
+  ),
+
+  http.patch(
     `${env.API_URL}/projects/:projectId/status`,
     async({ cookies, request, params }) => {
       await networkDelay();

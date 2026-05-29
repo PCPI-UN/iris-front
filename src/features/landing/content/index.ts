@@ -77,7 +77,7 @@ export const landingContent = {
         badge: '03 • RECORRIDO',
         title: 'Eventos que van dejando',
         titleHighlight: ' huella',
-        description: 'cada evento reúne ideas, esfuerzo y talento. Explora ediciones anteriores y descubre cómo continúan generando impacto.',
+        description: 'Cada evento reúne ideas, esfuerzo y talento. Explora ediciones anteriores y descubre cómo continúan generando impacto.',
         cta: 'Ver eventos anteriores',
       },
     ],

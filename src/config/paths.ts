@@ -70,6 +70,10 @@ export const paths = {
       getHref: () => "/app/events",
       roles: ["Admin"],
     },
+    pastEvents: {
+      getHref: () => "/app/events/past",
+      roles: ["Admin"],
+    },
     event: {
       getHref: (id: string) => `/app/events/${id}`,
       roles: ["Admin"],
@@ -147,6 +151,23 @@ export const paths = {
         }
 
         return `/public/events/${String(eventId)}`;
+      },
+    },
+    pastEvent: {
+      getHref: (
+        eventId:
+          | string
+          | number
+          | { id: string | number; name?: string | null | undefined },
+      ) => {
+        if (typeof eventId === 'object') {
+          const eventSlug = eventId.name ? slugify(eventId.name) : '';
+          return eventSlug
+            ? `/public/events/past/${eventSlug}-${String(eventId.id)}`
+            : `/public/events/past/${String(eventId.id)}`;
+        }
+
+        return `/public/events/past/${String(eventId)}`;
       },
     },
     developers: {

@@ -6,6 +6,16 @@ import { EyeIcon, UserRoundPlus } from "lucide-react";
 export const columnsProject = ({onSelectProject, onViewProject}: { onSelectProject: (project: any) => void; onViewProject: (project: any) => void; }): Column<any>[] => {
   return [
     {
+      title: "Código",
+      field: "projectCode",
+      sortable: true,
+      Cell: ({ entry }) => (
+        <span className="text-sm text-muted-foreground">
+          {entry.projectCode ?? "—"}
+        </span>
+      ),
+    },
+    {
       title: "Proyecto",
       field: "name",
       Cell: ({ entry }) => (
@@ -13,19 +23,6 @@ export const columnsProject = ({onSelectProject, onViewProject}: { onSelectProje
           <h3 className="font-semibold">{entry.name}</h3>
         </div>
       ),
-    },
-    {
-      title: "Descripción",
-      field: "description",
-      Cell: ({entry}) => (
-        <>
-          {entry.description && (
-            <p className="text-sm text-muted-foreground line-clamp-2">
-              {entry.description}
-            </p>
-          )}
-        </>
-      )
     },
     {
       title: "Asignaciones",
