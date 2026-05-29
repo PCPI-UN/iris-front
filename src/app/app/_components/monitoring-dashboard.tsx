@@ -45,17 +45,11 @@ import { MonitoringDashboardTabs } from '@/features/monitoring/components/monito
 import { RankingTab } from '@/features/monitoring/components/ranking-tab';
 import { StatisticsTab } from '@/features/monitoring/components/statistics-tab';
 import { ProjectsTab } from '@/features/monitoring/components/projects-tab';
-import { useSearchParams } from 'next/navigation';
-import { useState } from 'react';
-import { useRouter } from "next/navigation";
 
 export const MonitoringDashboard = ({ initialEventId, onBack, eventData }: MonitoringDashboardProps = {}) => {
   const user = useUser();
-  const router = useRouter();
-  const searchParams = useSearchParams();
   const { data: eventsData, isLoading: isEventsLoading } = useEventsDropdown();
-  const [projectSearch, setProjectSearch] = useState('');
- 
+
   const {
     activeTab,
     currentPage,
@@ -65,6 +59,7 @@ export const MonitoringDashboard = ({ initialEventId, onBack, eventData }: Monit
     handleProjectSearchChange,
     handleTabChange,
     isPastEventMode,
+    projectSearch,
     selectedCategoryId,
     selectedEventIdFromUrl,
     selectedState,
