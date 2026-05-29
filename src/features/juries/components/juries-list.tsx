@@ -10,8 +10,7 @@ import {
   TableRow,
   TableCell,
 } from "@/components/ui/table";
-import { SearchIcon, Check } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { SearchIcon } from "lucide-react";
 import { Chip } from "@/components/ui/chip";
 import { useJuryInvitations } from "../api/get-juries";
 import { Spinner } from "@/components/ui/spinner";
