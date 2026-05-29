@@ -25,11 +25,22 @@ type GetEventJuriesResponse = {
   meta?: InvitationsMeta;
 };
 
+const normalizeJurorKey = (value: unknown) => {
+  if (value === undefined || value === null) {
+    return "";
+  }
+
+  return String(value).trim();
+};
+
 const dedupeJurors = (jurors: EventJuror[] = []) => {
   const jurorMap = new Map<string, EventJuror>();
 
   jurors.forEach((juror) => {
-    const key = juror.id?.trim() || juror.email?.trim().toLowerCase() || `${juror.firstName ?? ""}:${juror.lastName ?? ""}`;
+    const key =
+      normalizeJurorKey(juror.id) ||
+      normalizeJurorKey(juror.email).toLowerCase() ||
+      `${juror.firstName ?? ""}:${juror.lastName ?? ""}`;
     const currentJuror = jurorMap.get(key) ?? { ...juror, assignedProjects: [] };
     const currentAssignments = currentJuror.assignedProjects ?? [];
     const nextAssignments = juror.assignedProjects ?? [];
@@ -68,7 +79,10 @@ const buildEventJuriesFromProjects = async (eventId: string | number): Promise<G
 
   (projectsQuery.data ?? []).forEach((project) => {
     (project.jurors ?? []).forEach((juror) => {
-      const key = juror.id?.trim() || juror.email?.trim().toLowerCase() || `${juror.firstName ?? ""}:${juror.lastName ?? ""}`;
+      const key =
+        normalizeJurorKey(juror.id) ||
+        normalizeJurorKey(juror.email).toLowerCase() ||
+        `${juror.firstName ?? ""}:${juror.lastName ?? ""}`;
       const currentJuror = jurorMap.get(key) ?? {
         id: juror.id,
         firstName: juror.firstName ?? "",
@@ -116,7 +130,7 @@ export const getEventJuries = async ({
       `/events/${eventId}/jurors`,
       { suppressErrorNotification: true }
     );
-
+    
     const jurors = dedupeJurors(response.jurors ?? response.data ?? []);
 
     return {

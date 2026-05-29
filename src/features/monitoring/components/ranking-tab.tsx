@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { Download, Trophy, Eye, Settings, RefreshCw } from 'lucide-react';
 import { Card, CardHeader, CardBody } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
-import { Table, TableHeader, TableBody, TableColumn, TableRow, TableCell } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { RankingConfigModal } from './ranking-config-modal';
 import type { RankingConfigType } from '../types';
@@ -13,6 +12,8 @@ import type { Event } from '@/types/api';
 import { useRankingConfig } from '../api/get-ranking-config';
 
 type RankingTabProps = {
+  selectedEventId?: number;
+  selectedCategoryId?: number;
   selectedEventName?: string;
   eventId?: number;
   categoryId?: number;
@@ -181,11 +182,9 @@ export const RankingTab = ({ selectedEventName, eventId, categoryId, event }: Ra
   return (
     <div className="space-y-4">
       <Card className="glass-card border border-default-200/70 shadow-sm">
-        <CardHeader className="pb-2 flex items-center justify-between">
+        <CardHeader className="pb-2 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex items-center">
-              <Trophy className="mr-2 h-8 w-8 text-amber-500" />
-            </div>
+            <Trophy className="h-8 w-8 text-amber-500 shrink-0" />
             <div>
               <h3 className="text-lg font-semibold">RANKING</h3>
               <p className="text-sm text-default-400">{selectedEventName ?? '—'}</p>
@@ -220,8 +219,17 @@ export const RankingTab = ({ selectedEventName, eventId, categoryId, event }: Ra
             </Button>
           </div>
         </CardHeader>
+
         <CardBody className="space-y-4 p-5 md:p-6">
-          {isLoading ? (
+          {/* IDLE — no event/category selected */}
+          {!canFetch && (
+            <div className="flex min-h-[120px] items-center justify-center rounded-2xl border border-dashed border-default-200 text-sm text-default-500">
+              Selecciona un evento y una categoría para ver el ranking.
+            </div>
+          )}
+
+          {/* LOADING */}
+          {canFetch && isLoading && (
             <div className="flex min-h-[180px] items-center justify-center">
               <Spinner size="lg" />
             </div>

@@ -19,6 +19,8 @@ type EventBody = {
   isPubliclyJoinable?: boolean;
   location: string;
   locationDetails?: string;
+  latitude?: number;
+  longitude?: number;
   eventType: "Competition" | "Exposition";
   evaluationType?: 1 | 2 | 3 | "ZERO_TO_FIVE" | "ZERO_TO_HUNDRED" | "FINAL_PROJECTS" | "0-5" | "0-100" | "Proyectos Finales";
   inscriptionRequirements?: string;
@@ -118,6 +120,8 @@ type EventDTO = {
   evaluationsOpened: boolean;
   location: string;
   locationDetails?: string;
+  latitude?: number;
+  longitude?: number;
   eventType: 1 | 2;
   evaluationType?: 1 | 2 | 3;
   inscriptionRequirements?: string;
@@ -171,6 +175,8 @@ type PublicEventDTO = {
   active: boolean;
   location?: string;
   locationDetails?: string;
+  latitude?: number;
+  longitude?: number;
   eventType?: 1 | 2;
   inscriptionCost?: number;
   inscriptionRequirements?: string;
@@ -230,6 +236,8 @@ const mapEventToDTO = (event: any, membership?: any): EventDTO => {
     evaluationsOpened,
     location: event.location,
     locationDetails,
+    latitude: typeof event.latitude === "number" ? event.latitude : undefined,
+    longitude: typeof event.longitude === "number" ? event.longitude : undefined,
     eventType: toEventTypeCode(event.eventType),
     evaluationType: toEvaluationTypeCode(event.evaluationType),
     inscriptionRequirements: event.inscriptionRequirements,
@@ -310,6 +318,8 @@ const mapEventToPublicDTO = (event: any): PublicEventDTO => {
     active,
     location,
     locationDetails,
+    latitude: typeof event.latitude === "number" ? event.latitude : undefined,
+    longitude: typeof event.longitude === "number" ? event.longitude : undefined,
     eventType: toEventTypeCode(event.eventType),
     inscriptionCost:
       event.inscriptionCost != null
@@ -963,6 +973,8 @@ export const eventsHandlers = [
           data.evaluationsOpened ?? (data.evaluationsOpened === true),
         location: data.location,
         locationDetails: data.locationDetails,
+        latitude: data.latitude,
+        longitude: data.longitude,
         eventType: toEventTypeCode(data.eventType) as any,
         evaluationType:
           data.evaluationType === undefined
@@ -1049,6 +1061,8 @@ export const eventsHandlers = [
         ...(hasField("locationDetails") && {
           locationDetails: data.locationDetails,
         }),
+        ...(hasField("latitude") && { latitude: data.latitude }),
+        ...(hasField("longitude") && { longitude: data.longitude }),
         ...(hasField("eventType") && { eventType: toEventTypeCode(data.eventType) as any }),
         ...(hasField("evaluationType") && {
           evaluationType:

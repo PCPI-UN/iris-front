@@ -1,14 +1,17 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { useSearchParams } from "next/navigation";
-import { useProjects } from "@/features/projects/api/get-projects";
+import { useRouter, useSearchParams } from "next/navigation";
 import { GlassCard } from "@/features/landing/components/glass-card";
 import { StatusBadge } from "@/components/ui/status-badge/status-badge";
 import { stylesGradient } from "@/components/ui/status-badge/status-style";
 import { useState } from "react";
 import { AssignJudgesPanel } from "./assign-judges-panel";
 import { ProjectPanel } from "./project-panel";
+import { ProjectWithJurors, useProjectsWithJurors } from "@/features/projects/api/get-projects-with-jurors";
+import { Pagination } from "@heroui/pagination";
+import { SearchProjects } from "@/components/search-project/search_projects";
+import { Spinner } from "@heroui/spinner";
 
 export const ProjectsCard = () => {
 
@@ -19,15 +22,50 @@ export const ProjectsCard = () => {
   const state = "APPROVED";
   const categoryId = searchParams?.get("categoryId") ? Number(searchParams.get("categoryId")) : 0;
 
-  const projectsQuery = useProjects({ page, eventId, state, categoryId });
-  const projects = projectsQuery.data?.data;
+  const projectsQuery = useProjectsWithJurors({ currentPage: page, eventId, state, categoryId });
+  const meta = projectsQuery.data?.meta;
+
+  const [filterValue, setFilterValue] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  
+  const defaultProjects = projectsQuery.data?.data ?? [];
+  const projects: ProjectWithJurors[] = filterValue
+    ? searchResults
+    : defaultProjects;
 
   const [selectedProject, setSelectedProject] = useState<any | null>(null);
   const [selectedProjectView, setSelectedProjectView] = useState<any | null>(null);
 
+  const router = useRouter();
+
+  const handlePageChange = (newPage: number) => {
+    const params = new URLSearchParams();
+    params.set("page", String(newPage));
+    if (eventId) params.set("event", String(eventId));
+    if (state) params.set("state", state);
+    if (categoryId) params.set("categoryId", String(categoryId));
+    router.push(`?${params.toString()}`);
+  };
+
   return (
     <div className="flex flex-col space-y-5 justify-between my-5">
-        {projects?.map((project) => (
+        <div className="mb-8">
+            <SearchProjects
+                eventId={eventId}
+                state={state}
+                categoryId={categoryId}
+                setSearchResults={setSearchResults}
+                setIsSearching={setIsSearching}
+                setFilterValue={setFilterValue}
+                filterValue={filterValue}
+            />
+        </div>
+        {
+            isSearching ? (
+                <Spinner className="flex justify-center"/>
+            ) : (
+                projects?.map((project) => (
             <GlassCard
               key={project.id}
               className="group relative overflow-hidden w-full rounded-xl cursor-pointer hover:scale-105 transition-all duration-500"
@@ -82,7 +120,17 @@ export const ProjectsCard = () => {
                     </Button>
                 </div>
             </GlassCard>
-        ))}
+        )))}
+        {meta && meta.totalPages > 1 && (
+        <div className="flex justify-center mt-6">
+          <Pagination
+            total={meta.totalPages}
+            page={page}
+            onChange={handlePageChange}
+            showControls
+          />
+        </div>
+      )}
         {selectedProject && (
             <div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-sm animate-appearance-in transition-all duration-400">
                 <div className="w-full sm:w-[400px] md:w-[450px] h-full">

@@ -7,7 +7,6 @@ import { Chip } from '@/components/ui/chip';
 import { Select, SelectItem } from '@/components/ui/select/select';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { StatusBadge } from '@/components/ui/status-badge/status-badge';
 import { Table, TableHeader, TableBody, TableColumn, TableRow, TableCell } from '@/components/ui/table';
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';

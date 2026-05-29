@@ -31,6 +31,7 @@ import { ProjectWithJurors, useProjectsWithJurors } from '@/features/projects/ap
 import { useCriterions } from '@/features/criterions/api/get-criterions';
 import { useQueries } from '@tanstack/react-query';
 import '@/features/landing/index.css';
+import { useEventsDropdown } from '@/features/events/api/get-events-dropdown';
 
 import { MonitoringDashboardProps, ProjectEvaluationProgress, ProjectEvaluationSummary } from '@/features/monitoring/types';
 import { stateColors, stateLabels } from '@/features/monitoring/utils/constants';
@@ -47,7 +48,9 @@ import { ProjectsTab } from '@/features/monitoring/components/projects-tab';
 
 export const MonitoringDashboard = ({ initialEventId, onBack, eventData }: MonitoringDashboardProps = {}) => {
   const user = useUser();
-  const { data: eventsData, isLoading: isEventsLoading } = useEvents({ page: 1 });
+  const { data: eventsData, isLoading: isEventsLoading } = useEventsDropdown();
+
+ 
   const {
     activeTab,
     currentPage,
@@ -403,10 +406,12 @@ export const MonitoringDashboard = ({ initialEventId, onBack, eventData }: Monit
         />
       ) : activeTab === 'ranking' ? (
         <RankingTab
+          selectedEventId={selectedEventId}
+          selectedCategoryId={selectedCategoryId}
           selectedEventName={selectedEvent?.name}
-          eventId={selectedEventId}
-          categoryId={selectedCategoryId}
-          event={selectedEvent}
+          evaluationsOpened={selectedEvent?.evaluationsOpened}
+          eventStatusName={selectedEvent?.statusName}
+          eventEndDate={selectedEvent?.endDate}
         />
       ) : (
         <Card className="glass-card border border-default-200/70 shadow-sm">
@@ -517,7 +522,7 @@ export const MonitoringDashboard = ({ initialEventId, onBack, eventData }: Monit
                               const pendingLabels = (project.pendingParticipants ?? [])
                                 .map((participant) => `${participant.firstName ?? ''} ${participant.lastName ?? ''}`.trim())
                                 .filter((label) => label.length > 0);
-
+                              console.log(project.pendingParticipants)
                               const participantLabels = pendingLabels.length > 0
                                 ? pendingLabels
                                 : (project.participants ?? []).map((participant) => {

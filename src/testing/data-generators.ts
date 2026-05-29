@@ -88,6 +88,8 @@ const generateEvent = () => ({
   evaluationsOpened: Math.random() > 0.5,
   location: randCompanyName(),
   locationDetails: randParagraph(),
+  latitude: Math.random() * 180 - 90,
+  longitude: Math.random() * 360 - 180,
   eventType: Math.random() > 0.5 ? 2 : 1,
   evaluationType: Math.random() > 0.5 ? 2 : 1,
   inscriptionRequirements: randParagraph(),
