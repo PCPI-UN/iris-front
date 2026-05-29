@@ -8,8 +8,10 @@ import { stylesGradient } from "@/components/ui/status-badge/status-style";
 import { useState } from "react";
 import { AssignJudgesPanel } from "./assign-judges-panel";
 import { ProjectPanel } from "./project-panel";
-import { useProjectsWithJurors } from "@/features/projects/api/get-projects-with-jurors";
+import { ProjectWithJurors, useProjectsWithJurors } from "@/features/projects/api/get-projects-with-jurors";
 import { Pagination } from "@heroui/pagination";
+import { SearchProjects } from "@/components/search-project/search_projects";
+import { Spinner } from "@heroui/spinner";
 
 export const ProjectsCard = () => {
 
@@ -21,8 +23,16 @@ export const ProjectsCard = () => {
   const categoryId = searchParams?.get("categoryId") ? Number(searchParams.get("categoryId")) : 0;
 
   const projectsQuery = useProjectsWithJurors({ currentPage: page, eventId, state, categoryId });
-  const projects = projectsQuery.data?.data;
   const meta = projectsQuery.data?.meta;
+
+  const [filterValue, setFilterValue] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  
+  const defaultProjects = projectsQuery.data?.data ?? [];
+  const projects: ProjectWithJurors[] = filterValue
+    ? searchResults
+    : defaultProjects;
 
   const [selectedProject, setSelectedProject] = useState<any | null>(null);
   const [selectedProjectView, setSelectedProjectView] = useState<any | null>(null);
@@ -40,7 +50,22 @@ export const ProjectsCard = () => {
 
   return (
     <div className="flex flex-col space-y-5 justify-between my-5">
-        {projects?.map((project) => (
+        <div className="mb-8">
+            <SearchProjects
+                eventId={eventId}
+                state={state}
+                categoryId={categoryId}
+                setSearchResults={setSearchResults}
+                setIsSearching={setIsSearching}
+                setFilterValue={setFilterValue}
+                filterValue={filterValue}
+            />
+        </div>
+        {
+            isSearching ? (
+                <Spinner className="flex justify-center"/>
+            ) : (
+                projects?.map((project) => (
             <GlassCard
               key={project.id}
               className="group relative overflow-hidden w-full rounded-xl cursor-pointer hover:scale-105 transition-all duration-500"
@@ -95,7 +120,7 @@ export const ProjectsCard = () => {
                     </Button>
                 </div>
             </GlassCard>
-        ))}
+        )))}
         {meta && meta.totalPages > 1 && (
         <div className="flex justify-center mt-6">
           <Pagination

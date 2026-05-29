@@ -10,8 +10,7 @@ import {
   TableRow,
   TableCell,
 } from "@/components/ui/table";
-import { SearchIcon, Check } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { SearchIcon } from "lucide-react";
 import { Chip } from "@/components/ui/chip";
 import { useJuryInvitations } from "../api/get-juries";
 import { Spinner } from "@/components/ui/spinner";
@@ -23,11 +22,14 @@ import { InviteModal } from "./invite-modal";
 import { AcceptInvitationModal } from "./accept-invitation-modal";
 import { ResendInvitationButton } from "./resend-invitation-button";
 import type { InvitationStatus } from "@/types/api";
+import { api } from "@/lib/api-client";
 
 export const JuriesList = () => {
   const [filterValue, setFilterValue] = useState("");
   const [selectedEventKey, setSelectedEventKey] = useState<string>("");
   const rowsPerPage = 10;
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
 
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -55,6 +57,43 @@ export const JuriesList = () => {
     page,
     limit: rowsPerPage,
   });
+
+  const fetchAllInvitations = async () => {
+  if (!selectedEventKey) return [];
+
+  let currentPage = 1;
+  let totalPages = 1;
+
+  let allInvitations: any[] = [];
+
+  while (currentPage <= totalPages) {
+    const response: { invitations: any[]; meta: any } = await api.get(
+      `/invitations/events/${selectedEventKey}`,
+      {
+        params: {
+          page: currentPage,
+          limit: rowsPerPage,
+        },
+      }
+    );
+
+    allInvitations = [
+      ...allInvitations,
+      ...(response.invitations ?? []),
+    ];
+
+    totalPages = response.meta?.totalPages ?? 1;
+
+    currentPage++;
+  }
+
+  // ELIMINAR DUPLICADOS
+  const uniqueInvitations = Array.from(
+    new Map(allInvitations.map((item) => [item.id, item])).values()
+  );
+
+  return uniqueInvitations;
+};
 
   const invitations = juriesQuery.data?.invitations ?? [];
   const meta = juriesQuery.data?.meta;
@@ -91,28 +130,44 @@ export const JuriesList = () => {
   };
 
   const onSearchChange = useCallback(
-    (value?: string) => {
-      if (value) {
-        setFilterValue(value);
-        setPageInUrl(1);
-      } else {
-        setFilterValue("");
-      }
-    },
-    [setPageInUrl]
-  );
+  async (value?: string) => {
+    setFilterValue(value || "");
+
+    if (!value || !selectedEventKey) {
+      setSearchResults([]);
+      return;
+    }
+
+    setIsSearching(true);
+
+    try {
+      const allInvitations = await fetchAllInvitations();
+
+      const filtered = allInvitations.filter((inv) =>
+        inv.email.toLowerCase().includes(value.toLowerCase())
+      );
+
+      setSearchResults(filtered);
+    } finally {
+      setIsSearching(false);
+    }
+
+    setPageInUrl(1);
+  },
+  [selectedEventKey, rowsPerPage, setPageInUrl]
+);
 
   const onClear = useCallback(() => {
-    setFilterValue("");
-    setPageInUrl(1);
-  }, [setPageInUrl]);
+  setFilterValue("");
+  setSearchResults([]);
+  setPageInUrl(1);
+}, [setPageInUrl]);
+  
 
-  const filteredInvitations = useMemo(() => {
-    if (!filterValue) return invitations;
-    return invitations.filter((inv) =>
-      inv.email.toLowerCase().includes(filterValue.toLowerCase())
-    );
-  }, [invitations, filterValue]);
+const filteredInvitations = useMemo(() => {
+  if (!filterValue) return invitations;
+  return searchResults;
+}, [filterValue, invitations, searchResults]);
 
   const hasSearchFilter = Boolean(filterValue);
   const pages = meta?.totalPages ?? 1;
@@ -121,7 +176,7 @@ export const JuriesList = () => {
   const topContent = useMemo(() => {
     return (
       <div className="flex flex-col gap-4">
-        <div className="flex justify-between gap-3 items-end">
+        <div className="flex justify-between gap-3 items-center">
           <Input
             isClearable
             className="w-full sm:max-w-[44%]"
@@ -131,11 +186,12 @@ export const JuriesList = () => {
             onClear={onClear}
             onValueChange={onSearchChange}
           />
-          <div className="flex gap-3">
+          <div className="flex items-end h-[50px] space-x-2">
             <Select
               label="Evento"
               placeholder="Selecciona un evento"
               className="w-64"
+              size="sm"
               selectedKeys={selectedEventKey ? [selectedEventKey] : []}
               onSelectionChange={(keys) => {
                 const selected = Array.from(keys)[0];
@@ -180,7 +236,7 @@ export const JuriesList = () => {
     if (!selectedEventKey) return null;
 
     return (
-      <div className="py-2 px-2 flex justify-between items-center">
+      <div className="py-2 px-2 flex justify-end items-center">
         <Pagination
           isCompact
           showControls
@@ -190,24 +246,6 @@ export const JuriesList = () => {
           total={pages}
           onChange={(n) => setPageInUrl(n)}
         />
-        <div className="hidden sm:flex w-[30%] justify-end gap-2">
-          <Button
-            isDisabled={page === 1}
-            size="sm"
-            variant="flat"
-            onPress={() => setPageInUrl(Math.max(1, page - 1))}
-          >
-            Anterior
-          </Button>
-          <Button
-            isDisabled={page === pages}
-            size="sm"
-            variant="flat"
-            onPress={() => setPageInUrl(Math.min(pages, page + 1))}
-          >
-            Siguiente
-          </Button>
-        </div>
       </div>
     );
   }, [page, pages, setPageInUrl, selectedEventKey]);
@@ -247,9 +285,9 @@ export const JuriesList = () => {
               ? "Selecciona un evento para ver las invitaciones"
               : "No hay invitaciones para este evento"
         }
-        items={isLoading ? [] : filteredInvitations}
+        items={isLoading || isSearching ? [] : filteredInvitations}
       >
-        {isLoading ? (
+        {isLoading || isSearching ? (
           <TableRow key="loading">
             <TableCell
               align="center"
