@@ -164,7 +164,7 @@ export const MonitoringDashboard = ({ initialEventId, onBack, eventData }: Monit
     queries: (allProjects ?? []).map((project) => ({
       queryKey: ['project-evaluation-stats-all', project.id],
       queryFn: () => getProjectEvaluationStats(String(project.id)),
-      enabled: projectQueryEnabled && (activeTab === 'statistics' || activeTab === 'ranking') && Boolean(project.id),
+      enabled: projectQueryEnabled && activeTab === 'statistics' && Boolean(project.id),
     })),
   });
 
@@ -404,9 +404,9 @@ export const MonitoringDashboard = ({ initialEventId, onBack, eventData }: Monit
       ) : activeTab === 'ranking' ? (
         <RankingTab
           selectedEventName={selectedEvent?.name}
-          isLoading={projectQueryEnabled && allProjectEvaluationStatsQueries.some((q) => q.isLoading)}
-          allProjects={allProjects}
-          allProjectStatsById={allProjectStatsById}
+          eventId={selectedEventId}
+          categoryId={selectedCategoryId}
+          event={selectedEvent}
         />
       ) : (
         <Card className="glass-card border border-default-200/70 shadow-sm">

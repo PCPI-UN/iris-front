@@ -1,11 +1,10 @@
 'use client';
 
-import { useState, useMemo, RefObject } from 'react';
+import { useState, useMemo, useEffect, RefObject } from 'react';
 import { Trophy, Users, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Chip } from '@heroui/chip';
 import { Divider } from '@heroui/divider';
 import { Button } from '@/components/ui/button';
-import { GlassCard } from '@/features/landing/components/glass-card';
 import { PRISMATIC_GRADIENT, PRISMATIC_GRADIENT_DIM } from '@/features/landing/components/events-section.utils';
 
 type RankedProject = {
@@ -18,6 +17,7 @@ type RankedProject = {
     documents?: any[];
   };
   categoryId?: number;
+  score?: number | null;
 };
 
 type PastEventWinnersTopProps = {
@@ -25,6 +25,10 @@ type PastEventWinnersTopProps = {
   categories: { id: number; name: string }[];
   winnersRef?: RefObject<HTMLElement>;
   isExposition?: boolean;
+  visiblePositions?: number;
+  visibleScore?: boolean;
+  selectedCategoryId?: number | undefined;
+  onCategoryChange?: (id?: number) => void;
 };
 
 const getParticipantLabels = (project: any): string[] => {
@@ -63,35 +67,47 @@ const hasText = (value?: string | null) =>
 
 const VISIBLE_MEMBERS_LIMIT = 8;
 
-const TopWinnerCard = ({ ranked, position, categoryName, isExposition }: { ranked: RankedProject; position: 1 | 2; categoryName?: string; isExposition?: boolean }) => {
+const getPositionLabel = (pos: number): string =>
+  pos === 1 ? '1° Lugar' : pos === 2 ? '2° Lugar' : '3° Lugar';
+
+const getPositionBadgeClass = (pos: number): string =>
+  pos === 1
+    ? 'award-position-badge first'
+    : pos === 2
+      ? 'award-position-badge second'
+      : 'award-position-badge third';
+
+const TopWinnerCard = ({
+  ranked,
+  categoryName,
+  isExposition,
+  showScore,
+}: {
+  ranked: RankedProject;
+  categoryName?: string;
+  isExposition?: boolean;
+  showScore?: boolean;
+}) => {
   const [membersExpanded, setMembersExpanded] = useState(false);
   const members = getParticipantLabels(ranked.project);
   const posterUrl = isExposition ? getPosterUrl(ranked.project) : undefined;
 
-  const positionLabel = position === 1 ? '1° Lugar' : '2° Lugar';
-  const positionBadgeClass =
-    position === 1 ? 'award-position-badge first' :
-    'award-position-badge second';
-  
   const visibleMembers = membersExpanded ? members : members.slice(0, VISIBLE_MEMBERS_LIMIT);
   const hiddenCount = members.length - VISIBLE_MEMBERS_LIMIT;
 
   return (
-    <div className="event-awards-card rounded-3xl p-8 sm:p-10 lg:p-10 relative overflow-hidden feature-card shadow-2xl border border-border/20 bg-gradient-to-br from-background/5 to-background/10 mx-auto max-w-6xl w-full">
+    <div className="event-awards-card rounded-3xl p-8 sm:p-10 relative overflow-hidden feature-card shadow-2xl border border-border/20 bg-gradient-to-br from-background/5 to-background/10 mx-auto max-w-6xl w-full">
       <div className="event-awards-blob pointer-events-none absolute top-0 right-0 h-48 w-48 rounded-full blur-3xl opacity-18" />
 
       <div className="relative z-10 flex flex-col lg:flex-row items-start gap-6 w-full">
         <div className="flex-1 space-y-4">
           <div className="flex items-start justify-between gap-3 w-full">
-            <div className="flex items-center gap-3">
-              <span
-                className={`${positionBadgeClass} text-sm font-bold px-3 py-1 rounded-full uppercase tracking-wide`}
-                title={positionLabel}
-                aria-label={`Posición ${ranked.position}: ${positionLabel}`}
-              >
-                {positionLabel}
-              </span>
-            </div>
+            <span
+              className={`${getPositionBadgeClass(ranked.position)} text-sm font-bold px-3 py-1 rounded-full uppercase tracking-wide`}
+              aria-label={`Posición ${ranked.position}: ${getPositionLabel(ranked.position)}`}
+            >
+              {getPositionLabel(ranked.position)}
+            </span>
 
             {posterUrl && (
               <a
@@ -109,7 +125,7 @@ const TopWinnerCard = ({ ranked, position, categoryName, isExposition }: { ranke
           </div>
 
           {posterUrl && (
-            <div className="mt-3 lg:hidden">
+            <div className="lg:hidden">
               <a
                 href={posterUrl}
                 target="_blank"
@@ -127,13 +143,15 @@ const TopWinnerCard = ({ ranked, position, categoryName, isExposition }: { ranke
             <h3 className="winner-title text-3xl sm:text-4xl lg:text-5xl font-extrabold text-foreground leading-none">
               {ranked.project.name}
             </h3>
-            {categoryName && (
-              <p className="mt-2 text-sm font-semibold text-cyan-400 uppercase tracking-widest">
-                {categoryName}
-              </p>
+            {showScore && ranked.score !== undefined && ranked.score !== null && (
+              <div className="mt-2">
+                <Chip size="sm" variant="flat" color="success">
+                  {String(Number(ranked.score).toFixed(2))}
+                </Chip>
+              </div>
             )}
             {hasText(ranked.project.description) && (
-              <p className="mt-3 text-sm sm:text-base text-foreground/85 leading-relaxed description">
+              <p className="mt-3 text-sm sm:text-base text-foreground/85 leading-relaxed">
                 {ranked.project.description}
               </p>
             )}
@@ -183,162 +201,193 @@ export function PastEventWinnersTop({
   categories,
   winnersRef,
   isExposition = false,
+  visiblePositions = 0,
+  visibleScore = true,
+  selectedCategoryId,
+  onCategoryChange,
 }: PastEventWinnersTopProps) {
-  const [currentPage, setCurrentPage] = useState(0);
+  const [currentIndex, setCurrentIndex] = useState(0);
 
-  // Create a map of categoryId to category name
-  const categoryMap = useMemo(() => {
-    const map = new Map<number, string>();
-    categories.forEach((cat) => {
-      map.set(cat.id, cat.name);
-    });
-    return map;
-  }, [categories]);
-
-  // Get all winners across all categories with their category info
-  const allWinners = useMemo(() => {
-    const winners: RankedProject[] = [];
-    for (const [categoryId, categoryWinners] of rankingByCategory.entries()) {
-      categoryWinners.forEach((winner) => {
-        winners.push({
-          ...winner,
-          categoryId,
-        });
-      });
+  // Init: select first category on mount if none set
+  useEffect(() => {
+    if (selectedCategoryId === undefined && categories.length > 0) {
+      onCategoryChange?.(categories[0].id);
     }
-    return [...winners].sort((a, b) => a.position - b.position);
+  }, [categories, onCategoryChange, selectedCategoryId]);
+
+  const categoryMap = useMemo(
+    () => new Map(categories.map((c) => [c.id, c.name])),
+    [categories],
+  );
+
+  // Flatten all winners from all categories
+  const allWinners = useMemo(() => {
+    const list: (RankedProject & { categoryId: number })[] = [];
+    for (const [catId, items] of rankingByCategory.entries()) {
+      items.forEach((w) => list.push({ ...w, categoryId: catId }));
+    }
+    return list.sort((a, b) => a.position - b.position);
   }, [rankingByCategory]);
 
-  // Get TOP 1 and TOP 2
-  const top1 = useMemo(() => allWinners.find((w) => w.position === 1), [allWinners]);
-  const top2 = useMemo(() => allWinners.find((w) => w.position === 2), [allWinners]);
+  const appliedLimit = Number(visiblePositions) || 0;
 
-  const winners = [top1, top2].filter((w): w is RankedProject => !!w);
-  const totalPages = Math.ceil(winners.length / 1);
+  const availableWinners = useMemo(() => {
+    if (appliedLimit === 0) return [];
+    return allWinners.filter((w) => w.position >= 1 && w.position <= appliedLimit);
+  }, [allWinners, appliedLimit]);
 
-  if (winners.length === 0) return null;
+  // Reset carousel index when winners change
+  useEffect(() => {
+    setCurrentIndex(0);
+  }, [availableWinners.length, selectedCategoryId]);
 
-  const pages = Array.from({ length: totalPages }, (_, pageIndex) => {
-    const start = pageIndex * 1;
-    return winners.slice(start, start + 1);
-  });
+  const handleCategoryChange = (catId: number) => {
+    onCategoryChange?.(catId);
+    setCurrentIndex(0);
+  };
+
+  const hasWinners = availableWinners.length > 0;
+  const totalPages = hasWinners ? availableWinners.length : 0;
+  const activeWinner = hasWinners ? (availableWinners[currentIndex] ?? availableWinners[0]) : undefined;
+  const hasMultipleCategories = categories.length > 1;
+  const hasMultiplePages = totalPages > 1;
 
   return (
     <section
       ref={winnersRef}
-      className="relative z-10 min-h-0 px-6 pt-12 pb-4 sm:pt-16 sm:pb-6 md:px-12 md:pt-20 md:pb-8"
+      className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-12 py-10 lg:py-16"
     >
-      <div className="max-w-7xl mx-auto">
-        <div className="flex items-center gap-4 mb-8 sm:mb-10 md:mb-12">
-          <div className="event-section-icon w-10 h-10 rounded-xl flex items-center justify-center shrink-0">
-            <Trophy className="h-5 w-5" />
-          </div>
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black uppercase tracking-tight prismatic-text">
-            Proyectos Ganadores
-          </h2>
-          <Divider className="event-divider flex-1" />
+      {/* Section header */}
+      <div className="flex items-center gap-4 mb-8 lg:mb-12">
+        <div className="event-section-icon w-12 h-12 rounded-xl flex items-center justify-center shrink-0">
+          <Trophy className="h-6 w-6" />
         </div>
+        <h2 className="event-section-title prismatic-text text-3xl sm:text-4xl lg:text-5xl font-black uppercase tracking-tight mx-auto text-center">
+          Proyectos Ganadores
+        </h2>
+        <Divider className="event-divider flex-1" />
+      </div>
 
-        <div className="space-y-4 sm:space-y-6">
-          <div className="overflow-x-hidden overflow-y-visible pb-1">
+      {/* Category pill selector — only shown when there are multiple categories */}
+      {hasMultipleCategories && (
+        <div className="w-full overflow-x-auto overscroll-x-contain scroll-smooth pb-2 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0 hide-scrollbar mb-8">
+          <div className="flex w-max min-w-full items-center gap-3 py-2">
+            {categories.map((cat) => (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => handleCategoryChange(cat.id)}
+                className={`category-button whitespace-nowrap snap-start px-4 sm:px-5 py-2 rounded-full text-sm font-semibold border transition-all duration-200 flex-shrink-0 ${
+                  selectedCategoryId === cat.id
+                    ? 'prismatic-border prismatic-text selected-category'
+                    : 'prismatic-text border-white/20 text-white/90 hover:border-white/40 hover:bg-white/5'
+                }`}
+                aria-pressed={selectedCategoryId === cat.id}
+              >
+                {cat.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Winner card carousel */}
+      <div className="space-y-4 sm:space-y-6">
+        <div className="overflow-x-hidden overflow-y-visible pb-1">
+          {hasWinners ? (
             <div
               className="flex transition-transform duration-500 ease-out"
-              style={{ transform: `translateX(-${currentPage * 100}%)` }}
+              style={{ transform: `translateX(-${currentIndex * 100}%)` }}
             >
-              {pages.map((page, pageIndex) => (
-                <div key={`winners-page-${pageIndex}`} className="min-w-full overflow-hidden">
-                  <div className="space-y-6">
-                    {page.map((winner, idx) => (
-                      <TopWinnerCard
-                        key={`winner-${winner.position}`}
-                        ranked={winner}
-                        position={winner.position as 1 | 2}
-                        categoryName={winner.categoryId ? categoryMap.get(winner.categoryId) : undefined}
-                        isExposition={isExposition}
-                      />
-                    ))}
-                  </div>
+              {availableWinners.map((winner) => (
+                <div key={`winner-${winner.position}`} className="min-w-full overflow-hidden">
+                  <TopWinnerCard
+                    ranked={winner}
+                    categoryName={
+                      winner.categoryId ? categoryMap.get(winner.categoryId) : undefined
+                    }
+                    isExposition={isExposition}
+                    showScore={visibleScore}
+                  />
                 </div>
               ))}
             </div>
-          </div>
-
-          {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-3 sm:gap-4 mt-6">
-              <Button
-                variant="bordered"
-                type="button"
-                className="events-nav-button h-9 w-9 sm:h-10 sm:w-10 p-0 border-white/25 backdrop-blur-sm transition-all enabled:hover:shadow-[0_0_18px_rgba(244,114,182,0.28)] disabled:opacity-40 disabled:shadow-none disabled:cursor-default"
-                onClick={() => {
-                  setCurrentPage((prev) => Math.max(prev - 1, 0));
-                }}
-                isDisabled={currentPage === 0}
-                aria-label="Página anterior"
-                style={
-                  currentPage === 0
-                    ? {
-                        backgroundImage: PRISMATIC_GRADIENT_DIM,
-                        backgroundSize: '100% 100%',
-                        animation: 'none',
-                      }
-                    : {
-                        backgroundImage: PRISMATIC_GRADIENT,
-                        backgroundSize: '200% auto',
-                        animation: 'prismatic-shift 8s ease-in-out infinite',
-                      }
-                }
-              >
-                <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5 text-black" />
-              </Button>
-
-              <div className="flex items-center gap-2">
-                {pages.map((_, pageIndex) => (
-                  <button
-                    key={`winners-dot-${pageIndex}`}
-                    type="button"
-                    onClick={() => {
-                      setCurrentPage(pageIndex);
-                    }}
-                    className={`h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full border border-white/20 transition-all ${
-                      currentPage === pageIndex
-                        ? 'scale-110 shadow-[0_0_10px_rgba(244,114,182,0.35)]'
-                        : 'opacity-60 hover:opacity-90'
-                    }`}
-                    aria-label={`Ir a la página ${pageIndex + 1}`}
-                  />
-                ))}
-              </div>
-
-              <Button
-                variant="bordered"
-                type="button"
-                className="events-nav-button h-9 w-9 sm:h-10 sm:w-10 p-0 border-white/25 backdrop-blur-sm transition-all enabled:hover:shadow-[0_0_18px_rgba(244,114,182,0.28)] disabled:opacity-40 disabled:shadow-none disabled:cursor-default"
-                onClick={() => {
-                  setCurrentPage((prev) => Math.min(prev + 1, totalPages - 1));
-                }}
-                isDisabled={currentPage === totalPages - 1}
-                aria-label="Página siguiente"
-                style={
-                  currentPage === totalPages - 1
-                    ? {
-                        backgroundImage: PRISMATIC_GRADIENT_DIM,
-                        backgroundSize: '100% 100%',
-                        animation: 'none',
-                      }
-                    : {
-                        backgroundImage: PRISMATIC_GRADIENT,
-                        backgroundSize: '200% auto',
-                        animation: 'prismatic-shift 8s ease-in-out infinite',
-                      }
-                }
-              >
-                <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 text-black" />
-              </Button>
+          ) : (
+            <div className="flex items-center justify-center h-32 rounded-2xl border border-dashed border-border/40 text-sm text-muted-foreground">
+              Aún no hay ganadores disponibles para la categoría seleccionada.
             </div>
           )}
         </div>
+
+        {/* Prev / next navigation */}
+        {hasMultiplePages && (
+          <div className="flex items-center justify-center gap-3 sm:gap-4 mt-6">
+            <Button
+              variant="bordered"
+              type="button"
+              className="events-nav-button h-9 w-9 sm:h-10 sm:w-10 p-0 border-white/25 backdrop-blur-sm transition-all enabled:hover:shadow-[0_0_18px_rgba(244,114,182,0.28)] disabled:opacity-40 disabled:shadow-none disabled:cursor-default"
+              onClick={() => setCurrentIndex((prev) => Math.max(prev - 1, 0))}
+              isDisabled={currentIndex === 0}
+              aria-label="Anterior ganador"
+              style={
+                currentIndex === 0
+                  ? {
+                      backgroundImage: PRISMATIC_GRADIENT_DIM,
+                      backgroundSize: '100% 100%',
+                      animation: 'none',
+                    }
+                  : {
+                      backgroundImage: PRISMATIC_GRADIENT,
+                      backgroundSize: '200% auto',
+                      animation: 'prismatic-shift 8s ease-in-out infinite',
+                    }
+              }
+            >
+              <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5 text-black" />
+            </Button>
+
+            <div className="flex items-center gap-2">
+              {availableWinners.map((_, idx) => (
+                <button
+                  key={`dot-${idx}`}
+                  type="button"
+                  onClick={() => setCurrentIndex(idx)}
+                  className={`h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full border border-white/20 transition-all ${
+                    currentIndex === idx
+                      ? 'scale-110 shadow-[0_0_10px_rgba(244,114,182,0.35)]'
+                      : 'opacity-60 hover:opacity-90'
+                  }`}
+                  aria-label={`Ir al ${getPositionLabel(availableWinners[idx]?.position ?? idx + 1)}`}
+                />
+              ))}
+            </div>
+
+            <Button
+              variant="bordered"
+              type="button"
+              className="events-nav-button h-9 w-9 sm:h-10 sm:w-10 p-0 border-white/25 backdrop-blur-sm transition-all enabled:hover:shadow-[0_0_18px_rgba(244,114,182,0.28)] disabled:opacity-40 disabled:shadow-none disabled:cursor-default"
+              onClick={() => setCurrentIndex((prev) => Math.min(prev + 1, totalPages - 1))}
+              isDisabled={currentIndex === totalPages - 1}
+              aria-label="Siguiente ganador"
+              style={
+                currentIndex === totalPages - 1
+                  ? {
+                      backgroundImage: PRISMATIC_GRADIENT_DIM,
+                      backgroundSize: '100% 100%',
+                      animation: 'none',
+                    }
+                  : {
+                      backgroundImage: PRISMATIC_GRADIENT,
+                      backgroundSize: '200% auto',
+                      animation: 'prismatic-shift 8s ease-in-out infinite',
+                    }
+              }
+            >
+              <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 text-black" />
+            </Button>
+          </div>
+        )}
       </div>
     </section>
   );
 }
-

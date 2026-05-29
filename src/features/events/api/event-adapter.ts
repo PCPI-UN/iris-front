@@ -145,6 +145,12 @@ export const normalizeEvent = (raw: any): Event => {
   const collaborators = raw?.collaborators ?? [];
   const awards = raw?.awards ?? [];
   const categories = raw?.categories ?? [];
+  const rankingConfig = raw?.rankingConfig ?? raw?.rankingConfiguration ?? raw?.ranking_config;
+  const rankingConfigId =
+    raw?.rankingConfigId ??
+    raw?.rankingConfigurationId ??
+    raw?.ranking_config_id ??
+    rankingConfig?.id;
   const role = roleName
     ? {
         ...(typeof raw?.role === "object" && raw?.role !== null ? raw.role : {}),
@@ -179,6 +185,17 @@ export const normalizeEvent = (raw: any): Event => {
     organizers,
     collaborators,
     awards,
+    rankingConfig: rankingConfig
+      ? {
+          id: rankingConfig.id ?? rankingConfig.rankingConfigId,
+          eventId: rankingConfig.eventId ?? raw?.id,
+          positions: rankingConfig.positions,
+          visiblePositions: rankingConfig.visiblePositions ?? rankingConfig.positions,
+          visibleInLanding: rankingConfig.visibleInLanding,
+          visibleScore: rankingConfig.visibleScore,
+        }
+      : undefined,
+    rankingConfigId: typeof rankingConfigId === 'number' ? rankingConfigId : undefined,
     status: raw?.status,
     active,
     role,

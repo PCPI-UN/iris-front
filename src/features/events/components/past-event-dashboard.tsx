@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState, useEffect } from 'react';
-import { Calendar, Users, Award, Folder, Search, Trophy, Download, Eye, Settings } from 'lucide-react';
+import { Calendar, Users, Award, Folder, Search, Trophy, Download, Eye, Settings, RefreshCw } from 'lucide-react';
 import { Card, CardHeader } from '@/components/ui/card';
 import { Chip } from '@/components/ui/chip';
 import { Select, SelectItem } from '@/components/ui/select/select';
@@ -20,7 +20,10 @@ import { normalizeText } from '@/features/monitoring/utils/filters';
 import { getProjectEvaluationStats } from '@/features/evaluations/api/get-project-evaluation-stats';
 import { ParticipantsDetails } from '@/features/projects/components/participants-details';
 import { ExportEventReportButton } from '@/features/reports/components/export-event-report-button';
-import { RankingConfigModal, type RankingConfigType } from '@/features/monitoring/components/ranking-config-modal';
+import { RankingConfigModal } from '@/features/monitoring/components/ranking-config-modal';
+import type { RankingConfigType } from '@/features/monitoring/types';
+import { useRankingConfig } from '@/features/monitoring/api/get-ranking-config';
+import { useEventRankings } from '@/features/monitoring/api/get-event-rankings';
 import type { Event } from '@/types/api';
 
 type Props = {
@@ -53,11 +56,14 @@ export const PastEventDashboard = ({ event, onBack }: Props) => {
     const [isJurorModalOpen, setIsJurorModalOpen] = useState(false);
     const [selectedJuror, setSelectedJuror] = useState<any>(null);
     const [isRankingConfigOpen, setIsRankingConfigOpen] = useState(false);
-    const [rankingConfig, setRankingConfig] = useState({
+    const [rankingConfigId, setRankingConfigId] = useState<number | undefined>(undefined);
+    const [rankingTableVersion, setRankingTableVersion] = useState(0);
+    const [rankingConfig, setRankingConfig] = useState<RankingConfigType>({
         visiblePositions: 0,
         visibleInLanding: false,
         visibleScore: true,
     });
+    const [isRefreshingRanking, setIsRefreshingRanking] = useState(false);
     const categorySelection = selectedCategoryId !== undefined ? [String(selectedCategoryId)] : ['all'];
 
     const [projectSearch, setProjectSearch] = useState<string>('');
@@ -87,6 +93,15 @@ export const PastEventDashboard = ({ event, onBack }: Props) => {
 
     const categories = categoriesQuery.data?.data ?? [];
     const categoryMap = useMemo(() => new Map(categories.map((category: any) => [category.id, category])), [categories]);
+    const rankingConfigQuery = useRankingConfig({
+        eventId: event.id,
+        queryConfig: { enabled: Boolean(event.id) },
+    });
+    const rankingQuery = useEventRankings({
+        eventId: event.id,
+        categoryId: selectedCategoryId,
+        queryConfig: { enabled: Boolean(event.id) },
+    });
 
     const chartData = useMemo(() => {
         const participantsByCategory = new Map<number, Set<string>>();
@@ -208,67 +223,130 @@ export const PastEventDashboard = ({ event, onBack }: Props) => {
     }, [projectSearch, projects]);
 
     const [rankingSearch, setRankingSearch] = useState<string>('');
-    const rankingEntries = useMemo(() => {
-        const term = normalizeText(rankingSearch);
-        const byCategory = Array.from(
-            projects.reduce((acc, project) => {
-                const key = project.courseId ?? 0;
-                const list = acc.get(key) ?? [];
-                list.push(project);
-                acc.set(key, list);
-                return acc;
-            }, new Map<number, typeof projects>()),
+    const effectiveRankingConfig = rankingConfigQuery.data?.data ?? event.rankingConfig ?? null;
+    const visiblePositions = effectiveRankingConfig?.visiblePositions ?? effectiveRankingConfig?.positions ?? 0;
+    const showRankingScore = rankingConfig.visibleScore;
+    const rankingRows = rankingQuery.data?.data ?? [];
+
+    const handleOpenRankingConfig = async () => {
+        let fetchedConfig = undefined as any;
+        if (event?.id) {
+            const refetchResult = await rankingConfigQuery.refetch();
+            fetchedConfig = refetchResult?.data?.data;
+        }
+
+        const existingRankingConfig = event?.rankingConfig;
+        const source = fetchedConfig ?? existingRankingConfig;
+
+        setRankingConfigId(
+            typeof source?.id === 'number'
+                ? source.id
+                : typeof event?.rankingConfigId === 'number'
+                    ? event.rankingConfigId
+                    : undefined,
         );
 
-        const entries: Array<any> = [];
-
-        byCategory.forEach(([courseId, courseProjects]) => {
-            const category = categoryMap.get(courseId);
-            const label = category?.code ?? category?.description ?? `Categoría ${courseId}`;
-
-            const sorted = [...courseProjects]
-                .map((project) => ({ project, stats: projectStatsById.get(String(project.id)) }))
-                .filter((entry) => {
-                    if (!term) return true;
-                    const p = entry.project;
-                    const participantLabels = ((p.participants ?? []) as any[])
-                        .map((pt) => `${pt.firstName ?? ''} ${pt.lastName ?? ''}`.trim())
-                        .join(' ');
-                    const jurorLabels = ((p.jurors ?? []) as any[])
-                        .map((j) => `${j.firstName ?? ''} ${j.lastName ?? ''} ${j.email ?? ''}`)
-                        .join(' ');
-
-                    return normalizeText([
-                        label,
-                        p.name,
-                        p.projectCode ?? '',
-                        p.eventNumber ?? '',
-                        participantLabels,
-                        jurorLabels,
-                    ].join(' ')).includes(term);
-                })
-                .sort((a, b) => {
-                    const gradeA = a.stats?.averageGrade ?? 0;
-                    const gradeB = b.stats?.averageGrade ?? 0;
-                    if (gradeB !== gradeA) return gradeB - gradeA;
-                    const countA = a.stats?.evaluationCount ?? 0;
-                    const countB = b.stats?.evaluationCount ?? 0;
-                    if (countB !== countA) return countB - countA;
-                    return (a.project.name ?? '').localeCompare(b.project.name ?? '');
-                });
-
-            sorted.forEach((entry, index) => {
-                entries.push({
-                    category: label,
-                    position: index + 1,
-                    project: entry.project,
-                    stats: entry.stats,
-                });
-            });
+        setRankingConfig({
+            visiblePositions: source?.visiblePositions ?? source?.positions ?? 0,
+            visibleInLanding: source?.visibleInLanding ?? false,
+            visibleScore: source?.visibleScore ?? true,
         });
 
-        return entries;
-    }, [projects, categoryMap, projectStatsById, rankingSearch]);
+        setIsRankingConfigOpen(true);
+    };
+
+    const handleRefreshRanking = async () => {
+        if (!event?.id) {
+            return;
+        }
+
+        setIsRefreshingRanking(true);
+
+        try {
+            const [rankingResult, configResult] = await Promise.all([
+                rankingQuery.refetch(),
+                rankingConfigQuery.refetch(),
+            ]);
+            const refreshedConfig = configResult.data?.data;
+
+            setRankingConfigId(
+                typeof refreshedConfig?.id === 'number'
+                    ? refreshedConfig.id
+                    : typeof event.rankingConfigId === 'number'
+                        ? event.rankingConfigId
+                        : typeof event.rankingConfig?.id === 'number'
+                            ? event.rankingConfig.id
+                            : undefined,
+            );
+
+            setRankingConfig({
+                visiblePositions: refreshedConfig?.visiblePositions ?? refreshedConfig?.positions ?? event.rankingConfig?.visiblePositions ?? event.rankingConfig?.positions ?? 0,
+                visibleInLanding: refreshedConfig?.visibleInLanding ?? event.rankingConfig?.visibleInLanding ?? false,
+                visibleScore: refreshedConfig?.visibleScore ?? event.rankingConfig?.visibleScore ?? true,
+            });
+
+            setRankingTableVersion((value) => value + 1);
+        } finally {
+            setIsRefreshingRanking(false);
+        }
+    };
+
+    useEffect(() => {
+        const existingRankingConfig = event.rankingConfig;
+        const fetchedRankingConfig = rankingConfigQuery.data?.data;
+
+        setRankingConfigId(
+            typeof event.rankingConfigId === 'number'
+                ? event.rankingConfigId
+                : typeof existingRankingConfig?.id === 'number'
+                    ? existingRankingConfig.id
+                    : typeof fetchedRankingConfig?.id === 'number'
+                        ? fetchedRankingConfig.id
+                    : undefined,
+        );
+
+        setRankingConfig({
+            visiblePositions:
+                existingRankingConfig?.visiblePositions ?? existingRankingConfig?.positions ?? fetchedRankingConfig?.visiblePositions ?? fetchedRankingConfig?.positions ?? 0,
+            visibleInLanding: existingRankingConfig?.visibleInLanding ?? fetchedRankingConfig?.visibleInLanding ?? false,
+            visibleScore: existingRankingConfig?.visibleScore ?? fetchedRankingConfig?.visibleScore ?? true,
+        });
+    }, [event, rankingConfigQuery.data]);
+    const rankingEntries = useMemo(() => {
+        const term = normalizeText(rankingSearch);
+        return rankingRows
+            .filter((entry) => {
+                if (!term) return true;
+
+                const participantLabels = (entry.participants ?? []).join(' ');
+                return normalizeText([
+                    entry.category ?? '',
+                    entry.projectName ?? '',
+                    entry.projectCode ?? '',
+                    participantLabels,
+                ].join(' ')).includes(term);
+            })
+            .sort((a, b) => a.position - b.position);
+    }, [rankingRows, rankingSearch]);
+
+    const visibleRankingEntries = useMemo(() => {
+        if (!visiblePositions || visiblePositions <= 0) {
+            return rankingEntries;
+        }
+
+        const seenByCategory = new Map<string, number>();
+
+        return rankingEntries.filter((entry) => {
+            const categoryKey = normalizeText(entry.category ?? '') || '__uncategorized__';
+            const currentCount = seenByCategory.get(categoryKey) ?? 0;
+            if (currentCount >= visiblePositions) {
+                return false;
+            }
+
+            seenByCategory.set(categoryKey, currentCount + 1);
+            return true;
+        });
+    }, [rankingEntries, visiblePositions]);
 
     const colors = ['#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
 
@@ -281,7 +359,6 @@ export const PastEventDashboard = ({ event, onBack }: Props) => {
                             ← Volver a eventos pasados
                         </Button>
                     </div>
-
                     <h1 className="text-2xl font-semibold max-w-full whitespace-normal md:max-w-md">{event.name}</h1>
                     <div className="mt-1 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
                         <p className="text-sm text-default-500 line-clamp-2">{event.description}</p>
@@ -618,14 +695,25 @@ export const PastEventDashboard = ({ event, onBack }: Props) => {
                     <Card className="glass-card border border-default-200/70 shadow-sm">
                         <CardHeader className="pb-2 flex items-center justify-between">
                             <h3 className="text-lg font-semibold">Ranking por Categoría</h3>
-                            <Button
-                                className="relative gap-2 border-2 border-default-300 hover:border-primary text-default-600 hover:text-primary hover:scale-105 transition-all duration-300 font-semibold px-4 py-2"
-                                variant="bordered"
-                                onPress={() => setIsRankingConfigOpen(true)}
-                            >
-                                <Eye className="h-5 w-5" />
-                                <Settings className="h-5 w-5" />
-                            </Button>
+                            <div className="flex items-center gap-1 md:gap-2">
+                                <Button
+                                    className="relative gap-2 border-2 border-default-300 hover:border-primary text-default-600 hover:text-primary hover:scale-105 transition-all duration-300 font-semibold px-4 py-2"
+                                    variant="bordered"
+                                    onPress={() => setIsRankingConfigOpen(true)}
+                                >
+                                    <Eye className="h-5 w-5" />
+                                    <Settings className="h-5 w-5" />
+                                </Button>
+                                <Button
+                                    className="relative gap-2 border-2 border-default-300 hover:border-primary text-default-600 hover:text-primary hover:scale-105 transition-all duration-300 font-semibold px-4 py-2"
+                                    variant="bordered"
+                                    onPress={handleRefreshRanking}
+                                    isDisabled={isRefreshingRanking || !event?.id}
+                                >
+                                    <RefreshCw className={isRefreshingRanking ? 'h-5 w-5 animate-spin' : 'h-5 w-5'} />
+                                    {isRefreshingRanking ? 'Actualizando…' : 'Refrescar'}
+                                </Button>
+                            </div>
                         </CardHeader>
                         <div className="p-5 md:p-6">
                             <div className="mb-4">
@@ -641,73 +729,88 @@ export const PastEventDashboard = ({ event, onBack }: Props) => {
                             </div>
 
                             {rankingEntries.length > 0 ? (
-                                <div className="overflow-hidden rounded-2xl border border-default-200/80">
-                                    <Table aria-label="Ranking por categorías" selectionMode="none">
-                                        <TableHeader>
-                                            <TableColumn className="w-16 text-center">Pos.</TableColumn>
-                                            <TableColumn className="w-32">Código</TableColumn>
-                                            <TableColumn>Nombre Proyecto</TableColumn>
-                                            <TableColumn className="w-28 text-center">Evaluaciones</TableColumn>
-                                            <TableColumn className="w-28 text-center">Puntaje</TableColumn>
-                                            <TableColumn className="w-28 text-center">Ver más</TableColumn>
-                                        </TableHeader>
-                                        <TableBody items={rankingEntries}>
-                                            {(entry) => (
-                                                <TableRow key={`${entry.project.id}-${entry.category}`}>
-                                                    <TableCell className="w-16 text-center">
-                                                        {entry.position === 1 ? (
-                                                            <div className="inline-flex items-center justify-center gap-1">
-                                                                <Trophy className="h-5 w-5 text-amber-500" />
-                                                                <span className="font-bold text-amber-500">1</span>
-                                                            </div>
-                                                        ) : entry.position === 2 ? (
-                                                            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-200 text-sm font-semibold text-slate-600 mx-auto">2</div>
-                                                        ) : entry.position === 3 ? (
-                                                            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-amber-100 text-sm font-semibold text-amber-700 mx-auto">3</div>
-                                                        ) : (
-                                                            <span className="text-sm text-default-500">{entry.position}</span>
-                                                        )}
-                                                    </TableCell>
-                                                    <TableCell className="w-32 whitespace-nowrap">
-                                                        <Chip size="sm" variant="flat">
-                                                            {entry.project.projectCode ?? entry.project.eventNumber ?? '—'}
-                                                        </Chip>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <div className="space-y-1">
-                                                            <p className="font-semibold text-foreground leading-tight">{entry.project.name}</p>
-                                                            <Chip size="sm" variant="flat" color="secondary" className="text-xs">
-                                                                {entry.category}
+                                <>
+                                    <div className="mb-3 flex flex-wrap gap-2">
+                                        <Chip size="sm" variant="flat">
+                                            Posiciones visibles: {visiblePositions > 0 ? visiblePositions : 'Todas'}
+                                        </Chip>
+                                        <Chip size="sm" variant="flat" color={showRankingScore ? 'success' : 'default'}>
+                                            Puntaje {showRankingScore ? 'visible' : 'oculto'}
+                                        </Chip>
+                                    </div>
+                                    <div className="overflow-hidden rounded-2xl border border-default-200/80">
+                                        <Table key={rankingTableVersion} aria-label="Ranking por categorías" selectionMode="none">
+                                            <TableHeader>
+                                                <TableColumn className="w-16 text-center">Pos.</TableColumn>
+                                                <TableColumn className="w-32">Código</TableColumn>
+                                                <TableColumn>Nombre Proyecto</TableColumn>
+                                                <TableColumn className="w-28 text-center">Evaluaciones</TableColumn>
+                                                <TableColumn className="w-28 text-center">Puntaje</TableColumn>
+                                                <TableColumn className="w-28 text-center">Ver más</TableColumn>
+                                            </TableHeader>
+                                            <TableBody items={visibleRankingEntries}>
+                                                {(entry) => (
+                                                    <TableRow key={`${entry.projectId ?? entry.projectCode ?? entry.projectName}-${entry.position}-${entry.category ?? 'all'}`}>
+                                                        <TableCell className="w-16 text-center">
+                                                            {entry.position === 1 ? (
+                                                                <div className="inline-flex items-center justify-center gap-1">
+                                                                    <Trophy className="h-5 w-5 text-amber-500" />
+                                                                    <span className="font-bold text-amber-500">1</span>
+                                                                </div>
+                                                            ) : entry.position === 2 ? (
+                                                                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-200 text-sm font-semibold text-slate-600 mx-auto">2</div>
+                                                            ) : entry.position === 3 ? (
+                                                                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-amber-100 text-sm font-semibold text-amber-700 mx-auto">3</div>
+                                                            ) : (
+                                                                <span className="text-sm text-default-500">{entry.position}</span>
+                                                            )}
+                                                        </TableCell>
+                                                        <TableCell className="w-32 whitespace-nowrap">
+                                                            <Chip size="sm" variant="flat">
+                                                                {entry.projectCode ?? '—'}
                                                             </Chip>
-                                                        </div>
-                                                    </TableCell>
-                                                    <TableCell className="w-28 text-center">
-                                                        <span className="text-sm font-medium text-default-600">{entry.stats?.evaluationCount ?? 0}</span>
-                                                    </TableCell>
-                                                    <TableCell className="w-28 text-center">
-                                                        <span className="text-base font-bold text-foreground">
-                                                            {entry.stats?.averageGrade !== undefined ? entry.stats.averageGrade.toFixed(2) : '—'}
-                                                        </span>
-                                                    </TableCell>
-                                                    <TableCell className="w-28 text-center">
-                                                        <Button
-                                                            size="sm"
-                                                            variant="bordered"
-                                                            startContent={<Eye className="h-4 w-4" />}
-                                                            className="border-default-300"
-                                                            onPress={() => {
-                                                                setSelectedProject(entry.project);
-                                                                setIsModalOpen(true);
-                                                            }}
-                                                        >
-                                                            Ver más
-                                                        </Button>
-                                                    </TableCell>
-                                                </TableRow>
-                                            )}
-                                        </TableBody>
-                                    </Table>
-                                </div>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <div className="space-y-1">
+                                                                <p className="font-semibold text-foreground leading-tight">{entry.projectName}</p>
+                                                                <Chip size="sm" variant="flat" color="secondary" className="text-xs">
+                                                                    {entry.category}
+                                                                </Chip>
+                                                            </div>
+                                                        </TableCell>
+                                                        <TableCell className="w-28 text-center">
+                                                            <span className="text-sm font-medium text-default-600">{entry.evaluationCount ?? 0}</span>
+                                                        </TableCell>
+                                                        <TableCell className="w-28 text-center">
+                                                            <span className={showRankingScore ? 'text-base font-bold text-foreground' : 'text-base text-default-400'}>
+                                                                {showRankingScore
+                                                                    ? entry.averageGrade !== undefined
+                                                                        ? entry.averageGrade.toFixed(2)
+                                                                        : '—'
+                                                                    : 'Oculto'}
+                                                            </span>
+                                                        </TableCell>
+                                                        <TableCell className="w-28 text-center">
+                                                            <Button
+                                                                size="sm"
+                                                                variant="bordered"
+                                                                startContent={<Eye className="h-4 w-4" />}
+                                                                className="border-default-300"
+                                                                onPress={() => {
+                                                                    const relatedProject = projects.find((project) => String(project.id) === String(entry.projectId)) ?? null;
+                                                                    setSelectedProject(relatedProject);
+                                                                    setIsModalOpen(true);
+                                                                }}
+                                                            >
+                                                                Ver más
+                                                            </Button>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                )}
+                                            </TableBody>
+                                        </Table>
+                                    </div>
+                                </>
                             ) : (
                                 <div className="flex min-h-[180px] items-center justify-center rounded-2xl border border-dashed border-default-200 text-sm text-default-400">
                                     No hay proyectos con evaluaciones para mostrar el ranking.
@@ -927,6 +1030,11 @@ export const PastEventDashboard = ({ event, onBack }: Props) => {
                 onOpenChange={setIsRankingConfigOpen}
                 config={rankingConfig}
                 onConfigChange={setRankingConfig}
+                eventId={event.id}
+                rankingConfigId={rankingConfigId}
+                onSaved={async () => {
+                    await handleRefreshRanking();
+                }}
             />
         </div>
     );

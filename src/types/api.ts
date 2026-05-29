@@ -131,6 +131,15 @@ export type Event = Entity<{
     position: number;
     categoryId?: number;
   }[];
+  rankingConfig?: {
+    id?: number;
+    eventId?: number;
+    positions?: number;
+    visiblePositions?: number;
+    visibleInLanding?: boolean;
+    visibleScore?: boolean;
+  };
+  rankingConfigId?: number;
   participants?: string[];
   status?: number;
   active: boolean;
