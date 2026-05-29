@@ -240,6 +240,23 @@ const eventTypeLabel = useMemo(
 [event?.eventType],
 );
 
+const handleOpenArViewer = () => {
+if (!event?.id) return;
+
+const viewerUrl = new URL('/ar-viewer.html', window.location.origin);
+viewerUrl.searchParams.set('eventId', String(event.id));
+
+if (typeof event.latitude === 'number') {
+    viewerUrl.searchParams.set('latitude', String(event.latitude));
+}
+
+if (typeof event.longitude === 'number') {
+    viewerUrl.searchParams.set('longitude', String(event.longitude));
+}
+
+window.open(viewerUrl.toString(), '_blank', 'noopener,noreferrer');
+};
+
 const handleJoin = async () => {
 if (!event?.id) return;
 if (isUserStatusResolving) return;
@@ -316,6 +333,8 @@ const isGripEvent =
 collaborators.some((collaborator) =>
     collaborator.toLowerCase().includes('grip shipping'),
 ) || event.name.toLowerCase().includes('grip shipping');
+const hasArCoordinates =
+typeof event.latitude === 'number' && typeof event.longitude === 'number';
 
 return (
 <div className="event-detail-page event-detail-page-offset min-h-screen w-full" data-theme={eventTheme}>
@@ -399,6 +418,17 @@ return (
                 endContent={<ChevronRight className="h-5 w-5" />}
                 >
                 {isAlreadyRegistered ? 'Ir al dashboard' : 'Inscríbete ya'}
+                </Button>
+                )}
+                {hasArCoordinates && (
+                <Button
+                onPress={handleOpenArViewer}
+                fullWidth
+                size="lg"
+                variant="bordered"
+                className="font-black text-base sm:text-lg tracking-wider uppercase py-6"
+                >
+                Ver en AR
                 </Button>
                 )}
                 {!isInscriptionClosed && (
