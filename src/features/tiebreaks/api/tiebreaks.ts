@@ -83,7 +83,7 @@ export const listTiebreaks = async (params: {
     ];
     const found = candidates.find((c) => Array.isArray(c));
     return (found ?? []) as TiebreakRecord[];
-  } catch {
-    return [];
+  } catch (err) {
+    throw err;
   }
 };
