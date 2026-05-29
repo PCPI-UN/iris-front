@@ -93,14 +93,22 @@ export const MonitoringDashboard = ({ initialEventId, onBack, eventData }: Monit
     itemsPerPage: 10,
     eventId: selectedEventId,
     categoryId: selectedCategoryId,
-    state: selectedState === 'ALL' ? undefined : selectedState,
+    state: 'APPROVED',
     q: projectSearch.trim() || undefined,
     queryConfig: { enabled: projectQueryEnabled && activeTab === 'projects' },
   });
   const visibleProjects = visibleProjectsQuery.data?.data ?? [];
   const allProjects = allProjectsQuery.data?.data ?? [];
+  const approvedProjects = useMemo(
+    () => allProjects.filter((project) => project.state === 'APPROVED'),
+    [allProjects],
+  );
+  const approvedVisibleProjects = useMemo(
+    () => visibleProjects.filter((project) => project.state === 'APPROVED'),
+    [visibleProjects],
+  );
   const hasSearchTerm = projectSearch.trim().length > 0;
-  const projectListingSource = hasSearchTerm ? allProjects : visibleProjects;
+  const projectListingSource = hasSearchTerm ? approvedProjects : approvedVisibleProjects;
   const filteredProjects = useMemo(() => {
     const term = normalizeText(projectSearch);
 
