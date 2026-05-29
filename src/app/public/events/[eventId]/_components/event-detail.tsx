@@ -426,7 +426,7 @@ return (
                 fullWidth
                 size="lg"
                 variant="bordered"
-                className="font-black text-base sm:text-lg tracking-wider uppercase py-6"
+                className="event-button event-glow font-black text-base sm:text-lg tracking-wider uppercase py-6"
                 >
                 Ver en AR
                 </Button>
