@@ -47,7 +47,7 @@ export const AssignJudgesPanel = ({
   }, [project]);
 
   const judges: Judge[] = useMemo(() => {
-    const juries = eventJuriesQuery.data?.data ?? [];
+    const juries = eventJuriesQuery.data?.data ?? eventJuriesQuery.data?.jurors ?? [];
 
     return juries.map((jury) => ({
       id: Number(jury.id),

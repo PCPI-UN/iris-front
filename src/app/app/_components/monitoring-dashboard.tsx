@@ -47,7 +47,7 @@ import { StatisticsTab } from '@/features/monitoring/components/statistics-tab';
 import { ProjectsTab } from '@/features/monitoring/components/projects-tab';
 
 export const MonitoringDashboard = ({ initialEventId, onBack, eventData }: MonitoringDashboardProps = {}) => {
-  const user = useUser();  
+  const user = useUser();
   const { data: eventsData, isLoading: isEventsLoading } = useEventsDropdown();
  
   const {

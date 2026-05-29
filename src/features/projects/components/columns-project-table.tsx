@@ -3,6 +3,7 @@ import { StatusBadge } from "@/components/ui/status-badge/status-badge";
 import { Project } from "@/types/api";
 import { MoreVertical } from "lucide-react";
 import { ViewDetails } from "./view-details";
+import { useProject } from "../api/get-project";
 import {
   Dropdown,
   DropdownTrigger,
@@ -11,57 +12,79 @@ import {
 } from "@/components/ui/dropdown";
 import { Button } from "@/components/ui/button";
 
+const ProjectActions = ({ project, onApprove, onReject, onRequest }: {
+  project: Project;
+  onApprove: (id: number) => void;
+  onReject: (id: number) => void;
+  onRequest: (id: number) => void;
+}) => {
+  const shouldFetchReason =
+    (project.state === "REJECTED" || project.state === "REQUEST_CHANGES") &&
+    !project.reason?.trim();
+
+  const projectQuery = useProject({
+    projectId: String(project.id),
+    queryConfig: {
+      enabled: shouldFetchReason,
+    },
+  });
+
+  const reason =
+    project.reason?.trim() ||
+    projectQuery.data?.reason?.trim() ||
+    (projectQuery.isLoading ? "Cargando motivo..." : "Sin motivo registrado");
+
+  return (
+    <Dropdown closeOnSelect={false}>
+      <DropdownTrigger>
+        <Button isIconOnly variant="light">
+          <MoreVertical className="w-4 h-4" />
+        </Button>
+      </DropdownTrigger>
+
+      <DropdownMenu
+        aria-label="Acciones del proyecto"
+        className="w-fit min-w-48 max-w-[calc(100vw-2rem)] sm:max-w-xl"
+      >
+        {project.state === "UNDER_REVIEW" ? (
+          <>
+            <DropdownItem key="request" onPress={() => onRequest(project.id)}>
+              Pedir cambios
+            </DropdownItem>
+
+            <DropdownItem key="reject" color="danger" onPress={() => onReject(project.id)}>
+              Rechazar
+            </DropdownItem>
+
+            <DropdownItem key="approve" onPress={() => onApprove(project.id)}>
+              Aprobar
+            </DropdownItem>
+          </>
+        ) : project.state === "APPROVED" ? (
+          <DropdownItem
+            key="approved"
+            isDisabled
+            className="h-auto items-start py-2 text-sm leading-5 text-foreground"
+          >
+            <div className="whitespace-normal break-words text-left">Aprobado</div>
+          </DropdownItem>
+        ) : (
+          <DropdownItem
+            key="reason"
+            isDisabled
+            className="h-auto items-start py-2 text-sm leading-5 text-foreground"
+          >
+            <div className="max-w-[min(36rem,calc(100vw-4rem))] whitespace-normal break-words text-left">
+              {reason}
+            </div>
+          </DropdownItem>
+        )}
+      </DropdownMenu>
+    </Dropdown>
+  );
+};
+
 export const columnsProject = ({onApprove, onReject, onRequest}: {onApprove: (id: number) => void; onReject: (id: number) => void; onRequest: (id: number) => void;}): Column<Project>[] => {
-
-const getActions = (entry: Project) => {
-  switch (entry.state) {
-    case "UNDER_REVIEW":
-      return [
-        <DropdownItem key="request" onPress={() => onRequest(entry.id)}>
-          Pedir cambios
-        </DropdownItem>,
-
-        <DropdownItem key="reject" color="danger" onPress={() => onReject(entry.id)}>
-          Rechazar
-        </DropdownItem>,
-
-        <DropdownItem key="approve" onPress={() => onApprove(entry.id)}>
-          Aprobar
-        </DropdownItem>
-      ]
-    case "REQUEST_CHANGES":
-      return [
-        /*<DropdownItem key="approve" onPress={() => onApprove(entry.id)}>
-          Aprobar
-        </DropdownItem>,
-        
-        <DropdownItem key="reject" color="danger" onPress={() => onReject(entry.id)}>
-          Rechazar
-        </DropdownItem>*/
-      ]
-    case "REJECTED":
-      return [
-        /*<DropdownItem key="request" onPress={() => onRequest(entry.id)}>
-          Pedir cambios
-        </DropdownItem>,
-
-        <DropdownItem key="approve" onPress={() => onApprove(entry.id)}>
-          Aprobar
-        </DropdownItem>,*/
-      ]
-    case "APPROVED":
-      return [
-        /*<DropdownItem key="request" onPress={() => onRequest(entry.id)}>
-          Pedir cambios
-        </DropdownItem>,
-
-        <DropdownItem key="reject" color="danger" onPress={() => onReject(entry.id)}>
-          Rechazar
-        </DropdownItem> */
-      ]
-  }
-}
-
 return [
   {
     title: "Código",
@@ -93,17 +116,12 @@ return [
   title: "Acciones",
   field: "actions",
   Cell: ({ entry }) => (
-    <Dropdown closeOnSelect={false}>
-      <DropdownTrigger>
-        <Button isIconOnly variant="light">
-          <MoreVertical className="w-4 h-4" />
-        </Button>
-      </DropdownTrigger>
-
-      <DropdownMenu aria-label="Acciones del proyecto">
-        {getActions(entry)}        
-      </DropdownMenu>
-    </Dropdown>
+    <ProjectActions
+      project={entry}
+      onApprove={onApprove}
+      onReject={onReject}
+      onRequest={onRequest}
+    />
   )},
   {
     title: "Ver",
