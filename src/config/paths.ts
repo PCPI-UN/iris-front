@@ -70,6 +70,10 @@ export const paths = {
       getHref: () => "/app/events",
       roles: ["Admin"],
     },
+    pastEvents: {
+      getHref: () => "/app/events/past",
+      roles: ["Admin"],
+    },
     event: {
       getHref: (id: string) => `/app/events/${id}`,
       roles: ["Admin"],

@@ -20,7 +20,7 @@ type EventBody = {
   location: string;
   locationDetails?: string;
   eventType: "Competition" | "Exposition";
-  evaluationType?: 1 | 2 | "ZERO_TO_FIVE" | "ZERO_TO_HUNDRED" | "0-5" | "0-100";
+  evaluationType?: 1 | 2 | 3 | "ZERO_TO_FIVE" | "ZERO_TO_HUNDRED" | "FINAL_PROJECTS" | "0-5" | "0-100" | "Proyectos Finales";
   inscriptionRequirements?: string;
   inscriptionCost?: number;
   minimumTeamSize?: number;
@@ -119,7 +119,7 @@ type EventDTO = {
   location: string;
   locationDetails?: string;
   eventType: 1 | 2;
-  evaluationType?: 1 | 2;
+  evaluationType?: 1 | 2 | 3;
   inscriptionRequirements?: string;
   inscriptionCost?: number;
   minimumTeamSize?: number;
@@ -175,7 +175,7 @@ type PublicEventDTO = {
   inscriptionCost?: number;
   inscriptionRequirements?: string;
   aboutOurAllies?: string;
-  evaluationType?: 1 | 2;
+  evaluationType?: 1 | 2 | 3;
   minimumTeamSize?: number;
   specificInscriptionDetails?: Array<{
     title: string;
