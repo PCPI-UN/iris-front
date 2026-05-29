@@ -31,6 +31,7 @@ import { ProjectWithJurors, useProjectsWithJurors } from '@/features/projects/ap
 import { useCriterions } from '@/features/criterions/api/get-criterions';
 import { useQueries } from '@tanstack/react-query';
 import '@/features/landing/index.css';
+import { useEventsDropdown } from '@/features/events/api/get-events-dropdown';
 
 import { MonitoringDashboardProps, ProjectEvaluationProgress, ProjectEvaluationSummary } from '@/features/monitoring/types';
 import { stateColors, stateLabels } from '@/features/monitoring/utils/constants';
@@ -47,7 +48,8 @@ import { ProjectsTab } from '@/features/monitoring/components/projects-tab';
 
 export const MonitoringDashboard = ({ initialEventId, onBack, eventData }: MonitoringDashboardProps = {}) => {
   const user = useUser();
-  const { data: eventsData, isLoading: isEventsLoading } = useEvents({ page: 1 });
+  const { data: eventsData, isLoading: isEventsLoading } = useEventsDropdown();
+ 
   const {
     activeTab,
     currentPage,

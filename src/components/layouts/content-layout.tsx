@@ -18,7 +18,6 @@ export const ContentLayout = ({ children, title = '' }: ContentLayoutProps) => {
           title === 'Projects' &&
         <ExportEventReportButton
           eventId={eventId}
-          onSuccess={() => console.log("Report downloaded successfully")}
           onError={(err) => console.error("Export failed:", err)}
         />
         }
