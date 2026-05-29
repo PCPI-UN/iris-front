@@ -168,6 +168,8 @@ export const normalizeEvent = (raw: any): Event => {
     statusName: raw?.statusName ?? (active ? "ACTIVE" : "INACTIVE"),
     location: raw?.location,
     locationDetails,
+    latitude: typeof raw?.latitude === "number" ? raw.latitude : undefined,
+    longitude: typeof raw?.longitude === "number" ? raw.longitude : undefined,
     eventType: toEventTypeCode(raw?.eventType),
     inscriptionCost,
     inscriptionRequirements: raw?.inscriptionRequirements,
