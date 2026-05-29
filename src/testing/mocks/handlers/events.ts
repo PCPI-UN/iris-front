@@ -20,7 +20,7 @@ type EventBody = {
   location: string;
   locationDetails?: string;
   eventType: "Competition" | "Exposition";
-  evaluationType?: 1 | 2 | "ZERO_TO_FIVE" | "ZERO_TO_HUNDRED" | "0-5" | "0-100";
+  evaluationType?: 1 | 2 | 3 | "ZERO_TO_FIVE" | "ZERO_TO_HUNDRED" | "FINAL_PROJECTS" | "0-5" | "0-100" | "Proyectos Finales";
   inscriptionRequirements?: string;
   inscriptionCost?: number;
   minimumTeamSize?: number;
@@ -119,7 +119,7 @@ type EventDTO = {
   location: string;
   locationDetails?: string;
   eventType: 1 | 2;
-  evaluationType?: 1 | 2;
+  evaluationType?: 1 | 2 | 3;
   inscriptionRequirements?: string;
   inscriptionCost?: number;
   minimumTeamSize?: number;
@@ -175,7 +175,7 @@ type PublicEventDTO = {
   inscriptionCost?: number;
   inscriptionRequirements?: string;
   aboutOurAllies?: string;
-  evaluationType?: 1 | 2;
+  evaluationType?: 1 | 2 | 3;
   minimumTeamSize?: number;
   specificInscriptionDetails?: Array<{
     title: string;
@@ -416,6 +416,110 @@ export const eventsHandlers = [
           itemsPerPage: PAGE_SIZE,
           currentPage: pagination.page,
           totalPages: pagination.totalPages,
+        },
+      });
+    } catch (error: any) {
+      return HttpResponse.json(
+        { message: error?.message || "Server Error" },
+        { status: 500 }
+      );
+    }
+  }),
+
+  http.get(`${env.API_URL}/events/public/past`, async ({ request }) => {
+    await networkDelay();
+
+    try {
+      const url = new URL(request.url);
+      const page = Number(url.searchParams.get("page") || 1);
+      const validPage = validatePage(page);
+
+      const pastEvents = db.event.findMany({
+        where: {
+          isPubliclyJoinable: {
+            equals: true,
+          },
+        },
+      });
+
+      const total = pastEvents.length;
+      const pagination = calculatePagination(total, validPage);
+      const startIndex = PAGE_SIZE * (pagination.page - 1);
+      const endIndex = startIndex + PAGE_SIZE;
+
+      const events = pastEvents
+        .slice(startIndex, endIndex)
+        .map((event) => mapEventToPublicDTO(event));
+
+      return HttpResponse.json({
+        events,
+        meta: {
+          total,
+          itemsOnCurrentPage: events.length,
+          itemsPerPage: PAGE_SIZE,
+          currentPage: pagination.page,
+          totalPages: pagination.totalPages,
+        },
+      });
+    } catch (error: any) {
+      return HttpResponse.json(
+        { message: error?.message || "Server Error" },
+        { status: 500 }
+      );
+    }
+  }),
+
+  http.get(`${env.API_URL}/events/public/past/:eventId`, async ({ params }) => {
+    await networkDelay();
+
+    try {
+      const eventId = toInternalPrefixedId(String(params.eventId), "event");
+
+      const event = db.event.findFirst({
+        where: {
+          id: {
+            equals: eventId,
+          },
+        },
+      });
+
+      if (!event) {
+        return HttpResponse.json(
+          { message: "Event not found" },
+          { status: 404 }
+        );
+      }
+
+      if (event.status !== 4) {
+        return HttpResponse.json(
+          { message: "Event is not a past event" },
+          { status: 403 }
+        );
+      }
+
+      const eventProjects = db.project.findMany({
+        where: {
+          eventId: {
+            equals: event.id,
+          },
+        },
+      });
+
+      const participants = eventProjects
+        .flatMap((project) => project.participants ?? [])
+        .map((participant: any) => {
+          const firstName = participant?.firstName ?? "";
+          const lastName = participant?.lastName ?? "";
+          return `${firstName} ${lastName}`.trim() || participant?.email || "";
+        })
+        .filter(Boolean);
+
+      const uniqueParticipants = [...new Set(participants)];
+
+      return HttpResponse.json({
+        data: {
+          ...mapEventToPublicDTO(event),
+          participants: uniqueParticipants,
         },
       });
     } catch (error: any) {

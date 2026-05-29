@@ -390,14 +390,21 @@ export const CreateEvent = () => {
                     <Select
                       label="Tipo de Evaluación"
                       name="evaluationType"
-                      selectedKeys={[String(formData.evaluationType ?? 1)]}
-                      onChange={(e) =>
-                        setFormData({ ...formData, evaluationType: Number(e.target.value) })
-                      }
+                      selectedKeys={new Set([String(formData.evaluationType ?? 1)])}
+                      onSelectionChange={(keys) => {
+                        const selected = Array.from(keys)[0];
+                        if (selected !== undefined) {
+                          setFormData({
+                            ...formData,
+                            evaluationType: toEvaluationTypeCode(selected),
+                          });
+                        }
+                      }}
                       className="flex-1"
                     >
                       <SelectItem key="1">0 - 5</SelectItem>
                       <SelectItem key="2">0 - 100</SelectItem>
+                      <SelectItem key="3">Proyectos Finales</SelectItem>
                     </Select>
 
                     <div className="pt-2 border-t border-default-200">

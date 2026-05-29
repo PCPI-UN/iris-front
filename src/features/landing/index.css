@@ -401,6 +401,361 @@
   transform: translateY(0) !important;
 }
 
+/* Utility to hide scrollbars while preserving scroll behavior */
+.no-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none; /* Safari and Chrome */
+}
+
+/* Make sure panels that use this utility still allow scrolling */
+.no-scrollbar {
+  overflow: auto;
+}
+
+/* Winners / Awards enhancements */
+.winner-grid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 1.25rem;
+}
+
+@media (min-width: 640px) {
+  .winner-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .winner-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.event-awards-card {
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.008));
+  border: 1px solid rgba(255,255,255,0.06);
+  transition: transform 220ms cubic-bezier(.2,.9,.3,1), box-shadow 220ms ease, border-color 220ms ease;
+  will-change: transform;
+  position: relative;
+  overflow: hidden;
+}
+
+.event-awards-card:hover {
+  transform: translateY(-6px) scale(1.02);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.5), 0 0 30px rgba(255,255,255,0.03) inset;
+  border-color: rgba(255,255,255,0.12);
+}
+
+/* Larger, more prominent winner card styles */
+.winner-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  justify-items: center;
+  gap: 1.5rem;
+}
+
+.event-awards-card {
+  padding: 1.25rem 1.75rem;
+  border-radius: 1.5rem;
+  min-width: 320px;
+  max-width: 980px;
+  width: 100%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  border: 1px solid rgba(255,255,255,0.04);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 40px rgba(0,0,0,0.25) inset;
+}
+
+.winner-title {
+  text-shadow: 0 4px 18px rgba(0,0,0,0.6);
+}
+
+.description {
+  max-width: 70ch;
+}
+
+.poster-thumb img,
+.poster-thumb .next-image {
+  border-radius: 0.75rem;
+}
+
+/* Prominent CTA for poster */
+.winner-cta {
+  background: linear-gradient(90deg, var(--chart-1), var(--chart-5));
+  color: var(--primary-foreground);
+  box-shadow: 0 8px 22px rgba(0,0,0,0.45), 0 0 18px rgba(0,0,0,0.12) inset;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.winner-cta:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.02);
+}
+
+/* Make chips and participants area more visible */
+.event-awards-card .chip,
+.event-awards-card .heroui-chip,
+.event-awards-card .chip > span {
+  background: rgba(255,255,255,0.04) !important;
+  color: var(--foreground) !important;
+  border: 1px solid rgba(255,255,255,0.04) !important;
+}
+
+@media (min-width: 1024px) {
+  .winner-grid {
+    grid-template-columns: 1fr 420px;
+    align-items: start;
+  }
+  .poster-thumb {
+    position: static !important;
+    order: 2;
+    margin-left: 1rem;
+  }
+}
+
+.event-awards-card .event-awards-blob {
+  opacity: 0.12 !important;
+  transform: translate(10%, -10%) !important;
+}
+
+.award-position-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.35rem 0.65rem;
+  border-radius: 9999px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  border: 1px solid transparent;
+  background-clip: padding-box;
+}
+
+/* Accessible solid color variants for award badges */
+.award-position-badge.first {
+  background: #FFD400; /* gold */
+  color: #06121a; /* very dark text for contrast */
+  border-color: rgba(0,0,0,0.06);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+}
+.award-position-badge.second {
+  background: #C8C8C8; /* silver */
+  color: #06121a;
+  border-color: rgba(0,0,0,0.06);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+.award-position-badge.third {
+  background: #C26A2B; /* bronze-like */
+  color: #06121a;
+  border-color: rgba(0,0,0,0.06);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.22);
+}
+
+/* Ensure badges are readable on very small screens */
+.award-position-badge {
+  min-width: 3.2rem;
+  text-align: center;
+}
+
+.poster-thumb {
+  width: 160px;
+  height: 110px;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.06);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.45);
+}
+
+/* small utility to hide native scrollbar when we want cleaner tabs */
+.hide-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Participants table refinements for Past Event public view */
+.event-detail-page .rounded-2xl.border {
+  background: rgba(255,255,255,0.006);
+  border-color: rgba(255,255,255,0.02) !important;
+  backdrop-filter: blur(4px) saturate(120%);
+}
+
+.event-detail-page .rounded-2xl.border > .max-h-\[56vh\] {
+  padding-right: 8px; /* space for visible scrollbar */
+  background: transparent;
+}
+
+/* Table base */
+.event-detail-page table[aria-label="Proyectos participantes"] {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  color: var(--foreground);
+}
+
+.event-detail-page table[aria-label="Proyectos participantes"] thead th {
+  background: transparent;
+  color: var(--foreground);
+  font-weight: 700;
+  padding: 12px 16px;
+  text-transform: none;
+  border-bottom: none;
+}
+
+.event-detail-page table[aria-label="Proyectos participantes"] tbody tr {
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+  transition: background 200ms ease, transform 200ms ease, box-shadow 200ms ease;
+  background: transparent;
+}
+
+.event-detail-page table[aria-label="Proyectos participantes"] tbody tr:hover {
+  background: linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+}
+
+.event-detail-page table[aria-label="Proyectos participantes"] td {
+  padding: 12px 16px;
+  vertical-align: middle;
+}
+
+.event-detail-page table[aria-label="Proyectos participantes"] td p {
+  margin: 0;
+}
+
+/* Poster / action cells center alignment tweak */
+.event-detail-page table[aria-label="Proyectos participantes"] td.text-center {
+  vertical-align: middle;
+}
+
+/* Visible prismatic scrollbar for the projects scroll container */
+.event-detail-page .rounded-2xl.border > .max-h-\[56vh\]::-webkit-scrollbar {
+  height: 10px;
+  width: 10px;
+}
+.event-detail-page .rounded-2xl.border > .max-h-\[56vh\]::-webkit-scrollbar-track {
+  background: transparent;
+}
+.event-detail-page .rounded-2xl.border > .max-h-\[56vh\]::-webkit-scrollbar-thumb {
+  background: linear-gradient(
+    90deg,
+    var(--chart-1),
+    var(--chart-4),
+    var(--chart-2),
+    var(--chart-3),
+    var(--chart-5)
+  );
+  border-radius: 999px;
+  border: 2px solid rgba(18,18,28,0.38);
+}
+
+/* Firefox scrollbar fallback */
+.event-detail-page .rounded-2xl.border > .max-h-\[56vh\] {
+  scrollbar-width: thin;
+  scrollbar-color: var(--chart-2) transparent;
+}
+
+/* Slightly softer header separation */
+.event-detail-page table[aria-label="Proyectos participantes"] thead th + th {
+  border-left: 1px solid rgba(255,255,255,0.02);
+}
+
+/* Make description text a bit softer */
+.event-detail-page table[aria-label="Proyectos participantes"] td .line-clamp-2 {
+  color: var(--foreground);
+  opacity: 0.85;
+}
+
+/* --- Extra polish: make the participants table whisper-sutil y "bonita" --- */
+.event-detail-page .rounded-2xl.border.participants-polish {
+  background: linear-gradient(180deg, rgba(255,255,255,0.018), rgba(255,255,255,0.006));
+  border-color: rgba(255,255,255,0.035) !important;
+  backdrop-filter: blur(6px) saturate(140%);
+}
+
+/* Target the existing container used in PastEventDetail (keeps specificity) */
+.event-detail-page .rounded-2xl.border > .max-h-\[56vh\] {
+  background: transparent;
+  padding: 6px 6px 6px 6px;
+}
+
+/* Softer alternating rows and subtle separators */
+.event-detail-page table[aria-label="Proyectos participantes"] tbody tr:nth-child(odd) {
+  background: linear-gradient(180deg, rgba(255,255,255,0.008), rgba(255,255,255,0.004));
+}
+.event-detail-page table[aria-label="Proyectos participantes"] tbody tr {
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+/* Gentle hover with prismatic left accent */
+.event-detail-page table[aria-label="Proyectos participantes"] tbody tr:hover {
+  background: linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.36);
+}
+
+/* Left gradient accent on hover using border-image */
+.event-detail-page table[aria-label="Proyectos participantes"] tbody tr:hover td:first-child {
+  border-left: 6px solid transparent;
+  -webkit-border-image: linear-gradient(180deg, var(--chart-1), var(--chart-2), var(--chart-3)) 1 100% stretch;
+  border-image: linear-gradient(180deg, var(--chart-1), var(--chart-2), var(--chart-3)) 1 100% stretch;
+}
+
+/* Make header text prismatic (gradient text) without touching JSX */
+.event-detail-page table[aria-label="Proyectos participantes"] thead th {
+  background: transparent;
+  color: var(--foreground);
+  -webkit-background-clip: initial;
+  background-clip: initial;
+  -webkit-text-fill-color: initial;
+}
+
+/* Slightly round cells for softer look */
+.event-detail-page table[aria-label="Proyectos participantes"] td:first-child {
+  border-top-left-radius: 10px;
+  border-bottom-left-radius: 10px;
+}
+.event-detail-page table[aria-label="Proyectos participantes"] td:last-child {
+  border-top-right-radius: 10px;
+  border-bottom-right-radius: 10px;
+}
+
+/* Refine action buttons inside table */
+.event-detail-page .event-section-title.inline-flex {
+  background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02));
+  border: 1px solid rgba(255,255,255,0.06);
+  padding: 8px 10px;
+  border-radius: 9999px;
+}
+
+/* Intense prismatic scrollbar thumb on the projects container */
+.event-detail-page .rounded-2xl.border > .max-h-\[56vh\]::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--chart-1), var(--chart-2), var(--chart-3));
+  border-radius: 999px;
+  border: 2px solid rgba(18,18,28,0.42);
+}
+
+/* Small padding tweak to table cells for better breathing space */
+.event-detail-page table[aria-label="Proyectos participantes"] td {
+  padding: 14px 18px;
+}
+
+/* Make the poster link look more like a small badge */
+.event-detail-page a[aria-label^="Ver poster de"] {
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  border: 1px solid rgba(255,255,255,0.06);
+  padding: 6px 10px;
+  border-radius: 9999px;
+}
+
+/* Keep text contrast pleasant */
+.event-detail-page table[aria-label="Proyectos participantes"] td .text-foreground {
+  color: var(--foreground);
+}
+
 /* Primary button variant with cyan glow - only in glass modals */
 [role="dialog"].glass-card button[type="submit"]:not([color="danger"]),
 .glass-card[role="dialog"] button[type="submit"]:not([color="danger"]),
@@ -1288,6 +1643,48 @@ section[class*="story"]::before {
 .event-detail-page .event-button:hover::before {
   opacity: 0.7;
 }
+
+/* Category button overrides to avoid global blue backgrounds and enforce white/prismatic text */
+.event-detail-page .category-button {
+  background: transparent !important;
+  border: 1px solid rgba(255,255,255,0.18) !important;
+  color: rgba(255,255,255,0.92) !important;
+  -webkit-text-fill-color: rgba(255,255,255,0.92) !important;
+}
+
+.event-detail-page .category-button:hover {
+  background: rgba(255,255,255,0.04) !important;
+  border-color: rgba(255,255,255,0.36) !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+/* Selected: keep outline white but show prismatic text */
+.event-detail-page .category-button.selected-category {
+  background: transparent !important;
+  /* Let .prismatic-border provide the gradient outline; keep border transparent */
+  border: 2px solid transparent !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  box-shadow: 0 6px 12px rgba(0,0,0,0.12);
+}
+
+.event-detail-page .category-button.selected-category.prismatic-text {
+  background: linear-gradient(
+    90deg,
+    oklch(0.75 0.15 195),
+    oklch(0.82 0.18 330),
+    oklch(0.88 0.16 85),
+    oklch(0.75 0.15 195)
+  ) !important;
+  background-size: 200% auto !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  color: transparent !important;
+  animation: prismatic-shift 8s ease-in-out infinite !important;
+}
+
 
 /* Ambient glow blobs */
 .event-detail-blob {

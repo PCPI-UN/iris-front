@@ -43,8 +43,6 @@ export const deleteJuror = ({
 }: DeleteJurorInput): Promise<{ success?: boolean; message?: string }> => {
   const validatedInput = deleteJurorInputSchema.parse({ projectId, memberUserId });
 
-  console.log("Deleting juror with input:", validatedInput);
-
   return api.delete(
     `/projects/${validatedInput.projectId}/jurors/${validatedInput.memberUserId}`
   );
