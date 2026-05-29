@@ -13,7 +13,7 @@ const Project = ({ eventId }: { eventId: string }) => {
                     En esta sección podrás evaluar los proyectos presentados en el evento. Revisa cada proyecto, asigna puntuaciones y proporciona retroalimentación constructiva para ayudar a los participantes a mejorar sus ideas y presentaciones.
                 </p>
             </div>
-            <ProjectListView eventId={eventId} />
+            <ProjectListView eventId={eventId} showProjectCode={true} />
         </div>
     );
 };
