@@ -608,6 +608,12 @@ const ProjectsTableSection = ({
   const [search, setSearch] = useState<string>('');
   const [openProject, setOpenProject] = useState<ProjectWithJurors | null>(null);
 
+  // Only show projects that are approved in the public past-event participants table
+  const approvedProjects = (projects ?? []).filter((p: any) => {
+    const state = String(p?.state ?? '').toUpperCase();
+    return state === 'APPROVED';
+  });
+
   const findCategoryName = (project: ProjectWithJurors) => {
     const categoryId = normalizeCategoryId(project) ?? (project as any).category?.id ?? null;
     if (categoryId) {
@@ -622,14 +628,14 @@ const ProjectsTableSection = ({
 
   const filtered = useMemo(() => {
     const term = normalizeText(search);
-    if (!term) return projects;
-    return projects.filter((project) => {
+    if (!term) return approvedProjects;
+    return approvedProjects.filter((project) => {
       const memberText = getParticipantLabels(project).join(' ');
       return normalizeText(
         [project.name, project.description ?? '', memberText, findCategoryName(project)].join(' '),
       ).includes(term);
     });
-  }, [projects, search, categories]);
+  }, [approvedProjects, search, categories]);
 
   return (
     <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-12 py-10 lg:py-16">
@@ -663,7 +669,7 @@ const ProjectsTableSection = ({
         <div className="flex items-center justify-center h-40 rounded-2xl border border-dashed border-border/40 text-sm text-muted-foreground">
           No se pudieron cargar los proyectos participantes.
         </div>
-      ) : projects.length === 0 ? (
+      ) : approvedProjects.length === 0 ? (
         <div className="flex items-center justify-center h-40 rounded-2xl border border-dashed border-border/40 text-sm text-muted-foreground">
           No hay proyectos para mostrar.
         </div>
