@@ -100,6 +100,8 @@ export type Event = Entity<{
   statusName: string;
   location?: string;
   locationDetails?: string;
+  latitude?: number;
+  longitude?: number;
   inscriptionCost?: number;
   inscriptionRequirements?: string;
   aboutOurAllies?: string;

@@ -50,6 +50,7 @@ export const MonitoringDashboard = ({ initialEventId, onBack, eventData }: Monit
   const user = useUser();
   const { data: eventsData, isLoading: isEventsLoading } = useEventsDropdown();
 
+ 
   const {
     activeTab,
     currentPage,

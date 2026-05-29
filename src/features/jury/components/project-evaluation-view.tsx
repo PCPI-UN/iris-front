@@ -101,7 +101,9 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
   const backendSections =
     categoryCriteriaData?.map((cat, index) => ({
       id: `section-${index + 1}`,
-      name: `${index + 1}. (${cat.weight}) ${cat.category}`,
+      // Se quito el peso de la categoría del nombre de la sección, por fallos es los calculos del peso.
+      // name: `${index + 1}. (${cat.weight}) ${cat.category}`,
+      name: `${index + 1}. ${cat.category}`,
       isSection: true,
       subcriteria:
         cat.criterions?.map((c, cIdx) => ({
