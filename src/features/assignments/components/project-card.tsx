@@ -1,14 +1,15 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { useSearchParams } from "next/navigation";
-import { useProjects } from "@/features/projects/api/get-projects";
+import { useRouter, useSearchParams } from "next/navigation";
 import { GlassCard } from "@/features/landing/components/glass-card";
 import { StatusBadge } from "@/components/ui/status-badge/status-badge";
 import { stylesGradient } from "@/components/ui/status-badge/status-style";
 import { useState } from "react";
 import { AssignJudgesPanel } from "./assign-judges-panel";
 import { ProjectPanel } from "./project-panel";
+import { useProjectsWithJurors } from "@/features/projects/api/get-projects-with-jurors";
+import { Pagination } from "@heroui/pagination";
 
 export const ProjectsCard = () => {
 
@@ -19,11 +20,23 @@ export const ProjectsCard = () => {
   const state = "APPROVED";
   const categoryId = searchParams?.get("categoryId") ? Number(searchParams.get("categoryId")) : 0;
 
-  const projectsQuery = useProjects({ page, eventId, state, categoryId });
+  const projectsQuery = useProjectsWithJurors({ currentPage: page, eventId, state, categoryId });
   const projects = projectsQuery.data?.data;
+  const meta = projectsQuery.data?.meta;
 
   const [selectedProject, setSelectedProject] = useState<any | null>(null);
   const [selectedProjectView, setSelectedProjectView] = useState<any | null>(null);
+
+  const router = useRouter();
+
+  const handlePageChange = (newPage: number) => {
+    const params = new URLSearchParams();
+    params.set("page", String(newPage));
+    if (eventId) params.set("event", String(eventId));
+    if (state) params.set("state", state);
+    if (categoryId) params.set("categoryId", String(categoryId));
+    router.push(`?${params.toString()}`);
+  };
 
   return (
     <div className="flex flex-col space-y-5 justify-between my-5">
@@ -83,6 +96,16 @@ export const ProjectsCard = () => {
                 </div>
             </GlassCard>
         ))}
+        {meta && meta.totalPages > 1 && (
+        <div className="flex justify-center mt-6">
+          <Pagination
+            total={meta.totalPages}
+            page={page}
+            onChange={handlePageChange}
+            showControls
+          />
+        </div>
+      )}
         {selectedProject && (
             <div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-sm animate-appearance-in transition-all duration-400">
                 <div className="w-full sm:w-[400px] md:w-[450px] h-full">

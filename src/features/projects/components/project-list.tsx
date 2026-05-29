@@ -3,7 +3,6 @@
 import { useSearchParams, useRouter } from "next/navigation";
 import { Spinner } from "@/components/ui/spinner";
 import { Pagination } from "@/components/ui/pagination";
-import { useProjects } from "../api/get-projects";
 import { useEvents } from "@/features/events/api/get-events";
 import { ApproveProjectModal } from "./approve-modal";
 import { RejectProjectModal } from "./reject-modal";
@@ -20,6 +19,7 @@ import React from "react";
 import { readCategoryIdFromSearchParams } from "@/lib/compat/category-legacy";
 import { ParticipantsDetails } from "./participants-details";
 import { toEventTypeLabel } from "@/features/events/utils/event-enums";
+import { useProjectsWithJurors } from "../api/get-projects-with-jurors";
 
 
 export const ProjectList = () => {
@@ -32,7 +32,7 @@ export const ProjectList = () => {
   const categoryParam = readCategoryIdFromSearchParams(searchParams);
   const categoryId = categoryParam ? Number(categoryParam) : undefined;
 
-  const projectsQuery = useProjects({ page, eventId, state, categoryId });
+  const projectsQuery = useProjectsWithJurors({ currentPage:page, itemsPerPage: 20, eventId, state, categoryId });
   const projects = projectsQuery.data?.data;
   const meta = projectsQuery.data?.meta;
   const eventsQuery = useEvents({ page: 1 });

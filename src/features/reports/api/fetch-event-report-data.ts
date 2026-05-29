@@ -2,10 +2,11 @@ import { getProjects, ProjectWithJurors } from "@/features/projects/api/get-proj
 import type { CategoryCount, DashboardStats, EventReportData, Project } from "../../../types/report-types";
 import { EventJuror, getEventJuries } from "@/features/juries/api/get-event-juries";
 import { getEvent } from "@/features/events/api/get-event";
+import { getProjectsWithJurors } from "@/features/projects/api/get-projects-with-jurors";
 
 export async function fetchEventReportData(eventId: number): Promise<EventReportData> {
-  const projectsQuery = await getProjects({ page: 1, eventId });
-  const dataJuriesQuery = await getEventJuries({eventId});
+  const projectsQuery = await getProjectsWithJurors({ itemsPerPage: 10000, eventId });
+  const dataJuriesQuery = await getEventJuries({eventId, limit: 10000});
   const dataEventQuery = await getEvent({eventId});
 
   const data = projectsQuery.data ?? [];
