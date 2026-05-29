@@ -48,10 +48,7 @@ import { ProjectsTab } from '@/features/monitoring/components/projects-tab';
 
 export const MonitoringDashboard = ({ initialEventId, onBack, eventData }: MonitoringDashboardProps = {}) => {
   const user = useUser();
-  const router = useRouter();
-  const searchParams = useSearchParams();
   const { data: eventsData, isLoading: isEventsLoading } = useEventsDropdown();
-  const [projectSearch, setProjectSearch] = useState('');
  
   const {
     activeTab,
