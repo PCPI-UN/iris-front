@@ -51,7 +51,6 @@ export const MonitoringDashboard = ({ initialEventId, onBack, eventData }: Monit
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: eventsData, isLoading: isEventsLoading } = useEventsDropdown();
-  const [projectSearch, setProjectSearch] = useState('');
  
   const {
     activeTab,
