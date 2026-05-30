@@ -262,7 +262,7 @@ export function PastEventWinnersTop({
         <div className="event-section-icon w-12 h-12 rounded-xl flex items-center justify-center shrink-0">
           <Trophy className="h-6 w-6" />
         </div>
-        <h2 className="event-section-title prismatic-text text-3xl sm:text-4xl lg:text-5xl font-black uppercase tracking-tight mx-auto text-center">
+        <h2 className="event-section-title prismatic-text text-2xl sm:text-3xl lg:text-4xl font-black uppercase tracking-tight text-left sm:text-center">
           Proyectos Ganadores
         </h2>
         <Divider className="event-divider flex-1" />
