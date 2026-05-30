@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState, useEffect } from 'react';
 import {
   Calendar,
   Trophy,
@@ -17,6 +17,7 @@ import { Divider } from '@heroui/divider';
 import { Chip } from '@heroui/chip';
 
 import { Input } from '@/components/ui/input';
+import { Select, SelectItem } from '@/components/ui/select/select';
 
 import { Spinner } from '@/components/ui/spinner';
 
@@ -36,6 +37,8 @@ import {
 } from '@/features/projects/api/get-projects-with-jurors';
 import { normalizeCategoryId } from '@/lib/compat/category-legacy';
 import { PastEventWinnersTop } from './past-event-winners-top';
+import { usePublicEventRankings } from '@/features/monitoring/api/get-event-rankings';
+import { useRankingConfig } from '@/features/monitoring/api/get-ranking-config';
 type RankedProject = any;
 
 const normalizeText = (value: string) =>
@@ -267,9 +270,6 @@ const WinnerCard = ({ ranked, categoryLabel, isExposition }: WinnerCardProps) =>
         <div className="flex-1 space-y-4">
           <div className="flex items-start justify-between gap-3 w-full">
             <div className="flex items-center gap-3">
-              <span className="event-date-badge text-sm font-bold px-3 py-1 rounded-full uppercase tracking-wide">
-                {categoryLabel}
-              </span>
               <span
                 className={`${positionBadgeClass} text-sm font-bold px-3 py-1 rounded-full uppercase tracking-wide`}
                 title={positionLabel}
@@ -800,10 +800,34 @@ export const PastEventDetail = ({ eventId }: EventDetailProps) => {
     },
   });
 
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | undefined>(undefined);
+
   const projects = projectsQuery.data?.data ?? [];
   const isProjectsLoading = projectsQuery.isLoading || projectsQuery.isFetching;
   const isProjectsError = projectsQuery.isError;
-  const isRankingLoading = false;
+
+  const rankingConfigQuery = useRankingConfig({ eventId: event?.id, queryConfig: { enabled: Boolean(event?.id) } });
+
+  const configVisibleFlag = (() => {
+    const cfg = rankingConfigQuery.data?.data;
+    if (!cfg) return undefined;
+    if (typeof cfg.visibleInLanding === 'boolean') return cfg.visibleInLanding;
+    if ('visiblePublic' in cfg && typeof (cfg as any).visiblePublic === 'boolean') return (cfg as any).visiblePublic;
+    return undefined;
+  })();
+
+  const rankingQuery = usePublicEventRankings({
+    eventId: event?.id,
+    categoryId: selectedCategoryId,
+    queryConfig: { enabled: Boolean(event?.id) && (rankingConfigQuery.isSuccess ? Boolean(configVisibleFlag ?? true) : false) },
+  });
+
+  // Reset category selection when the event changes
+  useEffect(() => {
+    setSelectedCategoryId(undefined);
+  }, [event?.id]);
+
+  const isRankingLoading = rankingQuery.isLoading || rankingConfigQuery.isLoading;
 
   const eventTheme = useMemo((): ThemeKey => {
     const rawId = String(event?.id ?? eventId);
@@ -847,12 +871,61 @@ export const PastEventDetail = ({ eventId }: EventDetailProps) => {
   }, [event?.categories, event?.awards, projects]);
 
   const rankingByCategory = useMemo(() => {
-    if (!event?.awards?.length) {
-      return new Map<number, RankedProject[]>();
+    // Prefer server-provided public rankings when available
+    const serverRows = rankingQuery.data?.data ?? [];
+    if (Array.isArray(serverRows) && serverRows.length > 0) {
+      const map = new Map<number, RankedProject[]>();
+      for (const row of serverRows) {
+        const catId = Number(row.category);
+        const normalizedCategoryId = Number.isFinite(catId) ? catId : 0;
+        const list = map.get(normalizedCategoryId) ?? [];
+        list.push({
+          position: row.position,
+          project: {
+            name: row.projectName ?? (row as any).project?.name ?? 'Proyecto',
+            description: undefined,
+            participants: row.participants ?? [],
+            pendingParticipants: [],
+            documents: undefined,
+          },
+          categoryId: normalizedCategoryId,
+          score: (row as any).averageGrade ?? (row as any).averageScore ?? (row as any).score ?? undefined,
+        });
+        map.set(normalizedCategoryId, list);
+      }
+
+      for (const [k, v] of map.entries()) {
+        v.sort((a: any, b: any) => a.position - b.position);
+        map.set(k, v as RankedProject[]);
+      }
+
+      return map;
     }
 
+    // Fallback to awards-based ranking when server data not available
+    if (!event?.awards?.length) return new Map<number, RankedProject[]>();
     return toAwardRanking(event.awards, projects, categories[0]?.id);
-  }, [event?.awards, categories, projects]);
+  }, [rankingQuery.data, event?.awards, categories, projects]);
+
+  const visibleRankingPositions = useMemo(() => {
+    const config = rankingConfigQuery.data?.data;
+    return config?.visiblePositions ?? config?.positions ?? 0;
+  }, [rankingConfigQuery.data]);
+
+  const isPublicRankingEnabled = useMemo(() => {
+    const config = rankingConfigQuery.data?.data;
+    if (!config) return true;
+    if (typeof config.visibleInLanding === 'boolean') return config.visibleInLanding;
+    if ('visiblePublic' in config && typeof (config as any).visiblePublic === 'boolean') return (config as any).visiblePublic;
+    return true;
+  }, [rankingConfigQuery.data]);
+
+  const visibleRankingScore = useMemo(() => {
+    const config = rankingConfigQuery.data?.data;
+    if (!config) return true;
+    if (typeof config.visibleScore === 'boolean') return config.visibleScore;
+    return true;
+  }, [rankingConfigQuery.data]);
 
   const eventTypeLabel = useMemo(
     () => normalizeEventType(event?.eventType),
@@ -1024,12 +1097,16 @@ export const PastEventDetail = ({ eventId }: EventDetailProps) => {
         <div className="flex justify-center py-12">
           <Spinner size="md" />
         </div>
-      ) : (
+      ) : isPublicRankingEnabled ? (
         <>
           <PastEventWinnersTop
             rankingByCategory={rankingByCategory}
             categories={categories}
             isExposition={isExposition}
+            visiblePositions={visibleRankingPositions}
+            visibleScore={visibleRankingScore}
+            selectedCategoryId={selectedCategoryId}
+            onCategoryChange={setSelectedCategoryId}
           />
 
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-12">
@@ -1043,7 +1120,7 @@ export const PastEventDetail = ({ eventId }: EventDetailProps) => {
             projects={projects}
           /> */}
         </>
-      )}
+      ) : null}
 
       <>
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-12">
