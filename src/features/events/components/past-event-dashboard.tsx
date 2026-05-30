@@ -22,7 +22,7 @@ import { ExportEventReportButton } from '@/features/reports/components/export-ev
 import { RankingConfigModal } from '@/features/monitoring/components/ranking-config-modal';
 import type { RankingConfigType } from '@/features/monitoring/types';
 import { useRankingConfig } from '@/features/monitoring/api/get-ranking-config';
-import { useEventRankings } from '@/features/monitoring/api/get-event-rankings';
+import { downloadEventRankingsReport, useEventRankings } from '@/features/monitoring/api/get-event-rankings';
 import type { Event } from '@/types/api';
 
 type Props = {
@@ -63,6 +63,7 @@ export const PastEventDashboard = ({ event, onBack }: Props) => {
         visibleScore: true,
     });
     const [isRefreshingRanking, setIsRefreshingRanking] = useState(false);
+    const [isDownloadingNotes, setIsDownloadingNotes] = useState(false);
     const categorySelection = selectedCategoryId !== undefined ? [String(selectedCategoryId)] : ['all'];
 
     const [projectSearch, setProjectSearch] = useState<string>('');
@@ -287,6 +288,33 @@ export const PastEventDashboard = ({ event, onBack }: Props) => {
             setRankingTableVersion((value) => value + 1);
         } finally {
             setIsRefreshingRanking(false);
+        }
+    };
+
+    const handleDownloadNotes = async () => {
+        if (!event?.id) {
+            return;
+        }
+
+        setIsDownloadingNotes(true);
+
+        try {
+            const { blob, fileName } = await downloadEventRankingsReport({
+                eventId: event.id,
+                categoryId: selectedCategoryId,
+            });
+
+            const url = URL.createObjectURL(blob);
+            const anchor = document.createElement('a');
+
+            anchor.href = url;
+            anchor.download = fileName;
+            document.body.appendChild(anchor);
+            anchor.click();
+            anchor.remove();
+            URL.revokeObjectURL(url);
+        } finally {
+            setIsDownloadingNotes(false);
         }
     };
 
@@ -707,10 +735,19 @@ export const PastEventDashboard = ({ event, onBack }: Props) => {
                                     className="relative gap-2 border-2 border-default-300 hover:border-primary text-default-600 hover:text-primary hover:scale-105 transition-all duration-300 font-semibold px-4 py-2"
                                     variant="bordered"
                                     onPress={handleRefreshRanking}
-                                    isDisabled={isRefreshingRanking || !event?.id}
+                                    isDisabled={isRefreshingRanking || isDownloadingNotes || !event?.id}
                                 >
                                     <RefreshCw className={isRefreshingRanking ? 'h-5 w-5 animate-spin' : 'h-5 w-5'} />
                                     {isRefreshingRanking ? 'Actualizando…' : 'Refrescar'}
+                                </Button>
+                                <Button
+                                    className="relative gap-2 border-2 border-default-300 hover:border-primary text-default-600 hover:text-primary hover:scale-105 transition-all duration-300 font-semibold px-4 py-2"
+                                    variant="bordered"
+                                    onPress={handleDownloadNotes}
+                                    isDisabled={isRefreshingRanking || isDownloadingNotes || !event?.id}
+                                >
+                                    <Download className={isDownloadingNotes ? 'h-5 w-5 animate-pulse' : 'h-5 w-5'} />
+                                    {isDownloadingNotes ? 'Descargando…' : 'Descargar notas'}
                                 </Button>
                             </div>
                         </CardHeader>
