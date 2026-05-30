@@ -1,22 +1,22 @@
 'use client';
 
+import { useState } from 'react';
 import { Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { Switch } from '@/components/ui/switch';
-
-export type RankingConfigType = {
-  visiblePositions: number;
-  visibleInLanding: boolean;
-  visibleScore: boolean;
-};
+import { useUpsertRankingConfig } from '../api/upsert-ranking-config';
+import type { RankingConfigType } from '../types';
 
 type RankingConfigModalProps = {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   config: RankingConfigType;
   onConfigChange: (config: RankingConfigType) => void;
+  eventId?: number;
+  rankingConfigId?: number;
+  onSaved?: (configId: number, config: RankingConfigType) => void | Promise<void>;
 };
 
 export const RankingConfigModal = ({
@@ -24,7 +24,40 @@ export const RankingConfigModal = ({
   onOpenChange,
   config,
   onConfigChange,
+  eventId,
+  rankingConfigId,
+  onSaved,
 }: RankingConfigModalProps) => {
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const saveRankingConfig = useUpsertRankingConfig();
+
+  const handleSave = async (onClose: () => void) => {
+    if (!eventId) {
+      setSaveError('Se requiere un evento para guardar la configuración.');
+      return;
+    }
+
+    setSaveError(null);
+
+    try {
+      const response = await saveRankingConfig.mutateAsync({
+        eventId,
+        rankingConfigId,
+        config,
+      });
+
+      const savedConfigId = response?.data?.id ?? response?.id;
+
+      if (typeof savedConfigId === 'number') {
+        await onSaved?.(savedConfigId, config);
+      }
+
+      onClose();
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : 'No se pudo guardar la configuración');
+    }
+  };
+
   return (
     <Modal isOpen={isOpen} onOpenChange={onOpenChange} className="m-auto mx-5 lg:max-w-md">
       <ModalContent>
@@ -104,11 +137,17 @@ export const RankingConfigModal = ({
               </div>
             </ModalBody>
 
+            {saveError && (
+              <div className="px-6 text-sm text-danger-500">
+                {saveError}
+              </div>
+            )}
+
             <ModalFooter>
               <Button color="default" variant="light" onPress={onClose}>
                 Cancelar
               </Button>
-              <Button color="primary" onPress={onClose}>
+              <Button color="primary" isLoading={saveRankingConfig.isPending} onPress={() => handleSave(onClose)}>
                 Guardar
               </Button>
             </ModalFooter>

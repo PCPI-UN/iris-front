@@ -7,6 +7,12 @@ export type { ProjectEvaluationStats };
 export type MonitoringTab = 'statistics' | 'projects' | 'ranking';
 export type ProjectFilterState = ProjectWithJurors['state'] | 'ALL';
 
+export type RankingConfigType = {
+  visiblePositions: number;
+  visibleInLanding: boolean;
+  visibleScore: boolean;
+};
+
 export type JurorEvaluationState = ProjectJuror & {
   evaluated: boolean;
 };
