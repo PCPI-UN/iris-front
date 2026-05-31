@@ -93,6 +93,7 @@ export const PastEventDashboard = ({ event, onBack }: Props) => {
 
     const categories = categoriesQuery.data?.data ?? [];
     const categoryMap = useMemo(() => new Map(categories.map((category: any) => [category.id, category])), [categories]);
+    const canFetchRanking = Boolean(event.id && selectedCategoryId);
     const rankingConfigQuery = useRankingConfig({
         eventId: event.id,
         queryConfig: { enabled: Boolean(event.id) },
@@ -100,7 +101,7 @@ export const PastEventDashboard = ({ event, onBack }: Props) => {
     const rankingQuery = useEventRankings({
         eventId: event.id,
         categoryId: selectedCategoryId,
-        queryConfig: { enabled: Boolean(event.id) },
+        queryConfig: { enabled: canFetchRanking },
     });
 
     const chartData = useMemo(() => {
@@ -263,7 +264,7 @@ export const PastEventDashboard = ({ event, onBack }: Props) => {
         setIsRefreshingRanking(true);
 
         try {
-            const [rankingResult, configResult] = await Promise.all([
+            const [, configResult] = await Promise.all([
                 rankingQuery.refetch(),
                 rankingConfigQuery.refetch(),
             ]);
@@ -726,7 +727,7 @@ export const PastEventDashboard = ({ event, onBack }: Props) => {
                                 <Button
                                     className="relative gap-2 border-2 border-default-300 hover:border-primary text-default-600 hover:text-primary hover:scale-105 transition-all duration-300 font-semibold px-4 py-2"
                                     variant="bordered"
-                                    onPress={() => setIsRankingConfigOpen(true)}
+                                    onPress={handleOpenRankingConfig}
                                 >
                                     <Eye className="h-5 w-5" />
                                     <Settings className="h-5 w-5" />
@@ -764,7 +765,11 @@ export const PastEventDashboard = ({ event, onBack }: Props) => {
                                 />
                             </div>
 
-                            {rankingEntries.length > 0 ? (
+                            {!selectedCategoryId ? (
+                                <div className="flex min-h-[180px] items-center justify-center rounded-2xl border border-dashed border-default-200 text-sm text-default-400">
+                                    Selecciona una categoría para ver el ranking.
+                                </div>
+                            ) : rankingEntries.length > 0 ? (
                                 <>
                                     <div className="mb-3 flex flex-wrap gap-2">
                                         <Chip size="sm" variant="flat">
