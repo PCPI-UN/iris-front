@@ -816,18 +816,11 @@ export const PastEventDetail = ({ eventId }: EventDetailProps) => {
     return undefined;
   })();
 
-  const rankingQuery = usePublicEventRankings({
-    eventId: event?.id,
-    categoryId: selectedCategoryId,
-    queryConfig: { enabled: Boolean(event?.id) && (rankingConfigQuery.isSuccess ? Boolean(configVisibleFlag ?? true) : false) },
-  });
-
   // Reset category selection when the event changes
   useEffect(() => {
     setSelectedCategoryId(undefined);
   }, [event?.id]);
 
-  const isRankingLoading = rankingQuery.isLoading || rankingConfigQuery.isLoading;
 
   const eventTheme = useMemo((): ThemeKey => {
     const rawId = String(event?.id ?? eventId);
@@ -870,6 +863,49 @@ export const PastEventDetail = ({ eventId }: EventDetailProps) => {
     return Array.from(categoryMap, ([id, name]) => ({ id, name }));
   }, [event?.categories, event?.awards, projects]);
 
+  // Filter out categories that have no projects to avoid showing empty category pills
+  const visibleCategories = useMemo(() => {
+    if (!projects || projects.length === 0) return [];
+    const projectCategoryIds = new Set<number>();
+    for (const p of projects) {
+      const cid = Number(p?.categoryId);
+      if (Number.isFinite(cid) && cid > 0) projectCategoryIds.add(cid);
+    }
+
+    return categories.filter((c) => projectCategoryIds.has(c.id));
+  }, [categories, projects]);
+
+
+
+  const visibleRankingPositions = useMemo(() => {
+    const config = rankingConfigQuery.data?.data;
+    return config?.visiblePositions ?? config?.positions ?? 0;
+  }, [rankingConfigQuery.data]);
+
+  // Determine if public ranking should be shown. If there is no ranking configuration
+  // (null), treat it as disabled to avoid calling the public rankings endpoint which
+  // can return a server-side error when public ranking is not enabled.
+  const isPublicRankingEnabled = useMemo(() => {
+    const config = rankingConfigQuery.data?.data;
+    if (config === null || config === undefined) return false;
+    if (typeof config.visibleInLanding === 'boolean') return config.visibleInLanding;
+    if ('visiblePublic' in config && typeof (config as any).visiblePublic === 'boolean') return (config as any).visiblePublic;
+    return false;
+  }, [rankingConfigQuery.data]);
+
+  const visibleRankingScore = useMemo(() => {
+    const config = rankingConfigQuery.data?.data;
+    if (!config) return true;
+    if (typeof config.visibleScore === 'boolean') return config.visibleScore;
+    return true;
+  }, [rankingConfigQuery.data]);
+
+  const rankingQuery = usePublicEventRankings({
+    eventId: event?.id,
+    categoryId: selectedCategoryId,
+    queryConfig: { enabled: Boolean(event?.id) && Boolean(isPublicRankingEnabled) },
+  });
+
   const rankingByCategory = useMemo(() => {
     // Prefer server-provided public rankings when available
     const serverRows = rankingQuery.data?.data ?? [];
@@ -907,25 +943,17 @@ export const PastEventDetail = ({ eventId }: EventDetailProps) => {
     return toAwardRanking(event.awards, projects, categories[0]?.id);
   }, [rankingQuery.data, event?.awards, categories, projects]);
 
-  const visibleRankingPositions = useMemo(() => {
-    const config = rankingConfigQuery.data?.data;
-    return config?.visiblePositions ?? config?.positions ?? 0;
-  }, [rankingConfigQuery.data]);
+  const isRankingLoading = rankingQuery.isLoading || rankingConfigQuery.isLoading;
 
-  const isPublicRankingEnabled = useMemo(() => {
-    const config = rankingConfigQuery.data?.data;
-    if (!config) return true;
-    if (typeof config.visibleInLanding === 'boolean') return config.visibleInLanding;
-    if ('visiblePublic' in config && typeof (config as any).visiblePublic === 'boolean') return (config as any).visiblePublic;
-    return true;
-  }, [rankingConfigQuery.data]);
-
-  const visibleRankingScore = useMemo(() => {
-    const config = rankingConfigQuery.data?.data;
-    if (!config) return true;
-    if (typeof config.visibleScore === 'boolean') return config.visibleScore;
-    return true;
-  }, [rankingConfigQuery.data]);
+  const shouldRenderWinners = useMemo(() => {
+    if (!isPublicRankingEnabled) return false;
+    if (!visibleCategories || visibleCategories.length === 0) return false;
+    // Only render winners if at least one visible category has ranking entries
+    for (const c of visibleCategories) {
+      if ((rankingByCategory.get(c.id)?.length ?? 0) > 0) return true;
+    }
+    return false;
+  }, [isPublicRankingEnabled, visibleCategories, rankingByCategory]);
 
   const eventTypeLabel = useMemo(
     () => normalizeEventType(event?.eventType),
@@ -1097,11 +1125,11 @@ export const PastEventDetail = ({ eventId }: EventDetailProps) => {
         <div className="flex justify-center py-12">
           <Spinner size="md" />
         </div>
-      ) : isPublicRankingEnabled ? (
+      ) : shouldRenderWinners ? (
         <>
           <PastEventWinnersTop
             rankingByCategory={rankingByCategory}
-            categories={categories}
+            categories={visibleCategories}
             isExposition={isExposition}
             visiblePositions={visibleRankingPositions}
             visibleScore={visibleRankingScore}
@@ -1131,7 +1159,7 @@ export const PastEventDetail = ({ eventId }: EventDetailProps) => {
           isExposition={isExposition}
           isLoading={isProjectsLoading}
           isError={isProjectsError}
-          categories={categories}
+            categories={visibleCategories}
         />
       </>
 
