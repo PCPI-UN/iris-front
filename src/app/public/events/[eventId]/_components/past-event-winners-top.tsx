@@ -232,7 +232,7 @@ export function PastEventWinnersTop({
   const appliedLimit = Number(visiblePositions) || 0;
 
   const availableWinners = useMemo(() => {
-    if (appliedLimit === 0) return [];
+    if (appliedLimit === 0) return allWinners;
     return allWinners.filter((w) => w.position >= 1 && w.position <= appliedLimit);
   }, [allWinners, appliedLimit]);
 

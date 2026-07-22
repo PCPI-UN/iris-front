@@ -5,6 +5,7 @@ import { QueryConfig } from '@/lib/react-query';
 
 export type RankingConfigRecord = {
   id?: number;
+  rankingConfigId?: number;
   eventId?: number;
   positions?: number;
   visiblePositions?: number;
@@ -40,7 +41,12 @@ const normalizeRankingConfig = (response: GetRankingConfigResponse | null | unde
   }
 
   const record = candidate as RankingConfigRecord;
-  const id = typeof record.id === 'number' ? record.id : undefined;
+  const id =
+    typeof record.id === 'number'
+      ? record.id
+      : typeof record.rankingConfigId === 'number'
+        ? record.rankingConfigId
+        : undefined;
   const positions = typeof record.positions === 'number' ? record.positions : record.visiblePositions;
   const visibleInLanding =
     typeof (record as Record<string, unknown>).visibleInLanding === 'boolean'
@@ -57,6 +63,7 @@ const normalizeRankingConfig = (response: GetRankingConfigResponse | null | unde
 
   return {
     id,
+    rankingConfigId: id,
     eventId: typeof record.eventId === 'number' ? record.eventId : undefined,
     positions,
     visiblePositions: positions,

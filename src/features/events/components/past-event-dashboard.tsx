@@ -101,8 +101,38 @@ export const PastEventDashboard = ({ event, onBack }: Props) => {
     const rankingQuery = useEventRankings({
         eventId: event.id,
         categoryId: selectedCategoryId,
+        state: 'APPROVED',
         queryConfig: { enabled: canFetchRanking },
     });
+
+    const approvedProjects = useMemo(
+        () => projects.filter((project) => String(project.state ?? '').toUpperCase() === 'APPROVED'),
+        [projects],
+    );
+
+    const approvedProjectLookup = useMemo(() => {
+        const byId = new Set<string>();
+        const byCode = new Set<string>();
+        const byName = new Set<string>();
+
+        approvedProjects.forEach((project) => {
+            if (project.id !== undefined && project.id !== null) {
+                byId.add(String(project.id));
+            }
+
+            const projectCode = normalizeText(String(project.projectCode ?? project.eventNumber ?? ''));
+            if (projectCode) {
+                byCode.add(projectCode);
+            }
+
+            const projectName = normalizeText(String(project.name ?? ''));
+            if (projectName) {
+                byName.add(projectName);
+            }
+        });
+
+        return { byId, byCode, byName };
+    }, [approvedProjects]);
 
     const chartData = useMemo(() => {
         const participantsByCategory = new Map<number, Set<string>>();
@@ -303,6 +333,7 @@ export const PastEventDashboard = ({ event, onBack }: Props) => {
             const { blob, fileName } = await downloadEventRankingsReport({
                 eventId: event.id,
                 categoryId: selectedCategoryId,
+                state: 'APPROVED',
             });
 
             const url = URL.createObjectURL(blob);
@@ -340,9 +371,47 @@ export const PastEventDashboard = ({ event, onBack }: Props) => {
             visibleScore: existingRankingConfig?.visibleScore ?? fetchedRankingConfig?.visibleScore ?? true,
         });
     }, [event, rankingConfigQuery.data]);
-    const rankingEntries = useMemo(() => {
+    const rankingEntries = useMemo<any[]>(() => {
         const term = normalizeText(rankingSearch);
-        return rankingRows
+        const approvedRankingRows = rankingRows
+            .map((entry) => {
+                const projectId = entry.projectId !== undefined && entry.projectId !== null ? String(entry.projectId) : undefined;
+                const matchedProject = approvedProjects.find((project) => {
+                    if (projectId && String(project.id) === projectId) return true;
+
+                    const projectCode = normalizeText(String(project.projectCode ?? project.eventNumber ?? ''));
+                    if (projectCode && projectCode === normalizeText(String(entry.projectCode ?? ''))) return true;
+
+                    const projectName = normalizeText(String(project.name ?? ''));
+                    return projectName && projectName === normalizeText(String(entry.projectName ?? ''));
+                });
+
+                const projectStats = matchedProject?.id !== undefined ? projectStatsById.get(String(matchedProject.id)) : undefined;
+                const fallbackEvaluationCount = typeof projectStats?.evaluationCount === 'number' ? projectStats.evaluationCount : undefined;
+
+                return {
+                    ...entry,
+                    evaluationCount: entry.evaluationCount > 0 ? entry.evaluationCount : (fallbackEvaluationCount ?? entry.evaluationCount ?? 0),
+                };
+            })
+            .filter((entry) => {
+                const projectId = entry.projectId !== undefined && entry.projectId !== null ? String(entry.projectId) : undefined;
+                if (projectId && approvedProjectLookup.byId.has(projectId)) {
+                    return true;
+                }
+
+                const projectCode = normalizeText(String(entry.projectCode ?? ''));
+                if (projectCode && approvedProjectLookup.byCode.has(projectCode)) {
+                    return true;
+                }
+
+                const projectName = normalizeText(String(entry.projectName ?? ''));
+                if (projectName && approvedProjectLookup.byName.has(projectName)) {
+                    return true;
+                }
+
+                return false;
+            })
             .filter((entry) => {
                 if (!term) return true;
 
@@ -355,9 +424,11 @@ export const PastEventDashboard = ({ event, onBack }: Props) => {
                 ].join(' ')).includes(term);
             })
             .sort((a, b) => a.position - b.position);
-    }, [rankingRows, rankingSearch]);
 
-    const visibleRankingEntries = useMemo(() => {
+        return approvedRankingRows;
+    }, [approvedProjects, approvedProjectLookup, projectStatsById, rankingRows, rankingSearch]);
+
+    const visibleRankingEntries = useMemo<any[]>(() => {
         if (!visiblePositions || visiblePositions <= 0) {
             return rankingEntries;
         }
