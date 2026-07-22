@@ -13,6 +13,7 @@ export type UpsertRankingConfigInput = {
 
 export type RankingConfigResponse = {
   id?: number;
+  rankingConfigId?: number;
   eventId?: number;
   positions?: number;
   visiblePositions?: number;
@@ -22,6 +23,7 @@ export type RankingConfigResponse = {
   gradeVisible?: boolean;
   data?: {
     id?: number;
+    rankingConfigId?: number;
     eventId?: number;
     positions?: number;
     visiblePositions?: number;
@@ -69,7 +71,7 @@ export const upsertRankingConfig = async ({
     // Try to get existing config for this event and patch it
     try {
       const existing = await getRankingConfig(eventId);
-      const existingId = existing?.data?.id ?? existing?.data?.eventId ?? undefined;
+      const existingId = existing?.data?.id ?? existing?.data?.rankingConfigId ?? undefined;
       if (typeof existingId === 'number') {
         return api.patch<RankingConfigResponse>(`/events/update-ranking-config/${existingId}`, payload);
       }
@@ -110,10 +112,8 @@ export const useUpsertRankingConfig = ({ mutationConfig }: UseUpsertRankingConfi
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: ['ranking-config', eventId] }),
           queryClient.invalidateQueries({ queryKey: ['events', eventId] }),
-          queryClient.invalidateQueries({ queryKey: ['event-rankings'] }),
           queryClient.refetchQueries({ queryKey: ['ranking-config', eventId] }),
           queryClient.refetchQueries({ queryKey: ['events', eventId] }),
-          queryClient.refetchQueries({ queryKey: ['event-rankings'] }),
         ]);
       }
 
