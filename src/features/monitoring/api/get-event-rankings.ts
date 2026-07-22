@@ -11,6 +11,7 @@ export type EventRankingRow = {
   projectCode?: string;
   projectName: string;
   category?: string;
+  categoryId?: number;
   evaluationCount: number;
   averageGrade?: number;
   participants: string[];
@@ -19,6 +20,7 @@ export type EventRankingRow = {
 export type GetEventRankingsParams = {
   eventId?: number;
   categoryId?: number;
+  state?: string;
 };
 
 export type GetEventRankingsResponse = {
@@ -128,6 +130,9 @@ const normalizeRankingRow = (item: unknown, index: number): EventRankingRow => {
       asString(record.category ?? record.categoryName ?? record.course ?? record.courseName) ??
       asString(nestedCategory.name ?? nestedCategory.code ?? nestedCategory.description) ??
       undefined,
+    categoryId:
+      asNumber(record.categoryId ?? record.category_id ?? project.categoryId ?? project.courseId) ??
+      undefined,
     evaluationCount:
       asNumber(record.evaluationCount ?? record.evaluationsCount ?? record.count ?? record.totalEvaluations) ??
       0,
@@ -137,7 +142,7 @@ const normalizeRankingRow = (item: unknown, index: number): EventRankingRow => {
   };
 };
 
-export const getEventRankings = async ({ eventId, categoryId }: GetEventRankingsParams): Promise<GetEventRankingsResponse> => {
+export const getEventRankings = async ({ eventId, categoryId, state }: GetEventRankingsParams): Promise<GetEventRankingsResponse> => {
   if (!eventId) {
     return { data: [] };
   }
@@ -147,6 +152,7 @@ export const getEventRankings = async ({ eventId, categoryId }: GetEventRankings
       format: 'json',
       categoryId,
       category_id: categoryId,
+      state,
     },
   });
 
@@ -160,27 +166,29 @@ export const getEventRankings = async ({ eventId, categoryId }: GetEventRankings
 export const getEventRankingsQueryOptions = ({
   eventId,
   categoryId,
+  state,
 }: GetEventRankingsParams = {}) => {
   return queryOptions({
-    queryKey: ['event-rankings', { eventId, categoryId }],
-    queryFn: () => getEventRankings({ eventId, categoryId }),
+    queryKey: ['event-rankings', { eventId, categoryId, state }],
+    queryFn: () => getEventRankings({ eventId, categoryId, state }),
   });
 };
 
 type UseEventRankingsOptions = {
   eventId?: number;
   categoryId?: number;
+  state?: string;
   queryConfig?: QueryConfig<typeof getEventRankingsQueryOptions>;
 };
 
-export const useEventRankings = ({ eventId, categoryId, queryConfig }: UseEventRankingsOptions = {}) => {
+export const useEventRankings = ({ eventId, categoryId, state, queryConfig }: UseEventRankingsOptions = {}) => {
   return useQuery({
-    ...getEventRankingsQueryOptions({ eventId, categoryId }),
+    ...getEventRankingsQueryOptions({ eventId, categoryId, state }),
     ...queryConfig,
   });
 };
 
-export const getPublicEventRankings = async ({ eventId, categoryId }: GetEventRankingsParams): Promise<GetEventRankingsResponse> => {
+export const getPublicEventRankings = async ({ eventId, categoryId, state }: GetEventRankingsParams): Promise<GetEventRankingsResponse> => {
   if (!eventId) {
     return { data: [] };
   }
@@ -190,6 +198,7 @@ export const getPublicEventRankings = async ({ eventId, categoryId }: GetEventRa
       format: 'json',
       categoryId,
       category_id: categoryId,
+      state,
     },
   });
 
@@ -203,22 +212,24 @@ export const getPublicEventRankings = async ({ eventId, categoryId }: GetEventRa
 export const getPublicEventRankingsQueryOptions = ({
   eventId,
   categoryId,
+  state,
 }: GetEventRankingsParams = {}) => {
   return queryOptions({
-    queryKey: ['public-event-rankings', { eventId, categoryId }],
-    queryFn: () => getPublicEventRankings({ eventId, categoryId }),
+    queryKey: ['public-event-rankings', { eventId, categoryId, state }],
+    queryFn: () => getPublicEventRankings({ eventId, categoryId, state }),
   });
 };
 
 type UsePublicEventRankingsOptions = {
   eventId?: number;
   categoryId?: number;
+  state?: string;
   queryConfig?: QueryConfig<typeof getPublicEventRankingsQueryOptions>;
 };
 
-export const usePublicEventRankings = ({ eventId, categoryId, queryConfig }: UsePublicEventRankingsOptions = {}) => {
+export const usePublicEventRankings = ({ eventId, categoryId, state, queryConfig }: UsePublicEventRankingsOptions = {}) => {
   return useQuery({
-    ...getPublicEventRankingsQueryOptions({ eventId, categoryId }),
+    ...getPublicEventRankingsQueryOptions({ eventId, categoryId, state }),
     ...queryConfig,
   });
 };
@@ -239,7 +250,7 @@ const parseContentDispositionFileName = (headerValue: string | null) => {
   return basicMatch?.[1] ?? null;
 };
 
-export const downloadEventRankingsReport = async ({ eventId, categoryId }: GetEventRankingsParams) => {
+export const downloadEventRankingsReport = async ({ eventId, categoryId, state }: GetEventRankingsParams) => {
   if (!eventId) {
     throw new Error('Se requiere un evento para descargar el ranking');
   }
@@ -249,6 +260,10 @@ export const downloadEventRankingsReport = async ({ eventId, categoryId }: GetEv
   if (categoryId !== undefined && categoryId !== null) {
     params.set('categoryId', String(categoryId));
     params.set('category_id', String(categoryId));
+  }
+
+  if (state) {
+    params.set('state', state);
   }
 
   const response = await fetch(`/api/events/${eventId}/rankings?${params.toString()}`, {
