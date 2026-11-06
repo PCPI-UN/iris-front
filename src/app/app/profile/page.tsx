@@ -1,8 +1,8 @@
-import { Profile } from './_components/profile';
+import { Profile } from "./_components/profile";
 
 export const metadata = {
-  title: 'Profile',
-  description: 'Profile',
+  title: "Mi perfil",
+  description: "Edita tu información personal",
 };
 
 const ProfilePage = () => {

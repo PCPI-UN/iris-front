@@ -1,6 +1,17 @@
 import { useNotifications } from '@/components/ui/notifications';
 import { env } from '@/config/env';
 
+/** Error thrown for non-2xx responses; keeps the HTTP status so callers can map it. */
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+  ) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
 type RequestOptions = {
   method?: string;
   headers?: Record<string, string>;
@@ -134,7 +145,7 @@ async function fetchApi<T>(
             message,
           });
         }
-        throw new Error(message);
+        throw new ApiError(message, retryResponse.status);
       }
 
       return retryResponse.json();
@@ -176,7 +187,7 @@ async function fetchApi<T>(
         message,
       });
     }
-    throw new Error(message);
+    throw new ApiError(message, response.status);
   }
 
   // Read body as text first to handle empty responses
