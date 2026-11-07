@@ -486,6 +486,8 @@ export const CreateEvent = () => {
                             inscriptionDeadline: undefined,
                           }));
                         }}
+                        isInvalid={Boolean(dateFieldErrors.inscriptionDeadline)}
+                        errorMessage={dateFieldErrors.inscriptionDeadline}
                         className="flex-1"
                         minValue={today(getLocalTimeZone())}
                       />

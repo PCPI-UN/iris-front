@@ -23,6 +23,12 @@ import { usePublicEventDetail } from '@/features/events/api/get-public-event-det
 import { normalizeEventType } from '@/features/events/utils/normalize-event-type';
 import { hasInscriptionDeadlinePassed } from '@/features/events/utils/inscription-deadline';
 import {
+    formatAwardValue,
+    getAwardDescription,
+    getAwardTitle,
+    getVisibleAwards,
+} from '@/features/events/utils/event-awards';
+import {
     getUserProjectStateInEvent,
     isUserRegisteredInEvent,
     resolveJoinTarget,
@@ -315,9 +321,9 @@ event.minimumTeamSize != null ||
 const hasHeroDescription = hasText(event.description);
 const hasProgramData = program.length > 0;
 const shouldShowInscriptionSection = hasRequirementsData || hasProgramData;
-const awards = Array.isArray(event.awards) ? event.awards : [];
+const awards = getVisibleAwards(event.awards);
 const hasAwardsData = awards.length > 0;
-const shouldRenderTopOneAsBanner = awards.length === 1 && awards[0]?.position === 1;
+const shouldRenderTopOneAsBanner = awards.length === 1;
 const isFreeEvent =
 event.inscriptionCost === 0;
 const hasGeneralDetailsSection = Boolean(
@@ -490,52 +496,63 @@ return (
         {shouldRenderTopOneAsBanner ? (
             <div className="event-info-card rounded-2xl p-6 sm:p-8 feature-card">
             <div className="space-y-2">
-                <div className="space-y-2">
-                <h3 className="text-xl sm:text-2xl font-black uppercase tracking-wide">{awards[0]?.title ?? 'Premio'}</h3>
-                {hasText(awards[0]?.description) && (
-                    <p className="text-xl sm:text-2xl font-black text-green-500 uppercase tracking-wide leading-snug">
-                    {awards[0].description}
+                <h3 className="text-xl sm:text-2xl font-black uppercase tracking-wide">{getAwardTitle(awards[0])}</h3>
+                {formatAwardValue(awards[0].value) && (
+                    <p className="text-xl sm:text-2xl font-black text-green-500 tracking-wide">
+                    {formatAwardValue(awards[0].value)}
                     </p>
                 )}
-                </div>
+                {getAwardDescription(awards[0]) && (
+                    <p className="text-base sm:text-lg text-muted-foreground leading-snug">
+                    {getAwardDescription(awards[0])}
+                    </p>
+                )}
             </div>
             </div>
         ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
-            {awards.map((award) => (
+            {awards.map((award) => {
+                const awardValue = formatAwardValue(award.value);
+                const awardDescription = getAwardDescription(award);
+                const hasAwardBody = Boolean(awardValue || awardDescription);
+
+                return (
                 <div
                 key={`${award.position}-${award.title}`}
                 className="event-awards-card rounded-2xl p-6 sm:p-8 relative overflow-hidden feature-card transition-transform duration-300 hover:scale-105"
                 >
                 <div className="event-awards-blob pointer-events-none absolute top-0 right-0 h-40 w-40 rounded-full blur-3xl opacity-20" />
                 <div className="relative z-10 space-y-4">
-                    <div className="flex items-center justify-between">
-                    <h3 className="text-lg sm:text-xl font-black uppercase tracking-wide">
-                        {award.position === 1
-                        ? 'Primer puesto'
-                        : award.position === 2
-                        ? 'Segundo puesto'
-                        : award.position === 3
-                            ? 'Tercer puesto'
-                            : award.position === 4
-                                ? 'Cuarto puesto'
-                            : `${award.position}° puesto`}
+                    <div className="flex items-center justify-between gap-3">
+                    <h3 className="text-lg sm:text-xl font-black uppercase tracking-wide break-words">
+                        {getAwardTitle(award)}
                     </h3>
-                    <div className="w-10 h-10 rounded-full bg-background/50 flex items-center justify-center">
+                    <div className="w-10 h-10 shrink-0 rounded-full bg-background/50 flex items-center justify-center">
                         <span className="text-sm font-bold">#{award.position}</span>
                     </div>
                     </div>
-                    <Divider className="event-divider" />
-                    <div className="space-y-1">
-                    {hasText(award.description) && (
-                        <p className="text-xl sm:text-2xl font-black text-green-500 uppercase tracking-wide leading-snug">
-                        {award.description}
-                        </p>
+                    {/* Only the title when there is nothing else: no empty block */}
+                    {hasAwardBody && (
+                    <>
+                        <Divider className="event-divider" />
+                        <div className="space-y-2">
+                        {awardValue && (
+                            <p className="text-xl sm:text-2xl font-black text-green-500 tracking-wide">
+                            {awardValue}
+                            </p>
+                        )}
+                        {awardDescription && (
+                            <p className="text-sm sm:text-base text-muted-foreground leading-snug">
+                            {awardDescription}
+                            </p>
+                        )}
+                        </div>
+                    </>
                     )}
-                    </div>
                 </div>
                 </div>
-            ))}
+                );
+            })}
             </div>
         )}
     </section>
