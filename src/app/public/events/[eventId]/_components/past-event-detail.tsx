@@ -56,6 +56,7 @@ const truncateText = (value: string, maxLength: number) => {
 import { Footer } from '@/features/landing/components/cta-footer';
 import { EventType } from '@/types/api';
 import { PRISMATIC_GRADIENT } from '@/features/landing/components/events-section.utils';
+import { documentLink } from "@/lib/document-link";
 
 type ThemeKey = 'cyan' | 'pink' | 'yellow';
 
@@ -157,7 +158,7 @@ const getPosterUrl = (project: ProjectWithJurors): string | undefined => {
   const posterDoc = project.documents.find((d) =>
     d.type?.toLowerCase().includes('poster'),
   );
-  return posterDoc?.url;
+  return posterDoc ? documentLink(posterDoc) : undefined;
 };
 
 type WinnerCardProps = {

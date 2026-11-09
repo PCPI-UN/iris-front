@@ -33,6 +33,7 @@ import { useNotifications } from "@/components/ui/notifications"
 import { Spinner } from "@heroui/spinner"
 import { normalizeCategoryId } from "@/lib/compat/category-legacy"
 import { EventType } from '@/types/api'
+import { documentLink, type DocumentRef } from "@/lib/document-link";
 
 const SCORE_SCALE = [
   { value: 1, label: "Insuficiente" },
@@ -162,9 +163,9 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
     }
   }
 
-  const openDocument = (url?: string) => {
-    if (!url) return
-    window.open(url, "_blank", "noopener,noreferrer")
+  const openDocument = (doc?: DocumentRef) => {
+    if (!doc) return
+    window.open(documentLink(doc), "_blank", "noopener,noreferrer")
   }
 
   const getDocumentLabel = (doc: any, index: number) => {
@@ -280,7 +281,7 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
                     <Button
                       variant="flat"
                       className="w-full justify-between gap-3 border border-default-200 bg-default-50/60 text-left"
-                      onPress={() => openDocument(documents[0]?.url)}
+                      onPress={() => openDocument(documents[0])}
                     >
                       <span className="flex min-w-0 items-center gap-2 text-xs md:text-sm">
                         <FileText className="h-4 w-4 text-primary flex-shrink-0" />
@@ -306,7 +307,7 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
                         aria-label="Documentos del proyecto"
                         onAction={(key) => {
                           const selectedDocument = documents[Number(key)]
-                          openDocument(selectedDocument?.url)
+                          openDocument(selectedDocument)
                         }}
                       >
                         {documents.map((doc: any, index: number) => (
