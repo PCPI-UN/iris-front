@@ -15,9 +15,16 @@ import { PastEventDetail } from './_components/past-event-detail';
 
 const extractEventId = (value: string) => {
   const normalizedValue = value.trim();
+  if (/^\d+$/.test(normalizedValue)) return normalizedValue;
 
-  const numericSuffixMatch = normalizedValue.match(/(?:-(\d+)|^(\d+))$/);
-  return numericSuffixMatch?.[1] ?? numericSuffixMatch?.[2] ?? normalizedValue;
+  const prefixMatch = normalizedValue.match(/^(\d+)-/);
+  const suffixMatch = normalizedValue.match(/-(\d+)$/);
+
+  if (prefixMatch && suffixMatch && /^(19|20)\d{2}$/.test(suffixMatch[1])) {
+    return prefixMatch[1];
+  }
+
+  return suffixMatch?.[1] ?? prefixMatch?.[1] ?? normalizedValue;
 };
 
 const parseLocalDate = (value?: string) => {
@@ -38,8 +45,22 @@ const isPastEvent = (event?: Event) => {
   if (!event) return false;
 
   const statusName = String(event.statusName ?? '').toUpperCase();
-  if (statusName === 'CLOSED' || Number(event.status) === 4) {
+  if (
+    statusName === 'CLOSED' ||
+    statusName === 'FINISHED' ||
+    statusName === 'INACTIVE' ||
+    Number(event.status) === 4 ||
+    event.active === false ||
+    Boolean(event.rankingConfig?.visibleInLanding)
+  ) {
     return true;
+  }
+
+  if (event.endDate && /T\d{2}:\d{2}/.test(event.endDate)) {
+    const exactEnd = new Date(event.endDate);
+    if (!Number.isNaN(exactEnd.getTime())) {
+      return exactEnd.getTime() < Date.now();
+    }
   }
 
   const endDate = parseLocalDate(event.endDate);

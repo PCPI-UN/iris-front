@@ -208,26 +208,49 @@ export function PastEventWinnersTop({
 }: PastEventWinnersTopProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  // Init: select first category on mount if none set
+  // Init: select first category on mount if none set (ignoring synthetic id 0)
   useEffect(() => {
-    if (selectedCategoryId === undefined && categories.length > 0) {
-      onCategoryChange?.(categories[0].id);
+    if (selectedCategoryId === undefined && categories.length > 0 && categories[0].id > 0) {
+      const firstCategoryWithWinners = categories.find(
+        (c) => c.id > 0 && (rankingByCategory.get(c.id)?.length ?? 0) > 0,
+      );
+      onCategoryChange?.((firstCategoryWithWinners ?? categories[0]).id);
     }
-  }, [categories, onCategoryChange, selectedCategoryId]);
+  }, [categories, onCategoryChange, rankingByCategory, selectedCategoryId]);
 
   const categoryMap = useMemo(
     () => new Map(categories.map((c) => [c.id, c.name])),
     [categories],
   );
 
-  // Flatten all winners from all categories
+  // Filter winners by selectedCategoryId when applicable, or flatten all when global
   const allWinners = useMemo(() => {
+    if (
+      selectedCategoryId !== undefined &&
+      selectedCategoryId > 0 &&
+      rankingByCategory.has(selectedCategoryId)
+    ) {
+      const items = rankingByCategory.get(selectedCategoryId) ?? [];
+      return items
+        .map((w) => ({ ...w, categoryId: selectedCategoryId }))
+        .sort((a, b) => a.position - b.position);
+    }
+
+    if (
+      selectedCategoryId !== undefined &&
+      selectedCategoryId > 0 &&
+      categories.length > 1 &&
+      !rankingByCategory.has(0)
+    ) {
+      return [];
+    }
+
     const list: (RankedProject & { categoryId: number })[] = [];
     for (const [catId, items] of rankingByCategory.entries()) {
       items.forEach((w) => list.push({ ...w, categoryId: catId }));
     }
     return list.sort((a, b) => a.position - b.position);
-  }, [rankingByCategory]);
+  }, [categories.length, rankingByCategory, selectedCategoryId]);
 
   const appliedLimit = Number(visiblePositions) || 0;
 
@@ -299,8 +322,11 @@ export function PastEventWinnersTop({
               className="flex transition-transform duration-500 ease-out"
               style={{ transform: `translateX(-${currentIndex * 100}%)` }}
             >
-              {availableWinners.map((winner) => (
-                <div key={`winner-${winner.position}`} className="min-w-full overflow-hidden">
+              {availableWinners.map((winner, idx) => (
+                <div
+                  key={`winner-${winner.categoryId ?? 0}-${winner.position}-${winner.project.name}-${idx}`}
+                  className="min-w-full overflow-hidden"
+                >
                   <TopWinnerCard
                     ranked={winner}
                     categoryName={

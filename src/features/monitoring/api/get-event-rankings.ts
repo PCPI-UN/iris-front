@@ -10,11 +10,14 @@ export type EventRankingRow = {
   projectId?: number;
   projectCode?: string;
   projectName: string;
+  description?: string;
+  state?: string;
   category?: string;
   categoryId?: number;
   evaluationCount: number;
   averageGrade?: number;
   participants: string[];
+  documents?: Array<{ type?: string; url?: string }>;
 };
 
 export type GetEventRankingsParams = {
@@ -116,6 +119,11 @@ const normalizeRankingRow = (item: unknown, index: number): EventRankingRow => {
     asStringList(record.participants ?? record.members ?? record.integrants ?? record.teamMembers),
     asStringList(project.participants ?? project.members ?? project.integrants ?? project.teamMembers),
   );
+  const rawDocuments = Array.isArray(record.documents)
+    ? record.documents
+    : Array.isArray(project.documents)
+      ? project.documents
+      : undefined;
 
   return {
     position:
@@ -126,19 +134,32 @@ const normalizeRankingRow = (item: unknown, index: number): EventRankingRow => {
       asString(record.projectCode ?? record.code ?? project.projectCode ?? project.code ?? project.eventNumber),
     projectName:
       asString(record.projectName ?? record.name ?? project.name ?? project.title) ?? 'Proyecto',
+    description:
+      asString(record.description ?? record.summary ?? project.description ?? project.summary),
+    state:
+      asString(record.state ?? record.status ?? project.state ?? project.status),
     category:
-      asString(record.category ?? record.categoryName ?? record.course ?? record.courseName) ??
+      asString(record.categoryName ?? record.course ?? record.courseName) ??
+      (typeof record.category === 'string' ? asString(record.category) : undefined) ??
       asString(nestedCategory.name ?? nestedCategory.code ?? nestedCategory.description) ??
       undefined,
     categoryId:
-      asNumber(record.categoryId ?? record.category_id ?? project.categoryId ?? project.courseId) ??
-      undefined,
+      asNumber(
+        record.categoryId ??
+          record.category_id ??
+          record.courseId ??
+          project.categoryId ??
+          project.courseId ??
+          nestedCategory.id ??
+          nestedCategory.categoryId,
+      ) ?? undefined,
     evaluationCount:
       asNumber(record.evaluationCount ?? record.evaluationsCount ?? record.count ?? record.totalEvaluations) ??
       0,
     averageGrade:
       asNumber(record.averageGrade ?? record.averageScore ?? record.score ?? record.average ?? record.totalScore),
     participants,
+    documents: rawDocuments as Array<{ type?: string; url?: string }> | undefined,
   };
 };
 
@@ -147,11 +168,16 @@ export const getEventRankings = async ({ eventId, categoryId, state }: GetEventR
     return { data: [] };
   }
 
+  const validCategoryId =
+    typeof categoryId === 'number' && Number.isFinite(categoryId) && categoryId > 0
+      ? categoryId
+      : undefined;
+
   const response = await api.get<unknown>(`/events/${eventId}/rankings`, {
     params: {
       format: 'json',
-      categoryId,
-      category_id: categoryId,
+      categoryId: validCategoryId,
+      category_id: validCategoryId,
       state,
     },
   });
@@ -193,13 +219,19 @@ export const getPublicEventRankings = async ({ eventId, categoryId, state }: Get
     return { data: [] };
   }
 
+  const validCategoryId =
+    typeof categoryId === 'number' && Number.isFinite(categoryId) && categoryId > 0
+      ? categoryId
+      : undefined;
+
   const response = await api.get<unknown>(`/events/${eventId}/rankings/public`, {
     params: {
       format: 'json',
-      categoryId,
-      category_id: categoryId,
+      categoryId: validCategoryId,
+      category_id: validCategoryId,
       state,
     },
+    suppressErrorNotification: true,
   });
 
   return {

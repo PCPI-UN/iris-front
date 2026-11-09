@@ -254,10 +254,7 @@ export const projectsHandlers = [
     await networkDelay();
 
     try {
-      const { user, error } = requireAuth(cookies);
-      if (error || !user) {
-        return HttpResponse.json({ message: error || 'Unauthorized' }, { status: 401 });
-      }
+      const { user } = requireAuth(cookies);
 
       const rawEventId = String(params.eventId ?? '');
       if (!rawEventId || rawEventId === 'undefined' || rawEventId === 'NaN') {
@@ -319,11 +316,9 @@ export const projectsHandlers = [
         });
       }
 
-      if (user.role !== 'ADMIN') {
+      if (user && user.role !== 'ADMIN') {
         const userId = (user as any)?.id ?? (user as any)?.userId;
-        if (!userId || !isUserJuryOfEvent(userId, eventId)) {
-          allProjects = [];
-        } else {
+        if (userId && isUserJuryOfEvent(userId, eventId)) {
           allProjects = allProjects.filter((p) => isUserAssignedToProject(p, userId));
         }
       }
