@@ -2,6 +2,7 @@
 'use client';
 
 import {
+  forwardRef,
   useCallback,
   useEffect,
   useMemo,
@@ -9,6 +10,7 @@ import {
   useState,
   type MouseEvent as ReactMouseEvent,
 } from 'react';
+import { createPortal } from 'react-dom';
 import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from 'framer-motion';
 import {
   ArrowUpRight,
@@ -201,35 +203,45 @@ interface ContributorCardItemProps {
   reducedMotion: boolean;
 }
 
-function ContributorCardItem({
-  developer,
-  versionValues,
-  highlightedRole,
-  onSelect,
-  reducedMotion,
-}: ContributorCardItemProps) {
-  const cardRef = useRef<HTMLElement>(null);
-  const primaryRole = getPrimaryRoleGroup(developer.roleGroups);
-  const meta = ROLE_VISUAL_META[primaryRole];
+const ContributorCardItem = forwardRef<HTMLElement, ContributorCardItemProps>(
+  function ContributorCardItem(
+    { developer, versionValues, highlightedRole, onSelect, reducedMotion },
+    forwardedRef,
+  ) {
+    const internalRef = useRef<HTMLElement | null>(null);
+    const primaryRole = getPrimaryRoleGroup(developer.roleGroups);
+    const meta = ROLE_VISUAL_META[primaryRole];
 
-  const isDimmedBySynergy =
-    highlightedRole !== null && !developer.roleGroups.includes(highlightedRole);
-  const isHighlightedBySynergy =
-    highlightedRole !== null && developer.roleGroups.includes(highlightedRole);
+    const isDimmedBySynergy =
+      highlightedRole !== null && !developer.roleGroups.includes(highlightedRole);
+    const isHighlightedBySynergy =
+      highlightedRole !== null && developer.roleGroups.includes(highlightedRole);
 
-  const handleMouseMove = useCallback((event: ReactMouseEvent<HTMLElement>) => {
-    const el = cardRef.current;
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
-    el.style.setProperty('--mouse-x', `${x}px`);
-    el.style.setProperty('--mouse-y', `${y}px`);
-  }, []);
+    const setRefs = useCallback(
+      (node: HTMLElement | null) => {
+        internalRef.current = node;
+        if (typeof forwardedRef === 'function') {
+          forwardedRef(node);
+        } else if (forwardedRef) {
+          forwardedRef.current = node;
+        }
+      },
+      [forwardedRef],
+    );
 
-  return (
-    <motion.article
-      ref={cardRef}
+    const handleMouseMove = useCallback((event: ReactMouseEvent<HTMLElement>) => {
+      const el = internalRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+      el.style.setProperty('--mouse-x', `${x}px`);
+      el.style.setProperty('--mouse-y', `${y}px`);
+    }, []);
+
+    return (
+      <motion.article
+        ref={setRefs}
       layout={!reducedMotion ? 'position' : false}
       initial={reducedMotion ? false : { opacity: 0, y: 14 }}
       animate={{
@@ -372,7 +384,8 @@ function ContributorCardItem({
       </div>
     </motion.article>
   );
-}
+  },
+);
 
 export function Developers() {
   const [versionFilter, setVersionFilter] = useState<string>('Todas');
@@ -884,33 +897,35 @@ export function Developers() {
         </div>
       </LayoutGroup>
 
-      {/* 4. INTERACTIVE COHORT & TRAJECTORY INSPECTOR (SLIDE-OVER FICHA TÉCNICA) */}
-      <AnimatePresence>
-        {selectedDeveloper && (
-          <div
-            className="fixed inset-0 z-50 flex justify-end"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="contributor-inspector-title"
-          >
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              onClick={() => setSelectedDeveloper(null)}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm"
-            />
+      {/* 4. INTERACTIVE COHORT & TRAJECTORY INSPECTOR (SLIDE-OVER FICHA TÉCNICA BELOW HEADER) */}
+      {typeof document !== 'undefined' &&
+        createPortal(
+          <AnimatePresence>
+            {selectedDeveloper && (
+              <div
+                className="fixed inset-x-0 top-[73px] bottom-0 z-50 flex justify-end p-2.5 sm:p-4"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="contributor-inspector-title"
+              >
+                {/* Backdrop */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  onClick={() => setSelectedDeveloper(null)}
+                  className="fixed inset-x-0 top-[73px] bottom-0 bg-black/55 backdrop-blur-sm"
+                />
 
-            {/* Slide-Over Panel */}
-            <motion.aside
-              initial={prefersReducedMotion ? { opacity: 0 } : { x: '100%' }}
-              animate={prefersReducedMotion ? { opacity: 1 } : { x: 0 }}
-              exit={prefersReducedMotion ? { opacity: 0 } : { x: '100%' }}
-              transition={{ type: 'spring', stiffness: 340, damping: 34 }}
-              className="relative z-10 w-full max-w-md h-full overflow-y-auto border-l border-white/12 bg-[#0e101b]/95 p-6 sm:p-7 backdrop-blur-2xl shadow-2xl flex flex-col justify-between gap-6"
-            >
+                {/* Floating Slide-Over Panel Positioned Below Header */}
+                <motion.aside
+                  initial={prefersReducedMotion ? { opacity: 0 } : { x: '104%', opacity: 0.6 }}
+                  animate={prefersReducedMotion ? { opacity: 1 } : { x: 0, opacity: 1 }}
+                  exit={prefersReducedMotion ? { opacity: 0 } : { x: '104%', opacity: 0 }}
+                  transition={{ type: 'spring', stiffness: 340, damping: 34 }}
+                  className="relative z-10 w-full max-w-md h-full overflow-y-auto rounded-2xl border border-white/15 bg-[#0e101b]/95 p-5 sm:p-6 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.75)] flex flex-col justify-between gap-6"
+                >
               <div className="space-y-6">
                 {/* Drawer Top Bar */}
                 <div className="flex items-center justify-between border-b border-white/[0.08] pb-4">
@@ -1063,10 +1078,12 @@ export function Developers() {
                   Filtrar área {getPrimaryRoleGroup(selectedDeveloper.roleGroups)} →
                 </button>
               </div>
-            </motion.aside>
-          </div>
+                </motion.aside>
+              </div>
+            )}
+          </AnimatePresence>,
+          document.body,
         )}
-      </AnimatePresence>
     </section>
   );
 }
