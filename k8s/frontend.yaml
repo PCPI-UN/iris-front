@@ -33,19 +33,9 @@ spec:
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
-          env:
-            - name: NODE_ENV
-              value: "production"
-            - name: PORT
-              value: "3000"
-            - name: HOSTNAME
-              value: "0.0.0.0"
-            - name: API_URL
-              value: "http://gateway:3000"
-            - name: NEXT_PUBLIC_URL
-              value: "http://localhost:3001"
-            - name: NEXT_PUBLIC_API_URL
-              value: "http://localhost:3000"
+          envFrom:
+            - configMapRef:
+                name: frontend-config
           readinessProbe:
             httpGet:
               path: /
