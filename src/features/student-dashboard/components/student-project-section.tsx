@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, Variants } from 'framer-motion';
 import {
   FileText,
@@ -57,6 +57,13 @@ export const StudentProjectSection = ({
   );
   const [isSaving, setIsSaving] = useState(false);
 
+  useEffect(() => {
+    if (!isEditing && project) {
+      setEditedName(project.name || '');
+      setEditedDescription(project.description || '');
+    }
+  }, [project, isEditing]);
+
   if (!project) {
     return (
       <div className="rounded-2xl border border-white/10 bg-[#0e101a]/85 p-8 text-center backdrop-blur-xl">
@@ -75,6 +82,7 @@ export const StudentProjectSection = ({
         return 'Cambios Solicitados';
       case 'REJECTED':
         return 'Inscripción Rechazada';
+      case 'UNDER_REVIEW':
       case 'PENDING':
       default:
         return 'En Revisión';

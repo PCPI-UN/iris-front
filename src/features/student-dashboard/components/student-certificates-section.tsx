@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { paths } from '@/config/paths';
 import { DiplomaCertificate, StudentEvaluation, StudentProfile, StudentProjectInfo } from '../types';
+import { getCertificateDownloadUrl } from '../api/get-student-dashboard';
 import { generateIndividualStudentReport } from '../utils/generate-student-report';
 
 export interface StudentCertificatesSectionProps {
@@ -184,23 +185,17 @@ export const StudentCertificatesSection = ({
 
                   <div className="shrink-0">
                     {cert.isIssued ? (
-                      cert.downloadUrl ? (
-                        <motion.a
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                          href={cert.downloadUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="flex items-center gap-1.5 rounded-xl border border-pink-500/40 bg-pink-500/15 px-3 py-2 text-xs font-semibold text-pink-200 hover:bg-pink-500/25 transition-all shadow-sm"
-                        >
-                          <Download className="size-3.5" />
-                          <span>Descargar PDF</span>
-                        </motion.a>
-                      ) : (
-                        <span className="inline-flex items-center rounded-lg border border-emerald-500/30 bg-emerald-500/15 px-2.5 py-1 text-xs font-semibold text-emerald-300">
-                          Emitido
-                        </span>
-                      )
+                      <motion.a
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        href={getCertificateDownloadUrl(cert.id)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-1.5 rounded-xl border border-pink-500/40 bg-pink-500/15 px-3 py-2 text-xs font-semibold text-pink-200 hover:bg-pink-500/25 transition-all shadow-sm"
+                      >
+                        <Download className="size-3.5" />
+                        <span>Descargar PDF</span>
+                      </motion.a>
                     ) : (
                       <div
                         className="flex items-center gap-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-300"

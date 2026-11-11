@@ -14,8 +14,11 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
-import { StudentDashboardData } from '../types';
-import { useStudentDashboard } from '../api/get-student-dashboard';
+import { StudentDashboardData, StudentProjectInfo } from '../types';
+import {
+  useStudentDashboard,
+  useUpdateStudentProject,
+} from '../api/get-student-dashboard';
 import { StudentProjectSection } from './student-project-section';
 import { StudentEvaluationSection } from './student-evaluation-section';
 
@@ -37,8 +40,13 @@ export const StudentProjectDashboardView = ({
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<StudentProjectTab>(defaultTab);
 
-  const { data: remoteData, isLoading } = useStudentDashboard(eventId);
+  const { data: remoteData, isLoading } = useStudentDashboard(
+    eventId ?? 'current',
+  );
   const data = initialData || remoteData;
+  const updateProjectMutation = useUpdateStudentProject({
+    eventId: data?.currentProject?.eventId ?? eventId,
+  });
 
   if (isLoading || !data) {
     return (
@@ -49,6 +57,19 @@ export const StudentProjectDashboardView = ({
   }
 
   const { profile, currentProject, evaluation } = data;
+
+  const handleSaveProjectChanges = async (
+    updatedProject: Partial<StudentProjectInfo>,
+  ) => {
+    if (!currentProject?.id) return;
+    await updateProjectMutation.mutateAsync({
+      projectId: currentProject.id,
+      data: {
+        name: updatedProject.name ?? currentProject.name,
+        description: updatedProject.description ?? currentProject.description,
+      },
+    });
+  };
 
   const handleBack = () => {
     if (onBack) {
@@ -234,7 +255,10 @@ export const StudentProjectDashboardView = ({
           className="tab-panel"
         >
           {activeTab === 'project' && (
-            <StudentProjectSection project={currentProject} />
+            <StudentProjectSection
+              project={currentProject}
+              onSaveChanges={handleSaveProjectChanges}
+            />
           )}
 
           {activeTab === 'evaluation' && (

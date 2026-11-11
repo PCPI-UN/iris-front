@@ -981,9 +981,11 @@ export const scenarioHistoricalTrajectory: StudentDashboardData = {
  */
 export const studentMockScenariosByEmail: Record<string, StudentDashboardData> = {
   'student.review@iris.com': scenarioInReview,
+  'student.changes@iris.com': scenarioInReview,
   'student.prepub@iris.com': scenarioPrePublication,
   'maria@iris.com': scenarioPublishedRegular,
   'student.regular@iris.com': scenarioPublishedRegular,
+  'student@iris.com': scenarioPublishedRegular,
   'student.winner@iris.com': scenarioCoWinnerTie,
   'carlos@iris.com': scenarioHistoricalTrajectory,
   'student.history@iris.com': scenarioHistoricalTrajectory,

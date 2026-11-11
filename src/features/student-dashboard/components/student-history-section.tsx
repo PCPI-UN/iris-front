@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AcademicParticipation } from '../types';
+import { getCertificateDownloadUrl } from '../api/get-student-dashboard';
 
 export interface StudentHistorySectionProps {
   trajectory: AcademicParticipation[];
@@ -241,23 +242,17 @@ export const StudentHistorySection = ({
 
                               <div className="shrink-0">
                                 {cert.isIssued ? (
-                                  cert.downloadUrl ? (
-                                    <motion.a
-                                      whileHover={{ scale: 1.02 }}
-                                      whileTap={{ scale: 0.98 }}
-                                      href={cert.downloadUrl}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                      className="inline-flex items-center gap-1.5 rounded-lg border border-pink-500/40 bg-pink-500/20 px-3 py-1.5 text-xs font-semibold text-pink-200 hover:bg-pink-500/30 transition-all shadow-sm"
-                                    >
-                                      <Download className="size-3.5" />
-                                      <span>Descargar Diploma (PDF)</span>
-                                    </motion.a>
-                                  ) : (
-                                    <span className="inline-flex items-center rounded-lg border border-emerald-500/30 bg-emerald-500/15 px-2.5 py-1 text-xs font-semibold text-emerald-300">
-                                      Emitido
-                                    </span>
-                                  )
+                                  <motion.a
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
+                                    href={getCertificateDownloadUrl(cert.id)}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="inline-flex items-center gap-1.5 rounded-lg border border-pink-500/40 bg-pink-500/20 px-3 py-1.5 text-xs font-semibold text-pink-200 hover:bg-pink-500/30 transition-all shadow-sm"
+                                  >
+                                    <Download className="size-3.5" />
+                                    <span>Descargar Diploma (PDF)</span>
+                                  </motion.a>
                                 ) : (
                                   <div
                                     className="flex items-center gap-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-300"

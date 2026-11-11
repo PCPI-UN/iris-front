@@ -125,7 +125,7 @@ export const StudentGeneralDashboardView = ({
           </h2>
           {currentProject && (
             <span className="text-xs text-slate-400 font-mono">
-              Semestre 2026-1
+              Semestre {currentProject.semester || '2026-1'}
             </span>
           )}
         </div>
@@ -164,12 +164,18 @@ export const StudentGeneralDashboardView = ({
                   <span className="flex items-center gap-1.5">
                     <FolderGit2 className="size-3.5 text-cyan-400" />
                     <span>
-                      {currentProject.participants?.length || 1} Integrantes
+                      {currentProject.participantsCount ??
+                        currentProject.participants?.length ??
+                        1}{' '}
+                      Integrantes
                     </span>
                   </span>
                   <span className="text-slate-600" aria-hidden="true">·</span>
                   <span>
-                    {currentProject.documents?.length || 0} Documentos entregados
+                    {currentProject.documentsCount ??
+                      currentProject.documents?.length ??
+                      0}{' '}
+                    Documentos entregados
                   </span>
                 </div>
               </div>
