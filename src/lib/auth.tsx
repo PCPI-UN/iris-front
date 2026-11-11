@@ -122,7 +122,11 @@ export const useLogout = ({ onSuccess }: { onSuccess?: () => void }) => {
   });
 };
 
-const logout = (): Promise<AuthResponse> => {
+const logout = async (): Promise<AuthResponse> => {
+  if (typeof window !== 'undefined') {
+    const Cookies = (await import('js-cookie')).default;
+    Cookies.remove('access_token', { path: '/' });
+  }
   return api.post('/auth/logout');
 };
 
@@ -133,8 +137,16 @@ export const loginInputSchema = z.object({
 
 export type LoginInput = z.infer<typeof loginInputSchema>;
 const loginWithEmailAndPassword = async (data: LoginInput): Promise<User> => {
-  // 1. Login - setea la cookie en el backend
-  await api.post<AuthResponse>('/auth/login', data);
+  // 1. Login - setea la cookie en el backend / mock
+  const response = await api.post<AuthResponse & { jwt?: string }>(
+    '/auth/login',
+    data,
+  );
+
+  if (typeof window !== 'undefined' && response?.jwt) {
+    const Cookies = (await import('js-cookie')).default;
+    Cookies.set('access_token', response.jwt, { path: '/' });
+  }
 
   // 2. Obtener el usuario autenticado con la cookie
   const user = await getUser();

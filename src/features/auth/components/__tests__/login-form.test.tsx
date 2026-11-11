@@ -16,10 +16,10 @@ test('should login new user and call onSuccess cb which should navigate the user
 
   await renderApp(<LoginForm onSuccess={onSuccess} />, { user: null });
 
-  await userEvent.type(screen.getByLabelText(/correo electrónico/i), newUser.email);
+  await userEvent.type(await screen.findByLabelText(/correo electrónico/i), newUser.email);
   await userEvent.type(screen.getByLabelText(/contraseña/i), newUser.password);
 
-  await userEvent.click(screen.getByRole('button', { name: /iniciar sesión/i }));
+  await userEvent.click(screen.getByRole('button', { name: /^iniciar sesión$/i }));
 
   await waitFor(() => expect(onSuccess).toHaveBeenCalledTimes(1));
 });
