@@ -6,14 +6,15 @@ import { useRouter } from "next/navigation";
 import { paths } from "@/config/paths";
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@/components/ui/dropdown";
 import { ChevronDown, ExternalLink } from "lucide-react";
+import { documentLink, type DocumentRef } from "@/lib/document-link";
 
 export function ProjectCard({ project, showProjectCode = false }: { project: any; showProjectCode?: boolean }) {
     const router = useRouter();
     const documents = project?.documents ?? [];
 
-      const openDocument = (url?: string) => {
-    if (!url) return
-    window.open(url, "_blank", "noopener,noreferrer")
+      const openDocument = (doc?: DocumentRef) => {
+    if (!doc) return
+    window.open(documentLink(doc), "_blank", "noopener,noreferrer")
   }
 
   const getDocumentLabel = (doc: any, index: number) => {
@@ -133,7 +134,7 @@ export function ProjectCard({ project, showProjectCode = false }: { project: any
                                     <Button
                                         variant="flat"
                                         className="w-full justify-between gap-3 border border-default-200 bg-default-50/60 text-left"
-                                        onPress={() => openDocument(documents[0]?.url)}
+                                        onPress={() => openDocument(documents[0])}
                                     >
                                         <span className="flex min-w-0 items-center gap-2 text-xs md:text-sm">
                                             <FileText className="h-4 w-4 text-primary flex-shrink-0" />
@@ -161,7 +162,7 @@ export function ProjectCard({ project, showProjectCode = false }: { project: any
                                             aria-label="Documentos del proyecto"
                                             onAction={(key) => {
                                                 const selectedDocument = documents[Number(key)]
-                                                openDocument(selectedDocument?.url)
+                                                openDocument(selectedDocument)
                                             }}
                                         >
                                             {documents.map((doc: any, index: number) => (

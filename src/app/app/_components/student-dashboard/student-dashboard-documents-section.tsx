@@ -16,6 +16,7 @@ import { StudentDashboardSectionCard } from "./student-dashboard-section-card";
 import { useNotifications } from "@/components/ui/notifications";
 import { api } from "@/lib/api-client";
 import ca from "zod/v4/locales/ca.cjs";
+import { documentLink } from "@/lib/document-link";
 
 type StudentDashboardDocumentsSectionProps = {
   docsProject: ProjectDocument[];
@@ -260,7 +261,7 @@ export const StudentDashboardDocumentsSection = ({
 
         {primaryDocument ? (
           <a
-            href={primaryDocument.url}
+            href={documentLink(primaryDocument)}
             target="_blank"
             rel="noreferrer"
             aria-label={`Ver documentación del proyecto: ${primaryDocument.type || "Documentación"} (abre en nueva pestaña)`}
@@ -342,7 +343,7 @@ export const StudentDashboardDocumentsSection = ({
               <li key={document.id}>
                 <article className="flex items-center justify-between gap-3 rounded-xl border border-default-200 bg-default-50/50 px-4 py-3 transition-colors hover:border-fuchsia-200/50 hover:bg-fuchsia-300/10">
                   <a
-                    href={document.url}
+                    href={documentLink(document)}
                     target="_blank"
                     rel="noreferrer"
                     className="min-w-0 flex-1"

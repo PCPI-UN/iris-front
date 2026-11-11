@@ -21,6 +21,7 @@ import { ParticipantsDetails } from "./participants-details";
 import { toEventTypeLabel } from "@/features/events/utils/event-enums";
 import { ProjectWithJurors, useProjectsWithJurors } from "../api/get-projects-with-jurors";
 import { SearchProjects } from "../../../components/search-project/search_projects";
+import { documentLink } from "@/lib/document-link";
 
 
 export const ProjectList = () => {
@@ -195,7 +196,7 @@ export const ProjectList = () => {
                             <div
                               key={index}
                               className="w-full flex items-center justify-between p-3 rounded-lg border border-muted/20 bg-muted/5 hover:bg-muted/10 transition-colors cursor-pointer"
-                              onClick={() => window.open(doc.url, "_blank")}
+                              onClick={() => window.open(documentLink(doc), "_blank")}
                             >
                               <div className="flex items-center gap-2 text-sm">
                                 <FileText className="h-4 w-4 text-primary" />

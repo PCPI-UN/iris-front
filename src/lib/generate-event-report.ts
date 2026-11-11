@@ -4,6 +4,11 @@ import type {
   Project,
   DashboardStats,
 } from "../types/report-types";
+import { absoluteDocumentLink, type DocumentRef } from "./document-link";
+
+// Stable links: the signed document.url expires an hour after the export
+const reportDocumentLink = (doc: DocumentRef) =>
+  absoluteDocumentLink(doc, window.location.origin);
 
 const COLORS = {
   white: "FFFFFF",
@@ -378,7 +383,7 @@ function buildProjectsSummarySheet(wb: ExcelJS.Workbook, projects: Project[]) {
       if (ci === 6 && logo) {
         cell.value = {
           text: "Logo",
-          hyperlink: logo.url,
+          hyperlink: reportDocumentLink(logo),
         };
         cell.font = {
           name: "Calibri",
@@ -389,7 +394,7 @@ function buildProjectsSummarySheet(wb: ExcelJS.Workbook, projects: Project[]) {
       } else if (ci === 7 && poster) {
         cell.value = {
           text: "Poster",
-          hyperlink: poster.url,
+          hyperlink: reportDocumentLink(poster),
         };
         cell.font = {
           name: "Calibri",
@@ -400,7 +405,7 @@ function buildProjectsSummarySheet(wb: ExcelJS.Workbook, projects: Project[]) {
       } else if (ci === 8 && support) {
         cell.value = {
           text: "Supporting document",
-          hyperlink: support.url,
+          hyperlink: reportDocumentLink(support),
         };
         cell.font = {
           name: "Calibri",
