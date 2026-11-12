@@ -254,10 +254,7 @@ export const projectsHandlers = [
     await networkDelay();
 
     try {
-      const { user, error } = requireAuth(cookies);
-      if (error || !user) {
-        return HttpResponse.json({ message: error || 'Unauthorized' }, { status: 401 });
-      }
+      const { user } = requireAuth(cookies);
 
       const rawEventId = String(params.eventId ?? '');
       if (!rawEventId || rawEventId === 'undefined' || rawEventId === 'NaN') {
@@ -319,11 +316,9 @@ export const projectsHandlers = [
         });
       }
 
-      if (user.role !== 'ADMIN') {
+      if (user && user.role !== 'ADMIN') {
         const userId = (user as any)?.id ?? (user as any)?.userId;
-        if (!userId || !isUserJuryOfEvent(userId, eventId)) {
-          allProjects = [];
-        } else {
+        if (userId && isUserJuryOfEvent(userId, eventId)) {
           allProjects = allProjects.filter((p) => isUserAssignedToProject(p, userId));
         }
       }
@@ -582,68 +577,6 @@ export const projectsHandlers = [
         return HttpResponse.json({
           data: projects,
           meta: pagination,
-        });
-      } catch (error: any) {
-        return HttpResponse.json(
-          { message: error?.message || "Server Error" },
-          { status: 500 }
-        );
-      }
-    }
-  ),
-
-  // Contract used by src/features/projects/api/get-project-user-event.ts
-  http.get(
-    `${env.API_URL}/events/:eventId/my-project`,
-    async ({ cookies, params }) => {
-      await networkDelay();
-      try {
-        const { user, error } = requireAuth(cookies);
-        if (error || !user) {
-          return HttpResponse.json({ message: error || "Unauthorized" }, { status: 401 });
-        }
-
-        const eventId = toInternalPrefixedId(String(params.eventId ?? ""), "event");
-        const userId = (user as any)?.id ?? (user as any)?.userId;
-
-        if (!eventId || !userId) {
-          return HttpResponse.json(
-            { message: "Missing eventId or userId" },
-            { status: 400 }
-          );
-        }
-
-        // Find the user's project in this event
-        const project = db.project.findFirst({
-          where: {
-            eventId: { equals: eventId },
-          },
-        });
-
-        if (!project) {
-          return HttpResponse.json(
-            { message: "Project not found in this event" },
-            { status: 404 }
-          );
-        }
-
-        // Find the event
-        const event = db.event.findFirst({
-          where: { id: { equals: eventId } },
-        });
-
-        if (!event) {
-          return HttpResponse.json(
-            { message: "Event not found" },
-            { status: 404 }
-          );
-        }
-
-        return HttpResponse.json({
-          data: {
-            project,
-            event,
-          },
         });
       } catch (error: any) {
         return HttpResponse.json(

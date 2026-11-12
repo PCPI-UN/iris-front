@@ -145,7 +145,7 @@ export const normalizeEvent = (raw: any): Event => {
   const collaborators = raw?.collaborators ?? [];
   const awards = raw?.awards ?? [];
   const categories = raw?.categories ?? [];
-  const rankingConfig = raw?.rankingConfig ?? raw?.rankingConfiguration ?? raw?.ranking_config;
+  const rankingConfig = raw?.rankingConfig ?? raw?.rankingConfiguration ?? raw?.ranking_config ?? raw?.rankingEvent;
   const rankingConfigId =
     raw?.rankingConfigId ??
     raw?.rankingConfigurationId ??
@@ -191,10 +191,22 @@ export const normalizeEvent = (raw: any): Event => {
       ? {
           id: rankingConfig.id ?? rankingConfig.rankingConfigId,
           eventId: rankingConfig.eventId ?? raw?.id,
-          positions: rankingConfig.positions,
+          positions: rankingConfig.positions ?? rankingConfig.visiblePositions,
           visiblePositions: rankingConfig.visiblePositions ?? rankingConfig.positions,
-          visibleInLanding: rankingConfig.visibleInLanding,
-          visibleScore: rankingConfig.visibleScore,
+          visibleInLanding:
+            typeof rankingConfig.visibleInLanding === "boolean"
+              ? rankingConfig.visibleInLanding
+              : typeof rankingConfig.visiblePublic === "boolean"
+                ? rankingConfig.visiblePublic
+                : typeof rankingConfig.isPublic === "boolean"
+                  ? rankingConfig.isPublic
+                  : undefined,
+          visibleScore:
+            typeof rankingConfig.visibleScore === "boolean"
+              ? rankingConfig.visibleScore
+              : typeof rankingConfig.gradeVisible === "boolean"
+                ? rankingConfig.gradeVisible
+                : undefined,
         }
       : undefined,
     rankingConfigId: typeof rankingConfigId === 'number' ? rankingConfigId : undefined,

@@ -35,6 +35,39 @@ import {
 } from '@/features/events/utils/resolve-join-target';
 import { useUser } from '@/lib/auth';
 import { Footer } from '@/features/landing/components/cta-footer';
+import { PastEventDetail } from './past-event-detail';
+
+const isPastEventClient = (event?: any) => {
+  if (!event) return false;
+  const statusName = String(event.statusName ?? '').toUpperCase();
+  if (
+    statusName === 'CLOSED' ||
+    statusName === 'FINISHED' ||
+    statusName === 'INACTIVE' ||
+    Number(event.status) === 4 ||
+    event.active === false ||
+    Boolean(event.rankingConfig?.visibleInLanding)
+  ) {
+    return true;
+  }
+
+  if (!event.endDate) return false;
+  if (/T\d{2}:\d{2}/.test(String(event.endDate))) {
+    const exactEnd = new Date(event.endDate);
+    if (!Number.isNaN(exactEnd.getTime())) {
+      return exactEnd.getTime() < Date.now();
+    }
+  }
+
+  const datePart = String(event.endDate).split('T')[0];
+  const [year, month, day] = datePart.split('-').map(Number);
+  if (!year || !month || !day) return false;
+
+  const today = new Date();
+  const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+  const endDateStart = new Date(year, month - 1, day).getTime();
+  return endDateStart < todayStart;
+};
 
 type ThemeKey = 'cyan' | 'pink' | 'yellow';
 
@@ -295,6 +328,10 @@ return (
     </div>
     </div>
 );
+}
+
+if (isPastEventClient(event)) {
+return <PastEventDetail eventId={eventId} />;
 }
 
 const organizers = Array.isArray(event.organizers)
