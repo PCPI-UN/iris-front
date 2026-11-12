@@ -5,7 +5,7 @@ ENGINE="k3s"
 CLUSTER_NAME="iris-local"
 NAMESPACE="pcpi"
 SKIP_BUILD=false
-LOCAL_KUBECONFIG="$HOME/.kube/config"
+LOCAL_KUBECONFIG="/etc/rancher/k3s/k3s.yaml"
 PUBLIC_URL="${PUBLIC_URL:-}"
 NODE_ENV="${NODE_ENV:-}"
 LOG_CONTAINER=""
@@ -123,23 +123,25 @@ build_images() {
 }
 
 load_images() {
+  local image="pcpi/frontend:latest"
+  local workers=(
+    "root@hyas"
+    "root@maia"
+  )
+
   log_info "Cargando imagen frontend en el clúster ($ENGINE)..."
-  case "$ENGINE" in
-    kind)
-      echo "  ↳ [Kind] Cargando pcpi/frontend:latest..."
-      kind load docker-image "pcpi/frontend:latest" --name "$CLUSTER_NAME"
-      ;;
-    k3s)
-      sudo -v
-      echo "  ↳ [K3s] Importando pcpi/frontend:latest..."
-      docker save "pcpi/frontend:latest" | sudo k3s ctr --namespace k8s.io images import -
-      ;;
-    k3d)
-      echo "  ↳ [K3d] Inyectando pcpi/frontend:latest..."
-      k3d image import "pcpi/frontend:latest" -c "$CLUSTER_NAME"
-      ;;
-  esac
-  log_success "Imagen inyectada correctamente."
+
+  log_info "Importando frontend en Atlas..."
+
+  docker save "$image" | sudo k3s ctr --namespace k8s.io images import -
+
+  for worker in "${workers[@]}"; do
+    log_info "Importando frontend en $worker..."
+
+    docker save "$image" | ssh "$worker" "sudo k3s ctr --namespace k8s.io images import -"
+  done
+
+  log_success "Frontend distribuido en Atlas"
 }
 
 deploy_app() {
