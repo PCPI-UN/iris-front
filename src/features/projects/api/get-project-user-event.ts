@@ -25,17 +25,33 @@ export const getProject = async ({
 }: GetProjectInput): Promise<ProjectByEventPayload | null> => {
   const validatedInput = getProjectInputSchema.parse({ eventId });
   try {
-    const response = await api.get<ProjectByEventResponse>(
+    const response = await api.get<any>(
       `/events/${validatedInput.eventId}/my-project`,
       { suppressErrorNotification: true },
     );
-    const payload = "data" in response ? response.data : response;
+    const payload =
+      response && typeof response === "object" && "data" in response
+        ? response.data
+        : response;
 
-    if (!payload?.project || !payload?.event) {
-      throw new Error("Invalid project response");
+    if (payload?.project && payload?.event) {
+      return payload;
     }
 
-    return payload;
+    if (payload?.id && (payload?.enrollmentStatus || payload?.state)) {
+      return {
+        project: {
+          ...payload,
+          state: payload.enrollmentStatus ?? payload.state,
+        } as Project,
+        event: {
+          id: payload.eventId,
+          name: payload.eventName ?? "",
+        } as Event,
+      };
+    }
+
+    throw new Error("Invalid project response");
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     if (message === "No project found for this user in the specified event") {

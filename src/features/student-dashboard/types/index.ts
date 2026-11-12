@@ -5,6 +5,7 @@
 
 export type EnrollmentStatus =
   | 'PENDING'
+  | 'UNDER_REVIEW'
   | 'APPROVED'
   | 'REQUEST_CHANGES'
   | 'REJECTED';
@@ -58,6 +59,8 @@ export type StudentProjectInfo = {
   canEdit: boolean;
   documents: StudentProjectDocument[];
   participants: StudentProjectParticipant[];
+  participantsCount?: number;
+  documentsCount?: number;
   semester?: string;
 };
 
@@ -140,6 +143,57 @@ export type StudentDashboardData = {
   evaluation: StudentEvaluation | null;
   trajectory: AcademicParticipation[];
   certificates: DiplomaCertificate[];
+};
+
+/**
+ * Contratos HTTP según el Documento de Integración Backend [CU-86e3vmxb2]
+ */
+
+/** Endpoint 1: GET /api/v1/students/me/dashboard */
+export type StudentGeneralDashboardCurrentProjectDTO = {
+  id: number | string;
+  eventId: number | string;
+  eventName: string;
+  semester?: string;
+  projectCode: string;
+  name: string;
+  title?: string;
+  description: string;
+  categoryName: string;
+  enrollmentStatus: EnrollmentStatus;
+  canEdit: boolean;
+  participantsCount?: number;
+  documentsCount?: number;
+  documents?: StudentProjectDocument[];
+  participants?: StudentProjectParticipant[];
+};
+
+export type StudentGeneralDashboardResponse = {
+  profile: StudentProfile;
+  kpis: StudentKpis;
+  currentProject: StudentGeneralDashboardCurrentProjectDTO | null;
+  evaluation: {
+    resultsPublished: boolean;
+    finalScore?: number;
+    maxScore?: number;
+    ranking?: StudentRankingInfo;
+    criteriaScores?: CriterionScore[];
+    consolidatedFeedback?: string;
+  } | null;
+  trajectory: AcademicParticipation[];
+  certificates?: DiplomaCertificate[];
+};
+
+/** Endpoint 2: GET /api/v1/events/:eventId/my-project */
+export type StudentProjectDetailResponse = StudentProjectInfo;
+
+/** Endpoint 3: GET /api/v1/events/:eventId/my-project/results */
+export type StudentProjectResultsResponse = StudentEvaluation;
+
+/** Endpoint 4: PATCH /api/v1/projects/:projectId */
+export type UpdateStudentProjectPayload = {
+  name: string;
+  description: string;
 };
 
 export type StudentMockScenario =

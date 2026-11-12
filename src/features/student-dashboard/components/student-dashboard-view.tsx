@@ -9,8 +9,11 @@ import {
   Award,
 } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
-import { StudentDashboardData } from '../types';
-import { useStudentDashboard } from '../api/get-student-dashboard';
+import { StudentDashboardData, StudentProjectInfo } from '../types';
+import {
+  useStudentDashboard,
+  useUpdateStudentProject,
+} from '../api/get-student-dashboard';
 import { StudentHeader } from './student-header';
 import { StudentProjectSection } from './student-project-section';
 import { StudentEvaluationSection } from './student-evaluation-section';
@@ -34,12 +37,18 @@ export const StudentDashboardView = ({
   initialData,
   defaultTab = 'project',
   onBack,
+  eventId,
 }: StudentDashboardViewProps) => {
   const [activeTab, setActiveTab] = useState<StudentDashboardTab>(defaultTab);
 
   // Hook React Query para resolver datos según la sesión autenticada
-  const { data: remoteData, isLoading } = useStudentDashboard();
+  const { data: remoteData, isLoading } = useStudentDashboard(
+    eventId ?? 'current',
+  );
   const data = initialData || remoteData;
+  const updateProjectMutation = useUpdateStudentProject({
+    eventId: data?.currentProject?.eventId ?? eventId,
+  });
 
   if (isLoading || !data) {
     return (
@@ -50,6 +59,19 @@ export const StudentDashboardView = ({
   }
 
   const { profile, kpis, currentProject, evaluation, trajectory, certificates } = data;
+
+  const handleSaveProjectChanges = async (
+    updatedProject: Partial<StudentProjectInfo>,
+  ) => {
+    if (!currentProject?.id) return;
+    await updateProjectMutation.mutateAsync({
+      projectId: currentProject.id,
+      data: {
+        name: updatedProject.name ?? currentProject.name,
+        description: updatedProject.description ?? currentProject.description,
+      },
+    });
+  };
 
   const getEvaluationBadge = () => {
     if (!evaluation) return null;
@@ -209,7 +231,10 @@ export const StudentDashboardView = ({
           className="tab-panel"
         >
           {activeTab === 'project' && (
-            <StudentProjectSection project={currentProject} />
+            <StudentProjectSection
+              project={currentProject}
+              onSaveChanges={handleSaveProjectChanges}
+            />
           )}
 
           {activeTab === 'evaluation' && (

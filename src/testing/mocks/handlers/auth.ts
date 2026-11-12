@@ -91,59 +91,64 @@ export const authHandlers = [
     }
   }),
 
-  http.post(`${env.API_URL}/auth/login`, async ({ request }) => {
-    await networkDelay();
+  ...[`${env.API_URL}/auth/login`, '/api/auth/login'].map((url) =>
+    http.post(url, async ({ request }) => {
+      await networkDelay();
 
-    try {
-      const credentials = (await request.json()) as LoginBody;
-      const result = authenticate(credentials);
+      try {
+        const credentials = (await request.json()) as LoginBody;
+        const result = authenticate(credentials);
 
-      return HttpResponse.json(result, {
-        headers: {
-          // with a real API servier, the token cookie should also be Secure and HttpOnly
-          'Set-Cookie': `${AUTH_COOKIE}=${result.jwt}; Path=/;`,
-        },
-      });
-    } catch (error: any) {
-      return HttpResponse.json(
-        { message: error?.message || 'Server Error' },
-        { status: 500 },
-      );
-    }
-  }),
-
-  http.post(`${env.API_URL}/auth/logout`, async () => {
-    await networkDelay();
-
-    return HttpResponse.json(
-      { message: 'Logged out' },
-      {
-        headers: {
-          'Set-Cookie': `${AUTH_COOKIE}=; Path=/;`,
-        },
-      },
-    );
-  }),
-
-  http.get(`${env.API_URL}/auth/me`, async ({ cookies }) => {
-    await networkDelay();
-
-    try {
-      const { user, error } = requireAuth(cookies);
-
-      if (error || !user) {
+        return HttpResponse.json(result, {
+          headers: {
+            'Set-Cookie': `${AUTH_COOKIE}=${result.jwt}; Path=/;`,
+          },
+        });
+      } catch (error: any) {
         return HttpResponse.json(
-          { message: error ?? 'Unauthorized' },
-          { status: 401 },
+          { message: error?.message || 'Server Error' },
+          { status: 500 },
         );
       }
+    }),
+  ),
 
-      return HttpResponse.json({ data: user });
-    } catch (error: any) {
+  ...[`${env.API_URL}/auth/logout`, '/api/auth/logout'].map((url) =>
+    http.post(url, async () => {
+      await networkDelay();
+
       return HttpResponse.json(
-        { message: error?.message || 'Server Error' },
-        { status: 500 },
+        { message: 'Logged out' },
+        {
+          headers: {
+            'Set-Cookie': `${AUTH_COOKIE}=; Path=/;`,
+          },
+        },
       );
-    }
-  }),
+    }),
+  ),
+
+  ...[`${env.API_URL}/auth/me`, '/api/auth/me'].map((url) =>
+    http.get(url, async ({ cookies }) => {
+      await networkDelay();
+
+      try {
+        const { user, error } = requireAuth(cookies);
+
+        if (error || !user) {
+          return HttpResponse.json(
+            { message: error ?? 'Unauthorized' },
+            { status: 401 },
+          );
+        }
+
+        return HttpResponse.json({ data: user });
+      } catch (error: any) {
+        return HttpResponse.json(
+          { message: error?.message || 'Server Error' },
+          { status: 500 },
+        );
+      }
+    }),
+  ),
 ];

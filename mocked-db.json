@@ -291,6 +291,94 @@
       "platformPermissions": [],
       "bio": "Estudiante premiada con empate (Coganadora)",
       "createdAt": 1700500000000
+    },
+    {
+      "id": "user-student-regular",
+      "firstName": "María",
+      "lastName": "García",
+      "email": "student.regular@iris.com",
+      "phone": "",
+      "password": "3670747394",
+      "teamId": "team-001",
+      "role": "USER",
+      "active": true,
+      "status": "ACTIVE",
+      "platformRoles": [
+        {
+          "id": 2,
+          "name": "User",
+          "scope": "platform"
+        }
+      ],
+      "platformPermissions": [],
+      "bio": "Estudiante con resultados regulares publicados",
+      "createdAt": 1700600000000
+    },
+    {
+      "id": "user-student-history",
+      "firstName": "Carlos",
+      "lastName": "López",
+      "email": "student.history@iris.com",
+      "phone": "",
+      "password": "3670747394",
+      "teamId": "team-002",
+      "role": "USER",
+      "active": true,
+      "status": "ACTIVE",
+      "platformRoles": [
+        {
+          "id": 2,
+          "name": "User",
+          "scope": "platform"
+        }
+      ],
+      "platformPermissions": [],
+      "bio": "Estudiante con trayectoria histórica consolidada",
+      "createdAt": 1700700000000
+    },
+    {
+      "id": "user-student-default",
+      "firstName": "Estudiante",
+      "lastName": "Demo",
+      "email": "student@iris.com",
+      "phone": "",
+      "password": "3670747394",
+      "teamId": "team-001",
+      "role": "USER",
+      "active": true,
+      "status": "ACTIVE",
+      "platformRoles": [
+        {
+          "id": 2,
+          "name": "User",
+          "scope": "platform"
+        }
+      ],
+      "platformPermissions": [],
+      "bio": "Cuenta general de prueba de estudiante",
+      "createdAt": 1700800000000
+    },
+    {
+      "id": "user-student-changes",
+      "firstName": "Laura",
+      "lastName": "Herrera",
+      "email": "student.changes@iris.com",
+      "phone": "",
+      "password": "3670747394",
+      "teamId": "team-001",
+      "role": "USER",
+      "active": true,
+      "status": "ACTIVE",
+      "platformRoles": [
+        {
+          "id": 2,
+          "name": "User",
+          "scope": "platform"
+        }
+      ],
+      "platformPermissions": [],
+      "bio": "Estudiante con solicitud de cambios",
+      "createdAt": 1700900000000
     }
   ],
   "event": [
