@@ -4,7 +4,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
 import { paths } from "@/config/paths";
-import { api } from "@/lib/api-client";
+import { api, ApiError } from "@/lib/api-client";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -16,6 +16,15 @@ import {
 } from "lucide-react";
 
 type ConfirmState = "loading" | "success" | "invalid" | "error";
+
+/**
+ * The backend answers 404 for an unknown, expired or used token and 400 for a
+ * token of another type; both mean the link is no longer valid.
+ */
+export const getConfirmErrorState = (err: unknown): ConfirmState =>
+  err instanceof ApiError && (err.status === 400 || err.status === 404)
+    ? "invalid"
+    : "error";
 
 const cardMotion = {
   initial: { opacity: 0, y: 12, scale: 0.98 },
@@ -42,17 +51,7 @@ export const ConfirmAccountForm = () => {
       await api.post("/auth/activate", { token });
       setState("success");
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message.toLowerCase() : "";
-
-      if (
-        message.includes("invalid") ||
-        message.includes("expired") ||
-        message.includes("token")
-      ) {
-        setState("invalid");
-      } else {
-        setState("error");
-      }
+      setState(getConfirmErrorState(err));
     }
   }, [token]);
 
