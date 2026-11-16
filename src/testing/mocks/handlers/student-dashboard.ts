@@ -456,11 +456,11 @@ const getStudentDashboardHandler = async ({
             id: currentProject.id,
             eventId: currentProject.eventId,
             eventName: currentProject.eventName,
-            semester: currentProject.semester || '2026-1',
-            projectCode: currentProject.projectCode,
+            semester: currentProject.semester,
+            projectCode: currentProject.projectCode || null,
             name: currentProject.name,
-            description: currentProject.description,
-            categoryName: currentProject.categoryName,
+            description: currentProject.description || null,
+            categoryName: currentProject.categoryName || null,
             enrollmentStatus: currentProject.enrollmentStatus,
             canEdit:
               currentProject.enrollmentStatus === 'REQUEST_CHANGES',
@@ -474,25 +474,24 @@ const getStudentDashboardHandler = async ({
               0,
           }
         : null,
-      evaluation: data.evaluation
-        ? data.evaluation.resultsPublished
-          ? {
-              resultsPublished: true,
-              finalScore: data.evaluation.finalScore,
-            }
-          : {
-              resultsPublished: false,
-            }
+      // Como el gateway: sin proyecto actual es null; la nota es null hasta publicar
+      evaluation: currentProject
+        ? {
+            resultsPublished: Boolean(data.evaluation?.resultsPublished),
+            finalScore: data.evaluation?.resultsPublished
+              ? (data.evaluation.finalScore ?? null)
+              : null,
+          }
         : null,
       trajectory: (data.trajectory ?? []).map((item) => ({
         id: item.id,
         eventId: item.eventId,
         semester: item.semester,
         eventName: item.eventName,
-        courseName: item.courseName,
+        courseName: item.courseName || null,
         projectName: item.projectName,
-        ...(item.finalScore !== undefined && { finalScore: item.finalScore }),
-        ...(item.award && { award: item.award }),
+        finalScore: item.finalScore ?? null,
+        award: item.award || null,
         isCurrent: Boolean(item.isCurrent),
         certificates: (item.certificates ?? []).map((cert) => ({
           id: cert.id,
@@ -515,6 +514,72 @@ const getStudentDashboardHandler = async ({
       { status: 500 },
     );
   }
+};
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+// Códigos de PendingParticipantStatus en el backend: 1 PENDING, 2 INVITED, 3 JOINED
+const toGatewayParticipantStatus = (status?: string): string =>
+  status === 'joined' ? '3' : status === 'Invitado' ? '2' : '1';
+
+/**
+ * Respuesta de `GET /events/:eventId/my-project` con la forma real del gateway:
+ * `{ project, event }`, el proyecto con `state` y `courseId` (sin nombre de categoría ni
+ * semestre), participantes con `ParticipantCode` y `status` numérico, y documentos con `state`.
+ */
+const toGatewayMyProject = (user: unknown, project: StudentProjectInfo) => {
+  const currentProject = resolveStudentStateForUser(user).currentProject;
+  const isCurrentEvent =
+    Boolean(currentProject) &&
+    String(currentProject?.eventId) === String(project.eventId);
+  const now = Date.now();
+
+  return {
+    project: {
+      id: project.id,
+      eventId: project.eventId,
+      courseId: 1,
+      name: project.name,
+      description: project.description ?? undefined,
+      projectCode: project.projectCode ?? undefined,
+      state: project.enrollmentStatus,
+      participants: (project.participants ?? []).map((participant) => ({
+        userId: 0,
+        projectId: project.id,
+        firstName: participant.firstName,
+        lastName: participant.lastName,
+        email: participant.email,
+        ParticipantCode: participant.studentCode,
+        semester:
+          participant.semester !== undefined
+            ? String(participant.semester)
+            : undefined,
+        career: participant.career,
+        status: toGatewayParticipantStatus(participant.status),
+      })),
+      documents: (project.documents ?? []).map((document) => ({
+        id: document.id,
+        projectId: project.id,
+        url: document.url,
+        type: document.type,
+        state: 'ACTIVE',
+        createdAt: new Date(document.createdAt ?? now).toISOString(),
+      })),
+    },
+    // El evento del proyecto actual sigue en curso; los del historial ya terminaron
+    event: {
+      id: project.eventId,
+      name: project.eventName,
+      startDate: new Date(
+        isCurrentEvent ? now - 7 * DAY_MS : now - 187 * DAY_MS,
+      ).toISOString(),
+      endDate: new Date(
+        isCurrentEvent ? now + 7 * DAY_MS : now - 180 * DAY_MS,
+      ).toISOString(),
+      evaluationType: 1,
+      resultsPublished: false,
+    },
+  };
 };
 
 // 2. GET /api/v1/events/:eventId/my-project (Ficha técnica de proyecto)
@@ -553,20 +618,7 @@ const getStudentEventProjectHandler = async ({
       );
     }
 
-    return HttpResponse.json({
-      id: project.id,
-      eventId: project.eventId,
-      eventName: project.eventName,
-      semester: project.semester || '2026-1',
-      projectCode: project.projectCode,
-      name: project.name,
-      description: project.description,
-      categoryName: project.categoryName,
-      enrollmentStatus: project.enrollmentStatus,
-      canEdit: Boolean(project.canEdit),
-      documents: project.documents ?? [],
-      participants: project.participants ?? [],
-    });
+    return HttpResponse.json(toGatewayMyProject(user, project));
   } catch (err: any) {
     return HttpResponse.json(
       { message: err?.message || 'Server Error' },
@@ -618,7 +670,9 @@ const getStudentEventResultsHandler = async ({
     // Regla 2 y 3 (Anonimización estricta y privacidad de competidores):
     return HttpResponse.json({
       resultsPublished: true,
-      finalScore: evaluation.finalScore ?? 0,
+      evaluated: evaluation.finalScore != null,
+      finalScore: evaluation.finalScore ?? null,
+      // Los escenarios simulan eventos ZERO_TO_FIVE (nota máxima 5)
       maxScore: evaluation.maxScore ?? 5.0,
       ranking: evaluation.ranking,
       criteriaScores: (evaluation.criteriaScores ?? []).map((crit) => ({

@@ -395,6 +395,73 @@ describe('Dashboard del estudiante con respuestas reales del gateway', () => {
     expect(screen.queryByText('4.85')).not.toBeInTheDocument();
   });
 
+  it('sin proyecto en el evento no muestra el proyecto de otro evento', async () => {
+    useRealBackendResponses();
+    server.use(
+      http.get('*/api/events/:eventId/my-project/results', () =>
+        HttpResponse.json(
+          { message: 'No project found for this user in the specified event' },
+          { status: 404 },
+        ),
+      ),
+      http.get('*/api/events/:eventId/my-project', () =>
+        HttpResponse.json(
+          { message: 'No project found for this user in the specified event' },
+          { status: 404 },
+        ),
+      ),
+    );
+    render(<StudentProjectDashboardView eventId={7} />, {
+      wrapper: createWrapper(),
+    });
+
+    expect(
+      await screen.findByText('No tienes un proyecto en este evento'),
+    ).toBeInTheDocument();
+    // El proyecto actual del dashboard general es de otro evento (4) y no debe aparecer
+    expect(
+      screen.queryByText('Plataforma de trazabilidad de residuos'),
+    ).not.toBeInTheDocument();
+  });
+
+  it('un fallo al consultar la ficha se muestra como error, no como estado vacío', async () => {
+    useRealBackendResponses();
+    server.use(
+      http.get('*/api/events/:eventId/my-project', () =>
+        HttpResponse.json({ message: 'Internal error' }, { status: 500 }),
+      ),
+    );
+    render(<StudentProjectDashboardView eventId={1} />, {
+      wrapper: createWrapper(),
+    });
+
+    expect(
+      await screen.findByText('No pudimos cargar tu dashboard'),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText('No tienes un proyecto en este evento'),
+    ).not.toBeInTheDocument();
+  });
+
+  it('consulta el dashboard general una sola vez al cargar', async () => {
+    let dashboardRequests = 0;
+    useRealBackendResponses();
+    server.use(
+      http.get('*/api/students/me/dashboard', () => {
+        dashboardRequests += 1;
+        return HttpResponse.json(realDashboard as any);
+      }),
+    );
+    render(<StudentProjectDashboardView eventId={1} />, {
+      wrapper: createWrapper(),
+    });
+
+    expect(
+      (await screen.findAllByText('Sistema de riego inteligente')).length,
+    ).toBeGreaterThan(0);
+    expect(dashboardRequests).toBe(1);
+  });
+
   it('muestra un error con reintento si el dashboard no se puede cargar', async () => {
     server.use(
       http.get('*/api/students/me/dashboard', () =>

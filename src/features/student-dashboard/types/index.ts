@@ -207,11 +207,3 @@ export type UpdateStudentProjectPayload = {
   name: string;
   description: string;
 };
-
-export type StudentMockScenario =
-  | 'IN_REVIEW' // 1. Cambios solicitados / edición habilitada
-  | 'PRE_PUBLICATION' // 2. En feria activa / evaluación en consolidación (oculto)
-  | 'PUBLISHED_REGULAR' // 3. Resultados publicados normales
-  | 'CO_WINNER_TIE' // 4. Resultados publicados con empate / Coganador
-  | 'HISTORICAL_TRAJECTORY'; // 5. Trayectoria con amplio historial
-

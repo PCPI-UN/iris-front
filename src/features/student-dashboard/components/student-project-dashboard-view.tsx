@@ -95,7 +95,34 @@ export const StudentProjectDashboardView = ({
     }
   };
 
-  const isEvaluationPublished = Boolean(evaluation?.resultsPublished);
+  // El usuario no tiene proyecto en este evento: no se muestra la ficha de otro evento
+  if (!currentProject) {
+    return (
+      <section
+        className="dashboard-page space-y-6 pb-12"
+        aria-label="Dashboard del Proyecto Estudiantil"
+      >
+        <div className="rounded-2xl border border-white/10 bg-[#0e101a]/85 p-8 text-center backdrop-blur-xl space-y-3">
+          <Clock className="mx-auto size-10 text-slate-500" />
+          <h1 className="text-base font-bold text-white">
+            No tienes un proyecto en este evento
+          </h1>
+          <p className="mx-auto max-w-md text-sm text-slate-400">
+            Aquí verás la ficha y los resultados de tu proyecto cuando
+            participes en este evento.
+          </p>
+          <Button
+            size="sm"
+            variant="flat"
+            onPress={handleBack}
+            className="rounded-xl border border-cyan-500/40 bg-cyan-500/15 px-4 py-2 text-xs font-semibold text-cyan-300 hover:bg-cyan-500/25"
+          >
+            Volver a mi dashboard
+          </Button>
+        </div>
+      </section>
+    );
+  }
 
   const renderEvaluationTabMeta = () => {
     if (!evaluation) {

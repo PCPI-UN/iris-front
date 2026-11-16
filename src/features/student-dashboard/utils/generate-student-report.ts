@@ -1,5 +1,14 @@
 import * as ExcelJS from 'exceljs';
 import { StudentEvaluation, StudentProfile, StudentProjectInfo } from '../types';
+import { formatScore, formatScoreWithMax } from './format-score';
+
+// Nombre de archivo seguro a partir del código del proyecto o del evento
+const toFileNamePart = (value?: string | null): string =>
+  (value ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^A-Za-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
 
 export interface GenerateIndividualReportParams {
   profile: StudentProfile;
@@ -107,8 +116,8 @@ export async function generateIndividualStudentReport({
         crit.component || 'General',
         crit.criterion,
         crit.weight ? `${crit.weight}%` : '-',
-        crit.score.toFixed(2),
-        crit.maxScore.toFixed(2),
+        crit.score != null ? formatScore(crit.score) : '-',
+        crit.maxScore != null ? formatScore(crit.maxScore) : '-',
       ]);
 
       const isEven = index % 2 === 0;
@@ -131,7 +140,9 @@ export async function generateIndividualStudentReport({
     const scoreSummaryRow = ws.addRow([
       '',
       'PUNTAJE FINAL CONSOLIDADO:',
-      `${evaluation.finalScore?.toFixed(2)} / ${evaluation.maxScore?.toFixed(2)}`,
+      evaluation.finalScore != null
+        ? formatScoreWithMax(evaluation.finalScore, evaluation.maxScore)
+        : 'Sin evaluación registrada',
       'POSICIÓN:',
       evaluation.ranking
         ? `Puesto ${evaluation.ranking.position}${evaluation.ranking.isCoWinner ? ' (Coganador)' : ''}`
@@ -169,7 +180,11 @@ export async function generateIndividualStudentReport({
   const url = window.URL.createObjectURL(blob);
   const anchor = document.createElement('a');
   anchor.href = url;
-  anchor.download = 'Reporte_Evaluacion_Feria_Proyectos_aprobado.xlsx';
+  const fileNameSuffix =
+    toFileNamePart(project?.projectCode) || toFileNamePart(project?.eventName);
+  anchor.download = fileNameSuffix
+    ? `Reporte_Evaluacion_${fileNameSuffix}.xlsx`
+    : 'Reporte_Evaluacion.xlsx';
   document.body.appendChild(anchor);
   anchor.click();
   document.body.removeChild(anchor);

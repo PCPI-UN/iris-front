@@ -1,6 +1,17 @@
 import { useNotifications } from '@/components/ui/notifications';
 import { env } from '@/config/env';
 
+/** Error de una respuesta HTTP no exitosa; conserva el código de estado. */
+export class ApiError extends Error {
+  readonly status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+  }
+}
+
 type RequestOptions = {
   method?: string;
   headers?: Record<string, string>;
@@ -134,7 +145,7 @@ async function fetchApi<T>(
             message,
           });
         }
-        throw new Error(message);
+        throw new ApiError(message, retryResponse.status);
       }
 
       return retryResponse.json();
@@ -176,7 +187,7 @@ async function fetchApi<T>(
         message,
       });
     }
-    throw new Error(message);
+    throw new ApiError(message, response.status);
   }
 
   // Read body as text first to handle empty responses
