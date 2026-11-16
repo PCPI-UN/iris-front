@@ -42,7 +42,7 @@ const topWinnersData: WinnerCard[] = [
       'Este proyecto desarrolla un sistema de alerta temprana que predice el riesgo de deserción estudiantil mediante técnicas de Machine Learning. El sistema desplegado en producción genera alertas personalizadas y explica factores contribuyentes, permitiendo intervenciones preventivas por coordinadores académicos y bienestar institucional.',
     year: '2025-30',
     posterUrl:
-      'https://irislab.blob.core.windows.net/irislabcontainer/1764015659802-Poster%20_SADE_Feria.png?sv=2025-11-05&se=2026-11-24T20%3A20%3A59Z&sr=b&sp=r&sig=vMMb3PKpGfoQo0MND4BJAHBFvV5DffN7lh3NughxDrA%3D',
+      'https://irislab.blob.core.windows.net/irislabcontainer/1764015659802-Poster%20_SADE_Feria.png?sv=2025-11-05&se=2027-11-04T05%3A19%3A18Z&sr=c&sp=r&sig=%2FBLdiVR19eRB2GfMhsHvMsAODq%2BfKIsVFBqE36VES8g%3D',
     accentColor: 'oklch(0.75 0.15 195)',
   },
   {
@@ -54,7 +54,7 @@ const topWinnersData: WinnerCard[] = [
       'El proyecto evalúa la vulnerabilidad del arroyo de la calle 84 en Barranquilla para mejorar su resiliencia ante el cambio climático. Mediante QGIS, HEC-HMS y HEC-RAS se analiza su comportamiento hidrológico e hidráulico y se aplican enfoques de vulnerabilidad del IPCC y MOVE. Se busca reducir inundaciones, minimizar pérdidas económicas y fortalecer la seguridad pública conforme a los ODS y al POT.',
     year: '2025-30',
     posterUrl:
-      'https://irislab.blob.core.windows.net/irislabcontainer/1764015710362-POSTER%20ENTREGA%20FINAL%20COMPLETO.pdf?sv=2025-11-05&se=2026-11-24T20%3A21%3A50Z&sr=b&sp=r&sig=WyO8x8R%2FIHMNIpJca0eZhwAcFHpf2kn9vhOMkFHhVdo%3D',
+      'https://irislab.blob.core.windows.net/irislabcontainer/1764015710362-POSTER%20ENTREGA%20FINAL%20COMPLETO.pdf?sv=2025-11-05&se=2027-11-04T05%3A19%3A18Z&sr=c&sp=r&sig=%2FBLdiVR19eRB2GfMhsHvMsAODq%2BfKIsVFBqE36VES8g%3D',
     accentColor: 'oklch(0.82 0.18 330)',
   },
 ];

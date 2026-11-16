@@ -9,6 +9,7 @@ import {
   ArrowRight,
   ChevronLeft,
   ChevronRight,
+  Trophy,
 } from 'lucide-react';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { GlassCard } from './glass-card';
@@ -22,6 +23,7 @@ import {
   resolveJoinTarget,
 } from '@/features/events/utils/resolve-join-target';
 import { hasInscriptionDeadlinePassed } from '@/features/events/utils/inscription-deadline';
+import { getAwardTitle, getVisibleAwards } from '@/features/events/utils/event-awards';
 import { paths } from '@/config/paths';
 import { landingContent } from '../content';
 import {
@@ -430,6 +432,7 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
                         const isRejectedProject = projectState === 'REJECTED';
                         const isAlreadyRegistered = registeredEventIds.has(String(event.id)) && !isRejectedProject;
                         const cardStatusText = isInscriptionClosed ? 'Inscripciones Cerradas' : status;
+                        const awardTitles = getVisibleAwards(event.awards).map(getAwardTitle);
 
                         return (
                           <GlassCard
@@ -542,6 +545,31 @@ export function EventsSection({ eventsSectionRef }: EventsSectionProps) {
                                     {eventLocation}
                                   </span>
                                 </div>
+
+                                {awardTitles.length > 0 && (
+                                  <div className="flex items-center gap-3 text-sm">
+                                    <div
+                                      className="w-8 h-8 shrink-0 rounded-lg flex items-center justify-center"
+                                      style={{
+                                        background: `color-mix(in oklch, ${eventTheme.color}, transparent 90%)`,
+                                        borderRadius: '0.5rem',
+                                      }}
+                                    >
+                                      <Trophy
+                                        className="w-4 h-4"
+                                        style={{ color: eventTheme.color }}
+                                      />
+                                    </div>
+
+                                    <span
+                                      className="text-muted-foreground break-words overflow-hidden [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]"
+                                      title={awardTitles.join(' · ')}
+                                    >
+                                      <span className="sr-only">Premios: </span>
+                                      {awardTitles.join(' · ')}
+                                    </span>
+                                  </div>
+                                )}
                               </div>
 
                               <div

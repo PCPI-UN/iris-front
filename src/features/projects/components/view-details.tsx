@@ -6,6 +6,7 @@ import { useDisclosure } from "@/hooks/use-disclosure";
 import { Project } from "@/types/api";
 import { Eye, FileText } from "lucide-react";
 import { ParticipantsDetails } from "./participants-details";
+import { documentLink } from "@/lib/document-link";
 
 export const ViewDetails = ({project} : {project: Project}) => {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
@@ -63,7 +64,7 @@ export const ViewDetails = ({project} : {project: Project}) => {
                             <div
                               key={index}
                               className="w-full flex items-center justify-between p-3 hover:bg-gradient-to-br from-cyan-400/10 to-cyan-400/5 rounded-lg border border-gray-100/20 transition-all duration-500 cursor-pointer"
-                              onClick={() => window.open(doc.url, "_blank")}
+                              onClick={() => window.open(documentLink(doc), "_blank")}
                             >
                               <div className="flex items-center gap-2 text-sm">
                                 <FileText className="h-4 w-4 text-primary" />

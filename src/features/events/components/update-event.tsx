@@ -673,12 +673,18 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                               ? parseDate(getDatePart(formData.inscriptionDeadline))
                               : undefined
                           }
-                          onChange={(date) =>
+                          onChange={(date) => {
                             setFormData((prev) => ({
                               ...prev,
                               inscriptionDeadline: date ? date.toString() : "",
-                            }))
-                          }
+                            }));
+                            setDateFieldErrors((prev) => ({
+                              ...prev,
+                              inscriptionDeadline: undefined,
+                            }));
+                          }}
+                          isInvalid={Boolean(dateFieldErrors.inscriptionDeadline)}
+                          errorMessage={dateFieldErrors.inscriptionDeadline}
                           className="flex-1"
                         />
                         <Input

@@ -6,6 +6,7 @@ import { Chip } from '@heroui/chip';
 import { Divider } from '@heroui/divider';
 import { Button } from '@/components/ui/button';
 import { PRISMATIC_GRADIENT, PRISMATIC_GRADIENT_DIM } from '@/features/landing/components/events-section.utils';
+import { documentLink } from "@/lib/document-link";
 
 type RankedProject = {
   position: number;
@@ -59,7 +60,7 @@ const getPosterUrl = (project: any): string | undefined => {
   const posterDoc = project.documents.find((d: any) =>
     d.type?.toLowerCase().includes('poster'),
   );
-  return posterDoc?.url;
+  return posterDoc ? documentLink(posterDoc) : undefined;
 };
 
 const hasText = (value?: string | null) =>

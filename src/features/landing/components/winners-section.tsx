@@ -19,7 +19,7 @@ const winnersData = [
     teamMembers: ['Esteban Ramírez', 'Jean Herrán', 'Juan Pineda'],
     description: 'Este proyecto desarrolla un sistema de alerta temprana que predice el riesgo de deserción estudiantil mediante técnicas de Machine Learning. El sistema desplegado en producción genera alertas personalizadas y explica factores contribuyentes, permitiendo intervenciones preventivas por coordinadores académicos y bienestar institucional.',
     year: '2025-30',
-    posterUrl: 'https://irislab.blob.core.windows.net/irislabcontainer/1764015659802-Poster%20_SADE_Feria.png?sv=2025-11-05&se=2026-11-24T20%3A20%3A59Z&sr=b&sp=r&sig=vMMb3PKpGfoQo0MND4BJAHBFvV5DffN7lh3NughxDrA%3D',
+    posterUrl: 'https://irislab.blob.core.windows.net/irislabcontainer/1764015659802-Poster%20_SADE_Feria.png?sv=2025-11-05&se=2027-11-04T05%3A19%3A18Z&sr=c&sp=r&sig=%2FBLdiVR19eRB2GfMhsHvMsAODq%2BfKIsVFBqE36VES8g%3D',
   },
   {
     engineeringId: 2,
@@ -27,7 +27,7 @@ const winnersData = [
     teamMembers: ['Dayana Torres', 'Luis Márquez'],
     description: 'El proyecto evalúa la vulnerabilidad del arroyo de la calle 84 en Barranquilla para mejorar su resiliencia ante el cambio climático. Mediante QGIS, HEC-HMS y HEC-RAS se analiza su comportamiento hidrológico e hidráulico y se aplican enfoques de vulnerabilidad del IPCC y MOVE. Se busca reducir inundaciones, minimizar pérdidas económicas y fortalecer la seguridad pública conforme a los ODS y al POT.',
     year: '2025-30',
-    posterUrl: 'https://irislab.blob.core.windows.net/irislabcontainer/1764015710362-POSTER%20ENTREGA%20FINAL%20COMPLETO.pdf?sv=2025-11-05&se=2026-11-24T20%3A21%3A50Z&sr=b&sp=r&sig=WyO8x8R%2FIHMNIpJca0eZhwAcFHpf2kn9vhOMkFHhVdo%3D',
+    posterUrl: 'https://irislab.blob.core.windows.net/irislabcontainer/1764015710362-POSTER%20ENTREGA%20FINAL%20COMPLETO.pdf?sv=2025-11-05&se=2027-11-04T05%3A19%3A18Z&sr=c&sp=r&sig=%2FBLdiVR19eRB2GfMhsHvMsAODq%2BfKIsVFBqE36VES8g%3D',
   },
   {
     engineeringId: 3,
@@ -35,7 +35,7 @@ const winnersData = [
     teamMembers: ['Jaime Besada', 'Juan Abad', 'Kemer Pérez'],
     description: 'MULTICOLOR es una microempresa colombiana ubicada en Barranquilla, Atlántico, dedicada a la fabricación de soportes metálicos. Todos sus productos son realizados mediante métodos manuales, lo cual genera tiempos de fabricación elevados, dependencia de la habilidad del operario y variaciones en la calidad del producto. \r\n\r\nLa empresa MULTICOLOR requiere suplantar los métodos que se realizan de forma manual para el doblez de las varillas, con el objetivo de mejorar su competitividad y capacidad productiva.',
     year: '2025-30',
-    posterUrl: 'https://irislab.blob.core.windows.net/irislabcontainer/1764218714694-Poster%20Maquina%20Dobladora%20(1).png?sv=2025-11-05&se=2026-11-27T04%3A45%3A14Z&sr=b&sp=r&sig=zvA%2FlNSmFUxGm5lkjrFLC4LLzRYISqO7YvQhrnoVXqU%3D',
+    posterUrl: 'https://irislab.blob.core.windows.net/irislabcontainer/1764218714694-Poster%20Maquina%20Dobladora%20(1).png?sv=2025-11-05&se=2027-11-04T05%3A19%3A18Z&sr=c&sp=r&sig=%2FBLdiVR19eRB2GfMhsHvMsAODq%2BfKIsVFBqE36VES8g%3D',
   },
   {
     engineeringId: 4,
@@ -43,7 +43,7 @@ const winnersData = [
     teamMembers: ['Liliana Lizarazo', 'Louis Sánchez', 'Virginia Rambal'],
     description: 'La operación anómala de los sistemas de protección en redes eléctricas enmalladas representa un desafío crítico para la confiabilidad del suministro, donde factores humanos contribuyen a cerca del 40% de las fallas operativas según la NERC. Este trabajo desarrolla un sistema de detección de fallas basado en inteligencia artificial implementado sobre un prototipo físico IEEE-5 nodos a escala, diseñado para evaluar el desempeño de algoritmos de detección bajo condiciones reales. El diseño de ingeniería consideró criterios técnicos como AUC-ROC, exactitud, F1-score y tasa de falsos negativos, integrados mediante una matriz de decisión para seleccionar la alternativa óptima. El proyecto se enmarcó en estándares internacionales aplicables al análisis y verificación de sistemas eléctricos y dispositivos de protección, incluyendo IEC 60909, IEC 60076, IEC 60255, C37.010-1979 y lineamientos del AI Act (2024). La solución seleccionada fue un clasificador MLP (Perceptrón Multicapa), validado mediante la aplicación física de fallas trifásicas, bifásicas y monofásicas. Durante la validación, el sistema detectó 57 de las 60 fallas ejecutadas (95 %), superando el umbral requerido y evidenciando su viabilidad para aplicaciones de protección. Los resultados evidencian que el proyecto cumplió su objetivo general, confirmando la viabilidad técnica de aplicar técnicas de aprendizaje automático en sistemas de protección en redes enmalladas.',
     year: '2025-30',
-    posterUrl: 'https://irislab.blob.core.windows.net/irislabcontainer/1764169735257-Poster.pdf?sv=2025-11-05&se=2026-11-26T15%3A08%3A55Z&sr=b&sp=r&sig=U7g9N9FtG8thGQXgOZSloW14dl1s4p5G9iN7yX1h7Lw%3D',
+    posterUrl: 'https://irislab.blob.core.windows.net/irislabcontainer/1764169735257-Poster.pdf?sv=2025-11-05&se=2027-11-04T05%3A19%3A18Z&sr=c&sp=r&sig=%2FBLdiVR19eRB2GfMhsHvMsAODq%2BfKIsVFBqE36VES8g%3D',
   },
   {
     engineeringId: 5,
@@ -51,7 +51,7 @@ const winnersData = [
     teamMembers: ['Carlos Ordoñez', 'Samir Mercado'],
     description: 'Autonet AI es un proyecto que aborda el crítico problema de la gestión manual de redes, responsable del 40% al 70% de las fallas en infraestructuras complejas, y cuyo propósito es demostrar que es posible automatizar tanto la detección como la respuesta ante incidentes de seguridad en un entorno controlado. El sistema integra monitoreo en tiempo real mediante SNMP, modelos de inteligencia artificial y automatización con Ansible para identificar tráfico normal, un ataque de Denegación de Servicio (DoS) y un ataque de fuerza bruta, y aplicar automáticamente configuraciones de mitigación. Su alcance comprende el diseño, entrenamiento y validación de este ciclo completo de supervisión–predicción–respuesta dentro de un laboratorio estableciendo una base escalable y replicable para futuras ampliaciones hacia redes más complejas y escenarios reales.',
     year: '2025-30',
-    posterUrl: 'https://irislab.blob.core.windows.net/irislabcontainer/1764189741196-AutoNet_poster.pdf?sv=2025-11-05&se=2026-11-26T20%3A42%3A21Z&sr=b&sp=r&sig=nk3MMEFCpb5%2FupW4WLXhwVuhPUHGpCESqwXqW%2Fl5WBg%3D',
+    posterUrl: 'https://irislab.blob.core.windows.net/irislabcontainer/1764189741196-AutoNet_poster.pdf?sv=2025-11-05&se=2027-11-04T05%3A19%3A18Z&sr=c&sp=r&sig=%2FBLdiVR19eRB2GfMhsHvMsAODq%2BfKIsVFBqE36VES8g%3D',
   },
   {
     engineeringId: 6,
@@ -59,7 +59,7 @@ const winnersData = [
     teamMembers: ['Daniela Flórez Gonzales', 'Entissar Khorfan Hamdam', 'Valeria Palma Sanjuanelo'],
     description: 'SynFood aborda el alto costo y la complejidad de planear menús personalizados. Usa un modelo de optimización multicriterio que pondera proteína, fibra, omega-3, antioxidantes, carga glucémica y diversidad vegetal según el objetivo del usuario. Genera menús completos en segundos, consistentes y reproducibles, con buena calidad nutricional, cumplimiento de restricciones y acceso web sin costo.',
     year: '2025-30',
-    posterUrl: 'https://irislab.blob.core.windows.net/irislabcontainer/1763995772708-Pendon%20proyecto%20final-1.jpg?sv=2025-11-05&se=2026-11-24T14%3A49%3A32Z&sr=b&sp=r&sig=ndhyuBFPmIPXHiGB668Z6Wi4aOXrxMsBtpCmqsmrGtk%3D',
+    posterUrl: 'https://irislab.blob.core.windows.net/irislabcontainer/1763995772708-Pendon%20proyecto%20final-1.jpg?sv=2025-11-05&se=2027-11-04T05%3A19%3A18Z&sr=c&sp=r&sig=%2FBLdiVR19eRB2GfMhsHvMsAODq%2BfKIsVFBqE36VES8g%3D',
   },
 ];
 
