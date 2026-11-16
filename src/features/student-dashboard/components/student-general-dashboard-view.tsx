@@ -19,6 +19,7 @@ import { StudentDashboardData } from '../types';
 import { useStudentDashboard } from '../api/get-student-dashboard';
 import { StudentHeader } from './student-header';
 import { StudentHistorySection } from './student-history-section';
+import { StudentDashboardError } from './student-dashboard-error';
 
 export interface StudentGeneralDashboardViewProps {
   initialData?: StudentDashboardData;
@@ -51,8 +52,23 @@ export const StudentGeneralDashboardView = ({
   initialData,
 }: StudentGeneralDashboardViewProps) => {
   const router = useRouter();
-  const { data: remoteData, isLoading } = useStudentDashboard();
+  const {
+    data: remoteData,
+    isLoading,
+    isError,
+    isFetching,
+    refetch,
+  } = useStudentDashboard();
   const data = initialData || remoteData;
+
+  if (isError && !data) {
+    return (
+      <StudentDashboardError
+        onRetry={() => void refetch()}
+        isRetrying={isFetching}
+      />
+    );
+  }
 
   if (isLoading || !data) {
     return (
@@ -95,8 +111,11 @@ export const StudentGeneralDashboardView = ({
   };
 
   const handleGoToCurrentProject = () => {
-    const targetEventId = currentProject?.eventId ? String(currentProject.eventId) : '3';
-    router.push(`/app/events/${targetEventId}/dashboard`);
+    // La tarjeta solo se muestra con proyecto actual, que siempre trae su evento
+    if (currentProject?.eventId === undefined || currentProject?.eventId === null) {
+      return;
+    }
+    router.push(`/app/events/${currentProject.eventId}/dashboard`);
   };
 
   const handleGoToPastEventsRepo = () => {
@@ -123,9 +142,9 @@ export const StudentGeneralDashboardView = ({
             <Sparkles className="size-4.5 text-cyan-400" />
             <span>Feria y Proyecto Activo</span>
           </h2>
-          {currentProject && (
+          {currentProject?.semester && (
             <span className="text-xs text-slate-400 font-mono">
-              Semestre {currentProject.semester || '2026-1'}
+              Semestre {currentProject.semester}
             </span>
           )}
         </div>

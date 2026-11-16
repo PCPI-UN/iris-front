@@ -21,6 +21,8 @@ import {
 } from '../api/get-student-dashboard';
 import { StudentProjectSection } from './student-project-section';
 import { StudentEvaluationSection } from './student-evaluation-section';
+import { StudentDashboardError } from './student-dashboard-error';
+import { formatScore } from '../utils/format-score';
 
 export type StudentProjectTab = 'project' | 'evaluation';
 
@@ -40,13 +42,26 @@ export const StudentProjectDashboardView = ({
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<StudentProjectTab>(defaultTab);
 
-  const { data: remoteData, isLoading } = useStudentDashboard(
-    eventId ?? 'current',
-  );
+  const {
+    data: remoteData,
+    isLoading,
+    isError,
+    isFetching,
+    refetch,
+  } = useStudentDashboard(eventId ?? 'current');
   const data = initialData || remoteData;
   const updateProjectMutation = useUpdateStudentProject({
     eventId: data?.currentProject?.eventId ?? eventId,
   });
+
+  if (isError && !data) {
+    return (
+      <StudentDashboardError
+        onRetry={() => void refetch()}
+        isRetrying={isFetching}
+      />
+    );
+  }
 
   if (isLoading || !data) {
     return (
@@ -66,7 +81,8 @@ export const StudentProjectDashboardView = ({
       projectId: currentProject.id,
       data: {
         name: updatedProject.name ?? currentProject.name,
-        description: updatedProject.description ?? currentProject.description,
+        description:
+          updatedProject.description ?? currentProject.description ?? '',
       },
     });
   };
@@ -79,7 +95,34 @@ export const StudentProjectDashboardView = ({
     }
   };
 
-  const isEvaluationPublished = Boolean(evaluation?.resultsPublished);
+  // El usuario no tiene proyecto en este evento: no se muestra la ficha de otro evento
+  if (!currentProject) {
+    return (
+      <section
+        className="dashboard-page space-y-6 pb-12"
+        aria-label="Dashboard del Proyecto Estudiantil"
+      >
+        <div className="rounded-2xl border border-white/10 bg-[#0e101a]/85 p-8 text-center backdrop-blur-xl space-y-3">
+          <Clock className="mx-auto size-10 text-slate-500" />
+          <h1 className="text-base font-bold text-white">
+            No tienes un proyecto en este evento
+          </h1>
+          <p className="mx-auto max-w-md text-sm text-slate-400">
+            Aquí verás la ficha y los resultados de tu proyecto cuando
+            participes en este evento.
+          </p>
+          <Button
+            size="sm"
+            variant="flat"
+            onPress={handleBack}
+            className="rounded-xl border border-cyan-500/40 bg-cyan-500/15 px-4 py-2 text-xs font-semibold text-cyan-300 hover:bg-cyan-500/25"
+          >
+            Volver a mi dashboard
+          </Button>
+        </div>
+      </section>
+    );
+  }
 
   const renderEvaluationTabMeta = () => {
     if (!evaluation) {
@@ -111,11 +154,13 @@ export const StudentProjectDashboardView = ({
     return {
       label: 'Resultados y Calificaciones',
       icon: <BarChart3 className="size-4 text-cyan-400" />,
-      badge: (
-        <span className="rounded border border-cyan-500/30 bg-cyan-500/20 px-2 py-0.5 font-mono text-[12px] font-bold text-cyan-300">
-          {evaluation.finalScore?.toFixed(2) || '4.85'}
-        </span>
-      ),
+      // Sin nota (proyecto no evaluado) no se muestra insignia: nunca un valor de relleno
+      badge:
+        evaluation.finalScore != null ? (
+          <span className="rounded border border-cyan-500/30 bg-cyan-500/20 px-2 py-0.5 font-mono text-[12px] font-bold text-cyan-300">
+            {formatScore(evaluation.finalScore)}
+          </span>
+        ) : null,
     };
   };
 
@@ -142,7 +187,9 @@ export const StudentProjectDashboardView = ({
             </Button>
             <div>
               <span className="text-[11px] font-semibold tracking-wider text-cyan-400 uppercase">
-                {currentProject?.canEdit ? 'Feria de Proyectos' : 'Historial de Proyecto'}
+                {currentProject?.isCurrent === false
+                  ? 'Historial de Proyecto'
+                  : 'Feria de Proyectos'}
               </span>
               <h1 className="text-lg sm:text-2xl font-bold tracking-tight text-white flex items-center gap-2">
                 <span>{currentProject?.eventName || 'Feria de Proyectos'}</span>
@@ -150,16 +197,14 @@ export const StudentProjectDashboardView = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-2 self-start sm:self-auto">
-            <span className="inline-flex items-center gap-1.5 font-mono text-xs text-slate-300 bg-white/5 border border-white/10 px-3 py-1 rounded-lg">
-              <Calendar className="size-3 text-cyan-400" />
-              <span>
-                {currentProject?.semester
-                  ? `Semestre ${currentProject.semester}`
-                  : 'Semestre 2026-1'}
+          {currentProject?.semester && (
+            <div className="flex items-center gap-2 self-start sm:self-auto">
+              <span className="inline-flex items-center gap-1.5 font-mono text-xs text-slate-300 bg-white/5 border border-white/10 px-3 py-1 rounded-lg">
+                <Calendar className="size-3 text-cyan-400" />
+                <span>Semestre {currentProject.semester}</span>
               </span>
-            </span>
-          </div>
+            </div>
+          )}
         </div>
 
         {/* Resumen del proyecto asociado */}

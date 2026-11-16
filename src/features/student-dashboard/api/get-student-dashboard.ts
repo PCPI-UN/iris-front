@@ -1,10 +1,6 @@
-import {
-  useQuery,
-  useMutation,
-  useQueryClient,
-  queryOptions,
-} from '@tanstack/react-query';
-import { api } from '@/lib/api-client';
+import { useCallback, useMemo } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { ApiError, api } from '@/lib/api-client';
 import { useUser } from '@/lib/auth';
 import { useNotifications } from '@/components/ui/notifications';
 import {
@@ -17,6 +13,7 @@ import {
   StudentProjectResultsResponse,
   UpdateStudentProjectPayload,
 } from '../types';
+import { adaptStudentProject } from '../utils/adapt-student-project';
 
 type WrappedOrDirect<T> = { data: T } | T;
 
@@ -31,6 +28,11 @@ const unwrapResponse = <T>(response: WrappedOrDirect<T>): T => {
   }
   return response as T;
 };
+
+// 404: el usuario no tiene proyecto en el evento. Cualquier otro fallo se propaga
+// para que la vista muestre el error en vez de un estado vacío engañoso.
+const isNotFound = (error: unknown): boolean =>
+  error instanceof ApiError && error.status === 404;
 
 /**
  * Endpoint 1: Dashboard General del Estudiante
@@ -52,14 +54,15 @@ export const getStudentProjectByEvent = async (
   eventId: number | string,
 ): Promise<StudentProjectDetailResponse | null> => {
   try {
-    const response = await api.get<
-      WrappedOrDirect<StudentProjectDetailResponse>
-    >(`/events/${encodeURIComponent(String(eventId))}/my-project`, {
-      suppressErrorNotification: true,
-    });
-    return unwrapResponse(response);
-  } catch {
-    return null;
+    // El gateway responde { project, event }; se adapta a la forma del dashboard
+    const response = await api.get<WrappedOrDirect<unknown>>(
+      `/events/${encodeURIComponent(String(eventId))}/my-project`,
+      { suppressErrorNotification: true },
+    );
+    return adaptStudentProject(unwrapResponse(response));
+  } catch (error) {
+    if (isNotFound(error)) return null;
+    throw error;
   }
 };
 
@@ -77,14 +80,17 @@ export const getStudentProjectResults = async (
       suppressErrorNotification: true,
     });
     return unwrapResponse(response);
-  } catch {
-    return null;
+  } catch (error) {
+    if (isNotFound(error)) return null;
+    throw error;
   }
 };
 
 /**
  * Endpoint 4: Modificación de Propuesta por Ajustes Solicitados
- * PATCH /api/v1/projects/:projectId
+ * PATCH /projects/:projectId/info guarda nombre y descripción;
+ * POST /projects/:projectId/change-to-under-review la reenvía a revisión.
+ * Ninguno de los dos devuelve el proyecto: los datos se vuelven a consultar.
  */
 export const updateStudentProject = async ({
   projectId,
@@ -92,12 +98,10 @@ export const updateStudentProject = async ({
 }: {
   projectId: string | number;
   data: UpdateStudentProjectPayload;
-}): Promise<StudentProjectInfo> => {
-  const response = await api.patch<WrappedOrDirect<StudentProjectInfo>>(
-    `/projects/${encodeURIComponent(String(projectId))}`,
-    data,
-  );
-  return unwrapResponse(response);
+}): Promise<void> => {
+  const id = encodeURIComponent(String(projectId));
+  await api.patch(`/projects/${id}/info`, data);
+  await api.post(`/projects/${id}/change-to-under-review`);
 };
 
 /**
@@ -119,6 +123,12 @@ export const downloadStudentCertificate = async (
   return unwrapResponse(response);
 };
 
+/**
+ * Combina el dashboard general con la ficha y los resultados de un evento.
+ * - `projectDetail` / `resultsDetail` sin definir: vista general, se usa el resumen del dashboard.
+ * - `null`: se pidió un evento y el usuario no tiene proyecto (o resultados) en él; no se
+ *   sustituye por el proyecto de otro evento.
+ */
 const normalizeGeneralDashboardToStudentData = (
   general: StudentGeneralDashboardResponse,
   projectDetail?: StudentProjectInfo | null,
@@ -145,10 +155,38 @@ const normalizeGeneralDashboardToStudentData = (
       : normalizedTrajectory.flatMap((item) => item.certificates ?? []);
 
   const currentProjectSummary = general.currentProject;
+  const sameEvent = (a?: string | number | null, b?: string | number | null) =>
+    a !== undefined && a !== null && b !== undefined && b !== null
+      ? String(a) === String(b)
+      : false;
+
+  // La ficha del evento no trae categoría ni semestre: se completan con el dashboard general
+  const detailIsCurrentProject = projectDetail
+    ? sameEvent(currentProjectSummary?.eventId, projectDetail.eventId)
+    : false;
+  const detailTrajectoryItem = projectDetail
+    ? normalizedTrajectory.find((item) =>
+        sameEvent(item.eventId, projectDetail.eventId),
+      )
+    : undefined;
 
   const resolvedProject: StudentProjectInfo | null = projectDetail
     ? {
         ...projectDetail,
+        categoryName:
+          projectDetail.categoryName ??
+          (detailIsCurrentProject
+            ? currentProjectSummary?.categoryName
+            : null) ??
+          detailTrajectoryItem?.courseName ??
+          null,
+        semester:
+          projectDetail.semester ??
+          (detailIsCurrentProject
+            ? currentProjectSummary?.semester
+            : undefined) ??
+          detailTrajectoryItem?.semester,
+        isCurrent: projectDetail.isCurrent ?? detailIsCurrentProject,
         participants: projectDetail.participants ?? [],
         documents: projectDetail.documents ?? [],
         participantsCount:
@@ -158,9 +196,10 @@ const normalizeGeneralDashboardToStudentData = (
         documentsCount:
           projectDetail.documentsCount ?? projectDetail.documents?.length ?? 0,
       }
-    : currentProjectSummary
+    : currentProjectSummary && projectDetail === undefined
       ? {
           ...currentProjectSummary,
+          isCurrent: true,
           documents: currentProjectSummary.documents ?? [],
           participants: currentProjectSummary.participants ?? [],
           participantsCount:
@@ -174,6 +213,7 @@ const normalizeGeneralDashboardToStudentData = (
         }
       : null;
 
+  // La escala (maxScore) la define cada evento: nunca se asume un valor por defecto
   const resolvedEvaluation: StudentEvaluation | null =
     resultsDetail !== undefined
       ? resultsDetail
@@ -181,7 +221,7 @@ const normalizeGeneralDashboardToStudentData = (
         ? {
             resultsPublished: Boolean(general.evaluation.resultsPublished),
             finalScore: general.evaluation.finalScore,
-            maxScore: general.evaluation.maxScore ?? 5.0,
+            maxScore: general.evaluation.maxScore,
             ranking: general.evaluation.ranking,
             criteriaScores: general.evaluation.criteriaScores,
             consolidatedFeedback: general.evaluation.consolidatedFeedback,
@@ -198,64 +238,101 @@ const normalizeGeneralDashboardToStudentData = (
   };
 };
 
+const studentDashboardKeys = {
+  all: ['student-dashboard'] as const,
+  general: (userKey: string) =>
+    [...studentDashboardKeys.all, userKey, 'general'] as const,
+  eventProject: (userKey: string, eventId: string) =>
+    [...studentDashboardKeys.all, userKey, 'event', eventId, 'project'] as const,
+  eventResults: (userKey: string, eventId: string) =>
+    [...studentDashboardKeys.all, userKey, 'event', eventId, 'results'] as const,
+};
+
 /**
- * Orquestador de consulta del Dashboard del Estudiante:
- * - Sin `eventId` (Vista general `/app`): consume `GET /students/me/dashboard` (Endpoint 1).
- * - Con `eventId` (Vista de evento `/app/events/:eventId/dashboard`): consume en paralelo
- *   `GET /students/me/dashboard` (Endpoint 1), `GET /events/:eventId/my-project` (Endpoint 2)
- *   y `GET /events/:eventId/my-project/results` (Endpoint 3).
+ * Datos del Dashboard del Estudiante:
+ * - Sin `eventId` (vista general `/app`): `GET /students/me/dashboard`.
+ * - Con `eventId` (vista de evento `/app/events/:eventId/dashboard`): además
+ *   `GET /events/:eventId/my-project` y `GET /events/:eventId/my-project/results`.
+ *   `'current'` resuelve el evento del proyecto actual del dashboard general.
+ *
+ * Cada endpoint es una consulta propia: el dashboard general se comparte en caché entre
+ * las dos vistas y ninguna consulta se lanza hasta conocer el usuario de la sesión.
  */
-export const getStudentDashboardData = async (
-  _userEmail?: string,
-  eventId?: number | string,
-): Promise<StudentDashboardData> => {
-  const general = await getStudentGeneralDashboard();
-
-  // Si no se solicita un evento específico, retornamos la vista consolidada general (/app)
-  if (eventId === undefined || eventId === null || String(eventId) === '') {
-    return normalizeGeneralDashboardToStudentData(general);
-  }
-
-  const targetEventId =
-    String(eventId) === 'current'
-      ? (general.currentProject?.eventId ?? 3)
-      : eventId;
-
-  const [projectDetail, resultsDetail] = await Promise.all([
-    getStudentProjectByEvent(targetEventId),
-    getStudentProjectResults(targetEventId),
-  ]);
-
-  return normalizeGeneralDashboardToStudentData(
-    general,
-    projectDetail,
-    resultsDetail,
-  );
-};
-
-export const getStudentDashboardQueryOptions = (
-  userEmail?: string,
-  eventId?: number | string,
-) => {
-  return queryOptions({
-    queryKey: [
-      'student-dashboard',
-      userEmail || 'me',
-      eventId !== undefined ? String(eventId) : 'general',
-    ],
-    queryFn: () => getStudentDashboardData(userEmail, eventId),
-  });
-};
-
 export const useStudentDashboard = (eventId?: number | string) => {
   const { data: user, isLoading: isUserLoading } = useUser();
-  const query = useQuery(
-    getStudentDashboardQueryOptions(user?.email, eventId),
-  );
+  const enabled = !isUserLoading;
+  const userKey = user?.email || 'me';
+
+  const generalQuery = useQuery({
+    queryKey: studentDashboardKeys.general(userKey),
+    queryFn: getStudentGeneralDashboard,
+    enabled,
+  });
+
+  const wantsEvent =
+    eventId !== undefined && eventId !== null && String(eventId) !== '';
+  const targetEventId = !wantsEvent
+    ? undefined
+    : String(eventId) === 'current'
+      ? generalQuery.data?.currentProject?.eventId
+      : eventId;
+  const hasTargetEvent = targetEventId !== undefined && targetEventId !== null;
+  const eventKey = hasTargetEvent ? String(targetEventId) : 'none';
+  const eventEnabled = enabled && hasTargetEvent;
+
+  const projectQuery = useQuery({
+    queryKey: studentDashboardKeys.eventProject(userKey, eventKey),
+    queryFn: () => getStudentProjectByEvent(eventKey),
+    enabled: eventEnabled,
+  });
+
+  const resultsQuery = useQuery({
+    queryKey: studentDashboardKeys.eventResults(userKey, eventKey),
+    queryFn: () => getStudentProjectResults(eventKey),
+    enabled: eventEnabled,
+  });
+
+  const general = generalQuery.data;
+  const projectDetail = projectQuery.data;
+  const resultsDetail = resultsQuery.data;
+
+  const data = useMemo<StudentDashboardData | undefined>(() => {
+    if (!general) return undefined;
+    if (!wantsEvent) return normalizeGeneralDashboardToStudentData(general);
+    // 'current' sin proyecto en un evento vigente: no hay ficha que consultar
+    if (!hasTargetEvent) {
+      return normalizeGeneralDashboardToStudentData(general, null, null);
+    }
+    // undefined = aún cargando; null = el usuario no tiene proyecto en el evento
+    if (projectDetail === undefined || resultsDetail === undefined) {
+      return undefined;
+    }
+    return normalizeGeneralDashboardToStudentData(
+      general,
+      projectDetail,
+      resultsDetail,
+    );
+  }, [general, projectDetail, resultsDetail, wantsEvent, hasTargetEvent]);
+
+  const refetchGeneral = generalQuery.refetch;
+  const refetchProject = projectQuery.refetch;
+  const refetchResults = resultsQuery.refetch;
+  const refetch = useCallback(async () => {
+    await Promise.all([
+      refetchGeneral(),
+      ...(eventEnabled ? [refetchProject(), refetchResults()] : []),
+    ]);
+  }, [eventEnabled, refetchGeneral, refetchProject, refetchResults]);
+
+  const eventQueries = eventEnabled ? [projectQuery, resultsQuery] : [];
+  const queries = [generalQuery, ...eventQueries];
 
   return {
-    ...query,
-    isLoading: isUserLoading || query.isLoading,
+    data,
+    isLoading: isUserLoading || queries.some((query) => query.isLoading),
+    isFetching: queries.some((query) => query.isFetching),
+    isError: queries.some((query) => query.isError),
+    refetch,
   };
 };
 
@@ -270,7 +347,7 @@ export const useUpdateStudentProject = ({
     mutationFn: updateStudentProject,
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['student-dashboard'],
+        queryKey: studentDashboardKeys.all,
       });
       if (eventId !== undefined) {
         queryClient.invalidateQueries({

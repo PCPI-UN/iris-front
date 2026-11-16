@@ -124,20 +124,17 @@ describe('Student Dashboard Backend Integration (MSW Mock Server)', () => {
     expect(JSON.stringify(publishedResults)).not.toContain('evaluatorId');
   });
 
-  it('Endpoint 4: PATCH /projects/:projectId actualiza propuesta en REQUEST_CHANGES (pasa a UNDER_REVIEW) y bloquea con 403 si está APPROVED', async () => {
+  it('Endpoint 4: PATCH /projects/:projectId/info + POST change-to-under-review actualiza propuesta en REQUEST_CHANGES (pasa a UNDER_REVIEW) y bloquea con 403 si está APPROVED', async () => {
     // 1. Permitido cuando está en REQUEST_CHANGES
     await authenticateTestUser('student.review@iris.com');
-    const updated = await updateStudentProject({
+    // El backend no devuelve el proyecto al guardar: se verifica volviendo a consultarlo
+    await updateStudentProject({
       projectId: 'proj-review-001',
       data: {
         name: 'Optimizador de Rutas Masivas v2 (Revisado)',
         description: 'Resumen técnico ajustado según comité.',
       },
     });
-
-    expect(updated.name).toBe('Optimizador de Rutas Masivas v2 (Revisado)');
-    expect(updated.enrollmentStatus).toBe('UNDER_REVIEW');
-    expect(updated.canEdit).toBe(false);
 
     // Verificar que persiste en el servidor mock al volver a consultar Endpoint 2
     const refetched = await getStudentProjectByEvent(3);
@@ -197,7 +194,7 @@ describe('Student Dashboard Backend Integration (MSW Mock Server)', () => {
 
     unmount();
 
-    // Renderizar ficha del proyecto y probar flujo completo de edición vía PATCH /projects/:id
+    // Renderizar ficha del proyecto y probar flujo completo de edición vía PATCH /projects/:id/info
     render(<StudentProjectDashboardView eventId={3} />, {
       wrapper: createWrapper(),
     });
