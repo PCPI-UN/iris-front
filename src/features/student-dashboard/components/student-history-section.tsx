@@ -20,6 +20,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { AcademicParticipation } from '../types';
 import { getCertificateDownloadUrl } from '../api/get-student-dashboard';
+import { formatScoreWithMax } from '../utils/format-score';
 
 export interface StudentHistorySectionProps {
   trajectory: AcademicParticipation[];
@@ -31,12 +32,9 @@ export const StudentHistorySection = ({
   const router = useRouter();
 
   const handleViewProject = (item: AcademicParticipation) => {
-    if (item.isCurrent) {
-      router.push(`/app/events/${item.eventId || '3'}/dashboard`);
-      return;
-    }
-    const target = item.eventId ? String(item.eventId) : item.id;
-    router.push(`/app/events/${target}/dashboard`);
+    // Sin evento no hay ficha que abrir (el botón no se muestra en ese caso)
+    if (item.eventId === undefined || item.eventId === null) return;
+    router.push(`/app/events/${item.eventId}/dashboard`);
   };
 
   if (!trajectory || trajectory.length === 0) {
@@ -134,10 +132,13 @@ export const StudentHistorySection = ({
                       )}
                     </div>
 
-                    {item.finalScore !== undefined && (
+                    {item.finalScore != null && (
                       <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-white bg-white/5 border border-white/10 px-2.5 py-0.5 rounded-md">
                         <CheckCircle2 className="size-3 text-cyan-400" />
-                        <span>Calificación: {item.finalScore.toFixed(2)} / 5.00</span>
+                        <span>
+                          Calificación:{' '}
+                          {formatScoreWithMax(item.finalScore, item.maxScore)}
+                        </span>
                       </div>
                     )}
                   </div>
@@ -154,7 +155,7 @@ export const StudentHistorySection = ({
                       <span className="text-slate-600 hidden sm:inline" aria-hidden="true">·</span>
                       <span className="flex items-center gap-1 text-slate-400">
                         <BookOpen className="size-3.5 text-pink-400" />
-                        Asignatura: <span className="text-slate-200">{item.courseName}</span>
+                        Categoría: <span className="text-slate-200">{item.courseName || 'Sin categoría'}</span>
                       </span>
                     </div>
                   </div>
@@ -168,11 +169,14 @@ export const StudentHistorySection = ({
                       </span>
                     ) : (
                       <span className="text-[11px] text-slate-400 font-medium">
-                        Edición académica finalizada
+                        {item.isCurrent
+                          ? 'Participación en curso'
+                          : 'Edición académica finalizada'}
                       </span>
                     )}
 
                     {/* Botón de acceso a la Ficha Técnica reutilizando StudentProjectDashboardView */}
+                    {item.eventId != null && (
                     <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                       <Button
                         size="sm"
@@ -186,6 +190,7 @@ export const StudentHistorySection = ({
                         <ArrowRight className="size-3" />
                       </Button>
                     </motion.div>
+                    )}
                   </div>
 
                   {/* Certificados y Diplomas Oficiales Asociados al Evento */}

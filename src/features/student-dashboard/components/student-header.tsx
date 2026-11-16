@@ -90,7 +90,7 @@ export const StudentHeader = ({
                 {profile.firstName} {profile.lastName}
               </h1>
               <span className="inline-flex items-center rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2.5 py-0.5 text-xs font-semibold text-cyan-300">
-                Estudiante Activo
+                Estudiante
               </span>
             </div>
 
@@ -101,14 +101,22 @@ export const StudentHeader = ({
                   {profile.studentCode || 'No registrado'}
                 </span>
               </span>
-              <span className="text-slate-600 hidden sm:inline" aria-hidden="true">·</span>
-              <span className="truncate text-slate-300 font-medium">
-                {profile.career}
-              </span>
-              <span className="text-slate-600 hidden sm:inline" aria-hidden="true">·</span>
-              <span className="font-semibold text-cyan-400">
-                {profile.semester}° Semestre
-              </span>
+              {profile.career && (
+                <>
+                  <span className="text-slate-600 hidden sm:inline" aria-hidden="true">·</span>
+                  <span className="truncate text-slate-300 font-medium">
+                    {profile.career}
+                  </span>
+                </>
+              )}
+              {profile.semester != null && (
+                <>
+                  <span className="text-slate-600 hidden sm:inline" aria-hidden="true">·</span>
+                  <span className="font-semibold text-cyan-400">
+                    {profile.semester}° Semestre
+                  </span>
+                </>
+              )}
             </p>
 
             {eventName && (

@@ -1125,7 +1125,7 @@ export const getStudentDashboardDataByEmail = (
       return (
         String(item.eventId) === strEventId ||
         item.id === strEventId ||
-        strEventId.includes(item.id) ||
+        strEventId.includes(String(item.id)) ||
         (strEventId === '2' && item.semester.includes('2025-2')) ||
         (strEventId === '4' && item.semester.includes('2025-1')) ||
         (strEventId === '5' && item.semester.includes('2024'))

@@ -16,6 +16,7 @@ import {
 import { Spinner } from '@/components/ui/spinner';
 import { StudentEvaluation, StudentProfile, StudentProjectInfo } from '../types';
 import { generateIndividualStudentReport } from '../utils/generate-student-report';
+import { formatScore, scorePercentOf } from '../utils/format-score';
 
 export interface StudentEvaluationSectionProps {
   evaluation: StudentEvaluation | null;
@@ -113,10 +114,31 @@ export const StudentEvaluationSection = ({
     );
   }
 
-  // Caso 3: Resultados oficiales publicados
-  const finalScore = evaluation.finalScore ?? 0;
-  const maxScore = evaluation.maxScore ?? 5.0;
-  const scorePercent = Math.min(100, Math.round((finalScore / maxScore) * 100));
+  // Caso 3: Resultados publicados, pero ningún jurado evaluó el proyecto
+  if (evaluation.evaluated === false || evaluation.finalScore == null) {
+    return (
+      <div
+        className="rounded-2xl border border-white/10 bg-[#0e101a]/70 p-8 text-center backdrop-blur-xl"
+        aria-live="polite"
+      >
+        <Clock className="mx-auto size-10 text-slate-500 mb-3" />
+        <h3 className="text-base font-bold text-white">
+          Sin evaluación registrada
+        </h3>
+        <p className="mx-auto mt-1 max-w-lg text-sm text-slate-400">
+          Los resultados del evento ya fueron publicados, pero tu proyecto no
+          registra evaluaciones de los jurados. Si crees que se trata de un
+          error, comunícate con la coordinación del evento.
+        </p>
+      </div>
+    );
+  }
+
+  // Caso 4: Resultados oficiales publicados
+  // La escala (maxScore) la define cada evento; sin ella no se muestra denominador ni porcentaje
+  const finalScore = evaluation.finalScore;
+  const maxScore = evaluation.maxScore ?? null;
+  const scorePercent = scorePercentOf(finalScore, maxScore);
   const ranking = evaluation.ranking;
   const criteria = evaluation.criteriaScores ?? [];
   const feedback = evaluation.consolidatedFeedback;
@@ -217,11 +239,13 @@ export const StudentEvaluationSection = ({
               </span>
               <div className="flex items-baseline gap-2">
                 <span className="text-4xl sm:text-5xl font-black tracking-tight text-white">
-                  {finalScore.toFixed(2)}
+                  {formatScore(finalScore)}
                 </span>
-                <span className="text-sm font-semibold text-slate-400">
-                  / {maxScore.toFixed(2)}
-                </span>
+                {maxScore != null && (
+                  <span className="text-sm font-semibold text-slate-400">
+                    / {formatScore(maxScore)}
+                  </span>
+                )}
               </div>
               <p className="text-xs text-slate-300 pt-1">
                 Promedio aritmético consolidado de las evaluaciones recibidas.
@@ -234,6 +258,7 @@ export const StudentEvaluationSection = ({
           </div>
 
           {/* Barra de Progreso de Calificación */}
+          {scorePercent !== null && maxScore != null && (
           <div className="mt-4 space-y-1">
             <div className="h-2 w-full overflow-hidden rounded-full bg-slate-800">
               <div
@@ -242,11 +267,12 @@ export const StudentEvaluationSection = ({
               />
             </div>
             <div className="flex justify-between text-[12px] font-mono text-slate-400">
-              <span>0.0</span>
+              <span>0</span>
               <span>{scorePercent}% de la puntuación máxima</span>
-              <span>{maxScore.toFixed(1)}</span>
+              <span>{formatScore(maxScore)}</span>
             </div>
           </div>
+          )}
         </motion.div>
 
         {/* Tarjeta de Posición en el Ranking (Soporte Coganador / Ganador) */}
@@ -329,10 +355,8 @@ export const StudentEvaluationSection = ({
 
           <div className="space-y-2.5">
             {criteria.map((item) => {
-              const itemPercent = Math.min(
-                100,
-                Math.round((item.score / item.maxScore) * 100)
-              );
+              const itemMaxScore = item.maxScore ?? maxScore;
+              const itemPercent = scorePercentOf(item.score, itemMaxScore);
 
               return (
                 <motion.div
@@ -352,18 +376,22 @@ export const StudentEvaluationSection = ({
                     </div>
                     <div className="flex items-center gap-2 font-mono self-end sm:self-auto">
                       <span className="text-cyan-400 font-bold">
-                        {item.score.toFixed(1)}
+                        {formatScore(item.score)}
                       </span>
-                      <span className="text-slate-500">/ {item.maxScore.toFixed(1)}</span>
+                      {itemMaxScore != null && (
+                        <span className="text-slate-500">/ {formatScore(itemMaxScore)}</span>
+                      )}
                     </div>
                   </div>
 
-                  <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
-                    <div
-                      className="h-full rounded-full bg-cyan-400 transition-all duration-300"
-                      style={{ width: `${itemPercent}%` }}
-                    />
-                  </div>
+                  {itemPercent !== null && (
+                    <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
+                      <div
+                        className="h-full rounded-full bg-cyan-400 transition-all duration-300"
+                        style={{ width: `${itemPercent}%` }}
+                      />
+                    </div>
+                  )}
                 </motion.div>
               );
             })}

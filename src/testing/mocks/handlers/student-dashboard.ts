@@ -277,7 +277,7 @@ const resolveEventProjectAndResults = (
     return (
       String(item.eventId) === strEventId ||
       item.id === String(rawEventId) ||
-      String(rawEventId).includes(item.id)
+      String(rawEventId).includes(String(item.id))
     );
   });
 
@@ -640,6 +640,39 @@ const getStudentEventResultsHandler = async ({
 };
 
 // 4. PATCH /api/v1/projects/:projectId (Modificación de propuesta por ajustes solicitados)
+const isStudentScenarioProject = (user: unknown, projectId: string) => {
+  const userEmail = String((user as any)?.email ?? '').toLowerCase();
+  const currentProject = scenarioStoreByEmail[userEmail]?.currentProject;
+  return Boolean(currentProject && String(currentProject.id) === projectId);
+};
+
+// 4b. POST /projects/:projectId/change-to-under-review (reenvío a revisión tras guardar)
+// El cambio de estado del escenario ya lo aplica el PATCH /info de arriba.
+const resubmitStudentProjectHandler = async ({
+  cookies,
+  params,
+}: {
+  cookies: Record<string, string>;
+  params: Record<string, any>;
+}) => {
+  await networkDelay();
+
+  const { user, error } = requireAuth(cookies);
+  if (error || !user) {
+    return HttpResponse.json(
+      { message: error || 'Unauthorized' },
+      { status: 401 },
+    );
+  }
+
+  const projectId = String(params.projectId ?? '').trim();
+  if (!isStudentScenarioProject(user, projectId)) {
+    return undefined;
+  }
+
+  return HttpResponse.json({});
+};
+
 const patchStudentProjectHandler = async ({
   cookies,
   request,
@@ -661,6 +694,13 @@ const patchStudentProjectHandler = async ({
     }
 
     const projectId = String(params.projectId ?? '').trim();
+
+    // Solo se atienden los proyectos de los escenarios del dashboard del estudiante;
+    // el resto sigue al handler general de PATCH /projects/:projectId/info.
+    if (!isStudentScenarioProject(user, projectId)) {
+      return undefined;
+    }
+
     const body = (await request.json()) as {
       name?: string;
       description?: string;
@@ -726,58 +766,7 @@ const patchStudentProjectHandler = async ({
       });
     }
 
-    // Buscar también en db.project si es un proyecto de la BD general
-    const dbProj = db.project.findFirst({
-      where: { id: { equals: projectId } },
-    });
-
-    if (!dbProj) {
-      return HttpResponse.json(
-        { message: 'Project not found' },
-        { status: 404 },
-      );
-    }
-
-    const isDbParticipant = (dbProj.participants ?? []).some(
-      (p: any) => String(p?.email ?? '').toLowerCase() === userEmail,
-    );
-
-    if (!isDbParticipant && (user as any).role !== 'ADMIN') {
-      return HttpResponse.json(
-        { message: 'No tienes permisos para modificar este proyecto' },
-        { status: 403 },
-      );
-    }
-
-    if (String(dbProj.state) !== 'REQUEST_CHANGES') {
-      return HttpResponse.json(
-        {
-          message:
-            'El proyecto ya se encuentra aprobado y no admite modificaciones directas',
-        },
-        { status: 403 },
-      );
-    }
-
-    const updatedDbProj = db.project.update({
-      where: { id: { equals: projectId } },
-      data: {
-        name: body.name?.trim() || dbProj.name,
-        description: body.description?.trim() ?? dbProj.description,
-        state: 'UNDER_REVIEW',
-      },
-    });
-
-    await persistDb('project');
-
-    return HttpResponse.json({
-      id: updatedDbProj?.id ?? projectId,
-      eventId: toPublicNumericEventId(String(updatedDbProj?.eventId ?? 3)),
-      name: updatedDbProj?.name,
-      description: updatedDbProj?.description,
-      enrollmentStatus: 'UNDER_REVIEW',
-      canEdit: false,
-    });
+    return undefined;
   } catch (err: any) {
     return HttpResponse.json(
       { message: err?.message || 'Server Error' },
@@ -868,8 +857,11 @@ export const studentDashboardHandlers = [
   ...buildApiPaths('/events/:eventId/my-project/results').map((url) =>
     http.get(url, getStudentEventResultsHandler),
   ),
-  ...buildApiPaths('/projects/:projectId').map((url) =>
+  ...buildApiPaths('/projects/:projectId/info').map((url) =>
     http.patch(url, patchStudentProjectHandler),
+  ),
+  ...buildApiPaths('/projects/:projectId/change-to-under-review').map((url) =>
+    http.post(url, resubmitStudentProjectHandler),
   ),
   ...buildApiPaths('/certificates/:certificateId/download').map((url) =>
     http.get(url, downloadCertificateHandler),

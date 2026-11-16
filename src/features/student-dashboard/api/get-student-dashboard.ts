@@ -17,6 +17,7 @@ import {
   StudentProjectResultsResponse,
   UpdateStudentProjectPayload,
 } from '../types';
+import { adaptStudentProject } from '../utils/adapt-student-project';
 
 type WrappedOrDirect<T> = { data: T } | T;
 
@@ -52,12 +53,12 @@ export const getStudentProjectByEvent = async (
   eventId: number | string,
 ): Promise<StudentProjectDetailResponse | null> => {
   try {
-    const response = await api.get<
-      WrappedOrDirect<StudentProjectDetailResponse>
-    >(`/events/${encodeURIComponent(String(eventId))}/my-project`, {
-      suppressErrorNotification: true,
-    });
-    return unwrapResponse(response);
+    // El gateway responde { project, event }; se adapta a la forma del dashboard
+    const response = await api.get<WrappedOrDirect<unknown>>(
+      `/events/${encodeURIComponent(String(eventId))}/my-project`,
+      { suppressErrorNotification: true },
+    );
+    return adaptStudentProject(unwrapResponse(response));
   } catch {
     return null;
   }
@@ -84,7 +85,9 @@ export const getStudentProjectResults = async (
 
 /**
  * Endpoint 4: Modificación de Propuesta por Ajustes Solicitados
- * PATCH /api/v1/projects/:projectId
+ * PATCH /projects/:projectId/info guarda nombre y descripción;
+ * POST /projects/:projectId/change-to-under-review la reenvía a revisión.
+ * Ninguno de los dos devuelve el proyecto: los datos se vuelven a consultar.
  */
 export const updateStudentProject = async ({
   projectId,
@@ -92,12 +95,10 @@ export const updateStudentProject = async ({
 }: {
   projectId: string | number;
   data: UpdateStudentProjectPayload;
-}): Promise<StudentProjectInfo> => {
-  const response = await api.patch<WrappedOrDirect<StudentProjectInfo>>(
-    `/projects/${encodeURIComponent(String(projectId))}`,
-    data,
-  );
-  return unwrapResponse(response);
+}): Promise<void> => {
+  const id = encodeURIComponent(String(projectId));
+  await api.patch(`/projects/${id}/info`, data);
+  await api.post(`/projects/${id}/change-to-under-review`);
 };
 
 /**
@@ -145,10 +146,38 @@ const normalizeGeneralDashboardToStudentData = (
       : normalizedTrajectory.flatMap((item) => item.certificates ?? []);
 
   const currentProjectSummary = general.currentProject;
+  const sameEvent = (a?: string | number | null, b?: string | number | null) =>
+    a !== undefined && a !== null && b !== undefined && b !== null
+      ? String(a) === String(b)
+      : false;
+
+  // La ficha del evento no trae categoría ni semestre: se completan con el dashboard general
+  const detailIsCurrentProject = projectDetail
+    ? sameEvent(currentProjectSummary?.eventId, projectDetail.eventId)
+    : false;
+  const detailTrajectoryItem = projectDetail
+    ? normalizedTrajectory.find((item) =>
+        sameEvent(item.eventId, projectDetail.eventId),
+      )
+    : undefined;
 
   const resolvedProject: StudentProjectInfo | null = projectDetail
     ? {
         ...projectDetail,
+        categoryName:
+          projectDetail.categoryName ??
+          (detailIsCurrentProject
+            ? currentProjectSummary?.categoryName
+            : null) ??
+          detailTrajectoryItem?.courseName ??
+          null,
+        semester:
+          projectDetail.semester ??
+          (detailIsCurrentProject
+            ? currentProjectSummary?.semester
+            : undefined) ??
+          detailTrajectoryItem?.semester,
+        isCurrent: projectDetail.isCurrent ?? detailIsCurrentProject,
         participants: projectDetail.participants ?? [],
         documents: projectDetail.documents ?? [],
         participantsCount:
@@ -161,6 +190,7 @@ const normalizeGeneralDashboardToStudentData = (
     : currentProjectSummary
       ? {
           ...currentProjectSummary,
+          isCurrent: true,
           documents: currentProjectSummary.documents ?? [],
           participants: currentProjectSummary.participants ?? [],
           participantsCount:
@@ -174,6 +204,7 @@ const normalizeGeneralDashboardToStudentData = (
         }
       : null;
 
+  // La escala (maxScore) la define cada evento: nunca se asume un valor por defecto
   const resolvedEvaluation: StudentEvaluation | null =
     resultsDetail !== undefined
       ? resultsDetail
@@ -181,7 +212,7 @@ const normalizeGeneralDashboardToStudentData = (
         ? {
             resultsPublished: Boolean(general.evaluation.resultsPublished),
             finalScore: general.evaluation.finalScore,
-            maxScore: general.evaluation.maxScore ?? 5.0,
+            maxScore: general.evaluation.maxScore,
             ranking: general.evaluation.ranking,
             criteriaScores: general.evaluation.criteriaScores,
             consolidatedFeedback: general.evaluation.consolidatedFeedback,
@@ -217,9 +248,12 @@ export const getStudentDashboardData = async (
   }
 
   const targetEventId =
-    String(eventId) === 'current'
-      ? (general.currentProject?.eventId ?? 3)
-      : eventId;
+    String(eventId) === 'current' ? general.currentProject?.eventId : eventId;
+
+  // 'current' sin proyecto en un evento vigente: no hay ficha de evento que consultar
+  if (targetEventId === undefined || targetEventId === null) {
+    return normalizeGeneralDashboardToStudentData(general);
+  }
 
   const [projectDetail, resultsDetail] = await Promise.all([
     getStudentProjectByEvent(targetEventId),

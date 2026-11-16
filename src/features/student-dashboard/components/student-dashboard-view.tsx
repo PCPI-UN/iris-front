@@ -19,6 +19,8 @@ import { StudentProjectSection } from './student-project-section';
 import { StudentEvaluationSection } from './student-evaluation-section';
 import { StudentHistorySection } from './student-history-section';
 import { StudentCertificatesSection } from './student-certificates-section';
+import { StudentDashboardError } from './student-dashboard-error';
+import { formatScore } from '../utils/format-score';
 
 export type StudentDashboardTab =
   | 'project'
@@ -42,13 +44,26 @@ export const StudentDashboardView = ({
   const [activeTab, setActiveTab] = useState<StudentDashboardTab>(defaultTab);
 
   // Hook React Query para resolver datos según la sesión autenticada
-  const { data: remoteData, isLoading } = useStudentDashboard(
-    eventId ?? 'current',
-  );
+  const {
+    data: remoteData,
+    isLoading,
+    isError,
+    isFetching,
+    refetch,
+  } = useStudentDashboard(eventId ?? 'current');
   const data = initialData || remoteData;
   const updateProjectMutation = useUpdateStudentProject({
     eventId: data?.currentProject?.eventId ?? eventId,
   });
+
+  if (isError && !data) {
+    return (
+      <StudentDashboardError
+        onRetry={() => void refetch()}
+        isRetrying={isFetching}
+      />
+    );
+  }
 
   if (isLoading || !data) {
     return (
@@ -68,7 +83,8 @@ export const StudentDashboardView = ({
       projectId: currentProject.id,
       data: {
         name: updatedProject.name ?? currentProject.name,
-        description: updatedProject.description ?? currentProject.description,
+        description:
+          updatedProject.description ?? currentProject.description ?? '',
       },
     });
   };
@@ -82,9 +98,11 @@ export const StudentDashboardView = ({
         </span>
       );
     }
+    // Sin nota (proyecto no evaluado) no se muestra insignia: nunca un valor de relleno
+    if (evaluation.finalScore == null) return null;
     return (
       <span className="rounded bg-cyan-500/20 px-1.5 py-0.2 font-mono text-[12px] font-bold text-cyan-300">
-        {evaluation.finalScore?.toFixed(1) || '4.8'}
+        {formatScore(evaluation.finalScore)}
       </span>
     );
   };

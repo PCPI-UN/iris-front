@@ -140,13 +140,13 @@ export const StudentProjectSection = ({
 
   const handleStartEdit = () => {
     setEditedName(project.name);
-    setEditedDescription(project.description);
+    setEditedDescription(project.description ?? '');
     setIsEditing(true);
   };
 
   const handleCancelEdit = () => {
     setEditedName(project.name);
-    setEditedDescription(project.description);
+    setEditedDescription(project.description ?? '');
     setIsEditing(false);
   };
 
@@ -380,7 +380,9 @@ export const StudentProjectSection = ({
                           {doc.title || 'Memoria Técnica'}
                         </p>
                         <p className="text-[12px] text-slate-400">
-                          Memoria Técnica de Soporte
+                          {doc.type === 'LOGO'
+                            ? 'Imagen del proyecto'
+                            : 'Memoria Técnica de Soporte'}
                         </p>
                       </div>
                     </div>
@@ -442,7 +444,9 @@ export const StudentProjectSection = ({
                       )}
                     </div>
                     <p className="text-[12px] text-slate-400 truncate">
-                      {member.career || 'Estudiante'} · {member.studentCode}
+                      {[member.career || 'Estudiante', member.studentCode]
+                        .filter(Boolean)
+                        .join(' · ')}
                     </p>
                   </div>
                 </li>
