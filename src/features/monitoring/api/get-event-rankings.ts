@@ -26,8 +26,15 @@ export type GetEventRankingsParams = {
   state?: string;
 };
 
+export type PublicRankingConfiguration = {
+  visiblePublic?: boolean;
+  positions?: number;
+  gradeVisible?: boolean;
+};
+
 export type GetEventRankingsResponse = {
   data: EventRankingRow[];
+  configuration?: PublicRankingConfiguration;
 };
 
 const asRecord = (value: unknown): RankingItemRecord => {
@@ -108,6 +115,34 @@ const extractItems = (response: unknown): unknown[] => {
 
 const firstNonEmptyList = (...lists: string[][]) => {
   return lists.find((list) => list.length > 0) ?? [];
+};
+
+// The public rankings endpoint describes its own visibility inline (it is the only
+// source of this config available to visitors without a session, since the
+// /events/ranking-config endpoint requires authentication). Preserve it so callers
+// can decide whether to render the ranking instead of relying on an auth-gated call.
+const extractConfiguration = (response: unknown): PublicRankingConfiguration | undefined => {
+  const record = asRecord(response);
+  const cfg = asRecord(record.configuration ?? record.config ?? record.rankingConfig);
+  if (Object.keys(cfg).length === 0) return undefined;
+
+  const visiblePublic =
+    typeof cfg.visiblePublic === 'boolean'
+      ? cfg.visiblePublic
+      : typeof cfg.visibleInLanding === 'boolean'
+        ? (cfg.visibleInLanding as boolean)
+        : typeof cfg.isPublic === 'boolean'
+          ? (cfg.isPublic as boolean)
+          : undefined;
+  const gradeVisible =
+    typeof cfg.gradeVisible === 'boolean'
+      ? cfg.gradeVisible
+      : typeof cfg.visibleScore === 'boolean'
+        ? (cfg.visibleScore as boolean)
+        : undefined;
+  const positions = asNumber(cfg.positions ?? cfg.visiblePositions);
+
+  return { visiblePublic, positions, gradeVisible };
 };
 
 const normalizeRankingRow = (item: unknown, index: number): EventRankingRow => {
@@ -238,6 +273,7 @@ export const getPublicEventRankings = async ({ eventId, categoryId, state }: Get
     data: extractItems(response)
       .map((item, index) => normalizeRankingRow(item, index))
       .sort((left, right) => left.position - right.position),
+    configuration: extractConfiguration(response),
   };
 };
 

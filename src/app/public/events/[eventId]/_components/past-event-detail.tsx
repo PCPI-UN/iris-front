@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useRef, useState, useEffect } from 'react';
+import { keepPreviousData } from '@tanstack/react-query';
 import {
   Calendar,
   Trophy,
@@ -877,9 +878,38 @@ export const PastEventDetail = ({ eventId }: EventDetailProps) => {
 
   const rankingConfigQuery = useRankingConfig({ eventId: event?.id, queryConfig: { enabled: Boolean(event?.id) } });
 
+  // The public rankings endpoint is self-enforcing (responds 403 when the ranking is not
+  // public) and carries its own visibility configuration inline, so query it for any event
+  // and let the response decide. This avoids the deadlock where the ranking was never
+  // fetched for visitors without a session: for them /events/ranking-config returns 401 and
+  // the public event detail does not include rankingConfig, so the previous gate stayed
+  // false forever and /rankings/public was never requested.
+  const rankingQuery = usePublicEventRankings({
+    eventId: event?.id,
+    categoryId: selectedCategoryId && selectedCategoryId > 0 ? selectedCategoryId : undefined,
+    state: 'APPROVED',
+    // No retry: a 403 here is the backend declaring the ranking non-public, not a transient
+    // failure, so retrying would only repeat a request we expect to be rejected.
+    // keepPreviousData: when the selected category changes the query key changes and data would
+    // momentarily be undefined; since visibility is derived from the response's `configuration`,
+    // that would flicker the ranking off. Keeping the previous data holds it steady.
+    queryConfig: { enabled: Boolean(event?.id), retry: false, placeholderData: keepPreviousData },
+  });
+
+  const publicRankingConfig = useMemo(() => {
+    const cfg = rankingQuery.data?.configuration;
+    if (!cfg) return null;
+    return {
+      positions: cfg.positions,
+      visiblePositions: cfg.positions,
+      visibleInLanding: cfg.visiblePublic,
+      visibleScore: cfg.gradeVisible,
+    };
+  }, [rankingQuery.data]);
+
   const effectiveRankingConfig = useMemo(() => {
-    return rankingConfigQuery.data?.data ?? event?.rankingConfig ?? null;
-  }, [rankingConfigQuery.data, event?.rankingConfig]);
+    return rankingConfigQuery.data?.data ?? event?.rankingConfig ?? publicRankingConfig ?? null;
+  }, [rankingConfigQuery.data, event?.rankingConfig, publicRankingConfig]);
 
   // Reset category selection when the event changes
   useEffect(() => {
@@ -926,13 +956,6 @@ export const PastEventDetail = ({ eventId }: EventDetailProps) => {
     }
     return true;
   }, [effectiveRankingConfig]);
-
-  const rankingQuery = usePublicEventRankings({
-    eventId: event?.id,
-    categoryId: selectedCategoryId && selectedCategoryId > 0 ? selectedCategoryId : undefined,
-    state: 'APPROVED',
-    queryConfig: { enabled: Boolean(event?.id) && Boolean(isPublicRankingEnabled) },
-  });
 
   const categories = useMemo(() => {
     const categoryMap = new Map<number, string>();

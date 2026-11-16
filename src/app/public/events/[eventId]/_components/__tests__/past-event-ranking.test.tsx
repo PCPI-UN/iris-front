@@ -212,6 +212,13 @@ describe('PastEventDetail - Ranking en eventos finalizados (IRIS-V3-EVT-01 §3.2
           },
         });
       }),
+      // El backend hace cumplir la visibilidad en el propio endpoint público.
+      http.get(`*/events/${eventId}/rankings/public`, () => {
+        return HttpResponse.json(
+          { message: 'Public ranking is not enabled for this event' },
+          { status: 403 },
+        );
+      }),
     );
 
     renderWithQueryClient(<PastEventDetail eventId={eventId} />);
@@ -361,5 +368,65 @@ describe('PastEventDetail - Ranking en eventos finalizados (IRIS-V3-EVT-01 §3.2
       await screen.findByRole('heading', { name: 'Asistente Clínico Autónomo' }),
     ).toBeInTheDocument();
     expect(screen.getByText('4.95')).toBeInTheDocument();
+  });
+
+  test('visitante sin sesión: muestra el ranking usando solo la configuración embebida en /rankings/public cuando ranking-config da 401 y el detalle público no trae rankingConfig', async () => {
+    const eventId = 905;
+
+    server.use(
+      // El detalle público NO incluye rankingConfig (contrato real del backend).
+      http.get(`*/events/public/past/${eventId}`, () => {
+        return HttpResponse.json({
+          data: {
+            id: eventId,
+            name: 'Feria Abierta 2025',
+            description: 'Evento finalizado, visitante anónimo.',
+            startDate: '2025-09-01T08:00:00Z',
+            endDate: '2025-09-03T18:00:00Z',
+            inscriptionDeadline: '2025-08-25',
+            status: 4,
+            statusName: 'CLOSED',
+            active: false,
+            eventType: 1,
+            categories: [{ id: 10, name: 'Ingeniería de Sistemas' }],
+          },
+        });
+      }),
+      // Endpoints autenticados no disponibles para el visitante.
+      http.get(`*/projects/by-event/${eventId}/with-jurors`, () => {
+        return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 });
+      }),
+      http.get(`*/events/ranking-config/${eventId}`, () => {
+        return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 });
+      }),
+      // La visibilidad SOLO está disponible dentro de la respuesta pública, en `configuration`.
+      http.get(`*/events/${eventId}/rankings/public`, () => {
+        return HttpResponse.json({
+          eventId,
+          scope: 'public',
+          configuration: { visiblePublic: true, positions: 3, gradeVisible: true },
+          items: [
+            {
+              position: 1,
+              projectId: 801,
+              projectName: 'Observatorio Ciudadano',
+              averageGrade: 4.6,
+              category: { id: 10, name: 'Ingeniería de Sistemas' },
+              participants: ['Marta Ruiz'],
+            },
+          ],
+        });
+      }),
+    );
+
+    renderWithQueryClient(<PastEventDetail eventId={eventId} />);
+
+    expect(
+      await screen.findByRole('heading', { name: /proyectos ganadores/i }),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: 'Observatorio Ciudadano' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('4.60')).toBeInTheDocument();
   });
 });
