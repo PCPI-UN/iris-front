@@ -500,7 +500,11 @@ export const eventsHandlers = [
         );
       }
 
-      if (event.status !== 4) {
+      const isPastByDate = Boolean(
+        event.endDate && new Date(String(event.endDate)).getTime() < Date.now(),
+      );
+
+      if (event.status !== 4 && !isPastByDate) {
         return HttpResponse.json(
           { message: "Event is not a past event" },
           { status: 403 }
@@ -586,6 +590,161 @@ export const eventsHandlers = [
           participants: uniqueParticipants,
         },
       });
+    } catch (error: any) {
+      return HttpResponse.json(
+        { message: error?.message || "Server Error" },
+        { status: 500 }
+      );
+    }
+  }),
+
+  http.get(`${env.API_URL}/events/ranking-config/:eventId`, async ({ params }) => {
+    await networkDelay();
+
+    try {
+      const eventId = toInternalPrefixedId(String(params.eventId), "event");
+      const event = db.event.findFirst({
+        where: {
+          id: {
+            equals: eventId,
+          },
+        },
+      }) as any;
+
+      if (!event) {
+        return HttpResponse.json({ data: null });
+      }
+
+      const rawConfig = event.rankingConfig ?? event.rankingConfiguration ?? null;
+      if (!rawConfig) {
+        const isPastClosed =
+          Number(event.status) === 4 ||
+          Boolean(event.endDate && new Date(String(event.endDate)).getTime() < Date.now());
+        return HttpResponse.json({
+          data: isPastClosed
+            ? {
+                id: toPublicNumericId(String(event.id), "event"),
+                eventId: toPublicNumericId(String(event.id), "event"),
+                positions: 3,
+                visiblePositions: 3,
+                visibleInLanding: true,
+                visibleScore: true,
+              }
+            : null,
+        });
+      }
+
+      return HttpResponse.json({
+        data: {
+          id: rawConfig.id ?? toPublicNumericId(String(event.id), "event"),
+          eventId: toPublicNumericId(String(event.id), "event"),
+          positions: rawConfig.positions ?? rawConfig.visiblePositions ?? 3,
+          visiblePositions: rawConfig.visiblePositions ?? rawConfig.positions ?? 3,
+          visibleInLanding: Boolean(
+            rawConfig.visibleInLanding ?? rawConfig.visiblePublic ?? rawConfig.isPublic,
+          ),
+          visibleScore: rawConfig.visibleScore ?? rawConfig.gradeVisible ?? true,
+        },
+      });
+    } catch (error: any) {
+      return HttpResponse.json(
+        { message: error?.message || "Server Error" },
+        { status: 500 }
+      );
+    }
+  }),
+
+  http.get(`${env.API_URL}/events/:eventId/rankings/public`, async ({ params, request }) => {
+    await networkDelay();
+
+    try {
+      const eventId = toInternalPrefixedId(String(params.eventId), "event");
+      const url = new URL(request.url);
+      const rawCategoryId = url.searchParams.get("categoryId") ?? url.searchParams.get("category_id");
+      const filterCategoryId = rawCategoryId ? Number(rawCategoryId) : undefined;
+
+      const event = db.event.findFirst({
+        where: {
+          id: {
+            equals: eventId,
+          },
+        },
+      }) as any;
+
+      if (!event) {
+        return HttpResponse.json({ data: [] });
+      }
+
+      let projects = db.project
+        .findMany({
+          where: {
+            eventId: {
+              equals: event.id,
+            },
+          },
+        })
+        .filter((project: any) => String(project.state ?? "").toUpperCase() === "APPROVED");
+
+      if (filterCategoryId && Number.isFinite(filterCategoryId) && filterCategoryId > 0) {
+        projects = projects.filter((project: any) => {
+          const projCatId = toPublicNumericId(
+            String(project.categoryId ?? project.courseId ?? ""),
+            "course",
+          );
+          return projCatId === filterCategoryId || Number(project.categoryId) === filterCategoryId;
+        });
+      }
+
+      const scoredProjects = projects
+        .map((project: any) => {
+          const evaluations = db.evaluation.findMany({
+            where: {
+              projectId: {
+                equals: String(project.id),
+              },
+            },
+          });
+
+          const avgScore =
+            evaluations.length > 0
+              ? evaluations.reduce((sum: number, ev: any) => sum + Number(ev.grade ?? 0), 0) /
+                evaluations.length
+              : typeof project.score === "number"
+                ? project.score
+                : undefined;
+
+          const categoryId = toPublicNumericId(
+            String(project.categoryId ?? project.courseId ?? ""),
+            "course",
+          );
+
+          return {
+            project,
+            avgScore,
+            evaluationCount: evaluations.length,
+            categoryId: categoryId > 0 ? categoryId : undefined,
+          };
+        })
+        .filter((entry) => entry.avgScore !== undefined)
+        .sort((a, b) => Number(b.avgScore ?? 0) - Number(a.avgScore ?? 0));
+
+      const data = scoredProjects.map((entry, idx) => ({
+        position: idx + 1,
+        projectId: toPublicNumericId(String(entry.project.id), "project") || idx + 1,
+        projectCode: entry.project.projectCode ?? entry.project.eventNumber ?? "",
+        projectName: entry.project.name,
+        description: entry.project.description,
+        state: "APPROVED",
+        categoryId: entry.categoryId,
+        evaluationCount: entry.evaluationCount,
+        averageGrade: Number(Number(entry.avgScore).toFixed(2)),
+        participants: (entry.project.participants ?? []).map((p: any) =>
+          `${p.firstName ?? ""} ${p.lastName ?? ""}`.trim() || p.email || "Participante",
+        ),
+        documents: entry.project.documents ?? [],
+      }));
+
+      return HttpResponse.json({ data });
     } catch (error: any) {
       return HttpResponse.json(
         { message: error?.message || "Server Error" },

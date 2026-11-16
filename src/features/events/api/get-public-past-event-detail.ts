@@ -10,16 +10,25 @@ export const getPublicPastEventDetail = async ({
 }: {
   eventId: number;
 }): Promise<{ data: Event }> => {
-  const response = await api.get<{ data?: Event; event?: Event }>(
-    `/events/public/past/${eventId}`,
-    { suppressErrorNotification: true },
-  );
+  let response: { data?: Event; event?: Event } | undefined;
+
+  try {
+    response = await api.get<{ data?: Event; event?: Event }>(
+      `/events/public/past/${eventId}`,
+      { suppressErrorNotification: true },
+    );
+  } catch {
+    response = await api.get<{ data?: Event; event?: Event }>(
+      `/events/public/${eventId}`,
+      { suppressErrorNotification: true },
+    );
+  }
 
   const event =
-    response.event ??
-    (response.data as any)?.event ??
-    (response.data as any)?.data ??
-    response.data;
+    response?.event ??
+    (response?.data as any)?.event ??
+    (response?.data as any)?.data ??
+    response?.data;
 
   if (!event) {
     throw new Error("Evento pasado no encontrado");

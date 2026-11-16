@@ -1,14 +1,14 @@
 import { useNotifications } from '@/components/ui/notifications';
 import { env } from '@/config/env';
 
-/** Error thrown for non-2xx responses; keeps the HTTP status so callers can map it. */
+/** Error de una respuesta HTTP no exitosa; conserva el código de estado. */
 export class ApiError extends Error {
-  constructor(
-    message: string,
-    public readonly status: number,
-  ) {
+  readonly status: number;
+
+  constructor(message: string, status: number) {
     super(message);
     this.name = 'ApiError';
+    this.status = status;
   }
 }
 

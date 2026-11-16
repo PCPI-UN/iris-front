@@ -17,8 +17,10 @@ import { projectsHandlers } from "./projects";
 import { usersHandlers } from "./users";
 import { evaluationsHandlers } from "./evaluations";
 import { dashboardHandlers } from "./dashboard";
+import { studentDashboardHandlers } from "./student-dashboard";
 
 export const handlers = [
+  ...studentDashboardHandlers,
   ...juriesHandlers,
   ...administratorsHandlers,
   ...authHandlers,
@@ -29,7 +31,6 @@ export const handlers = [
   ...projectsHandlers,
   ...teamsHandlers,
   ...usersHandlers,
-  ...projectsHandlers,
   ...evaluationsHandlers,
   ...criterionHandlers,
   ...dashboardHandlers,

@@ -12,9 +12,16 @@ import { PastEventDetail } from '../../[eventId]/_components/past-event-detail';
 
 const extractEventId = (value: string) => {
   const normalizedValue = value.trim();
+  if (/^\d+$/.test(normalizedValue)) return normalizedValue;
 
-  const numericSuffixMatch = normalizedValue.match(/(?:-(\d+)|^(\d+))$/);
-  return numericSuffixMatch?.[1] ?? numericSuffixMatch?.[2] ?? normalizedValue;
+  const prefixMatch = normalizedValue.match(/^(\d+)-/);
+  const suffixMatch = normalizedValue.match(/-(\d+)$/);
+
+  if (prefixMatch && suffixMatch && /^(19|20)\d{2}$/.test(suffixMatch[1])) {
+    return prefixMatch[1];
+  }
+
+  return suffixMatch?.[1] ?? prefixMatch?.[1] ?? normalizedValue;
 };
 
 const PublicPastEventDetailPage = async ({

@@ -71,6 +71,7 @@ export const getProjectsWithJurors = async (
       ...withLegacyCourseIdParam(categoryId),
       q,
     },
+    suppressErrorNotification: true,
   });
 
   return {

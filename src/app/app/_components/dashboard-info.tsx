@@ -3,21 +3,30 @@
 import { useUser } from '@/lib/auth';
 import { AdminDashboard } from './admin-dashboard';
 import { GetEventsUser } from '@/features/events/components/get-events-user';
+import { StudentGeneralDashboardView } from '@/features/student-dashboard';
 
 export const DashboardInfo = () => {
   const user = useUser();
-  const primaryRoleName =
-    user.data?.platformRoles?.[0]?.name ??
-    ((user.data as { role?: string } | undefined)?.role === 'ADMIN'
-      ? 'Admin'
-      : 'User');
+  // Un usuario puede tener varios roles de plataforma: se revisan todos, no solo el primero
+  const roleNames = (user.data?.platformRoles ?? []).map((role) => role.name);
+  const legacyRole = (user.data as { role?: string } | undefined)?.role;
 
-  // If the user is an ADMIN, display the AdminDashboard
-  if (primaryRoleName === 'Admin') {
+  const isAdmin = roleNames.includes('Admin') || legacyRole === 'ADMIN';
+  // Sin roles de plataforma (usuarios del mock) se asume un usuario regular
+  const isRegularUser = roleNames.length === 0 || roleNames.includes('User');
+
+  // Si es ADMIN, despliega el Dashboard de Administración
+  if (isAdmin) {
     return <AdminDashboard />;
   }
 
-  // For regular users, display the list of events
+  // Para estudiantes y participantes, despliega el Dashboard General del Estudiante
+  if (isRegularUser) {
+    return <StudentGeneralDashboardView />;
+  }
+
+  // Otros roles de plataforma (gestores, profesores, tutores...) no son estudiantes:
+  // conservan la lista de sus eventos
   return (
     <div className="dashboard-page ">
       <div className="pt-5 flex flex-col gap-4">
