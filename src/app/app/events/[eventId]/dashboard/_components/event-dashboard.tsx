@@ -43,8 +43,14 @@ export const EventDashboard = ({ eventId }: EventDashboardProps) => {
     return <JuryDashboard eventId={normalizedEventId || eventId} eventType={currentEvent.eventType} />;
   }
 
-  if (currentEvent?.role?.name === 'Participant') {
-    return <StudentDashboard eventId={parseInt(eventId)} />;
+  // Participante del evento, o usuario regular de la plataforma (p. ej. al abrir la ficha de
+  // un evento pasado desde su historial). Si no tiene proyecto en el evento, el dashboard
+  // del estudiante lo indica; nunca muestra el proyecto de otro evento.
+  if (
+    currentEvent?.role?.name === 'Participant' ||
+    user.data?.platformRoles?.some((r) => r.name === 'User')
+  ) {
+    return <StudentDashboard eventId={normalizedEventId || eventId} />;
   }
 
   // Si no tiene rol definido en el evento

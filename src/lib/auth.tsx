@@ -8,6 +8,8 @@ import { z } from 'zod';
 
 import { AuthResponse, User } from '@/types/api';
 
+import { env } from '@/config/env';
+
 import { api } from './api-client';
 
 // api call definitions for auth (types, schemas, requests):
@@ -122,7 +124,13 @@ export const useLogout = ({ onSuccess }: { onSuccess?: () => void }) => {
   });
 };
 
-const logout = (): Promise<AuthResponse> => {
+const logout = async (): Promise<AuthResponse> => {
+  // Solo con el API simulado (MSW): la cookie de sesión la gestiona el cliente.
+  // Con el backend real la cookie es HttpOnly y la borra el propio /auth/logout.
+  if (env.ENABLE_API_MOCKING && typeof window !== 'undefined') {
+    const Cookies = (await import('js-cookie')).default;
+    Cookies.remove('access_token', { path: '/' });
+  }
   return api.post('/auth/logout');
 };
 
@@ -133,8 +141,18 @@ export const loginInputSchema = z.object({
 
 export type LoginInput = z.infer<typeof loginInputSchema>;
 const loginWithEmailAndPassword = async (data: LoginInput): Promise<User> => {
-  // 1. Login - setea la cookie en el backend
-  await api.post<AuthResponse>('/auth/login', data);
+  // 1. Login - setea la cookie en el backend / mock
+  const response = await api.post<AuthResponse & { jwt?: string }>(
+    '/auth/login',
+    data,
+  );
+
+  // Solo con el API simulado (MSW), que no puede fijar la cookie desde la respuesta.
+  // Con el backend real el token nunca debe quedar en una cookie legible por JavaScript.
+  if (env.ENABLE_API_MOCKING && typeof window !== 'undefined' && response?.jwt) {
+    const Cookies = (await import('js-cookie')).default;
+    Cookies.set('access_token', response.jwt, { path: '/' });
+  }
 
   // 2. Obtener el usuario autenticado con la cookie
   const user = await getUser();

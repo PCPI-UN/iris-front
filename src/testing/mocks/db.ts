@@ -176,9 +176,12 @@ export const loadDb = async () => {
     }
   }
   // If we are running in a browser environment
-  return Object.assign(
-    JSON.parse(window.localStorage.getItem("msw-db") || "{}")
-  );
+  if (typeof window.localStorage?.getItem === "function") {
+    return Object.assign(
+      JSON.parse(window.localStorage.getItem("msw-db") || "{}")
+    );
+  }
+  return {};
 };
 
 export const storeDb = async (data: string) => {
@@ -186,7 +189,7 @@ export const storeDb = async (data: string) => {
   if (typeof window === "undefined") {
     const { writeFile } = await import("fs/promises");
     await writeFile(dbFilePath, data);
-  } else {
+  } else if (typeof window.localStorage?.setItem === "function") {
     // If we are running in a browser environment
     window.localStorage.setItem("msw-db", data);
   }
@@ -212,5 +215,10 @@ export const initializeDb = async () => {
 };
 
 export const resetDb = () => {
-  window.localStorage.clear();
+  if (
+    typeof window !== "undefined" &&
+    typeof window.localStorage?.clear === "function"
+  ) {
+    window.localStorage.clear();
+  }
 };
