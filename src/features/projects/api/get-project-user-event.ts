@@ -1,7 +1,7 @@
 import { useQuery, queryOptions } from "@tanstack/react-query";
 import { z } from "zod";
 
-import { api } from "@/lib/api-client";
+import { api, ApiError } from "@/lib/api-client";
 import { QueryConfig } from "@/lib/react-query";
 import { Event, Project } from "@/types/api";
 
@@ -53,8 +53,8 @@ export const getProject = async ({
 
     throw new Error("Invalid project response");
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    if (message === "No project found for this user in the specified event") {
+    // The backend answers 404 when the user has no project in the event.
+    if (error instanceof ApiError && error.status === 404) {
       return null;
     }
 
