@@ -171,6 +171,7 @@ export const normalizeEvent = (raw: any): Event => {
         ? raw.isPubliclyJoinable
         : Boolean(raw?.isPublic),
     evaluationsOpened,
+    resultsPublished: raw?.resultsPublished === true,
     statusName: raw?.statusName ?? (active ? "ACTIVE" : "INACTIVE"),
     location: raw?.location,
     locationDetails,
