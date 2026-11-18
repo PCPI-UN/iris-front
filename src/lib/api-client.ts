@@ -21,7 +21,42 @@ type RequestOptions = {
   cache?: RequestCache;
   next?: NextFetchRequestConfig;
   suppressErrorNotification?: boolean;
+  /** 'blob' reads the body as a file (see api.download) instead of JSON */
+  responseType?: 'json' | 'blob';
 };
+
+/** A file returned by the API, with the name the backend sent in Content-Disposition */
+export type DownloadedFile = {
+  blob: Blob;
+  fileName: string | null;
+};
+
+/** Reads the file name from `attachment; filename="..."` (or RFC 5987 filename*=) */
+export function getFileNameFromContentDisposition(
+  header: string | null,
+): string | null {
+  if (!header) return null;
+
+  const encoded = header.match(/filename\*\s*=\s*(?:UTF-8'')?([^;]+)/i)?.[1];
+  if (encoded) {
+    try {
+      return decodeURIComponent(encoded.trim().replace(/^"|"$/g, ''));
+    } catch {
+      // fall back to the plain filename
+    }
+  }
+
+  const plain = header.match(/filename\s*=\s*("([^"]*)"|[^;]+)/i);
+  const fileName = (plain?.[2] ?? plain?.[1])?.trim();
+  return fileName || null;
+}
+
+const readFile = async (response: Response): Promise<DownloadedFile> => ({
+  blob: await response.blob(),
+  fileName: getFileNameFromContentDisposition(
+    response.headers.get('Content-Disposition'),
+  ),
+});
 
 function buildUrlWithParams(
   url: string,
@@ -71,6 +106,7 @@ async function fetchApi<T>(
     cache = 'no-store',
     next,
     suppressErrorNotification = false,
+    responseType = 'json',
   } = options;
 
   // Get cookies from the request when running on server
@@ -148,6 +184,9 @@ async function fetchApi<T>(
         throw new ApiError(message, retryResponse.status);
       }
 
+      if (responseType === 'blob') {
+        return (await readFile(retryResponse)) as T;
+      }
       return retryResponse.json();
     } catch (refreshError) {
       // If the refresh fails, redirect to the login only if we are not already there.
@@ -190,6 +229,10 @@ async function fetchApi<T>(
     throw new ApiError(message, response.status);
   }
 
+  if (responseType === 'blob') {
+    return (await readFile(response)) as T;
+  }
+
   // Read body as text first to handle empty responses
   const text = await response.text();
   if (!text) return {} as T;
@@ -217,5 +260,16 @@ export const api = {
   },
   delete<T>(url: string, body?: any, options?: RequestOptions): Promise<T> {
     return fetchApi<T>(url, { ...options, method: 'DELETE', body });
+  },
+  /** GET of a file (e.g. an Excel report): same session handling as the other calls */
+  download(
+    url: string,
+    options?: Omit<RequestOptions, 'method' | 'body' | 'responseType'>,
+  ): Promise<DownloadedFile> {
+    return fetchApi<DownloadedFile>(url, {
+      ...options,
+      method: 'GET',
+      responseType: 'blob',
+    });
   },
 };
