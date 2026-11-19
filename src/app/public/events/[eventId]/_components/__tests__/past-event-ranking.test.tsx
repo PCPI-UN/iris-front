@@ -95,6 +95,8 @@ describe('PastEventDetail - Ranking en eventos finalizados (IRIS-V3-EVT-01 §3.2
             status: 4,
             statusName: 'CLOSED',
             active: false,
+            // The ranking is only shown once the results are published
+            resultsPublished: true,
             eventType: 1,
             categories: [
               { id: 10, name: 'Ingeniería de Sistemas' },
@@ -316,6 +318,8 @@ describe('PastEventDetail - Ranking en eventos finalizados (IRIS-V3-EVT-01 §3.2
             status: 4,
             statusName: 'CLOSED',
             active: false,
+            // The ranking is only shown once the results are published
+            resultsPublished: true,
             eventType: 1,
             categories: [
               { id: 10, name: 'IA' },
@@ -387,6 +391,8 @@ describe('PastEventDetail - Ranking en eventos finalizados (IRIS-V3-EVT-01 §3.2
             status: 4,
             statusName: 'CLOSED',
             active: false,
+            // The ranking is only shown once the results are published
+            resultsPublished: true,
             eventType: 1,
             categories: [{ id: 10, name: 'Ingeniería de Sistemas' }],
           },
