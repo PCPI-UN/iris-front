@@ -15,17 +15,15 @@ import {
 import { db } from './mocks/db';
 import { AUTH_COOKIE, authenticate, hash } from './mocks/utils';
 
+const queryLoadingElements = () => [
+  ...screen.queryAllByTestId(/loading/i),
+  ...screen.queryAllByText(/loading/i),
+];
+
 export const waitForLoadingToFinish = async () => {
-  const loadingElements = [
-    ...screen.queryAllByTestId(/loading/i),
-    ...screen.queryAllByText(/loading/i),
-  ];
-  
-  if (loadingElements.length > 0) {
-    await waitForElementToBeRemoved(
-      () => loadingElements,
-      { timeout: 4000 },
-    );
+  if (queryLoadingElements().length > 0) {
+    // Queried again on every check: a list taken once keeps the removed nodes and never empties
+    await waitForElementToBeRemoved(queryLoadingElements, { timeout: 4000 });
   }
 };
 
