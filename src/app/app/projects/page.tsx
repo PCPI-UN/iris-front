@@ -10,8 +10,8 @@ import { getProjectsQueryOptions } from "@/features/projects/api/get-projects";
 import { RoleGuard } from "@/components/auth/role-guard";
 
 export const metadata = {
-  title: "Projects",
-  description: "Projects",
+  title: "Proyectos",
+  description: "Proyectos",
 };
 
 const ProjectsPage = async ({
@@ -22,16 +22,19 @@ const ProjectsPage = async ({
   const queryClient = new QueryClient();
 
   const resolvedSearchParams = await searchParams;
-  const page = resolvedSearchParams.page ? Number(resolvedSearchParams.page) : 1;
+  const page = resolvedSearchParams.page
+    ? Number(resolvedSearchParams.page)
+    : 1;
   const eventId = Number(resolvedSearchParams.event);
 
   await queryClient.prefetchQuery(
-    getProjectsQueryOptions({ page, eventId: eventId || undefined })
+    getProjectsQueryOptions({ page, eventId: eventId || undefined }),
   );
 
   const dehydratedState = dehydrate(queryClient);
+
   return (
-    <RoleGuard roles={['Admin']}>
+    <RoleGuard roles={["Admin"]}>
       <HydrationBoundary state={dehydratedState}>
         <Projects />
       </HydrationBoundary>

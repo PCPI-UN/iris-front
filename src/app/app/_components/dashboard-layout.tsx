@@ -2,13 +2,20 @@
 
 import { usePathname } from "next/navigation";
 import { ErrorBoundary } from "react-error-boundary";
-import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator, BreadcrumbPage } from "@/components/ui/breadcrumb";
+
+import { AppSidebar } from "./app-sidebar";
+
+import {
+  Breadcrumb,
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbLink,
+} from "@/components/ui/breadcrumb";
 import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { AppSidebar } from "./app-sidebar";
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
   return (
@@ -37,9 +44,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
                 <Breadcrumb>
                   <BreadcrumbList>
                     <BreadcrumbItem>
-                      <BreadcrumbLink href="/app">
-                        Dashboard
-                      </BreadcrumbLink>
+                      <BreadcrumbLink href="/app">Dashboard</BreadcrumbLink>
                     </BreadcrumbItem>
                   </BreadcrumbList>
                 </Breadcrumb>
@@ -66,7 +71,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
 };
 
 function Fallback({ error }: { error: Error }) {
-  return <p>Error: {error.message ?? "Something went wrong!"}</p>;
+  return <p>Error: {error.message ?? "¡Algo salió mal!"}</p>;
 }
 
 export const DashboardLayout = ({
@@ -75,6 +80,7 @@ export const DashboardLayout = ({
   children: React.ReactNode;
 }) => {
   const pathname = usePathname();
+
   return (
     <Layout>
       <ErrorBoundary key={pathname} FallbackComponent={Fallback}>

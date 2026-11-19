@@ -3,7 +3,9 @@
 import { Input } from "@heroui/react";
 import { Textarea } from "@heroui/input";
 import { Select, SelectItem } from "@heroui/select";
+
 import { ProjectData } from "../project-wizard";
+
 import { useCategoriesDropdown } from "@/features/courses/api/get-categories-dropdown";
 
 type ProjectDetailsStepProps = {
@@ -42,27 +44,30 @@ export function ProjectDetailsStep({
       <div className="grid gap-4 md:grid-cols-[8rem_minmax(0,1fr)] md:items-start">
         <div>
           <Input
+            inputMode="numeric"
             label="Num. Asignado"
+            maxLength={2}
             placeholder="10"
+            type="text"
             value={project.projectCode}
             onValueChange={(value) =>
-              onUpdate({ ...project, projectCode: normalizeAssignedNumber(value) })
+              onUpdate({
+                ...project,
+                projectCode: normalizeAssignedNumber(value),
+              })
             }
-            inputMode="numeric"
-            type="text"
-            maxLength={2}
           />
         </div>
 
         {/* Nombre del Proyecto */}
         <div className="relative">
           <Input
+            isRequired
             label="Nombre del Proyecto"
+            maxLength={255}
             placeholder="Sistema de gestión de inventario inteligente"
             value={project.name}
             onValueChange={(value) => onUpdate({ ...project, name: value })}
-            isRequired
-            maxLength={255}
           />
 
           {/* Contador */}
@@ -75,13 +80,15 @@ export function ProjectDetailsStep({
       {/* Descripción */}
       <div className="relative">
         <Textarea
+          description="Incluya el problema que resuelve, la metodología y los resultados esperados."
           label="Descripción del Proyecto"
+          maxLength={3000}
+          minRows={6}
           placeholder="Describa brevemente el objetivo y alcance de su proyecto..."
           value={project.description}
-          onValueChange={(value) => onUpdate({ ...project, description: value })}
-          minRows={6}
-          description="Incluya el problema que resuelve, la metodología y los resultados esperados."
-          maxLength={3000}
+          onValueChange={(value) =>
+            onUpdate({ ...project, description: value })
+          }
         />
 
         {/* Contador */}
@@ -92,16 +99,17 @@ export function ProjectDetailsStep({
 
       {/* Select de categorías */}
       <Select
+        isRequired
+        isDisabled={!eventId || categoriesQuery.isLoading}
+        isLoading={!!eventId && categoriesQuery.isLoading}
         label="Categoría"
         placeholder="Seleccione una categoría"
         selectedKeys={project.categoryId ? [String(project.categoryId)] : []}
         onSelectionChange={(keys) => {
           const selected = Array.from(keys)[0] as string;
+
           onUpdate({ ...project, categoryId: Number(selected) });
         }}
-        isDisabled={!eventId || categoriesQuery.isLoading}
-        isLoading={!!eventId && categoriesQuery.isLoading}
-        isRequired
       >
         {categories.length > 0 ? (
           categories.map((category: any) => (
@@ -109,7 +117,9 @@ export function ProjectDetailsStep({
           ))
         ) : (
           <SelectItem key="no-categories" isDisabled>
-            {eventId ? "No categories available" : "Event required"}
+            {eventId
+              ? "No hay categorías disponibles"
+              : "Se requiere un evento"}
           </SelectItem>
         )}
       </Select>

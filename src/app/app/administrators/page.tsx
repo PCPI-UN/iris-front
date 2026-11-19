@@ -10,8 +10,8 @@ import { getAdministratorsQueryOptions } from "@/features/administrators/api/get
 import { RoleGuard } from "@/components/auth/role-guard";
 
 export const metadata = {
-  title: "Administrators",
-  description: "Administrators",
+  title: "Administradores",
+  description: "Gestión de administradores",
 };
 
 const AdministratorsPage = async ({
@@ -26,7 +26,7 @@ const AdministratorsPage = async ({
   await queryClient.prefetchQuery(
     getAdministratorsQueryOptions({
       page: resolvedSearchParams.page ? Number(resolvedSearchParams.page) : 1,
-    })
+    }),
   );
 
   const dehydratedState = dehydrate(queryClient);
@@ -41,4 +41,3 @@ const AdministratorsPage = async ({
 };
 
 export default AdministratorsPage;
-

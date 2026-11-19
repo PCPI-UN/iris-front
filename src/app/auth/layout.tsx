@@ -1,13 +1,13 @@
-import { ReactNode, Suspense } from 'react';
-import { ErrorBoundary } from 'react-error-boundary';
+import { ReactNode, Suspense } from "react";
+import { ErrorBoundary } from "react-error-boundary";
 
-import { Spinner } from '@/components/ui/spinner';
+import { AuthLayout as AuthLayoutComponent } from "./_components/auth-layout";
 
-import { AuthLayout as AuthLayoutComponent } from './_components/auth-layout';
+import { Spinner } from "@/components/ui/spinner";
 
 export const metadata = {
-  title: 'Autenticación - Iris',
-  description: 'Sistema de autenticación de Iris',
+  title: "Autenticación - Iris",
+  description: "Sistema de autenticación de Iris",
 };
 
 const AuthLayout = ({ children }: { children: ReactNode }) => {
@@ -19,7 +19,7 @@ const AuthLayout = ({ children }: { children: ReactNode }) => {
         </div>
       }
     >
-      <ErrorBoundary fallback={<div>Something went wrong!</div>}>
+      <ErrorBoundary fallback={<div>¡Algo salió mal!</div>}>
         <AuthLayoutComponent>{children}</AuthLayoutComponent>
       </ErrorBoundary>
     </Suspense>

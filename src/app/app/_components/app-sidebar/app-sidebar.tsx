@@ -4,7 +4,6 @@ import * as React from "react";
 import Image from "next/image";
 import {
   Home,
-  MessageSquare,
   Calendar,
   Users as UsersIcon,
   type LucideIcon,
@@ -18,6 +17,7 @@ import {
 } from "lucide-react";
 
 import { NavUser } from "./nav-user";
+
 import {
   Sidebar,
   SidebarContent,
@@ -52,15 +52,19 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       case "Admin":
         return [
           { title: "Dashboard", url: paths.app.root.getHref(), icon: Home },
-          { title: "Events", url: paths.app.events.getHref(), icon: Calendar },
-          { title: "Past Events", url: paths.app.pastEvents.getHref(), icon: Calendar },
+          { title: "Eventos", url: paths.app.events.getHref(), icon: Calendar },
           {
-            title: "Categories",
+            title: "Eventos anteriores",
+            url: paths.app.pastEvents.getHref(),
+            icon: Calendar,
+          },
+          {
+            title: "Categorías",
             url: paths.app.categories.getHref(),
             icon: ArrowDownAZ,
           },
           {
-            title: "Projects",
+            title: "Proyectos",
             url: paths.app.projects.getHref(),
             icon: SquareChartGantt,
           },
@@ -70,14 +74,22 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             icon: ChartNoAxesCombined,
           },
           {
-            title: "Criteria",
+            title: "Criterios",
             url: paths.app.criteria.getHref(),
             icon: Presentation,
           },
-          { title: "Juries", url: paths.app.juries.getHref(), icon: UsersIcon },
-          { title: "Assignments", url: paths.app.assignments.getHref(), icon: PinIcon },
           {
-            title: "Administrators",
+            title: "Jurados",
+            url: paths.app.juries.getHref(),
+            icon: UsersIcon,
+          },
+          {
+            title: "Asignaciones",
+            url: paths.app.assignments.getHref(),
+            icon: PinIcon,
+          },
+          {
+            title: "Administradores",
             url: paths.app.administrators.getHref(),
             icon: ShieldCheck,
           },
@@ -112,11 +124,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         url: paths.home.getHref(),
       },
     }),
-    [user.data?.firstName, user.data?.lastName, user.data?.email]
+    [user.data?.firstName, user.data?.lastName, user.data?.email],
   );
 
   return (
-    <Sidebar collapsible="icon" className="app-sidebar" {...props}>
+    <Sidebar className="app-sidebar" collapsible="icon" {...props}>
       <SidebarHeader suppressHydrationWarning>
         <SidebarMenu>
           <SidebarMenuItem>
@@ -126,11 +138,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             >
               <Link href={data.enterprise.url}>
                 <Image
-                  src={data.enterprise.logo}
                   alt="Iris Logo"
-                  width={20}
-                  height={20}
                   className="!size-5"
+                  height={20}
+                  src={data.enterprise.logo}
+                  width={20}
                 />
                 <span className="text-base font-semibold">
                   {data.enterprise.name}
@@ -142,7 +154,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent suppressHydrationWarning>
         <SidebarGroup>
-          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+          <SidebarGroupLabel>Navegación</SidebarGroupLabel>
           <SidebarMenu>
             {menuItems.map((item) => (
               <SidebarMenuItem key={item.title}>

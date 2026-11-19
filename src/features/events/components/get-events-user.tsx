@@ -78,9 +78,9 @@ export const GetEventsUser = () => {
   if (events.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-64 space-y-4">
-        <p className="text-lg text-default-500">No events found</p>
+        <p className="text-lg text-default-500">No se encontraron eventos</p>
         <p className="text-sm text-default-400">
-          You are not enrolled in any events yet
+          Aún no estás inscrito en ningún evento
         </p>
       </div>
     );

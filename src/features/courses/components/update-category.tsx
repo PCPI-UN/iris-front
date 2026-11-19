@@ -2,6 +2,12 @@
 
 import { SquarePen } from "lucide-react";
 
+import { useCategory } from "../api/get-category";
+import {
+  updateCategoryInputSchema,
+  useUpdateCategory,
+} from "../api/update-category";
+
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
@@ -12,18 +18,11 @@ import {
   ModalBody,
   ModalFooter,
 } from "@/components/ui/modal";
-import { useDisclosure } from '@/hooks/use-disclosure';
+import { useDisclosure } from "@/hooks/use-disclosure";
 import { useNotifications } from "@/components/ui/notifications";
 import { Select, SelectItem } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-
-import { useCategory } from "../api/get-category";
-import {
-  updateCategoryInputSchema,
-  useUpdateCategory,
-} from "../api/update-category";
-
 import { useEvents } from "@/features/events/api/get-events";
 
 type UpdateCategoryProps = {
@@ -45,7 +44,7 @@ export const UpdateCategory = ({ categoryId }: UpdateCategoryProps) => {
       onSuccess: () => {
         addNotification({
           type: "success",
-          title: "Category Updated",
+          title: "Categoría actualizada",
         });
         onClose();
       },
@@ -60,26 +59,26 @@ export const UpdateCategory = ({ categoryId }: UpdateCategoryProps) => {
   return (
     <>
       <Button
-        variant="shadow"
         className="w-full"
         size="sm"
+        startContent={<SquarePen size={16} />}
+        variant="shadow"
         onPress={() => {
           onOpen();
         }}
-        startContent={<SquarePen size={16} />}
       >
-        Edit category
+        Editar categoría
       </Button>
 
-      <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="2xl">
+      <Modal isOpen={isOpen} size="2xl" onOpenChange={onOpenChange}>
         <ModalContent>
           {(onClose) => {
             if (categoryQuery.isLoading) {
               return (
                 <>
-                  <ModalHeader>Update Category</ModalHeader>
+                  <ModalHeader>Actualizar categoría</ModalHeader>
                   <ModalBody className="flex items-center justify-center py-12">
-                    <div>Loading...</div>
+                    <div>Cargando...</div>
                   </ModalBody>
                 </>
               );
@@ -88,101 +87,103 @@ export const UpdateCategory = ({ categoryId }: UpdateCategoryProps) => {
             if (!category) {
               return (
                 <>
-                  <ModalHeader>Update Category</ModalHeader>
+                  <ModalHeader>Actualizar categoría</ModalHeader>
                   <ModalBody>
-                    <p>Category not found</p>
+                    <p>Categoría no encontrada</p>
                   </ModalBody>
                   <ModalFooter>
-                    <Button onPress={onClose}>Close</Button>
+                    <Button onPress={onClose}>Cerrar</Button>
                   </ModalFooter>
                 </>
               );
             }
 
             return (
-            <Form
-              key={`update-category-${categoryId}-${category?.id}`}
-              id="update-category"
-              onSubmit={async (e) => {
-                e.preventDefault();
-                const form = e.target as HTMLFormElement;
-                const formData = new FormData(form);
+              <Form
+                key={`update-category-${categoryId}-${category?.id}`}
+                id="update-category"
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  const form = e.target as HTMLFormElement;
+                  const formData = new FormData(form);
 
-                const rawData = Object.fromEntries(formData);
+                  const rawData = Object.fromEntries(formData);
 
-                const data = {
-                  id: category.id,
-                  code: rawData.code,
-                  description: rawData.description,
-                  active: rawData.active === "true",
-                };
+                  const data = {
+                    id: category.id,
+                    code: rawData.code,
+                    description: rawData.description,
+                    active: rawData.active === "true",
+                  };
 
-                const values = await updateCategoryInputSchema.parseAsync(data);
-                await updateCategoryMutation.mutateAsync({
-                  data: values,
-                });
-                // Notificación y cierre ahora se manejan en onSuccess
-              }}
-            >
-              <ModalHeader className="flex flex-col gap-1">
-                Update Category
-              </ModalHeader>
+                  const values =
+                    await updateCategoryInputSchema.parseAsync(data);
 
-              <ModalBody className="space-y-4 w-full">
-                {/* Event Select */}
-                <Select
-                  label="Event"
-                  name="eventId"
-                  placeholder="Select an event"
-                  defaultSelectedKeys={
-                    category?.eventId ? [String(category.eventId)] : []
-                  }
-                  isLoading={eventsQuery.isLoading}
-                >
-                  {events.map((event) => (
-                    <SelectItem key={event.id}>{event.name}</SelectItem>
-                  ))}
-                </Select>
+                  await updateCategoryMutation.mutateAsync({
+                    data: values,
+                  });
+                  // Notificación y cierre ahora se manejan en onSuccess
+                }}
+              >
+                <ModalHeader className="flex flex-col gap-1">
+                  Actualizar categoría
+                </ModalHeader>
 
-                <Input
-                  label="Category name"
-                  name="code"
-                  defaultValue={category?.code ?? ""}
-                  isRequired
-                />
+                <ModalBody className="space-y-4 w-full">
+                  {/* Event Select */}
+                  <Select
+                    defaultSelectedKeys={
+                      category?.eventId ? [String(category.eventId)] : []
+                    }
+                    isLoading={eventsQuery.isLoading}
+                    label="Evento"
+                    name="eventId"
+                    placeholder="Selecciona un evento"
+                  >
+                    {events.map((event) => (
+                      <SelectItem key={event.id}>{event.name}</SelectItem>
+                    ))}
+                  </Select>
 
-                <Textarea
-                  label="Description"
-                  name="description"
-                  defaultValue={category?.description ?? ""}
-                  isRequired
-                />
+                  <Input
+                    isRequired
+                    defaultValue={category?.code ?? ""}
+                    label="Nombre de la categoría"
+                    name="code"
+                  />
 
-                <Switch
-                  name="active"
-                  value="true"
-                  defaultSelected={category?.active}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2`}
-                >
-                  <div className="flex flex-col gap-1">
-                    <p className="text-medium">Active</p>
-                  </div>
-                </Switch>
-              </ModalBody>
+                  <Textarea
+                    isRequired
+                    defaultValue={category?.description ?? ""}
+                    label="Descripción"
+                    name="description"
+                  />
 
-              <ModalFooter>
-                <Button color="danger" variant="light" onPress={onClose}>
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  isLoading={updateCategoryMutation.isPending}
-                  disabled={updateCategoryMutation.isPending}
-                >
-                  Save Changes
-                </Button>
-              </ModalFooter>
-            </Form>
+                  <Switch
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2`}
+                    defaultSelected={category?.active}
+                    name="active"
+                    value="true"
+                  >
+                    <div className="flex flex-col gap-1">
+                      <p className="text-medium">Activa</p>
+                    </div>
+                  </Switch>
+                </ModalBody>
+
+                <ModalFooter>
+                  <Button color="danger" variant="light" onPress={onClose}>
+                    Cancelar
+                  </Button>
+                  <Button
+                    disabled={updateCategoryMutation.isPending}
+                    isLoading={updateCategoryMutation.isPending}
+                    type="submit"
+                  >
+                    Guardar cambios
+                  </Button>
+                </ModalFooter>
+              </Form>
             );
           }}
         </ModalContent>

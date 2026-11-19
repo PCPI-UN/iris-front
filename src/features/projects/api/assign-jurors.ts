@@ -31,8 +31,8 @@ export const useAssignJurors = () => {
 };
 
 export const deleteJurorInputSchema = z.object({
-  projectId: z.string().min(1, "Project ID is required"),
-  memberUserId: z.string().min(1, "Member user ID is required"),
+  projectId: z.string().min(1, "El ID del proyecto es obligatorio"),
+  memberUserId: z.string().min(1, "El ID del jurado es obligatorio"),
 });
 
 export type DeleteJurorInput = z.infer<typeof deleteJurorInputSchema>;
@@ -41,10 +41,13 @@ export const deleteJuror = ({
   projectId,
   memberUserId,
 }: DeleteJurorInput): Promise<{ success?: boolean; message?: string }> => {
-  const validatedInput = deleteJurorInputSchema.parse({ projectId, memberUserId });
+  const validatedInput = deleteJurorInputSchema.parse({
+    projectId,
+    memberUserId,
+  });
 
   return api.delete(
-    `/projects/${validatedInput.projectId}/jurors/${validatedInput.memberUserId}`
+    `/projects/${validatedInput.projectId}/jurors/${validatedInput.memberUserId}`,
   );
 };
 

@@ -1,7 +1,15 @@
 "use client";
 
-import { useSearchParams, useRouter } from "next/navigation";
 import type { Selection } from "@heroui/react";
+
+import { useSearchParams, useRouter } from "next/navigation";
+import { SearchIcon, ChevronDown } from "lucide-react";
+import { useCallback, useMemo, useState } from "react";
+
+import { useAdministrators } from "../api/get-administrators";
+
+import { InviteModal } from "./invite-modal";
+
 import {
   Table,
   TableHeader,
@@ -10,7 +18,6 @@ import {
   TableRow,
   TableCell,
 } from "@/components/ui/table";
-import { SearchIcon, ChevronDown } from "lucide-react";
 import {
   Dropdown,
   DropdownTrigger,
@@ -19,13 +26,9 @@ import {
 } from "@/components/ui/dropdown";
 import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
-import { useAdministrators } from "../api/get-administrators";
 import { Spinner } from "@/components/ui/spinner";
 import { Pagination } from "@/components/ui/pagination";
 import { Input } from "@/components/ui/input";
-import { useCallback, useMemo, useState } from "react";
-
-import { InviteModal } from "./invite-modal";
 
 export const AdministratorsList = () => {
   const [filterValue, setFilterValue] = useState("");
@@ -38,16 +41,18 @@ export const AdministratorsList = () => {
   const page = useMemo(() => {
     const raw = searchParams?.get("page") || "1";
     const n = Number(raw);
+
     return Number.isFinite(n) && n > 0 ? n : 1;
   }, [searchParams]);
 
   const setPageInUrl = useCallback(
     (n: number) => {
       const sp = new URLSearchParams(searchParams?.toString());
+
       sp.set("page", String(n));
       router.replace(`?${sp.toString()}`, { scroll: false });
     },
-    [router, searchParams]
+    [router, searchParams],
   );
 
   const administratorsQuery = useAdministrators({ page });
@@ -79,7 +84,7 @@ export const AdministratorsList = () => {
     (e: React.ChangeEvent<HTMLSelectElement>) => {
       setPageInUrl(1);
     },
-    [setPageInUrl]
+    [setPageInUrl],
   );
 
   const onSearchChange = useCallback(
@@ -91,7 +96,7 @@ export const AdministratorsList = () => {
         setFilterValue("");
       }
     },
-    [setPageInUrl]
+    [setPageInUrl],
   );
 
   const onClear = useCallback(() => {
@@ -107,29 +112,33 @@ export const AdministratorsList = () => {
       statusFilter === "all"
         ? null
         : new Set(Array.from(statusFilter) as string[]);
+
     return administrators.filter((a) => {
-      const matchSearch =
-        !q ||
-        a.email?.toLowerCase().includes(q);
+      const matchSearch = !q || a.email?.toLowerCase().includes(q);
       const st = (a.invitationStatus ?? "").toLowerCase();
       const matchStatus = !selected || selected.has(st);
+
       return matchSearch && matchStatus;
     });
   }, [administrators, filterValue, statusFilter]);
 
   // Use server-side pagination metadata when available, otherwise fallback to client-side
-  const pages = meta?.totalPages ?? Math.max(1, Math.ceil(filteredAdministrators.length / rowsPerPage));
+  const pages =
+    meta?.totalPages ??
+    Math.max(1, Math.ceil(filteredAdministrators.length / rowsPerPage));
   const totalItems = meta?.total ?? filteredAdministrators.length;
-  
+
   // Only apply client-side pagination if we have filters, otherwise use server-paginated data directly
-  const displayAdministrators = hasSearchFilter || statusFilter !== "all" 
-    ? filteredAdministrators 
-    : administrators;
+  const displayAdministrators =
+    hasSearchFilter || statusFilter !== "all"
+      ? filteredAdministrators
+      : administrators;
 
   const topContent = useMemo(() => {
     function capitalize(s: string) {
       return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
     }
+
     return (
       <div className="flex flex-col gap-4">
         <div className="flex justify-between gap-3 items-end">
@@ -176,8 +185,8 @@ export const AdministratorsList = () => {
 
         <div className="flex justify-between items-center">
           <span className="text-default-400 text-small">
-            {hasSearchFilter || statusFilter !== "all" 
-              ? `${filteredAdministrators.length} resultados (filtrados)` 
+            {hasSearchFilter || statusFilter !== "all"
+              ? `${filteredAdministrators.length} resultados (filtrados)`
               : `${totalItems} resultados`}
           </span>
         </div>
@@ -212,7 +221,7 @@ export const AdministratorsList = () => {
             variant="flat"
             onPress={() => setPageInUrl(Math.max(1, page - 1))}
           >
-            Previous
+            Anterior
           </Button>
           <Button
             isDisabled={pages === 1}
@@ -220,7 +229,7 @@ export const AdministratorsList = () => {
             variant="flat"
             onPress={() => setPageInUrl(Math.min(pages, page + 1))}
           >
-            Next
+            Siguiente
           </Button>
         </div>
       </div>
@@ -235,13 +244,13 @@ export const AdministratorsList = () => {
 
   return (
     <Table
-      aria-label="Administrators List (read-only)"
-      topContent={topContent}
-      topContentPlacement="outside"
+      aria-label="Lista de administradores (solo lectura)"
       bottomContent={bottomContent}
       bottomContentPlacement="outside"
       classNames={{ wrapper: "max-h-[382px] glass-card" }}
       selectionMode="none"
+      topContent={topContent}
+      topContentPlacement="outside"
     >
       <TableHeader columns={columns}>
         {(column) => (
@@ -275,7 +284,7 @@ export const AdministratorsList = () => {
               </TableCell>
               <TableCell align="center">
                 {item.createdAt
-                  ? new Date(item.createdAt).toLocaleDateString()
+                  ? new Date(item.createdAt).toLocaleDateString("es-CO")
                   : "—"}
               </TableCell>
             </TableRow>
@@ -285,4 +294,3 @@ export const AdministratorsList = () => {
     </Table>
   );
 };
-

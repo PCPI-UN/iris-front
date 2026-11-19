@@ -474,12 +474,12 @@ export const PastEventDashboard = ({ event, onBack }: Props) => {
                         <div className="inline-flex items-center gap-2">
                             <Calendar className="h-4 w-4 text-default-400" />
                             <span>
-                                {new Date(event.startDate).toLocaleDateString()} - {new Date(event.endDate).toLocaleDateString()}
+                                {new Date(event.startDate).toLocaleDateString('es-CO')} - {new Date(event.endDate).toLocaleDateString('es-CO')}
                             </span>
                         </div>
                         <div className="inline-flex items-center gap-2">
                             <Calendar className="h-4 w-4 text-default-400" />
-                            <span>Inscripción: {new Date(event.inscriptionDeadline).toLocaleDateString()}</span>
+                            <span>Inscripción: {new Date(event.inscriptionDeadline).toLocaleDateString('es-CO')}</span>
                         </div>
                     </div>
                 </div>
@@ -514,7 +514,7 @@ export const PastEventDashboard = ({ event, onBack }: Props) => {
                         <button className={`rounded-md px-3 py-1 text-sm ${activeTab === 'statistics' ? 'bg-foreground text-background' : 'border'}`} onClick={() => setActiveTab('statistics')}>Estadísticas</button>
                         <button className={`rounded-md px-3 py-1 text-sm ${activeTab === 'projects' ? 'bg-foreground text-background' : 'border'}`} onClick={() => setActiveTab('projects')}>Proyectos</button>
                         <button className={`rounded-md px-3 py-1 text-sm ${activeTab === 'jurors' ? 'bg-foreground text-background' : 'border'}`} onClick={() => setActiveTab('jurors')}>Jurados</button>
-                        <button className={`rounded-md px-3 py-1 text-sm ${activeTab === 'ranking' ? 'bg-foreground text-background' : 'border'}`} onClick={() => setActiveTab('ranking')}>Ranking</button>
+                        <button className={`rounded-md px-3 py-1 text-sm ${activeTab === 'ranking' ? 'bg-foreground text-background' : 'border'}`} onClick={() => setActiveTab('ranking')}>Clasificación</button>
                     </div>
                 </div>
             </div>
@@ -798,7 +798,7 @@ export const PastEventDashboard = ({ event, onBack }: Props) => {
                 {activeTab === 'ranking' && (
                     <Card className="glass-card border border-default-200/70 shadow-sm">
                         <CardHeader className="pb-2 flex items-center justify-between">
-                            <h3 className="text-lg font-semibold">Ranking por Categoría</h3>
+                            <h3 className="text-lg font-semibold">Clasificación por categoría</h3>
                             <div className="flex items-center gap-1 md:gap-2">
                                 <Button
                                     className="relative gap-2 border-2 border-default-300 hover:border-primary text-default-600 hover:text-primary hover:scale-105 transition-all duration-300 font-semibold px-4 py-2"
@@ -843,7 +843,7 @@ export const PastEventDashboard = ({ event, onBack }: Props) => {
 
                             {!selectedCategoryId ? (
                                 <div className="flex min-h-[180px] items-center justify-center rounded-2xl border border-dashed border-default-200 text-sm text-default-400">
-                                    Selecciona una categoría para ver el ranking.
+                                    Selecciona una categoría para ver la clasificación.
                                 </div>
                             ) : rankingEntries.length > 0 ? (
                                 <>
@@ -856,7 +856,7 @@ export const PastEventDashboard = ({ event, onBack }: Props) => {
                                         </Chip>
                                     </div>
                                     <div className="overflow-hidden rounded-2xl border border-default-200/80">
-                                        <Table key={rankingTableVersion} aria-label="Ranking por categorías" selectionMode="none">
+                                        <Table key={rankingTableVersion} aria-label="Clasificación por categorías" selectionMode="none">
                                             <TableHeader>
                                                 <TableColumn className="w-16 text-center">Pos.</TableColumn>
                                                 <TableColumn className="w-32">Código</TableColumn>
@@ -930,7 +930,7 @@ export const PastEventDashboard = ({ event, onBack }: Props) => {
                                 </>
                             ) : (
                                 <div className="flex min-h-[180px] items-center justify-center rounded-2xl border border-dashed border-default-200 text-sm text-default-400">
-                                    No hay proyectos con evaluaciones para mostrar el ranking.
+                                    No hay proyectos con evaluaciones para mostrar la clasificación.
                                 </div>
                             )}
                         </div>
@@ -998,7 +998,7 @@ export const PastEventDashboard = ({ event, onBack }: Props) => {
                                                     <thead className="bg-white/5">
                                                         <tr className="text-left text-xs font-semibold uppercase tracking-[0.18em] text-white/60 border-b border-white/10">
                                                             <th className="px-4 py-3">Nombre</th>
-                                                            <th className="px-4 py-3">Email</th>
+                                                            <th className="px-4 py-3">Correo electrónico</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
