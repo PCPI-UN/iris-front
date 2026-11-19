@@ -135,7 +135,7 @@ export function DataTable<Entry extends { id: string | number }>({
             </TableColumn>
           ))}
         </TableHeader>
-        <TableBody emptyContent={"No rows to display."}>
+        <TableBody emptyContent={"No hay registros para mostrar."}>
           {sortedData.map((item) => (
             <TableRow key={item.id}>
               {columns.map((column, colIndex) => (

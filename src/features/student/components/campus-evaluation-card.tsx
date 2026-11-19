@@ -31,21 +31,21 @@ export function CampusEvaluationCard({
                         <Badge variant="shadow" className="flex items-center gap-1.5">
                             <Award className="w-3.5 h-3.5" />
                         </Badge>
-                        <p className='text-xs'>Evaluated</p>
+                        <p className='text-xs'>Evaluado</p>
                     </div>
                 )}
             </div>
 
             <div className="flex items-end justify-between">
                 <div>
-                    <p className="text-xs text-muted-foreground mb-1">Overall score</p>
+                    <p className="text-xs text-muted-foreground mb-1">Puntaje general</p>
                     <p className="text-4xl font-bold">
                         {overallScore}
                         <span className="text-muted-foreground">/{maxScore}</span>
                     </p>
                 </div>
                 <div className="text-right">
-                    <p className="text-xs text-muted-foreground mb-1">Evaluations received</p>
+                    <p className="text-xs text-muted-foreground mb-1">Evaluaciones recibidas</p>
                     <p className="text-4xl font-bold">{evaluationsCount}</p>
                 </div>
             </div>

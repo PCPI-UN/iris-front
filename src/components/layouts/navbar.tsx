@@ -278,7 +278,7 @@ export function Navbar({ showNavLinks = true, showLoginButton = true }: NavbarPr
                 type="button"
                 onClick={handleMobileMenuToggle}
                 className="nav-menu-toggle lg:hidden p-2 text-white hover:text-white/85 transition-colors"
-                aria-label="Toggle menu"
+                aria-label="Alternar menú"
               >
                 {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
               </button>

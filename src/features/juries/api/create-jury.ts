@@ -6,10 +6,13 @@ import { MutationConfig } from "@/lib/react-query";
 import { JuryInvitation } from "@/types/api";
 
 export const createJuryInvitationInputSchema = z.object({
-  email: z.string().min(1, "Required").email("Invalid email address"),
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
-  eventId: z.number().min(1, "Event is required"),
+  email: z
+    .string()
+    .min(1, "Este campo es obligatorio")
+    .email("Correo electrónico inválido"),
+  firstName: z.string().min(1, "El nombre es obligatorio"),
+  lastName: z.string().min(1, "El apellido es obligatorio"),
+  eventId: z.number().min(1, "El evento es obligatorio"),
   eventType: z.enum(["Exposition", "Competition"]),
 });
 
@@ -28,6 +31,7 @@ export const createJuryInvitation = ({
   data: CreateJuryInvitationInput;
 }): Promise<CreateJuryInvitationResponse> => {
   const { eventId, ...invitationData } = data;
+
   return api.post(`/invitations/events/${eventId}/jurors`, invitationData);
 };
 

@@ -6,8 +6,15 @@ import { MutationConfig } from "@/lib/react-query";
 import { Jury } from "@/types/api";
 
 export const updateJuryInputSchema = z.object({
-  email: z.string().min(1, "Required").email("Invalid email address").optional(),
-  eventIds: z.array(z.string()).min(1, "At least one event is required").optional(),
+  email: z
+    .string()
+    .min(1, "Este campo es obligatorio")
+    .email("Correo electrónico inválido")
+    .optional(),
+  eventIds: z
+    .array(z.string())
+    .min(1, "Debes seleccionar al menos un evento")
+    .optional(),
   projectIds: z.array(z.string()).optional(),
   invitationStatus: z.enum(["pending", "accepted", "declined"]).optional(),
 });
@@ -45,4 +52,3 @@ export const useUpdateJury = ({
     mutationFn: updateJury,
   });
 };
-

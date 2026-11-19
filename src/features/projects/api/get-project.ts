@@ -6,7 +6,7 @@ import { QueryConfig } from "@/lib/react-query";
 import { Project } from "@/types/api";
 
 export const getProjectInputSchema = z.object({
-  projectId: z.string().min(1, "Project ID is required"),
+  projectId: z.string().min(1, "El ID del proyecto es obligatorio"),
 });
 
 export type GetProjectInput = z.infer<typeof getProjectInputSchema>;
@@ -16,7 +16,7 @@ export const getProject = async ({
 }: GetProjectInput): Promise<Project | null> => {
   const validatedInput = getProjectInputSchema.parse({ projectId });
   const response = await api.get<{ data?: Project } | Project | null>(
-    `/projects/${validatedInput.projectId}`
+    `/projects/${validatedInput.projectId}`,
   );
 
   if (!response) {
@@ -24,6 +24,7 @@ export const getProject = async ({
   }
 
   const envelope = response as { data?: Project };
+
   if (typeof response === "object" && response !== null && "data" in envelope) {
     return envelope.data ?? null;
   }

@@ -103,7 +103,7 @@ export const ProjectsTab = ({
             selectionMode="none"
           >
             <TableHeader>
-              <TableColumn className="w-28 whitespace-nowrap">Code</TableColumn>
+              <TableColumn className="w-28 whitespace-nowrap">Código</TableColumn>
               <TableColumn>Proyecto</TableColumn>
               <TableColumn>Integrantes</TableColumn>
               <TableColumn>Jurados asignados</TableColumn>

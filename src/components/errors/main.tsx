@@ -1,4 +1,4 @@
-import { Button } from '../ui/button';
+import { Button } from "../ui/button";
 
 export const MainErrorFallback = () => {
   return (
@@ -6,12 +6,12 @@ export const MainErrorFallback = () => {
       className="flex h-screen w-screen flex-col items-center justify-center text-red-500"
       role="alert"
     >
-      <h2 className="text-lg font-semibold">Ooops, something went wrong :( </h2>
+      <h2 className="text-lg font-semibold">¡Uy! Algo salió mal :(</h2>
       <Button
         className="mt-4"
         onClick={() => window.location.assign(window.location.origin)}
       >
-        Refresh
+        Recargar
       </Button>
     </div>
   );

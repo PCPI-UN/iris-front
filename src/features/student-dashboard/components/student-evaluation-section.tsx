@@ -336,7 +336,7 @@ export const StudentEvaluationSection = ({
           </motion.div>
         ) : (
           <div className="rounded-xl border border-white/10 bg-white/5 p-5 flex items-center justify-center text-xs text-slate-400">
-            Posición en ranking no disponible.
+            Posición en clasificación no disponible.
           </div>
         )}
       </motion.div>

@@ -320,7 +320,7 @@ const parseContentDispositionFileName = (headerValue: string | null) => {
 
 export const downloadEventRankingsReport = async ({ eventId, categoryId, state }: GetEventRankingsParams) => {
   if (!eventId) {
-    throw new Error('Se requiere un evento para descargar el ranking');
+    throw new Error('Se requiere un evento para descargar la clasificación');
   }
 
   const params = new URLSearchParams({ format: 'excel' });

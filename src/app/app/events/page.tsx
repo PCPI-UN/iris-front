@@ -2,16 +2,16 @@ import {
   dehydrate,
   HydrationBoundary,
   QueryClient,
-} from '@tanstack/react-query';
+} from "@tanstack/react-query";
 
-import { getEventsQueryOptions } from '@/features/events/api/get-events';
+import { Events } from "./_components/events";
 
-import { Events } from './_components/events';
-import { RoleGuard } from '@/components/auth/role-guard';
+import { getEventsQueryOptions } from "@/features/events/api/get-events";
+import { RoleGuard } from "@/components/auth/role-guard";
 
 export const metadata = {
-  title: 'Events',
-  description: 'Events',
+  title: "Eventos",
+  description: "Eventos",
 };
 
 const EventsPage = async ({
@@ -32,7 +32,7 @@ const EventsPage = async ({
   const dehydratedState = dehydrate(queryClient);
 
   return (
-    <RoleGuard roles={['Admin', 'User']}>
+    <RoleGuard roles={["Admin", "User"]}>
       <HydrationBoundary state={dehydratedState}>
         <Events />
       </HydrationBoundary>
@@ -41,4 +41,3 @@ const EventsPage = async ({
 };
 
 export default EventsPage;
-

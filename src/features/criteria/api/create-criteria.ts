@@ -7,17 +7,20 @@ import { MutationConfig } from "@/lib/react-query";
 import { Criterion } from "@/types/api";
 
 export const createCriteriaInputSchema = z.object({
-  eventId: z.number().min(1, "Event is required"),
-  name: z.string().min(1, "Required").max(100, "Maximum 100 characters"),
+  eventId: z.number().min(1, "El evento es obligatorio"),
+  name: z
+    .string()
+    .min(1, "Este campo es obligatorio")
+    .max(100, "Máximo 100 caracteres"),
   description: z.string().optional(),
   weight: z
     .number()
-    .min(0, "Weight must be greater than or equal to 0")
-    .max(1, "Weight must be less than or equal to 1"),
+    .min(0, "La ponderación debe ser mayor o igual a 0")
+    .max(1, "La ponderación debe ser menor o igual a 1"),
 
   categoryIds: z
-    .array(z.number().min(1, "Category is required"))
-    .min(1, "At least one category is required"),
+    .array(z.number().min(1, "La categoría es obligatoria"))
+    .min(1, "Debes seleccionar al menos una categoría"),
   category: z.string().optional(),
   componentId: z.number().min(1).optional(),
 });
@@ -33,6 +36,7 @@ export const createCriteria = ({
     ...data,
     ...withLegacyCourseIdsParam(data.categoryIds),
   };
+
   return api.post("/criterions", payload);
 };
 

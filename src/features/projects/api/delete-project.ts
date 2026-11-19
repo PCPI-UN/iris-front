@@ -5,10 +5,8 @@ import { api } from "@/lib/api-client";
 import { Project } from "@/types/api";
 import { MutationConfig } from "@/lib/react-query";
 
-import { getProjectsQueryOptions } from "./get-projects";
-
 export const deleteProjectInputSchema = z.object({
-  projectId: z.string().min(1, "Project ID is required"),
+  projectId: z.string().min(1, "El ID del proyecto es obligatorio"),
 });
 
 export type DeleteProjectInput = z.infer<typeof deleteProjectInputSchema>;
@@ -17,6 +15,7 @@ export const deleteProject = ({
   projectId,
 }: DeleteProjectInput): Promise<{ data: Project }> => {
   const validatedInput = deleteProjectInputSchema.parse({ projectId });
+
   return api.delete(`/projects/${validatedInput.projectId}`);
 };
 

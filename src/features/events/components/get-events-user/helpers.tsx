@@ -1,5 +1,7 @@
 import { EventType } from "@/types/api";
+
 import dayjs from "dayjs";
+import "dayjs/locale/es";
 import {
   Calendar,
   Code2,
@@ -13,32 +15,36 @@ export type RoleName = "Participant" | "Juror";
 
 export const formatDateShort = (date: string | number) => {
   return {
-    day: dayjs(date).format("MMM D, YYYY"),
-    time: dayjs(date).format("h:mm A"),
+    day: dayjs(date).locale("es").format("D [de] MMM, YYYY"),
+    time: dayjs(date).locale("es").format("h:mm A"),
   };
 };
 
 export const getRoleIcon = (role?: RoleName) => {
   if (role === "Juror") return <Scale className="h-4 w-4" />;
   if (role === "Participant") return <GraduationCap className="h-4 w-4" />;
+
   return null;
 };
 
 export const getRoleColor = (role?: RoleName) => {
   if (role === "Juror") return "warning";
   if (role === "Participant") return "primary";
+
   return "default";
 };
 
 export const getRoleLabel = (role?: RoleName) => {
   if (role === "Juror") return "Jurado";
   if (role === "Participant") return "Participante";
+
   return "Sin rol";
 };
 
 export const getEventKindLabel = (eventType?: number) => {
   if (eventType === EventType.Competition) return "Competencia";
   if (eventType === EventType.Exposition) return "Presentacion";
+
   return "Evento";
 };
 
@@ -59,6 +65,7 @@ export const getLocationLabel = (
 
 export const getMainButtonLabel = (role?: RoleName) => {
   if (role === "Juror") return "Ver proyecto";
+
   return "Ver mi proyecto";
 };
 
@@ -71,7 +78,7 @@ export const getStatusLabel = (active: boolean) => {
 };
 
 export const getCollapsedMetaItems = (event: {
-  eventType?: number
+  eventType?: number;
   startDate: string;
   location?: string;
   locationDetails?: string;

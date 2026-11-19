@@ -33,7 +33,7 @@ export const ViewDetails = ({project} : {project: Project}) => {
                   <h2 className="text-2xl font-bold">{project.name}</h2>
                 </div>
                 <section className="space-y-2">
-                    <h2 className="font-medium bg-gradient-to-br from-white via-white/80 to-white bg-clip-text text-transparent inline-block">Description</h2>
+                    <h2 className="font-medium bg-gradient-to-br from-white via-white/80 to-white bg-clip-text text-transparent inline-block">Descripción</h2>
                     <p className="text-sm font-light">
                         {project.description}
                     </p>

@@ -3,6 +3,11 @@
 import { Plus } from "lucide-react";
 import { useState } from "react";
 
+import {
+  createCategoryInputSchema,
+  useCreateCategory,
+} from "../api/create-category";
+
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,15 +18,10 @@ import {
   ModalBody,
   ModalFooter,
 } from "@/components/ui/modal";
-import { useDisclosure } from '@/hooks/use-disclosure';
+import { useDisclosure } from "@/hooks/use-disclosure";
 import { useNotifications } from "@/components/ui/notifications";
 import { Select, SelectItem } from "@/components/ui/select";
 import { useEvents } from "@/features/events/api/get-events";
-
-import {
-  createCategoryInputSchema,
-  useCreateCategory,
-} from "../api/create-category";
 import { Input } from "@/components/ui/input";
 
 export const CreateCategory = () => {
@@ -34,7 +34,7 @@ export const CreateCategory = () => {
       onSuccess: () => {
         addNotification({
           type: "success",
-          title: "Category Created",
+          title: "Categoría creada",
         });
         setSelectedEvent("");
         onClose();
@@ -50,9 +50,9 @@ export const CreateCategory = () => {
     <>
       <Button size="sm" onPress={() => onOpen()}>
         <Plus size={16} />
-        Create category
+        Crear categoría
       </Button>
-      <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="2xl">
+      <Modal isOpen={isOpen} size="2xl" onOpenChange={onOpenChange}>
         <ModalContent>
           {(onClose) => (
             <Form
@@ -63,17 +63,19 @@ export const CreateCategory = () => {
                 const formData = new FormData(form);
 
                 const rawData = Object.fromEntries(formData);
-                
+
                 // Validar que se haya seleccionado un evento
                 if (!selectedEvent) {
                   addNotification({
                     type: "error",
-                    title: "Evento Requerido",
-                    message: "Debes seleccionar un evento antes de crear una categoría",
+                    title: "Evento requerido",
+                    message:
+                      "Debes seleccionar un evento antes de crear una categoría",
                   });
+
                   return;
                 }
-                
+
                 const data = {
                   code: rawData.code as string,
                   description: rawData.description as string,
@@ -84,70 +86,68 @@ export const CreateCategory = () => {
                 if (Number.isNaN(data.eventId)) {
                   addNotification({
                     type: "error",
-                    title: "Invalid Event",
-                    message: "Selected event ID is not numeric. Restart mock server to load updated handlers.",
+                    title: "Evento inválido",
+                    message:
+                      "El ID del evento seleccionado no es válido. Intenta recargar la página.",
                   });
+
                   return;
                 }
-                
+
                 const values = await createCategoryInputSchema.parseAsync(data);
+
                 await createCategoryMutation.mutateAsync({ data: values });
               }}
             >
               <ModalHeader className="flex flex-col gap-1">
-                Create new category
+                Crear nueva categoría
                 <p className="text-sm font-normal text-gray-500">
-                  Add a new category to an event
+                  Agrega una nueva categoría a un evento
                 </p>
               </ModalHeader>
               <ModalBody className="space-y-4 w-full">
                 <Select
-                  label="Event"
-                  placeholder="Select an event"
+                  isRequired
+                  isLoading={eventsQuery.isLoading}
+                  label="Evento"
+                  placeholder="Selecciona un evento"
                   selectedKeys={selectedEvent ? [selectedEvent] : []}
                   onSelectionChange={(keys) => {
                     const keysArray = Array.from(keys);
-                    setSelectedEvent(keysArray[0] as string || "");
+
+                    setSelectedEvent((keysArray[0] as string) || "");
                   }}
-                  isRequired
-                  isLoading={eventsQuery.isLoading}
                 >
                   {events.map((event) => (
-                    <SelectItem key={event.id}>
-                      {event.name}
-                    </SelectItem>
+                    <SelectItem key={event.id}>{event.name}</SelectItem>
                   ))}
                 </Select>
-                
-                <Input 
-                  label="Category name" 
-                  name="code" 
+
+                <Input
+                  isRequired
+                  label="Nombre de la categoría"
+                  name="code"
                   placeholder="ej: Dpto. Ingeniería de Sistemas"
-                  isRequired 
                 />
 
-                <Textarea 
-                  label="Description" 
-                  name="description" 
-                  placeholder="Brief description of the category"
-                  isRequired 
+                <Textarea
+                  isRequired
+                  label="Descripción"
+                  name="description"
+                  placeholder="Breve descripción de la categoría"
                 />
               </ModalBody>
               <ModalFooter>
-                <Button
-                  color="danger"
-                  variant="flat"
-                  onPress={onClose}
-                >
-                  Cancel
+                <Button color="danger" variant="flat" onPress={onClose}>
+                  Cancelar
                 </Button>
                 <Button
-                  type="submit"
                   color="primary"
-                  isLoading={createCategoryMutation.isPending}
                   disabled={createCategoryMutation.isPending}
+                  isLoading={createCategoryMutation.isPending}
+                  type="submit"
                 >
-                  Create category
+                  Crear categoría
                 </Button>
               </ModalFooter>
             </Form>

@@ -1,35 +1,31 @@
-"use client"
+"use client";
 
-import {
-  BadgeCheck,
-  ChevronsUpDown,
-  LogOut,
-  Sparkles,
-} from "lucide-react"
-import { Avatar } from "@/components/ui/avatar"
+import { BadgeCheck, ChevronsUpDown, LogOut } from "lucide-react";
+import { useRouter } from "next/navigation";
+
+import { Avatar } from "@/components/ui/avatar";
 import {
   Dropdown,
   DropdownTrigger,
   DropdownMenu,
   DropdownSection,
   DropdownItem,
-} from "@/components/ui/dropdown"
+} from "@/components/ui/dropdown";
 import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar"
-import { paths } from "@/config/paths"
-import { useRouter } from "next/navigation";
+} from "@/components/ui/sidebar";
+import { paths } from "@/config/paths";
 import { useLogout } from "@/lib/auth";
 
 export function NavUser({
   user,
 }: {
   user: {
-    name: string
-    email: string
-  }
+    name: string;
+    email: string;
+  };
 }) {
   const router = useRouter();
   const logout = useLogout({
@@ -37,6 +33,7 @@ export function NavUser({
       window.location.href = paths.home.getHref();
     },
   });
+
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -44,15 +41,11 @@ export function NavUser({
           <DropdownTrigger asChild>
             <SidebarMenuButton
               asChild
-              size="lg"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+              size="lg"
             >
               <button className="flex items-center gap-2 w-full cursor-pointer">
-                <Avatar
-                  size="sm"
-                  name={user.name}
-                  className="h-8 w-8"
-                />
+                <Avatar className="h-8 w-8" name={user.name} size="sm" />
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-medium">{user.name}</span>
                   <span className="truncate text-xs">{user.email}</span>
@@ -62,22 +55,18 @@ export function NavUser({
             </SidebarMenuButton>
           </DropdownTrigger>
           <DropdownMenu
-            aria-label="User menu"
-            className="w-56 rounded-lg"
             disallowEmptySelection
+            aria-label="Menú de usuario"
+            className="w-56 rounded-lg"
           >
-            <DropdownSection showDivider aria-label="User Info">
+            <DropdownSection showDivider aria-label="Información de usuario">
               <DropdownItem
                 key="info"
                 isReadOnly
                 className="h-auto cursor-default py-2"
               >
                 <div className="flex items-center gap-2">
-                  <Avatar
-                    size="sm"
-                    name={user.name}
-                    className="h-8 w-8"
-                  />
+                  <Avatar className="h-8 w-8" name={user.name} size="sm" />
                   <div className="grid flex-1 text-left text-sm leading-tight">
                     <span className="truncate font-medium">{user.name}</span>
                     <span className="truncate text-xs">{user.email}</span>
@@ -85,24 +74,28 @@ export function NavUser({
                 </div>
               </DropdownItem>
             </DropdownSection>
-            <DropdownSection showDivider aria-label="Settings">
-              <DropdownItem key="account" startContent={<BadgeCheck />} onClick={() => router.push(paths.app.profile.getHref())}>
-                Account
+            <DropdownSection showDivider aria-label="Configuración">
+              <DropdownItem
+                key="account"
+                startContent={<BadgeCheck />}
+                onClick={() => router.push(paths.app.profile.getHref())}
+              >
+                Cuenta
               </DropdownItem>
             </DropdownSection>
-            <DropdownSection aria-label="Actions">
+            <DropdownSection aria-label="Acciones">
               <DropdownItem
                 key="logout"
-                onClick={() => logout.mutate()}
-                startContent={<LogOut />}
                 color="danger"
+                startContent={<LogOut />}
+                onClick={() => logout.mutate()}
               >
-                Log out
+                Cerrar sesión
               </DropdownItem>
             </DropdownSection>
           </DropdownMenu>
         </Dropdown>
       </SidebarMenuItem>
     </SidebarMenu>
-  )
+  );
 }

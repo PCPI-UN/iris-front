@@ -55,8 +55,8 @@ export const EvaluationProject = ({ projectId, className }: EvaluationProjectPro
         <div className={cn('space-y-8', className)}>
             {/* Overview Card */}
             <CampusEvaluationCard
-                title="Project Evaluation"
-                description="Detailed evaluation scores and feedback from jury members"
+                title="Evaluación del proyecto"
+                description="Puntajes detallados y retroalimentación de los jurados"
                 overallScore={Number(averageScore.toFixed(1))}
                 maxScore={5.0}
                 evaluationsCount={totalEvaluations}
@@ -65,14 +65,14 @@ export const EvaluationProject = ({ projectId, className }: EvaluationProjectPro
 
             {/* Criteria Cards */}
             <div className="flex items-center gap-4 mb-4">
-                <h2 className="text-xl font-semibold text-foreground whitespace-nowrap">Evaluation by criteria</h2>
+                <h2 className="text-xl font-semibold text-foreground whitespace-nowrap">Evaluación por criterios</h2>
                 <div className="flex-1 border-b border-border" />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {evaluations[0]?.scores?.map((score: { criterion: string; score: number }, index: number) => (
                     <CriteriaEvaluationCard
                         key={score.criterion || `criterion-${index}`}
-                        title={score.criterion || `Criterion ${index + 1}`}
+                        title={score.criterion || `Criterio ${index + 1}`}
                         score={Number((evaluations.reduce((sum: number, evaluation: any) => {
                             const criterionScore = evaluation.scores.find((s: any) => s.criterion === score.criterion)?.score || 0;
                             return sum + criterionScore;
@@ -84,15 +84,15 @@ export const EvaluationProject = ({ projectId, className }: EvaluationProjectPro
 
             {/* Feedback Cards */}
             <div className="flex items-center gap-4 mb-4">
-                <h2 className="text-xl font-semibold text-foreground whitespace-nowrap">Jury feedback</h2>
+                <h2 className="text-xl font-semibold text-foreground whitespace-nowrap">Retroalimentación del jurado</h2>
                 <div className="flex-1 border-b border-border" />
             </div>
             <div className="space-y-4">
                 {evaluations.map((evaluation: any) => (
                     <JuryFeedbackCard
                         key={evaluation.id}
-                        evaluatorName={`Jury #${evaluation.id.slice(-4)}`}
-                        date={new Date(evaluation.createdAt).toLocaleDateString()}
+                        evaluatorName={`Jurado #${evaluation.id.slice(-4)}`}
+                        date={new Date(evaluation.createdAt).toLocaleDateString("es-CO")}
                         feedback={evaluation.comments}
                     />
                 ))}

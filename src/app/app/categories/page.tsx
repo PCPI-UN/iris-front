@@ -5,12 +5,13 @@ import {
 } from "@tanstack/react-query";
 
 import { Categories } from "./_components/categories";
+
 import { getCategoriesQueryOptions } from "@/features/courses/api/get-categories";
 import { RoleGuard } from "@/components/auth/role-guard";
 
 export const metadata = {
-  title: "Categories",
-  description: "Category Management",
+  title: "Categorías",
+  description: "Gestión de categorías",
 };
 
 const CategoriesPage = async ({
@@ -21,14 +22,17 @@ const CategoriesPage = async ({
   const queryClient = new QueryClient();
 
   const resolvedSearchParams = await searchParams;
-  const page = resolvedSearchParams.page ? Number(resolvedSearchParams.page) : 1;
+  const page = resolvedSearchParams.page
+    ? Number(resolvedSearchParams.page)
+    : 1;
   const eventId = resolvedSearchParams.event;
 
   await queryClient.prefetchQuery(
-    getCategoriesQueryOptions({ page, eventId: Number(eventId) })
+    getCategoriesQueryOptions({ page, eventId: Number(eventId) }),
   );
 
   const dehydratedState = dehydrate(queryClient);
+
   return (
     <RoleGuard roles={["Admin"]}>
       <HydrationBoundary state={dehydratedState}>

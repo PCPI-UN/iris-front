@@ -2,6 +2,8 @@
 
 import { Trash } from "lucide-react";
 
+import { useDeleteProject } from "../api/delete-project";
+
 import { Button } from "@/components/ui/button";
 import {
   Modal,
@@ -13,9 +15,7 @@ import {
 import { useNotifications } from "@/components/ui/notifications";
 import { useUser } from "@/lib/auth";
 import { canDeleteProject } from "@/lib/authorization";
-
-import { useDeleteProject } from "../api/delete-project";
-import { useDisclosure } from '@/hooks/use-disclosure';
+import { useDisclosure } from "@/hooks/use-disclosure";
 
 type DeleteProjectProps = {
   id: string;
@@ -30,7 +30,7 @@ export const DeleteProject = ({ id }: DeleteProjectProps) => {
       onSuccess: () => {
         addNotification({
           type: "success",
-          title: "Project Deleted",
+          title: "Proyecto eliminado",
         });
         onClose();
       },
@@ -44,38 +44,41 @@ export const DeleteProject = ({ id }: DeleteProjectProps) => {
   return (
     <>
       <Button
-        variant="shadow"
         className="w-full"
-        size="sm"
         color="danger"
+        size="sm"
+        variant="shadow"
         onPress={() => onOpen()}
       >
         <Trash size={16} />
-        Delete Project
+        Eliminar proyecto
       </Button>
-      <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="2xl">
+      <Modal isOpen={isOpen} size="2xl" onOpenChange={onOpenChange}>
         <ModalContent>
           {(onClose) => (
             <>
               <ModalHeader className="flex flex-col gap-1">
-                <h2 className="text-lg font-bold">Delete Project</h2>
+                <h2 className="text-lg font-bold">Eliminar proyecto</h2>
               </ModalHeader>
               <ModalBody>
                 <p className="text-sm text-gray-500">
-                  Are you sure you want to delete this project?
+                  ¿Estás seguro de que deseas eliminar este proyecto? Esta
+                  acción no se puede deshacer.
                 </p>
               </ModalBody>
               <ModalFooter>
                 <Button color="danger" variant="light" onPress={onClose}>
-                  Cancel
+                  Cancelar
                 </Button>
                 <Button
                   color="primary"
                   isLoading={deleteProjectMutation.isPending}
-                  onPress={() => deleteProjectMutation.mutate({ projectId: id })}
                   startContent={<Trash className="size-4" />}
+                  onPress={() =>
+                    deleteProjectMutation.mutate({ projectId: id })
+                  }
                 >
-                  Delete Project
+                  Eliminar proyecto
                 </Button>
               </ModalFooter>
             </>

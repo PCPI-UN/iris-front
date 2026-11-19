@@ -5,13 +5,16 @@ import { api } from "@/lib/api-client";
 import { MutationConfig } from "@/lib/react-query";
 import { Administrator } from "@/types/api";
 
-import { getAdministratorsQueryOptions } from "./get-administrators";
-
 export const createAdministratorInputSchema = z.object({
-  email: z.string().min(1, "Required").email("Invalid email address"),
+  email: z
+    .string()
+    .min(1, "Este campo es obligatorio")
+    .email("Correo electrónico inválido"),
 });
 
-export type CreateAdministratorInput = z.infer<typeof createAdministratorInputSchema>;
+export type CreateAdministratorInput = z.infer<
+  typeof createAdministratorInputSchema
+>;
 
 export const createAdministrator = ({
   data,
@@ -42,4 +45,3 @@ export const useCreateAdministrator = ({
     mutationFn: createAdministrator,
   });
 };
-
