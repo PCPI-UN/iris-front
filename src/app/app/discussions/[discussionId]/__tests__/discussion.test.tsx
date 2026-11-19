@@ -163,7 +163,5 @@ test(
       expect(within(commentsList).queryByText(comment)).not.toBeInTheDocument();
     });
   },
-  {
-    timeout: 20000,
-  },
+  20000,
 );

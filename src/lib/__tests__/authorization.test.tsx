@@ -4,20 +4,20 @@ import {
   canCreateDiscussion,
   canDeleteDiscussion,
   canUpdateDiscussion,
-  canViewUsers,
+  canViewCategories,
   canDeleteComment,
 } from '../authorization';
 
 describe('Discussion Authorization', () => {
   const adminUser: User = {
     id: '1',
-    role: 'ADMIN',
-  } as User;
+    platformRoles: [{ name: 'Admin' }],
+  } as unknown as User;
 
   const regularUser: User = {
     id: '2',
-    role: 'USER',
-  } as User;
+    platformRoles: [{ name: 'User' }],
+  } as unknown as User;
 
   test('should allow admin to create discussions', () => {
     expect(canCreateDiscussion(adminUser)).toBe(true);
@@ -40,29 +40,29 @@ describe('Discussion Authorization', () => {
     expect(canUpdateDiscussion(undefined)).toBe(false);
   });
 
-  test('should allow admin to view users', () => {
-    expect(canViewUsers(adminUser)).toBe(true);
-    expect(canViewUsers(regularUser)).toBe(false);
-    expect(canDeleteDiscussion(null)).toBe(false);
-    expect(canDeleteDiscussion(undefined)).toBe(false);
+  test('should allow any signed-in user to view categories', () => {
+    expect(canViewCategories(adminUser)).toBe(true);
+    expect(canViewCategories(regularUser)).toBe(true);
+    expect(canViewCategories(null)).toBe(false);
+    expect(canViewCategories(undefined)).toBe(false);
   });
 });
 
 describe('Comment Authorization', () => {
   const adminUser: User = {
     id: '1',
-    role: 'ADMIN',
-  } as User;
+    platformRoles: [{ name: 'Admin' }],
+  } as unknown as User;
 
   const regularUser: User = {
     id: '2',
-    role: 'USER',
-  } as User;
+    platformRoles: [{ name: 'User' }],
+  } as unknown as User;
 
   const anotherUser: User = {
     id: '3',
-    role: 'USER',
-  } as User;
+    platformRoles: [{ name: 'User' }],
+  } as unknown as User;
 
   test('should allow admin to delete any comment', () => {
     const comment: Comment = {
