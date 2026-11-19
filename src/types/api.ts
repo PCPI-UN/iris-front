@@ -97,6 +97,8 @@ export type Event = Entity<{
   accessCode: string;
   isPubliclyJoinable: boolean;
   evaluationsOpened: boolean;
+  /** When false, students do not see score, feedback, position or awards */
+  resultsPublished: boolean;
   statusName: string;
   location?: string;
   locationDetails?: string;

@@ -219,23 +219,23 @@ const toAwardRanking = (awards: any[], projects: any[] = [], fallbackCategoryId?
 
     const projectPayload = matchedProject
       ? (() => {
-          const computedName = (matchedProject.name ?? matchedProject.title ?? matchedProject.projectTitle ?? String(award?.title ?? '').trim()) || `Proyecto #${rawPosition}`;
-          const computedDescription = (matchedProject.description ?? matchedProject.summary ?? String(award?.description ?? '').trim()) || undefined;
-          return {
-            name: computedName,
-            description: computedDescription,
-            participants: matchedProject.participants ?? matchedProject.teamMembers ?? matchedProject.members ?? [],
-            pendingParticipants: matchedProject.pendingParticipants ?? [],
-            documents: matchedProject.documents ?? [],
-          };
-        })()
-      : {
-          name: String(award?.title ?? '').trim() || `Proyecto #${rawPosition}`,
-          description: String(award?.description ?? '').trim() || undefined,
-          participants: [],
-          pendingParticipants: [],
-          documents: [],
+        const computedName = (matchedProject.name ?? matchedProject.title ?? matchedProject.projectTitle ?? String(award?.title ?? '').trim()) || `Proyecto #${rawPosition}`;
+        const computedDescription = (matchedProject.description ?? matchedProject.summary ?? String(award?.description ?? '').trim()) || undefined;
+        return {
+          name: computedName,
+          description: computedDescription,
+          participants: matchedProject.participants ?? matchedProject.teamMembers ?? matchedProject.members ?? [],
+          pendingParticipants: matchedProject.pendingParticipants ?? [],
+          documents: matchedProject.documents ?? [],
         };
+      })()
+      : {
+        name: String(award?.title ?? '').trim() || `Proyecto #${rawPosition}`,
+        description: String(award?.description ?? '').trim() || undefined,
+        participants: [],
+        pendingParticipants: [],
+        documents: [],
+      };
 
     current.push({
       position: rawPosition,
@@ -269,8 +269,8 @@ const WinnerCard = ({ ranked, categoryLabel, isExposition }: WinnerCardProps) =>
 
   const positionBadgeClass =
     ranked.position === 1 ? 'award-position-badge first' :
-    ranked.position === 2 ? 'award-position-badge second' :
-    'award-position-badge third';
+      ranked.position === 2 ? 'award-position-badge second' :
+        'award-position-badge third';
   const visibleMembers = membersExpanded ? members : members.slice(0, VISIBLE_MEMBERS_LIMIT);
   const hiddenCount = members.length - VISIBLE_MEMBERS_LIMIT;
 
@@ -445,29 +445,27 @@ const WinnersSection = ({
 
       <div className="w-full overflow-x-auto overscroll-x-contain scroll-smooth pb-2 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0 hide-scrollbar">
         <div className="flex w-max min-w-full items-center gap-3 py-2">
-        {hasMultipleCategories
-          ? categories.map((cat) => (
+          {hasMultipleCategories
+            ? categories.map((cat) => (
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategoryId(cat.id)}
-                className={`category-button whitespace-nowrap snap-start px-4 sm:px-5 py-2 rounded-full text-sm font-semibold border transition-all duration-200 flex-shrink-0 ${
-                  selectedCategoryId === cat.id
+                className={`category-button whitespace-nowrap snap-start px-4 sm:px-5 py-2 rounded-full text-sm font-semibold border transition-all duration-200 flex-shrink-0 ${selectedCategoryId === cat.id
                     ? 'prismatic-border prismatic-text selected-category'
                     : 'prismatic-text border-white/20 text-white/90 hover:border-white/40 hover:bg-white/5'
-                }`}
+                  }`}
               >
                 {cat.name}
               </button>
             ))
-          : ([1, 2, 3] as const).map((pos) => (
+            : ([1, 2, 3] as const).map((pos) => (
               <button
                 key={pos}
                 onClick={() => setSelectedPosition(pos)}
-                className={`category-button whitespace-nowrap snap-start px-4 sm:px-5 py-2 rounded-full text-sm font-semibold border transition-all duration-200 flex-shrink-0 ${
-                  selectedPosition === pos
+                className={`category-button whitespace-nowrap snap-start px-4 sm:px-5 py-2 rounded-full text-sm font-semibold border transition-all duration-200 flex-shrink-0 ${selectedPosition === pos
                     ? 'prismatic-border prismatic-text selected-category'
                     : 'prismatic-text border-white/20 text-white/90 hover:border-white/40 hover:bg-white/5'
-                }`}
+                  }`}
               >
                 Top {pos}
               </button>
@@ -937,7 +935,7 @@ export const PastEventDetail = ({ eventId }: EventDetailProps) => {
 
   // Determine if public ranking should be shown using ranking-config endpoint with fallback to event.rankingConfig
   const isPublicRankingEnabled = useMemo(() => {
-    if (!effectiveRankingConfig) return false;
+    if (!effectiveRankingConfig || !(event?.resultsPublished)) return false;
     if (typeof effectiveRankingConfig.visibleInLanding === 'boolean') {
       return effectiveRankingConfig.visibleInLanding;
     }
@@ -1057,21 +1055,21 @@ export const PastEventDetail = ({ eventId }: EventDetailProps) => {
           Number.isFinite(rawCategoryId) && rawCategoryId > 0
             ? rawCategoryId
             : (() => {
-                const categoryLabel = normalizeText(String(row.category ?? ''));
-                if (categoryLabel) {
-                  const matchedCategory = categories.find(
-                    (category) => normalizeText(category.name) === categoryLabel,
-                  );
-                  if (matchedCategory) return matchedCategory.id;
-                }
-                if (selectedCategoryId && selectedCategoryId > 0) {
-                  return selectedCategoryId;
-                }
-                if (categories.length === 1 && categories[0].id > 0) {
-                  return categories[0].id;
-                }
-                return 0;
-              })();
+              const categoryLabel = normalizeText(String(row.category ?? ''));
+              if (categoryLabel) {
+                const matchedCategory = categories.find(
+                  (category) => normalizeText(category.name) === categoryLabel,
+                );
+                if (matchedCategory) return matchedCategory.id;
+              }
+              if (selectedCategoryId && selectedCategoryId > 0) {
+                return selectedCategoryId;
+              }
+              if (categories.length === 1 && categories[0].id > 0) {
+                return categories[0].id;
+              }
+              return 0;
+            })();
 
         const list = map.get(normalizedCategoryId) ?? [];
         list.push({
@@ -1197,7 +1195,7 @@ export const PastEventDetail = ({ eventId }: EventDetailProps) => {
     [event?.eventType],
   );
 
-  
+
 
   const organizers = Array.isArray(event?.organizers)
     ? event.organizers.filter(hasText)
@@ -1211,10 +1209,10 @@ export const PastEventDetail = ({ eventId }: EventDetailProps) => {
 
   const hasGeneralDetails = Boolean(
     hasText(primaryOrganizer) ||
-      hasText(primaryCollaborator) ||
-      eventTypeLabel ||
-      isFreeEvent ||
-      hasText(event?.location),
+    hasText(primaryCollaborator) ||
+    eventTypeLabel ||
+    isFreeEvent ||
+    hasText(event?.location),
   );
 
   const shouldShowAllies = hasText(event?.aboutOurAllies);
@@ -1294,9 +1292,9 @@ export const PastEventDetail = ({ eventId }: EventDetailProps) => {
                 </div>
               )}
 
-              
 
-              
+
+
             </div>
 
             {hasGeneralDetails && (

@@ -19,6 +19,7 @@ import { normalizeText } from '@/features/monitoring/utils/filters';
 import { getProjectEvaluationStats } from '@/features/evaluations/api/get-project-evaluation-stats';
 import { ParticipantsDetails } from '@/features/projects/components/participants-details';
 import { ExportEventReportButton } from '@/features/reports/components/export-event-report-button';
+import { PublishResultsToggle } from '@/features/events/components/publish-results-toggle';
 import { RankingConfigModal } from '@/features/monitoring/components/ranking-config-modal';
 import type { RankingConfigType } from '@/features/monitoring/types';
 import { useRankingConfig } from '@/features/monitoring/api/get-ranking-config';
@@ -461,8 +462,12 @@ export const PastEventDashboard = ({ event, onBack }: Props) => {
                     <h1 className="text-2xl font-semibold max-w-full whitespace-normal md:max-w-md">{event.name}</h1>
                     <div className="mt-1 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
                         <p className="text-sm text-default-500 line-clamp-2">{event.description}</p>
-                        <div className="shrink-0">
+                        <div className="shrink-0 flex flex-col items-start gap-2">
                             <ExportEventReportButton eventId={event.id} label="Descargar reporte" />
+                            <PublishResultsToggle
+                                eventId={event.id}
+                                resultsPublished={event.resultsPublished}
+                            />
                         </div>
                     </div>
                     <div className="mt-2 flex flex-col gap-2 text-sm text-default-500 sm:flex-row sm:flex-wrap sm:items-center">

@@ -18,6 +18,7 @@ import { Pagination } from "@/components/ui/pagination";
 import { Button } from "@/components/ui/button";
 import { useEvents } from "../api/get-events";
 import { DeleteEvent } from "./delete-event";
+import { PublishResultsToggle } from "./publish-results-toggle";
 import { UpdateEvent } from "./update-event";
 import { Event } from "@/types/api";
 import dayjs from "dayjs";
@@ -213,6 +214,12 @@ export const GetEventsAdmin = () => {
                     {event.evaluationsOpened ? "Open" : "Closed"}
                   </span>
                 </div>
+
+                {/* Results publication */}
+                <PublishResultsToggle
+                  eventId={event.id}
+                  resultsPublished={event.resultsPublished}
+                />
 
                 {/* Actions */}
                 <div className="flex gap-2 pt-2">
