@@ -48,20 +48,6 @@ export type AuthResponse = {
   message: string;
 };
 
-export type Discussion = Entity<{
-  title: string;
-  body: string;
-  teamId: string;
-  author: User;
-  public: boolean;
-}>;
-
-export type Comment = Entity<{
-  body: string;
-  discussionId: string;
-  author: User;
-}>;
-
 export type EventMembership = Entity<{
   eventId: number;
   userId: number;

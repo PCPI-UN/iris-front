@@ -9,23 +9,20 @@ import Cookies from 'js-cookie';
 import { Providers } from '@/app/provider';
 
 import {
-  createDiscussion as generateDiscussion,
   createUser as generateUser,
 } from './data-generators';
 import { db } from './mocks/db';
 import { AUTH_COOKIE, authenticate, hash } from './mocks/utils';
 
+const queryLoadingElements = () => [
+  ...screen.queryAllByTestId(/loading/i),
+  ...screen.queryAllByText(/loading/i),
+];
+
 export const waitForLoadingToFinish = async () => {
-  const loadingElements = [
-    ...screen.queryAllByTestId(/loading/i),
-    ...screen.queryAllByText(/loading/i),
-  ];
-  
-  if (loadingElements.length > 0) {
-    await waitForElementToBeRemoved(
-      () => loadingElements,
-      { timeout: 4000 },
-    );
+  if (queryLoadingElements().length > 0) {
+    // Queried again on every check: a list taken once keeps the removed nodes and never empties
+    await waitForElementToBeRemoved(queryLoadingElements, { timeout: 4000 });
   }
 };
 
@@ -33,12 +30,6 @@ export const createUser = async (userProperties?: any) => {
   const user = generateUser(userProperties) as any;
   await db.user.create({ ...user, password: hash(user.password) });
   return user;
-};
-
-export const createDiscussion = async (discussionProperties?: any) => {
-  const discussion = generateDiscussion(discussionProperties);
-  const res = await db.discussion.create(discussion);
-  return res;
 };
 
 export const loginAsUser = async (user: any) => {

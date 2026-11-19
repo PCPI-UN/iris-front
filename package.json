@@ -105,6 +105,9 @@
   "devDependencies": {
     "@commitlint/cli": "^20.5.0",
     "@commitlint/types": "^20.5.0",
+    "@eslint/compat": "1.4.1",
+    "@eslint/eslintrc": "3.3.1",
+    "@eslint/js": "9.25.1",
     "@mswjs/data": "^0.16.2",
     "@mswjs/http-middleware": "^0.10.3",
     "@next/eslint-plugin-next": "15.3.4",

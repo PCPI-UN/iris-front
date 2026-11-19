@@ -27,11 +27,12 @@ beforeAll(() => {
 });
 afterAll(() => server.close());
 beforeEach(() => {
-  const ResizeObserverMock = vi.fn(() => ({
-    observe: vi.fn(),
-    unobserve: vi.fn(),
-    disconnect: vi.fn(),
-  }));
+  // A class: components call `new ResizeObserver(...)`, and vitest 4 does not construct a vi.fn arrow function
+  class ResizeObserverMock {
+    observe = vi.fn();
+    unobserve = vi.fn();
+    disconnect = vi.fn();
+  }
 
   vi.stubGlobal('ResizeObserver', ResizeObserverMock);
 

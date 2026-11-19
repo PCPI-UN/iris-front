@@ -16,7 +16,8 @@ test('should register new user and call onSuccess cb which should navigate the u
     { user: null },
   );
 
-  await userEvent.type(screen.getByLabelText(/nombre/i), newUser.firstName);
+  // The app providers show "Loading..." until the session check ends
+  await userEvent.type(await screen.findByLabelText(/nombre/i), newUser.firstName);
   await userEvent.type(screen.getByLabelText(/apellido/i), newUser.lastName);
   await userEvent.type(screen.getByLabelText(/correo electrónico/i), newUser.email);
   await userEvent.type(screen.getByLabelText(/contraseña/i), newUser.password);

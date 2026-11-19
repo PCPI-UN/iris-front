@@ -7,9 +7,7 @@ import { networkDelay } from "../utils";
 import { juriesHandlers } from "./juries";
 import { administratorsHandlers } from "./administrators";
 import { authHandlers } from "./auth";
-import { commentsHandlers } from "./comments";
 import { coursesHandlers } from "./courses";
-import { discussionsHandlers } from "./discussions";
 import { eventsHandlers } from "./events";
 import { teamsHandlers } from "./teams";
 import { criterionHandlers } from "./criterion";
@@ -24,9 +22,7 @@ export const handlers = [
   ...juriesHandlers,
   ...administratorsHandlers,
   ...authHandlers,
-  ...commentsHandlers,
   ...coursesHandlers,
-  ...discussionsHandlers,
   ...eventsHandlers,
   ...projectsHandlers,
   ...teamsHandlers,
