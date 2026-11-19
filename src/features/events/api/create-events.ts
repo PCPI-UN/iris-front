@@ -8,7 +8,7 @@ import { Event } from '@/types/api';
 import { getEventsQueryOptions } from './get-events';
 import { normalizeEventDatesForPayload } from '../utils/event-date-payload';
 import { normalizeEvent } from './event-adapter';
-import { toEventTypeLabel, toEvaluationTypeCode } from '../utils/event-enums';
+import { toEventTypeLabel } from '../utils/event-enums';
 
 export const createEventInputSchema = z.object({
   name: z.string().min(1, 'Required'),
@@ -29,15 +29,8 @@ export const createEventInputSchema = z.object({
   inscriptionRequirements: z.string().optional(),
   minimumTeamSize: z.coerce.number().optional(),
   aboutOurAllies: z.string().optional(),
-  evaluationType: z
-    .union([
-      z.literal(1),
-      z.literal(2),
-      z.literal(3),
-      z.enum(["ZERO_TO_FIVE", "ZERO_TO_HUNDRED","FINAL_PROJECTS"]),
-      z.enum(["0-5", "0-100","Proyectos Finales"]),
-    ])
-    .optional(),
+  /** Escala del catálogo (`GET /grading-scales`); una escala nueva se crea antes con `POST /grading-scales` */
+  gradingScaleId: z.number().int().positive().optional(),
   organizers: z.array(z.string()).optional(),
   collaborators: z.array(z.string()).optional(),
   // Estos campos se manejan en tablas relacionadas (EventInscriptionDetail, Category, etc)
@@ -74,10 +67,6 @@ export const createEvent = ({
     .post<Record<string, any>>('/events', {
       ...normalizeEventDatesForPayload(data),
       eventType: toEventTypeLabel(data.eventType),
-      evaluationType:
-        data.evaluationType === undefined
-          ? undefined
-          : toEvaluationTypeCode(data.evaluationType),
     })
     .then((response) =>
       normalizeEvent(response?.event ?? response?.data?.event ?? response?.data?.data ?? response?.data ?? response)
