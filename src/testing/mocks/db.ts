@@ -24,22 +24,6 @@ const models = {
     description: String,
     createdAt: Date.now,
   },
-  discussion: {
-    id: primaryKey(nanoid),
-    title: String,
-    body: String,
-    authorId: String,
-    teamId: String,
-    createdAt: Date.now,
-    public: Boolean,
-  },
-  comment: {
-    id: primaryKey(nanoid),
-    body: String,
-    authorId: String,
-    discussionId: String,
-    createdAt: Date.now,
-  },
   event: {
     id: primaryKey(nanoid),
     name: String,

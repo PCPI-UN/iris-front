@@ -1,103 +1,39 @@
-import { Comment, User } from '@/types/api';
+import { User } from '@/types/api';
 
 import {
-  canCreateDiscussion,
-  canDeleteDiscussion,
-  canUpdateDiscussion,
+  canCreateEvent,
+  canInviteJury,
+  canUpdateProject,
   canViewCategories,
-  canDeleteComment,
 } from '../authorization';
 
-describe('Discussion Authorization', () => {
-  const adminUser: User = {
+const withRoles = (...names: string[]) =>
+  ({
     id: '1',
-    platformRoles: [{ name: 'Admin' }],
-  } as unknown as User;
+    platformRoles: names.map((name) => ({ name })),
+  }) as unknown as User;
 
-  const regularUser: User = {
-    id: '2',
-    platformRoles: [{ name: 'User' }],
-  } as unknown as User;
+describe('Authorization', () => {
+  const admin = withRoles('Admin');
+  const user = withRoles('User');
 
-  test('should allow admin to create discussions', () => {
-    expect(canCreateDiscussion(adminUser)).toBe(true);
-    expect(canCreateDiscussion(regularUser)).toBe(false);
-    expect(canCreateDiscussion(null)).toBe(false);
-    expect(canCreateDiscussion(undefined)).toBe(false);
+  test('only Admin manages events, juries and projects', () => {
+    for (const can of [canCreateEvent, canInviteJury, canUpdateProject]) {
+      expect(can(admin)).toBe(true);
+      expect(can(user)).toBe(false);
+      expect(can(null)).toBe(false);
+      expect(can(undefined)).toBe(false);
+    }
   });
 
-  test('should allow admin to delete discussions', () => {
-    expect(canDeleteDiscussion(adminUser)).toBe(true);
-    expect(canDeleteDiscussion(regularUser)).toBe(false);
-    expect(canDeleteDiscussion(null)).toBe(false);
-    expect(canDeleteDiscussion(undefined)).toBe(false);
+  test('a user with several roles is Admin when one of them is', () => {
+    expect(canCreateEvent(withRoles('User', 'Admin'))).toBe(true);
   });
 
-  test('should allow admin to update discussions', () => {
-    expect(canUpdateDiscussion(adminUser)).toBe(true);
-    expect(canUpdateDiscussion(regularUser)).toBe(false);
-    expect(canUpdateDiscussion(null)).toBe(false);
-    expect(canUpdateDiscussion(undefined)).toBe(false);
-  });
-
-  test('should allow any signed-in user to view categories', () => {
-    expect(canViewCategories(adminUser)).toBe(true);
-    expect(canViewCategories(regularUser)).toBe(true);
+  test('any signed-in user can view categories', () => {
+    expect(canViewCategories(admin)).toBe(true);
+    expect(canViewCategories(user)).toBe(true);
     expect(canViewCategories(null)).toBe(false);
     expect(canViewCategories(undefined)).toBe(false);
-  });
-});
-
-describe('Comment Authorization', () => {
-  const adminUser: User = {
-    id: '1',
-    platformRoles: [{ name: 'Admin' }],
-  } as unknown as User;
-
-  const regularUser: User = {
-    id: '2',
-    platformRoles: [{ name: 'User' }],
-  } as unknown as User;
-
-  const anotherUser: User = {
-    id: '3',
-    platformRoles: [{ name: 'User' }],
-  } as unknown as User;
-
-  test('should allow admin to delete any comment', () => {
-    const comment: Comment = {
-      id: '1',
-      author: anotherUser,
-    } as Comment;
-
-    expect(canDeleteComment(adminUser, comment)).toBe(true);
-  });
-
-  test('should allow users to delete their own comments', () => {
-    const comment: Comment = {
-      id: '1',
-      author: regularUser,
-    } as Comment;
-
-    expect(canDeleteComment(regularUser, comment)).toBe(true);
-  });
-
-  test('should not allow users to delete others comments', () => {
-    const comment: Comment = {
-      id: '1',
-      author: anotherUser,
-    } as Comment;
-
-    expect(canDeleteComment(regularUser, comment)).toBe(false);
-  });
-
-  test('should not allow unauthorized users to delete comments', () => {
-    const comment: Comment = {
-      id: '1',
-      author: regularUser,
-    } as Comment;
-
-    expect(canDeleteComment(null, comment)).toBe(false);
-    expect(canDeleteComment(undefined, comment)).toBe(false);
   });
 });

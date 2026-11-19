@@ -9,7 +9,6 @@ import Cookies from 'js-cookie';
 import { Providers } from '@/app/provider';
 
 import {
-  createDiscussion as generateDiscussion,
   createUser as generateUser,
 } from './data-generators';
 import { db } from './mocks/db';
@@ -31,12 +30,6 @@ export const createUser = async (userProperties?: any) => {
   const user = generateUser(userProperties) as any;
   await db.user.create({ ...user, password: hash(user.password) });
   return user;
-};
-
-export const createDiscussion = async (discussionProperties?: any) => {
-  const discussion = generateDiscussion(discussionProperties);
-  const res = await db.discussion.create(discussion);
-  return res;
 };
 
 export const loginAsUser = async (user: any) => {

@@ -50,14 +50,6 @@ export const paths = {
       getHref: () => "/app",
       roles: ["Admin", "User"],
     },
-    discussions: {
-      getHref: () => "/app/discussions",
-      roles: ["Admin"],
-    },
-    discussion: {
-      getHref: (id: string) => `/app/discussions/${id}`,
-      roles: ["Admin"],
-    },
     profile: {
       getHref: () => "/app/profile",
       roles: ["Admin", "User"],
@@ -112,9 +104,6 @@ export const paths = {
     },
   },
   public: {
-    discussion: {
-      getHref: (id: string) => `/public/discussions/${id}`,
-    },
     project: {
       getHref: (
         event:

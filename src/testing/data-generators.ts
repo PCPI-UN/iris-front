@@ -40,42 +40,6 @@ export const createTeam = <T extends Partial<ReturnType<typeof generateTeam>>>(
   return { ...generateTeam(), ...overrides };
 };
 
-const generateDiscussion = () => ({
-  id: randUuid(),
-  title: randCatchPhrase(),
-  body: randParagraph(),
-  createdAt: Date.now(),
-  public: true,
-});
-
-export const createDiscussion = <
-  T extends Partial<ReturnType<typeof generateDiscussion>>,
->(
-  overrides?: T & {
-    authorId?: string;
-    teamId?: string;
-  }
-) => {
-  return { ...generateDiscussion(), ...overrides };
-};
-
-const generateComment = () => ({
-  id: randUuid(),
-  body: randParagraph(),
-  createdAt: Date.now(),
-});
-
-export const createComment = <
-  T extends Partial<ReturnType<typeof generateComment>>,
->(
-  overrides?: T & {
-    authorId?: string;
-    discussionId?: string;
-  }
-) => {
-  return { ...generateComment(), ...overrides };
-};
-
 const generateEvent = () => ({
   id: randUuid(),
   name: randCatchPhrase(),
