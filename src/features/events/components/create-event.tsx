@@ -35,7 +35,14 @@ import {
   getDatePart,
   ensureDateTimeValue,
 } from "../utils/event-date-time";
-import { toEventTypeCode, toEvaluationTypeCode } from "../utils/event-enums";
+import { toEventTypeCode } from "../utils/event-enums";
+import { useCreateGradingScale } from "@/features/grading-scales/api/create-grading-scale";
+import { GradingScaleField } from "@/features/grading-scales/components/grading-scale-field";
+import { validateGradingScaleDraft } from "@/features/grading-scales/utils/grading-scale";
+import {
+  GradingScaleSelection,
+  resolveGradingScaleId,
+} from "@/features/grading-scales/utils/grading-scale-selection";
 
 type Award = {
   title: string;
@@ -92,8 +99,12 @@ export const CreateEvent = () => {
     active: true,
     evaluationsOpened: false,
     eventType: 1,
-    evaluationType: 1,
   });
+  const [scaleSelection, setScaleSelection] = useState<GradingScaleSelection>({
+    mode: "catalog",
+    scaleId: null,
+  });
+  const [showScaleErrors, setShowScaleErrors] = useState(false);
 
   const [specificDetails, setSpecificDetails] = useState([{ title: "", description: "" }]);
   const [organizers, setOrganizers] = useState([""]);
@@ -123,6 +134,8 @@ export const CreateEvent = () => {
     },
   });
 
+  const createGradingScaleMutation = useCreateGradingScale();
+
   const user = useUser();
 
   if (!canCreateEvent(user?.data)) {
@@ -136,8 +149,9 @@ export const CreateEvent = () => {
       active: true,
       evaluationsOpened: false,
       eventType: 1,
-      evaluationType: 1,
     });
+    setScaleSelection({ mode: "catalog", scaleId: null });
+    setShowScaleErrors(false);
     setSpecificDetails([{ title: "", description: "" }]);
     setOrganizers([""]);
     setCollaborators([""]);
@@ -197,10 +211,22 @@ export const CreateEvent = () => {
     return Object.keys(nextErrors).length === 0;
   };
 
+  /** La escala nueva debe ser válida antes de seguir: 4 niveles con puntos que crecen */
+  const validateScaleSelection = () => {
+    if (scaleSelection.mode !== "new") return true;
+    const { isValid } = validateGradingScaleDraft(scaleSelection.draft);
+    setShowScaleErrors(!isValid);
+    return isValid;
+  };
+
   const handleNextStep = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (step === 1 && !validateDateFields(1)) {
+      return;
+    }
+
+    if (step === 1 && !validateScaleSelection()) {
       return;
     }
 
@@ -226,6 +252,16 @@ export const CreateEvent = () => {
         return;
       }
 
+      if (!validateScaleSelection()) {
+        setStep(1);
+        addNotification({
+          type: "error",
+          title: "Escala de calificación inválida",
+          message: "Revisa el nombre, las etiquetas y los puntos de la escala nueva.",
+        });
+        return;
+      }
+
       const dataToSubmit = {
         ...formData,
         startDate: ensureDateTimeValue(formData.startDate),
@@ -235,7 +271,6 @@ export const CreateEvent = () => {
         isPubliclyJoinable: Boolean(formData.isPubliclyJoinable),
         active: Boolean(formData.active)??true,
         eventType: toEventTypeCode(formData.eventType),
-        evaluationType: toEvaluationTypeCode(formData.evaluationType),
         locationDetails: formData.locationDetails || undefined,
         latitude: formData.latitude,
         longitude: formData.longitude,
@@ -259,7 +294,19 @@ export const CreateEvent = () => {
       if (!dataToSubmit.accessCode) delete dataToSubmit.accessCode;
 
       const values = await createEventInputSchema.parseAsync(dataToSubmit);
-      await createEventMutation.mutateAsync({ data: values });
+
+      // Una escala nueva se crea primero en el catálogo y el evento usa su id. Si el evento falla
+      // después, el formulario queda con la escala ya creada para no duplicarla al reintentar.
+      const { scaleId, created } = await resolveGradingScaleId(scaleSelection, (input) =>
+        createGradingScaleMutation.mutateAsync({ data: input }),
+      );
+      if (created) {
+        setScaleSelection({ mode: "catalog", scaleId: created.id });
+      }
+
+      await createEventMutation.mutateAsync({
+        data: { ...values, gradingScaleId: scaleId },
+      });
     } catch (err) {
       console.error(err);
       addNotification({ type: "error", title: "Form Validation Failed", message: "Check required fields." });
@@ -389,25 +436,12 @@ export const CreateEvent = () => {
                       </Select>
                     </div>
 
-                    <Select
-                      label="Tipo de Evaluación"
-                      name="evaluationType"
-                      selectedKeys={new Set([String(formData.evaluationType ?? 1)])}
-                      onSelectionChange={(keys) => {
-                        const selected = Array.from(keys)[0];
-                        if (selected !== undefined) {
-                          setFormData({
-                            ...formData,
-                            evaluationType: toEvaluationTypeCode(selected),
-                          });
-                        }
-                      }}
-                      className="flex-1"
-                    >
-                      <SelectItem key="1">0 - 5</SelectItem>
-                      <SelectItem key="2">0 - 100</SelectItem>
-                      <SelectItem key="3">Proyectos Finales</SelectItem>
-                    </Select>
+                    <GradingScaleField
+                      value={scaleSelection}
+                      onChange={setScaleSelection}
+                      selectDefault
+                      showErrors={showScaleErrors}
+                    />
 
                     <div className="pt-2 border-t border-default-200">
                       <p className="text-sm font-semibold mb-2">Detalles del Evento</p>
