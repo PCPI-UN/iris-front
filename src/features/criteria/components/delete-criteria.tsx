@@ -1,5 +1,8 @@
 "use client";
 
+import type { ComponentProps } from "react";
+import { Can } from "@/components/auth/can";
+import { PERMISSIONS } from "@/lib/authorization";
 import { Trash } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -20,7 +23,7 @@ type DeleteCriteriaProps = {
   onDeleted?: () => void;
 };
 
-export const DeleteCriteria = ({
+const DeleteCriteriaContent = ({
   criterionId,
   onDeleted,
 }: DeleteCriteriaProps) => {
@@ -96,3 +99,10 @@ export const DeleteCriteria = ({
     </>
   );
 };
+
+// Only sessions that can call the endpoint see the action
+export const DeleteCriteria = (props: ComponentProps<typeof DeleteCriteriaContent>) => (
+  <Can permission={PERMISSIONS.manageEvents}>
+    <DeleteCriteriaContent {...props} />
+  </Can>
+);

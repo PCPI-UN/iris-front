@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 
+import { Can } from "@/components/auth/can";
+import { PERMISSIONS } from "@/lib/authorization";
+
 import { Button } from "@/components/ui/button";
 import {
   Modal,
@@ -82,19 +85,22 @@ export const PublishResultsToggle = ({
             {resultsPublished ? "Publicados" : "No publicados"}
           </span>
         </div>
-        <Switch
-          size="sm"
-          aria-label="Publicar resultados"
-          isSelected={resultsPublished}
-          isDisabled={mutation.isPending}
-          onValueChange={(published) => {
-            if (published) {
-              setIsConfirmOpen(true);
-            } else {
-              setPublished(false);
-            }
-          }}
-        />
+        {/* Read-only roles see the status but cannot change it (PATCH requires manage:events) */}
+        <Can permission={PERMISSIONS.manageEvents}>
+          <Switch
+            size="sm"
+            aria-label="Publicar resultados"
+            isSelected={resultsPublished}
+            isDisabled={mutation.isPending}
+            onValueChange={(published) => {
+              if (published) {
+                setIsConfirmOpen(true);
+              } else {
+                setPublished(false);
+              }
+            }}
+          />
+        </Can>
       </div>
 
       <Modal

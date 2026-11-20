@@ -1,5 +1,8 @@
 "use client";
 
+import type { ComponentProps } from "react";
+import { Can } from "@/components/auth/can";
+import { PERMISSIONS } from "@/lib/authorization";
 import { SquarePen } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -33,7 +36,7 @@ type UpdateCriteriaProps = {
 
 const CRITERION_NAME_MAX_LENGTH = 100;
 
-export const UpdateCriteria = ({
+const UpdateCriteriaContent = ({
   criterionId,
   availableWeightPercent,
 }: UpdateCriteriaProps) => {
@@ -428,3 +431,10 @@ export const UpdateCriteria = ({
     </>
   );
 };
+
+// Only sessions that can call the endpoint see the action
+export const UpdateCriteria = (props: ComponentProps<typeof UpdateCriteriaContent>) => (
+  <Can permission={PERMISSIONS.manageEvents}>
+    <UpdateCriteriaContent {...props} />
+  </Can>
+);

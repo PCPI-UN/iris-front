@@ -22,7 +22,25 @@ const mockPatch = (status = 200) => {
   return bodies;
 };
 
+const mockSession = (permissions: string[]) =>
+  server.use(
+    http.get("*/api/auth/me", () =>
+      HttpResponse.json({
+        id: 1,
+        firstName: "Admin",
+        lastName: "System",
+        email: "admin@iris.local",
+        active: true,
+        status: "CONFIRMED",
+        platformRoles: [],
+        platformPermissions: permissions,
+      }),
+    ),
+  );
+
 beforeEach(() => {
+  // Changing the publication requires manage:events
+  mockSession(["read:events", "manage:events"]);
   // The global mock in setup-tests cannot be used with `new`
   vi.stubGlobal(
     "ResizeObserver",
@@ -50,18 +68,18 @@ const lastNotification = () => {
   return notifications[notifications.length - 1];
 };
 
-test("shows whether the results are published", () => {
+test("shows whether the results are published", async () => {
   const { unmount } = renderToggle(false);
   expect(screen.getByText("No publicados")).toBeInTheDocument();
   expect(
-    screen.getByRole("switch", { name: /publicar resultados/i }),
+    await screen.findByRole("switch", { name: /publicar resultados/i }),
   ).not.toBeChecked();
   unmount();
 
   renderToggle(true);
   expect(screen.getByText("Publicados")).toBeInTheDocument();
   expect(
-    screen.getByRole("switch", { name: /publicar resultados/i }),
+    await screen.findByRole("switch", { name: /publicar resultados/i }),
   ).toBeChecked();
 });
 
@@ -70,7 +88,7 @@ test("asks for confirmation before publishing and sends only resultsPublished", 
   renderToggle(false);
 
   await userEvent.click(
-    screen.getByRole("switch", { name: /publicar resultados/i }),
+    await screen.findByRole("switch", { name: /publicar resultados/i }),
   );
   expect(
     await screen.findByText("¿Publicar los resultados?"),
@@ -99,7 +117,7 @@ test("cancelling the confirmation does not publish", async () => {
   renderToggle(false);
 
   await userEvent.click(
-    screen.getByRole("switch", { name: /publicar resultados/i }),
+    await screen.findByRole("switch", { name: /publicar resultados/i }),
   );
   await userEvent.click(
     await screen.findByRole("button", { name: "Cancelar" }),
@@ -118,7 +136,7 @@ test("hides the results without confirmation", async () => {
   renderToggle(true);
 
   await userEvent.click(
-    screen.getByRole("switch", { name: /publicar resultados/i }),
+    await screen.findByRole("switch", { name: /publicar resultados/i }),
   );
 
   await waitFor(() =>
@@ -139,7 +157,7 @@ test("shows a clear error when the user lacks permission", async () => {
   renderToggle(true);
 
   await userEvent.click(
-    screen.getByRole("switch", { name: /publicar resultados/i }),
+    await screen.findByRole("switch", { name: /publicar resultados/i }),
   );
 
   await waitFor(() =>
@@ -147,6 +165,18 @@ test("shows a clear error when the user lacks permission", async () => {
       type: "error",
       message: "No tienes permiso para cambiar la publicación de resultados.",
     }),
+  );
+});
+
+test("a read-only role sees the status but not the switch", async () => {
+  mockSession(["read:events"]);
+  renderToggle(true);
+
+  expect(screen.getByText("Publicados")).toBeInTheDocument();
+  await waitFor(() =>
+    expect(
+      screen.queryByRole("switch", { name: /publicar resultados/i }),
+    ).not.toBeInTheDocument(),
   );
 });
 

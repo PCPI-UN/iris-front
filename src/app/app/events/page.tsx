@@ -7,7 +7,8 @@ import {
 import { getEventsQueryOptions } from '@/features/events/api/get-events';
 
 import { Events } from './_components/events';
-import { RoleGuard } from '@/components/auth/role-guard';
+import { PermissionGuard } from '@/components/auth/permission-guard';
+import { PERMISSIONS } from '@/lib/authorization';
 
 export const metadata = {
   title: 'Events',
@@ -32,11 +33,11 @@ const EventsPage = async ({
   const dehydratedState = dehydrate(queryClient);
 
   return (
-    <RoleGuard roles={['Admin', 'User']}>
+    <PermissionGuard permissions={[PERMISSIONS.readEvents]}>
       <HydrationBoundary state={dehydratedState}>
         <Events />
       </HydrationBoundary>
-    </RoleGuard>
+    </PermissionGuard>
   );
 };
 
