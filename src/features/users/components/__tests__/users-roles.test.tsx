@@ -29,6 +29,7 @@ const USERS = [
     email: "admin@iris.local",
     active: true,
     status: "CONFIRMED",
+    roles: [ROLES[0]],
   },
   {
     id: 2,
@@ -37,6 +38,16 @@ const USERS = [
     email: "laura@uninorte.edu.co",
     active: true,
     status: "CONFIRMED",
+    roles: [ROLES[1]],
+  },
+  {
+    id: 3,
+    firstName: "Sin",
+    lastName: "Roles",
+    email: "nuevo@uninorte.edu.co",
+    active: true,
+    status: "CONFIRMED",
+    roles: [],
   },
 ];
 
@@ -133,6 +144,38 @@ test("a read-only session does not see the change roles action", async () => {
   ).not.toBeInTheDocument();
 });
 
+test("shows the roles each user holds, as GET /users returns them", async () => {
+  mockApi({ sessionPermissions: ["read:users"] });
+  renderScreen();
+
+  expect(
+    await within(await rowOf("laura@uninorte.edu.co")).findByText("User"),
+  ).toBeInTheDocument();
+  expect(
+    within(await rowOf("admin@iris.local")).getByText("Admin"),
+  ).toBeInTheDocument();
+  expect(
+    within(await rowOf("nuevo@uninorte.edu.co")).getByText("Sin roles"),
+  ).toBeInTheDocument();
+});
+
+test("the modal opens with the current roles checked and saves only after a change", async () => {
+  mockApi({ sessionPermissions: ["read:users", "manage:user_roles"] });
+  renderScreen();
+
+  const row = await rowOf("laura@uninorte.edu.co");
+  await userEvent.click(
+    await within(row).findByRole("button", { name: "Cambiar roles" }),
+  );
+
+  expect(await screen.findByRole("switch", { name: "User" })).toBeChecked();
+  expect(screen.getByRole("switch", { name: "Professor" })).not.toBeChecked();
+  expect(screen.getByRole("button", { name: "Guardar roles" })).toBeDisabled();
+
+  await userEvent.click(screen.getByRole("switch", { name: "Professor" }));
+  expect(screen.getByRole("button", { name: "Guardar roles" })).toBeEnabled();
+});
+
 test("replaces the roles of a user and shows the ones it now holds", async () => {
   const puts = mockApi({
     sessionPermissions: ["read:users", "manage:user_roles"],
@@ -143,6 +186,8 @@ test("replaces the roles of a user and shows the ones it now holds", async () =>
   await userEvent.click(
     await within(row).findByRole("button", { name: "Cambiar roles" }),
   );
+  // From User to Professor
+  await userEvent.click(await screen.findByRole("switch", { name: "User" }));
   await userEvent.click(
     await screen.findByRole("switch", { name: "Professor" }),
   );
@@ -191,7 +236,9 @@ test("explains the backend rules when the change is rejected", async () => {
   await userEvent.click(
     await within(row).findByRole("button", { name: "Cambiar roles" }),
   );
-  await userEvent.click(await screen.findByRole("switch", { name: "User" }));
+  await userEvent.click(
+    await screen.findByRole("switch", { name: "Professor" }),
+  );
   await userEvent.click(screen.getByRole("button", { name: "Guardar roles" }));
 
   expect(await screen.findByRole("alert")).toHaveTextContent(

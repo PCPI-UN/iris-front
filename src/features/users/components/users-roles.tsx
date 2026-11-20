@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { Can } from "@/components/auth/can";
 import { Button } from "@/components/ui/button";
@@ -60,6 +60,22 @@ const EditRolesModal = ({
   const [selected, setSelected] = useState<number[]>([]);
   const [error, setError] = useState<string | null>(null);
 
+  // The modal opens with the roles the user holds today
+  const currentRoleIds = useMemo(
+    () => (user?.roles ?? []).map((role) => role.id).sort((a, b) => a - b),
+    [user],
+  );
+  useEffect(() => {
+    setSelected(currentRoleIds);
+    setError(null);
+  }, [currentRoleIds]);
+
+  const hasChanges =
+    selected.length !== currentRoleIds.length ||
+    [...selected]
+      .sort((a, b) => a - b)
+      .some((id, i) => id !== currentRoleIds[i]);
+
   const mutation = useSetUserRoles({
     mutationConfig: {
       onSuccess: (newRoles, { userId }) => {
@@ -101,8 +117,9 @@ const EditRolesModal = ({
         </ModalHeader>
         <ModalBody>
           <p className="text-sm text-default-500">
-            Los roles que elijas <strong>reemplazan</strong> todos los roles de
-            plataforma que tenga hoy. Elige al menos uno.
+            Aparecen marcados los roles que tiene hoy. Al guardar, los roles
+            marcados <strong>reemplazan</strong> a los actuales. Debe quedar al
+            menos uno.
           </p>
 
           {error && (
@@ -153,7 +170,7 @@ const EditRolesModal = ({
           </Button>
           <Button
             color="primary"
-            isDisabled={selected.length === 0}
+            isDisabled={selected.length === 0 || !hasChanges}
             isLoading={mutation.isPending}
             onPress={() => {
               if (!user) return;
@@ -177,7 +194,7 @@ export const UsersRoles = () => {
   const { data: sessionUser } = useUser();
   const [page, setPage] = useState(1);
   const [editing, setEditing] = useState<PlatformUser | null>(null);
-  // The users list does not include roles: show the ones assigned in this session
+  // Roles just saved, shown until GET /users reloads with them
   const [assignedRoles, setAssignedRoles] = useState<Record<number, Role[]>>(
     {},
   );
@@ -187,11 +204,11 @@ export const UsersRoles = () => {
   const platformRoles = getPlatformRoles(rolesQuery.data ?? []);
   const canManageAdmins = hasPermission(sessionUser, PERMISSIONS.manageAdmins);
 
-  // The table caches rows by item: include the roles in the item so a row
-  // re-renders when its roles change
+  // GET /users brings each user's active platform roles. The table caches rows
+  // by item, so the roles go in the item for the row to re-render when they change
   const users = (usersQuery.data?.users ?? []).map((user) => ({
     ...user,
-    assignedRoles: assignedRoles[user.id],
+    roles: assignedRoles[user.id] ?? user.roles ?? [],
   }));
   const totalPages = usersQuery.data?.meta?.totalPages ?? 1;
 
@@ -241,7 +258,7 @@ export const UsersRoles = () => {
               <TableColumn>Nombre</TableColumn>
               <TableColumn>Correo</TableColumn>
               <TableColumn>Estado</TableColumn>
-              <TableColumn>Roles asignados</TableColumn>
+              <TableColumn>Roles</TableColumn>
               <TableColumn>Acciones</TableColumn>
             </TableHeader>
             <TableBody
@@ -252,7 +269,7 @@ export const UsersRoles = () => {
             >
               {(user) => {
                 const isSelf = Number(sessionUser?.id) === user.id;
-                const roles = user.assignedRoles;
+                const roles = user.roles;
                 return (
                   <TableRow key={user.id}>
                     <TableCell>{fullName(user)}</TableCell>
@@ -267,7 +284,7 @@ export const UsersRoles = () => {
                       </Chip>
                     </TableCell>
                     <TableCell>
-                      {roles ? (
+                      {roles.length > 0 ? (
                         <div className="flex flex-wrap gap-1">
                           {roles.map((role) => (
                             <Chip key={role.id} size="sm" variant="flat">
@@ -276,7 +293,9 @@ export const UsersRoles = () => {
                           ))}
                         </div>
                       ) : (
-                        <span className="text-xs text-default-400">—</span>
+                        <span className="text-xs text-default-400">
+                          Sin roles
+                        </span>
                       )}
                     </TableCell>
                     <TableCell>

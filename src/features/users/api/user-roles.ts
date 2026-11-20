@@ -16,6 +16,8 @@ export type PlatformUser = {
   phone?: string;
   active: boolean;
   status: string;
+  /** Active platform roles (GET /users, Iris#204); [] when the user has none */
+  roles?: Role[];
 };
 
 export type Role = {
