@@ -39,6 +39,7 @@ import {
   ensureDateTimeValue,
 } from "../utils/event-date-time";
 import { toEventTypeCode, toEvaluationTypeCode } from "../utils/event-enums";
+import { formatTermCode, useTerms } from "../api/get-terms";
 
 type UpdateEventProps = {
   eventId: number;
@@ -119,6 +120,9 @@ type UpdateEventFormState = {
   minimumTeamSize: string;
   aboutOurAllies: string;
   evaluationType: 1 | 2 | 3;
+  /** "" while the event has no term: created before terms existed (-1) */
+  termId: string;
+  requiresCourse: boolean;
 };
 
 const INITIAL_FORM_STATE: UpdateEventFormState = {
@@ -141,6 +145,8 @@ const INITIAL_FORM_STATE: UpdateEventFormState = {
   minimumTeamSize: "",
   aboutOurAllies: "",
   evaluationType: 1,
+  termId: "",
+  requiresCourse: true,
 };
 
 export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
@@ -160,6 +166,8 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
   ]);
 
   const eventQuery = useEvent({ eventId });
+  const termsQuery = useTerms({ queryConfig: { enabled: isOpen } });
+  const terms = termsQuery.data ?? [];
   useCategoriesDropdown({ eventId });
   const updateEventMutation = useUpdateEvent({
     mutationConfig: {
@@ -209,6 +217,8 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
           : "",
       aboutOurAllies: event.aboutOurAllies ?? "",
       evaluationType: toEvaluationTypeCode(event.evaluationType) as UpdateEventFormState["evaluationType"],
+      termId: event.termId && event.termId > 0 ? String(event.termId) : "",
+      requiresCourse: event.requiresCourse,
     });
 
     setSpecificDetails(
@@ -362,6 +372,9 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
           formData.minimumTeamSize === "" ? undefined : Number(formData.minimumTeamSize),
         aboutOurAllies: formData.aboutOurAllies || undefined,
         evaluationType: formData.evaluationType,
+        // An event without term (-1) can be edited without choosing one: then termId is not sent
+        termId: formData.termId ? Number(formData.termId) : undefined,
+        requiresCourse: formData.requiresCourse,
         organizers: organizers.filter((value) => value.trim() !== ""),
         collaborators: collaborators.filter((value) => value.trim() !== ""),
         specificInscriptionDetails: specificDetails.filter(
@@ -587,6 +600,51 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                           <SelectItem key="2">0 - 100</SelectItem>
                           <SelectItem key="3">Proyectos Finales</SelectItem>
                         </Select>
+                      </div>
+
+                      <div className="flex flex-col sm:flex-row gap-4 sm:items-center">
+                        <Select
+                          label="Periodo Académico"
+                          placeholder={
+                            termsQuery.isLoading
+                              ? "Cargando periodos..."
+                              : "Sin periodo asignado"
+                          }
+                          selectedKeys={formData.termId ? new Set([formData.termId]) : new Set([])}
+                          onSelectionChange={(keys) => {
+                            const selected = Array.from(keys)[0];
+                            if (selected !== undefined) {
+                              setFormData((prev) => ({ ...prev, termId: String(selected) }));
+                            }
+                          }}
+                          isLoading={termsQuery.isLoading}
+                          description={
+                            formData.termId
+                              ? undefined
+                              : "Evento anterior a los periodos académicos. Asígnale uno para poder inscribir proyectos con NRC."
+                          }
+                          className="flex-1"
+                        >
+                          {terms.map((term) => (
+                            <SelectItem key={String(term.id)}>{formatTermCode(term)}</SelectItem>
+                          ))}
+                        </Select>
+                        <div className="flex-1 flex items-center gap-2">
+                          <Switch
+                            size="sm"
+                            isSelected={formData.requiresCourse}
+                            onValueChange={(isSelected) =>
+                              setFormData((prev) => ({ ...prev, requiresCourse: isSelected }))
+                            }
+                            color="success"
+                          />
+                          <div className="flex flex-col">
+                            <span className="text-sm font-medium">Exige NRC</span>
+                            <span className="text-xs text-default-500">
+                              Los proyectos ya inscritos conservan su curso.
+                            </span>
+                          </div>
+                        </div>
                       </div>
 
                       <div className="pt-2 border-t border-default-200">
