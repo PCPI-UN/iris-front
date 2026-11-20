@@ -1,5 +1,8 @@
 "use client";
 
+import type { ComponentProps } from "react";
+import { Can } from "@/components/auth/can";
+import { PERMISSIONS } from "@/lib/authorization";
 import { Pencil, Plus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -66,7 +69,7 @@ type CreateCriteriaContextualProps = {
 const toKeySet = (values: number[] | undefined) =>
   new Set((values ?? []).map((value) => String(value)));
 
-export const CreateCriteriaContextual = ({
+const CreateCriteriaContextualContent = ({
   defaultEventId,
   fixedComponent,
   availableComponents = [],
@@ -690,3 +693,10 @@ export const CreateCriteriaContextual = ({
     </>
   );
 };
+
+// Only sessions that can call the endpoint see the action
+export const CreateCriteriaContextual = (props: ComponentProps<typeof CreateCriteriaContextualContent>) => (
+  <Can permission={PERMISSIONS.manageEvents}>
+    <CreateCriteriaContextualContent {...props} />
+  </Can>
+);

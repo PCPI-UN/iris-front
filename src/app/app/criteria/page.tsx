@@ -1,5 +1,6 @@
 import { Criteria } from "./_components/criteria";
-import { RoleGuard } from "@/components/auth/role-guard";
+import { PermissionGuard } from '@/components/auth/permission-guard';
+import { PERMISSIONS } from '@/lib/authorization';
 
 export const metadata = {
   title: "Criterios",
@@ -11,9 +12,9 @@ const CriteriaPage = async () => {
   // The component will handle loading states
 
   return (
-    <RoleGuard roles={["Admin"]}>
+    <PermissionGuard permissions={[PERMISSIONS.readEvents]}>
       <Criteria />
-    </RoleGuard>
+    </PermissionGuard>
   );
 };
 

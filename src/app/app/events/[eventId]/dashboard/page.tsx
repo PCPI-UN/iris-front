@@ -3,7 +3,7 @@ import {
   HydrationBoundary,
   QueryClient,
 } from '@tanstack/react-query';
-import { RoleGuard } from '@/components/auth/role-guard';
+import { PermissionGuard } from '@/components/auth/permission-guard';
 import { getEventsQueryOptions } from '@/features/events/api/get-events';
 import { EventDashboard } from './_components/event-dashboard';
 
@@ -22,11 +22,11 @@ const EventDashboardPage = async ({
   const dehydratedState = dehydrate(queryClient);
 
   return (
-    <RoleGuard roles={['User']}>
+    <PermissionGuard permissions={[]}>
       <HydrationBoundary state={dehydratedState}>
         <EventDashboard eventId={eventId} />
       </HydrationBoundary>
-    </RoleGuard>
+    </PermissionGuard>
   );
 };
 
