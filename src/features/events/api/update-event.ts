@@ -31,6 +31,10 @@ export const updateEventInputSchema = z.object({
   inscriptionRequirements: z.string().optional(),
   minimumTeamSize: z.coerce.number().int('Must be an integer').min(0, 'Must be >= 0').optional(),
   aboutOurAllies: z.string().optional(),
+  // Not sent: unchanged. Events still in the "no term" row -1 can be edited without choosing one
+  termId: z.coerce.number().int().min(1).optional(),
+  // Not sent: unchanged. Projects already submitted keep their course section
+  requiresCourse: z.boolean().optional(),
   organizers: z.array(z.string()).optional(),
   collaborators: z.array(z.string()).optional(),
   // Estos campos se manejan en tablas relacionadas

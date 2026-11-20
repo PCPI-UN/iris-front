@@ -73,6 +73,13 @@ export enum EvaluationType {
   FINAL_PROJECTS = 3,
 }
 
+/** Academic term: 2026 + "10" is the term 202610 */
+export type Term = {
+  id: number;
+  year: number;
+  period: string;
+};
+
 export type Event = Entity<{
   id: number;
   name: string;
@@ -85,6 +92,10 @@ export type Event = Entity<{
   evaluationsOpened: boolean;
   /** When false, students do not see score, feedback, position or awards */
   resultsPublished: boolean;
+  /** Academic term of the event (GET /terms); -1 for events created before terms existed */
+  termId?: number;
+  /** true: each project must belong to a course section (NRC) of the term */
+  requiresCourse: boolean;
   statusName: string;
   location?: string;
   locationDetails?: string;

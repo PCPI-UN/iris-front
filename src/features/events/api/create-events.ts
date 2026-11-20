@@ -29,6 +29,10 @@ export const createEventInputSchema = z.object({
   inscriptionRequirements: z.string().optional(),
   minimumTeamSize: z.coerce.number().optional(),
   aboutOurAllies: z.string().optional(),
+  // Academic term (GET /terms); the "no term" row -1 is not accepted
+  termId: z.coerce.number().int().min(1, 'Required'),
+  // true: each project must belong to a course section (NRC) of the term
+  requiresCourse: z.boolean(),
   evaluationType: z
     .union([
       z.literal(1),

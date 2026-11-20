@@ -16,6 +16,7 @@ import {
   participantSchemaExposition,
   projectSchema,
   documentsSchema,
+  nrcSchema,
 } from "../schemas/wizard-schema";
 import {
   createCompetitionInputSchema,
@@ -31,6 +32,7 @@ import {
 } from "@/components/ui/modal";
 import { paths } from "@/config/paths";
 import { appendLegacyCourseIdToFormData } from "@/lib/compat/category-legacy";
+import { CourseSectionInput } from "./wizard-steps/course-section-input";
 
 export type Participant = {
   id: string;
@@ -47,6 +49,8 @@ export type ProjectData = {
   name: string;
   description: string;
   categoryId: number;
+  /** NRC of the course section; only asked when the event requires one */
+  nrc: string;
 };
 
 export type DocumentsData = {
@@ -65,6 +69,8 @@ const normalizeSemesterValue = (value: string) => value.match(/\d+/)?.[0] || val
 type ProjectWizardProps = {
   eventId: number;
   eventType: "Competition" | "Exposition";
+  /** true: the event requires the NRC of the course section of the project */
+  requiresCourse?: boolean;
 };
 
 const CONFLICT_MESSAGE_KEYS = [
@@ -98,7 +104,7 @@ const normalizeBackendErrorMessage = (rawMessage: unknown): string => {
   return `Uno o más participantes ya tienen un proyecto registrado en este evento: ${emails.join(", ")}`;
 };
 
-export function ProjectWizard({ eventId, eventType}: ProjectWizardProps) {
+export function ProjectWizard({ eventId, eventType, requiresCourse = false }: ProjectWizardProps) {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const isCompetitionEvent = eventType === "Competition";
@@ -130,6 +136,7 @@ export function ProjectWizard({ eventId, eventType}: ProjectWizardProps) {
       name: "",
       description: "",
       categoryId: 0,
+      nrc: "",
     },
     documents: {
       poster: null,
@@ -194,6 +201,17 @@ export function ProjectWizard({ eventId, eventType}: ProjectWizardProps) {
     setWizardData((prev) => ({ ...prev, documents }));
   };
 
+  const updateNrc = (nrc: string) => {
+    setWizardData((prev) => ({ ...prev, project: { ...prev.project, nrc } }));
+  };
+
+  /** The NRC is sent only when the event requires it; the backend ignores it otherwise */
+  const appendNrcToFormData = (formData: FormData) => {
+    if (requiresCourse) {
+      formData.append("nrc", nrcSchema.parse(wizardData.project.nrc));
+    }
+  };
+
 const validateStep = (step: number): boolean => {
   setIsSubmitError(false);
   setStepErrors([]);
@@ -205,6 +223,9 @@ const validateStep = (step: number): boolean => {
           ? z.array(participantSchemaCompetition)
           : z.array(participantSchemaExposition);
         
+        if (eventType === "Competition" && requiresCourse) {
+          nrcSchema.parse(wizardData.project.nrc);
+        }
         participantSchemaToUse
           .min(1, "Debe agregar al menos un participante")
           .parse(wizardData.participants);
@@ -213,6 +234,9 @@ const validateStep = (step: number): boolean => {
       case 2:
         if (eventType === "Exposition") { // For an exposition, step 2 is project details and needs validation
           projectSchema.parse(wizardData.project);
+          if (requiresCourse) {
+            nrcSchema.parse(wizardData.project.nrc);
+          }
         }
         return true; // For a competition, step 2 is review, so we skip validation here and do it all on submit
 
@@ -288,6 +312,7 @@ const handleSubmit = () => {
       appendLegacyCourseIdToFormData(formData, payloadData.categoryId);
       formData.append("participants", payloadData.participants);
       formData.append("name", `Equipo de ${wizardData.participants.map(p => p.firstName).join("-")}`);
+      appendNrcToFormData(formData);
 
       createProjectMutation.mutate({ data: formData });
       return;
@@ -340,6 +365,7 @@ const handleSubmit = () => {
     appendLegacyCourseIdToFormData(formData, payloadData.categoryId);
     formData.append("participants", payloadData.participants);
     formData.append("documents", payloadData.documents);
+    appendNrcToFormData(formData);
 
     payloadData.files.forEach(file => formData.append("files", file));
 
@@ -424,6 +450,11 @@ const handleSubmit = () => {
         </div>
 
         <div>
+          {currentStep === 1 && eventType === "Competition" && requiresCourse && (
+            <div className="mb-6">
+              <CourseSectionInput value={wizardData.project.nrc} onChange={updateNrc} />
+            </div>
+          )}
           {currentStep === 1 && (
             <ParticipantsStep
               participants={wizardData.participants}
@@ -436,6 +467,7 @@ const handleSubmit = () => {
               eventId={eventId}
               project={wizardData.project}
               onUpdate={updateProject}
+              requiresCourse={requiresCourse}
             />
           )}
           {currentStep === 3 && eventType === "Exposition" && (
