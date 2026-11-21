@@ -22,8 +22,9 @@ export const ResendInvitationButton = ({
       onSuccess: async () => {
         addNotification({
           type: "success",
-          title: "Invitación reenviada",
-          message: `Se ha reenviado la invitación a ${invitation.email}`,
+          // The email is registered and sent in the background (not "sent" yet)
+          title: "Reenvío registrado",
+          message: `El correo a ${invitation.email} se enviará en unos minutos. Su estado aparece en "Envío del correo".`,
         });
         await queryClient.invalidateQueries({ queryKey: ["jury-invitations"] });
       },

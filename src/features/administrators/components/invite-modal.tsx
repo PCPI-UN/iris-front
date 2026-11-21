@@ -29,7 +29,12 @@ export const InviteModal = () => {
   const createAdministratorMutation = useCreateAdministrator({
     mutationConfig: {
       onSuccess: async () => {
-        addNotification({ type: "success", title: "Administrador invitado" });
+        // The email is registered and sent in the background (not "sent" yet)
+        addNotification({
+          type: "success",
+          title: "Administrador invitado",
+          message: "El correo de la invitación se enviará en unos minutos.",
+        });
         await queryClient.invalidateQueries({ queryKey: ["administrators"] });
         setValidationError(null);
         onClose();
