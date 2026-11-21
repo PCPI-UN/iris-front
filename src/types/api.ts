@@ -250,7 +250,15 @@ export type JuryInvitation = {
   roles: InvitationRole[];
   event: Event;
   project: any | null;
+  /**
+   * Email delivery of the invitation (GET /invitations/events/:eventId, Iris#200).
+   * Absent when unknown: invitations older than the delivery log, or tutor invitations.
+   */
+  emailStatus?: InvitationEmailStatus;
 };
+
+/** PENDING: registered or waiting for a retry; SENT: delivered; FAILED: every attempt failed */
+export type InvitationEmailStatus = "PENDING" | "SENT" | "FAILED";
 
 export type InvitationsMeta = {
   total: number;
