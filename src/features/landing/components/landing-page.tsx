@@ -6,6 +6,7 @@ import { EventsSection } from './events-section';
 import { StorySections } from './story-sections';
 import { HorizontalScrollSection } from './horizontal-scroll-section';
 import { DevelopersCarousel } from './developers-carousel';
+import { WinnersSection } from './winners-section';
 import { Footer } from './cta-footer';
 import { Navbar } from '@/components/layouts/navbar';
 import { useLandingAnimations } from '../utils/use-landing-animations';
@@ -96,6 +97,9 @@ export function LandingPage() {
         horizontalSectionRef={horizontalSectionRef}
         horizontalContentRef={horizontalContentRef}
       />
+
+      {/* Winners of the fairs with published results (co-winners share the position) */}
+      <WinnersSection />
 
       {/* Story Section 3 */}
       <StorySections
