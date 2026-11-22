@@ -5,11 +5,14 @@ import { Textarea } from "@heroui/input";
 import { Select, SelectItem } from "@heroui/select";
 import { ProjectData } from "../project-wizard";
 import { useCategoriesDropdown } from "@/features/courses/api/get-categories-dropdown";
+import { CourseSectionInput } from "./course-section-input";
 
 type ProjectDetailsStepProps = {
   eventId: number;
   project: ProjectData;
   onUpdate: (project: ProjectData) => void;
+  /** true: the event requires the NRC of the course section of the project */
+  requiresCourse?: boolean;
 };
 
 const normalizeAssignedNumber = (value: string) => {
@@ -26,6 +29,7 @@ export function ProjectDetailsStep({
   eventId,
   project,
   onUpdate,
+  requiresCourse = false,
 }: ProjectDetailsStepProps) {
   const categoriesQuery = useCategoriesDropdown({
     eventId,
@@ -71,6 +75,13 @@ export function ProjectDetailsStep({
           </p>
         </div>
       </div>
+
+      {requiresCourse && (
+        <CourseSectionInput
+          value={project.nrc}
+          onChange={(nrc) => onUpdate({ ...project, nrc })}
+        />
+      )}
 
       {/* Descripción */}
       <div className="relative">

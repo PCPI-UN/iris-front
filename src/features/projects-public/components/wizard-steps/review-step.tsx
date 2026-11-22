@@ -104,6 +104,12 @@ export function ReviewStep({ data, eventType }: ReviewStepProps) {
                 <p className="text-sm font-medium text-default-500">Num. Asignado</p>
                 <p className="mt-1">{data.project.projectCode || "No especificado"}</p>
               </div>
+              {data.project.nrc && (
+                <div>
+                  <p className="text-sm font-medium text-default-500">NRC del curso</p>
+                  <p className="mt-1">{data.project.nrc}</p>
+                </div>
+              )}
               <div>
                 <p className="text-sm font-medium text-default-500">Descripción</p>
                 <p className="mt-1 text-pretty leading-relaxed">{data.project.description || "No especificada"}</p>

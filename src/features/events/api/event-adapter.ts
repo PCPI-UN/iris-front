@@ -173,6 +173,9 @@ export const normalizeEvent = (raw: any): Event => {
         : Boolean(raw?.isPublic),
     evaluationsOpened,
     resultsPublished: raw?.resultsPublished === true,
+    termId: typeof raw?.termId === "number" ? raw.termId : undefined,
+    // The gateway leaves false booleans out of the response
+    requiresCourse: raw?.requiresCourse === true,
     statusName: raw?.statusName ?? (active ? "ACTIVE" : "INACTIVE"),
     location: raw?.location,
     locationDetails,

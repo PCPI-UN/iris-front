@@ -31,6 +31,10 @@ export const createEventInputSchema = z.object({
   aboutOurAllies: z.string().optional(),
   /** Escala del catálogo (`GET /grading-scales`); una escala nueva se crea antes con `POST /grading-scales` */
   gradingScaleId: z.number().int().positive().optional(),
+  // Academic term (GET /terms); the "no term" row -1 is not accepted
+  termId: z.coerce.number().int().min(1, 'Required'),
+  // true: each project must belong to a course section (NRC) of the term
+  requiresCourse: z.boolean(),
   organizers: z.array(z.string()).optional(),
   collaborators: z.array(z.string()).optional(),
   // Estos campos se manejan en tablas relacionadas (EventInscriptionDetail, Category, etc)

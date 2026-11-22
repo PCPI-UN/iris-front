@@ -43,6 +43,7 @@ import {
   GradingScaleSelection,
   resolveGradingScaleId,
 } from "@/features/grading-scales/utils/grading-scale-selection";
+import { formatTermCode, useTerms } from "../api/get-terms";
 
 type Award = {
   title: string;
@@ -99,6 +100,7 @@ export const CreateEvent = () => {
     active: true,
     evaluationsOpened: false,
     eventType: 1,
+    requiresCourse: true,
   });
   const [scaleSelection, setScaleSelection] = useState<GradingScaleSelection>({
     mode: "catalog",
@@ -110,6 +112,7 @@ export const CreateEvent = () => {
   const [organizers, setOrganizers] = useState([""]);
   const [collaborators, setCollaborators] = useState([""]);
   const [dateFieldErrors, setDateFieldErrors] = useState<DateFieldErrors>({});
+  const [termError, setTermError] = useState<string | undefined>();
   const [awards, setAwards] = useState<Award[]>([
     { title: "", description: "", value: "", position: 1 },
   ]);
@@ -137,6 +140,8 @@ export const CreateEvent = () => {
   const createGradingScaleMutation = useCreateGradingScale();
 
   const user = useUser();
+  const termsQuery = useTerms({ queryConfig: { enabled: isOpen } });
+  const terms = termsQuery.data ?? [];
 
   if (!canCreateEvent(user?.data)) {
     return null;
@@ -149,6 +154,7 @@ export const CreateEvent = () => {
       active: true,
       evaluationsOpened: false,
       eventType: 1,
+      requiresCourse: true,
     });
     setScaleSelection({ mode: "catalog", scaleId: null });
     setShowScaleErrors(false);
@@ -156,7 +162,14 @@ export const CreateEvent = () => {
     setOrganizers([""]);
     setCollaborators([""]);
     setDateFieldErrors({});
+    setTermError(undefined);
     setAwards([{ title: "", description: "", value: "", position: 1 }]);
+  };
+
+  const validateTerm = () => {
+    const isValid = Number(formData.termId) > 0;
+    setTermError(isValid ? undefined : "El periodo académico es requerido.");
+    return isValid;
   };
 
   const validateDateFields = (targetStep: 1 | 2 | 3) => {
@@ -222,7 +235,7 @@ export const CreateEvent = () => {
   const handleNextStep = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (step === 1 && !validateDateFields(1)) {
+    if (step === 1 && (!validateDateFields(1) || !validateTerm())) {
       return;
     }
 
@@ -262,6 +275,11 @@ export const CreateEvent = () => {
         return;
       }
 
+      if (!validateTerm()) {
+        setStep(1);
+        return;
+      }
+
       const dataToSubmit = {
         ...formData,
         startDate: ensureDateTimeValue(formData.startDate),
@@ -271,6 +289,8 @@ export const CreateEvent = () => {
         isPubliclyJoinable: Boolean(formData.isPubliclyJoinable),
         active: Boolean(formData.active)??true,
         eventType: toEventTypeCode(formData.eventType),
+        termId: Number(formData.termId),
+        requiresCourse: Boolean(formData.requiresCourse),
         locationDetails: formData.locationDetails || undefined,
         latitude: formData.latitude,
         longitude: formData.longitude,
@@ -442,6 +462,60 @@ export const CreateEvent = () => {
                       selectDefault
                       showErrors={showScaleErrors}
                     />
+
+                    <div className="flex flex-col sm:flex-row gap-4 sm:items-center">
+                      <Select
+                        label="Periodo Académico"
+                        name="termId"
+                        placeholder={
+                          termsQuery.isLoading
+                            ? "Cargando periodos..."
+                            : "Seleccione el periodo del evento"
+                        }
+                        selectedKeys={formData.termId ? new Set([String(formData.termId)]) : new Set([])}
+                        onSelectionChange={(keys) => {
+                          const selected = Array.from(keys)[0];
+                          setFormData({
+                            ...formData,
+                            termId: selected === undefined ? undefined : Number(selected),
+                          });
+                          setTermError(undefined);
+                        }}
+                        isLoading={termsQuery.isLoading}
+                        isInvalid={Boolean(termError)}
+                        errorMessage={termError}
+                        description={
+                          !termsQuery.isLoading && terms.length === 0
+                            ? "No hay periodos académicos creados."
+                            : undefined
+                        }
+                        isRequired
+                        className="flex-1"
+                      >
+                        {terms.map((term) => (
+                          <SelectItem key={String(term.id)}>{formatTermCode(term)}</SelectItem>
+                        ))}
+                      </Select>
+                      <div className="flex-1 flex items-center gap-2">
+                        <Switch
+                          size="sm"
+                          name="requiresCourse"
+                          isSelected={Boolean(formData.requiresCourse)}
+                          onValueChange={(isSelected) =>
+                            setFormData({ ...formData, requiresCourse: isSelected })
+                          }
+                          color="success"
+                        />
+                        <div className="flex flex-col">
+                          <span className="text-sm font-medium">Exige NRC</span>
+                          <span className="text-xs text-default-500">
+                            {formData.requiresCourse
+                              ? "Cada proyecto debe indicar el NRC de su curso en el periodo."
+                              : "El evento no está asociado a un curso, como un hackathon."}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
 
                     <div className="pt-2 border-t border-default-200">
                       <p className="text-sm font-semibold mb-2">Detalles del Evento</p>

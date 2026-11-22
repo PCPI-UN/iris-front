@@ -937,6 +937,21 @@ export const eventsHandlers = [
     }
   }),
 
+  // Academic terms an event can be created or edited with, newest first
+  http.get(`${env.API_URL}/terms`, async ({ cookies }) => {
+    await networkDelay();
+
+    const { error } = requireAuth(cookies);
+    if (error) {
+      return HttpResponse.json({ message: error }, { status: 401 });
+    }
+
+    return HttpResponse.json([
+      { id: 2, year: 2026, period: "30" },
+      { id: 1, year: 2026, period: "10" },
+    ]);
+  }),
+
   http.get(`${env.API_URL}/events/dropdown`, async ({ cookies }) => {
     await networkDelay();
 
