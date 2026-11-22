@@ -4,13 +4,32 @@ import { env } from '@/config/env';
 /** Error de una respuesta HTTP no exitosa; conserva el código de estado. */
 export class ApiError extends Error {
   readonly status: number;
+  /** Machine-readable cause sent by the gateway (e.g. PROJECT_STATE_CHANGE_BLOCKED) */
+  readonly code?: string;
+  /** Extra data of the cause sent by the gateway */
+  readonly details?: unknown;
 
-  constructor(message: string, status: number) {
+  constructor(
+    message: string,
+    status: number,
+    extra: { code?: string; details?: unknown } = {},
+  ) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
+    this.code = extra.code;
+    this.details = extra.details;
   }
 }
+
+const readErrorExtra = (json: unknown): { code?: string; details?: unknown } => {
+  if (!json || typeof json !== 'object') return {};
+  const { code, details } = json as { code?: unknown; details?: unknown };
+  return {
+    code: typeof code === 'string' ? code : undefined,
+    details,
+  };
+};
 
 type RequestOptions = {
   method?: string;
@@ -173,7 +192,8 @@ async function fetchApi<T>(
       });
 
       if (!retryResponse.ok) {
-        const message = (await retryResponse.json()).message || retryResponse.statusText;
+        const errorJson = await retryResponse.json();
+        const message = errorJson.message || retryResponse.statusText;
         if (typeof window !== 'undefined') {
           useNotifications.getState().addNotification({
             type: 'error',
@@ -181,7 +201,7 @@ async function fetchApi<T>(
             message,
           });
         }
-        throw new ApiError(message, retryResponse.status);
+        throw new ApiError(message, retryResponse.status, readErrorExtra(errorJson));
       }
 
       if (responseType === 'blob') {
@@ -204,11 +224,13 @@ async function fetchApi<T>(
   if (!response.ok) {
     // Try to parse error body, but handle empty responses gracefully
     let message = response.statusText;
+    let extra: { code?: string; details?: unknown } = {};
     try {
       const text = await response.text();
       if (text) {
         const json = JSON.parse(text);
         message = json.message || response.statusText;
+        extra = readErrorExtra(json);
       }
     } catch (err) {
       // ignore parse errors and keep statusText
@@ -226,7 +248,7 @@ async function fetchApi<T>(
         message,
       });
     }
-    throw new ApiError(message, response.status);
+    throw new ApiError(message, response.status, extra);
   }
 
   if (responseType === 'blob') {
