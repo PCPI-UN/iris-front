@@ -1,5 +1,8 @@
 "use client";
 
+import type { ComponentProps } from "react";
+import { Can } from "@/components/auth/can";
+import { PERMISSIONS } from "@/lib/authorization";
 import { SquarePen } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -30,7 +33,7 @@ type UpdateCategoryProps = {
   categoryId: number;
 };
 
-export const UpdateCategory = ({ categoryId }: UpdateCategoryProps) => {
+const UpdateCategoryContent = ({ categoryId }: UpdateCategoryProps) => {
   const { addNotification } = useNotifications();
   const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
 
@@ -190,3 +193,10 @@ export const UpdateCategory = ({ categoryId }: UpdateCategoryProps) => {
     </>
   );
 };
+
+// Only sessions that can call the endpoint see the action
+export const UpdateCategory = (props: ComponentProps<typeof UpdateCategoryContent>) => (
+  <Can permission={PERMISSIONS.manageCourses}>
+    <UpdateCategoryContent {...props} />
+  </Can>
+);

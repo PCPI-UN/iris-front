@@ -1,3 +1,5 @@
+import { Can } from '@/components/auth/can';
+import { PERMISSIONS } from '@/lib/authorization';
 import { ExportEventReportButton } from '@/features/reports/components/export-event-report-button';
 import { useSearchParams } from 'next/navigation';
 import { ReactNode } from 'react';
@@ -16,10 +18,12 @@ export const ContentLayout = ({ children, title = '' }: ContentLayoutProps) => {
         <h1 className="text-2xl md:text-3xl font-semibold text-white">{title}</h1>
         {
           title === 'Projects' &&
-        <ExportEventReportButton
-          eventId={eventId}
-          onError={(err) => console.error("Export failed:", err)}
-        />
+        <Can permission={PERMISSIONS.readGrades}>
+          <ExportEventReportButton
+            eventId={eventId}
+            onError={(err) => console.error("Export failed:", err)}
+          />
+        </Can>
         }
       </div>
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 md:px-8">

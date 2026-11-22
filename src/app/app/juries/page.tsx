@@ -1,7 +1,8 @@
 import { QueryClient } from "@tanstack/react-query";
 
 import { Juries } from "./_components/Juries";
-import { RoleGuard } from "@/components/auth/role-guard";
+import { PermissionGuard } from '@/components/auth/permission-guard';
+import { PERMISSIONS } from '@/lib/authorization';
 
 export const metadata = {
   title: "Jurados",
@@ -10,9 +11,9 @@ export const metadata = {
 
 const JuriesPage = async () => {
   return (
-    <RoleGuard roles={["Admin"]}>
+    <PermissionGuard permissions={[PERMISSIONS.readEventMembers]}>
       <Juries />
-    </RoleGuard>
+    </PermissionGuard>
   );
 };
 
