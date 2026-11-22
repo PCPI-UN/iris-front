@@ -178,7 +178,130 @@ const isUserJuryOfEvent = (userId: string, eventId: string): boolean => {
   return !!membership;
 };
 
+type AdminChangeStateBody = {
+  state?: string;
+  reason?: string;
+  notify?: boolean;
+  force?: boolean;
+};
+
+type MockChangeLogEntry = {
+  id: number;
+  action: "STATE";
+  actor: { id: number; name: string | null };
+  createdAt: string;
+  before: Record<string, unknown>;
+  after: Record<string, unknown>;
+  reason: string | null;
+};
+
+const ADMIN_PROJECT_STATES = ["UNDER_REVIEW", "APPROVED", "REJECTED", "REQUEST_CHANGES"];
+
+// In memory only: the mock server forgets the change log when it restarts
+const projectChangeLog = new Map<string, MockChangeLogEntry[]>();
+let nextChangeLogId = 1;
+
 export const projectsHandlers = [
+  // PATCH /projects/:id/admin/state (manage:projects): 409 PROJECT_STATE_CHANGE_BLOCKED
+  // when the project has evaluations, unless force
+  http.patch(
+    `${env.API_URL}/projects/:projectId/admin/state`,
+    async ({ cookies, request, params }) => {
+      await networkDelay();
+      const { error, user } = requireAuth(cookies);
+      if (error) {
+        return HttpResponse.json({ message: error }, { status: 401 });
+      }
+
+      const projectId = params.projectId as string;
+      const { state, reason, force } = (await request.json()) as AdminChangeStateBody;
+      const trimmedReason = reason?.trim() ?? "";
+
+      if (!state || !ADMIN_PROJECT_STATES.includes(state)) {
+        return HttpResponse.json(
+          { message: "El estado debe ser UNDER_REVIEW, APPROVED, REJECTED o REQUEST_CHANGES" },
+          { status: 400 }
+        );
+      }
+      if (!trimmedReason) {
+        return HttpResponse.json(
+          { message: "El motivo del cambio de estado es obligatorio" },
+          { status: 400 }
+        );
+      }
+
+      const project = db.project.findFirst({ where: { id: { equals: projectId } } });
+      if (!project) {
+        return HttpResponse.json({ message: "Project not found" }, { status: 404 });
+      }
+      if (project.state === state) {
+        return HttpResponse.json(
+          { message: "El proyecto ya está en ese estado" },
+          { status: 400 }
+        );
+      }
+
+      const evaluationCount = db.evaluation.count({
+        where: { projectId: { equals: projectId } },
+      });
+      if (evaluationCount > 0 && !force) {
+        return HttpResponse.json(
+          {
+            statusCode: 409,
+            message: `No se cambió el estado porque el proyecto ya tiene ${evaluationCount} evaluaciones de jurados. Confirma el cambio para aplicarlo de todas formas.`,
+            code: "PROJECT_STATE_CHANGE_BLOCKED",
+            details: {
+              hasEvaluations: true,
+              evaluationCount,
+              resultsPublished: false,
+              leavesApproved: project.state === "APPROVED",
+            },
+            timestamp: new Date().toISOString(),
+          },
+          { status: 409 }
+        );
+      }
+
+      const keepsReason = state === "REJECTED" || state === "REQUEST_CHANGES";
+      const updated = db.project.update({
+        where: { id: { equals: projectId } },
+        data: { state, reason: keepsReason ? trimmedReason : "" },
+      });
+      await persistDb("project");
+
+      const entries = projectChangeLog.get(projectId) ?? [];
+      entries.unshift({
+        id: nextChangeLogId++,
+        action: "STATE",
+        actor: {
+          id: Number(user?.id) || 0,
+          name: user ? `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || null : null,
+        },
+        createdAt: new Date().toISOString(),
+        before: { state: project.state },
+        after: { state },
+        reason: trimmedReason,
+      });
+      projectChangeLog.set(projectId, entries);
+
+      return HttpResponse.json({ project: updated, failedEffects: [], warning: null });
+    }
+  ),
+
+  // GET /projects/:id/change-log (manage:projects), most recent first
+  http.get(
+    `${env.API_URL}/projects/:projectId/change-log`,
+    async ({ cookies, params }) => {
+      await networkDelay();
+      const { error } = requireAuth(cookies);
+      if (error) {
+        return HttpResponse.json({ message: error }, { status: 401 });
+      }
+      const projectId = params.projectId as string;
+      return HttpResponse.json({ entries: projectChangeLog.get(projectId) ?? [] });
+    }
+  ),
+
   // Contract used by src/features/projects/api/get-projects.ts
   http.get(`${env.API_URL}/projects/by-event/:eventId`, async ({ cookies, request, params }) => {
     await networkDelay();
