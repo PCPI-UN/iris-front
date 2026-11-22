@@ -1,0 +1,114 @@
+name: Frontend CI
+
+on:
+  pull_request:
+    branches: ['dev', 'prod']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: Build & Test
+    runs-on: ubuntu-24.04
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+      API_URL: http://localhost:3000
+      NEXT_PUBLIC_URL: http://localhost:3000
+      NEXT_PUBLIC_ENABLE_API_MOCKING: 'false'
+      NEXT_PUBLIC_MOCK_API_PORT: '8000'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Typecheck
+        run: pnpm run check-types
+
+      - name: Run unit tests
+        run: npx vitest run
+
+      - name: Build Next.js application
+        run: pnpm run build
+
+  lint:
+    name: ESLint (Warning)
+    runs-on: ubuntu-24.04
+    if: ${{ github.event_name == 'pull_request' }}
+    continue-on-error: true
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Lint changed files
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          mapfile -t CHANGED_FILES < <(git diff --name-only --diff-filter=ACMR "origin/$BASE_REF...HEAD" -- 'src/**/*.ts' 'src/**/*.tsx' 'src/**/*.js' 'src/**/*.jsx')
+
+          if [ "${#CHANGED_FILES[@]}" -eq 0 ]; then
+            echo "No modified files in src/ to lint."
+            exit 0
+          fi
+
+          echo "Linting ${#CHANGED_FILES[@]} modified file(s)..."
+          if ! npx eslint "${CHANGED_FILES[@]}"; then
+            echo "::warning title=ESLint Warning::ESLint encontró problemas en los archivos modificados del PR (check no bloqueante)."
+            exit 1
+          fi
+
+  ci-gate:
+    name: CI Gate
+    runs-on: ubuntu-24.04
+    needs: [build-and-test]
+    if: always()
+
+    steps:
+      - name: Verify required checks
+        env:
+          BUILD_TEST_RESULT: ${{ needs.build-and-test.result }}
+        run: |
+          echo "build-and-test: $BUILD_TEST_RESULT"
+
+          if [ "$BUILD_TEST_RESULT" != "success" ]; then
+            echo "::error::build-and-test falló o fue cancelado."
+            exit 1
+          fi
+
+          echo "CI Gate aprobado."
