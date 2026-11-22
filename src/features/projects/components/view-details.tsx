@@ -64,9 +64,10 @@ export const ViewDetails = ({project} : {project: Project}) => {
                               : doc.type;
 
                           return (
-                            <div
+                            <button
                               key={index}
-                              className="w-full flex items-center justify-between p-3 hover:bg-gradient-to-br from-cyan-400/10 to-cyan-400/5 rounded-lg border border-gray-100/20 transition-all duration-500 cursor-pointer"
+                              type="button"
+                              className="w-full flex items-center justify-between text-left p-3 hover:bg-gradient-to-br from-cyan-400/10 to-cyan-400/5 rounded-lg border border-gray-100/20 transition-all duration-500 cursor-pointer"
                               onClick={() => window.open(documentLink(doc), "_blank")}
                             >
                               <div className="flex items-center gap-2 text-sm">
@@ -82,7 +83,7 @@ export const ViewDetails = ({project} : {project: Project}) => {
                               >
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                               </svg>
-                            </div>
+                            </button>
                           );
                         })}
                       </div>

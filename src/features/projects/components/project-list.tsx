@@ -203,9 +203,10 @@ export const ProjectList = () => {
                               : doc.type;
 
                           return (
-                            <div
+                            <button
                               key={index}
-                              className="w-full flex items-center justify-between p-3 rounded-lg border border-muted/20 bg-muted/5 hover:bg-muted/10 transition-colors cursor-pointer"
+                              type="button"
+                              className="w-full flex items-center justify-between text-left p-3 rounded-lg border border-muted/20 bg-muted/5 hover:bg-muted/10 transition-colors cursor-pointer"
                               onClick={() => window.open(documentLink(doc), "_blank")}
                             >
                               <div className="flex items-center gap-2 text-sm">
@@ -221,7 +222,7 @@ export const ProjectList = () => {
                               >
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                               </svg>
-                            </div>
+                            </button>
                           );
                         })}
                       </div>
