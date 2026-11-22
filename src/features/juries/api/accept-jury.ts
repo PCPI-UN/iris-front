@@ -5,10 +5,10 @@ import { api } from "@/lib/api-client";
 import { MutationConfig } from "@/lib/react-query";
 
 export const acceptInvitationInputSchema = z.object({
-  token: z.string().min(1, "Token is required"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
+  token: z.string().min(1, "El token es obligatorio"),
+  password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres"),
+  firstName: z.string().min(1, "El nombre es obligatorio"),
+  lastName: z.string().min(1, "El apellido es obligatorio"),
   studentCode: z.string().optional(),
   microsoftToken: z.string().optional(),
 });

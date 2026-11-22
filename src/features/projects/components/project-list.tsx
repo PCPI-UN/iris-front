@@ -99,28 +99,28 @@ export const ProjectList = () => {
           variant={state === "UNDER_REVIEW" ? "flat" : "bordered"}
           onClick={() => handleStatusFilter("UNDER_REVIEW")}
         >
-          Under Review
+          En revisión
         </Button>
 
         <Button
           variant={state === "APPROVED" ? "flat" : "bordered"}
           onClick={() => handleStatusFilter("APPROVED")}
         >
-          Approved
+          Aprobado
         </Button>
 
         <Button
           variant={state === "REJECTED" ? "flat" : "bordered"}
           onClick={() => handleStatusFilter("REJECTED")}
         >
-          Rejected
+          Rechazado
         </Button>
 
         <Button
           variant={state === "REQUEST_CHANGES" ? "flat" : "bordered"}
           onClick={() => handleStatusFilter("REQUEST_CHANGES")}
         >
-          Changes required
+          Cambios solicitados
         </Button>
       </div>
 
@@ -179,7 +179,7 @@ export const ProjectList = () => {
                       {/* Encabezado documentos */}
                       <div className="flex items-center gap-2 text-sm">
                         <FileText className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">Documents</span>
+                        <span className="font-medium">Documentos</span>
                       </div>
 
                       {/* Lista de documentos */}
@@ -187,7 +187,7 @@ export const ProjectList = () => {
                         {project.documents.map((doc, index) => {
                           const readableType =
                             doc.type === "POSTER"
-                              ? "Poster"
+                              ? "Póster"
                               : doc.type === "ASSOCIATED_DOCUMENT"
                               ? "Documento asociado"
                               : doc.type;

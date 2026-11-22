@@ -122,7 +122,7 @@ export const CreateEvent = () => {
       onSuccess: () => {
         addNotification({
           type: "success",
-          title: "Event Created",
+          title: "Evento creado",
         });
         resetForm();
         onClose();
@@ -130,8 +130,8 @@ export const CreateEvent = () => {
       onError: (e) => {
         addNotification({
           type: "error",
-          title: "Validation Error",
-          message: "Missing or invalid fields in your form submission.",
+          title: "Error de validación",
+          message: "Faltan campos obligatorios o contienen valores inválidos.",
         });
       }
     },
@@ -329,7 +329,11 @@ export const CreateEvent = () => {
       });
     } catch (err) {
       console.error(err);
-      addNotification({ type: "error", title: "Form Validation Failed", message: "Check required fields." });
+      addNotification({
+        type: "error",
+        title: "Error de validación en el formulario",
+        message: "Verifica los campos obligatorios.",
+      });
     }
   };
 
@@ -348,7 +352,7 @@ export const CreateEvent = () => {
               onSubmit={step === 3 ? handleCreateSubmit : handleNextStep}
             >
               <ModalHeader className="flex flex-col gap-1 text-2xl font-semibold shrink-0">
-                Crear Evento {step > 1 ? `- Step ${step}` : ''}
+                Crear Evento {step > 1 ? `- Paso ${step}` : ''}
               </ModalHeader>
               <ModalBody className="w-full flex-1 min-h-0 overflow-y-auto pl-6">
 
@@ -531,7 +535,7 @@ export const CreateEvent = () => {
                     </div>
                     <div className="flex flex-wrap items-center gap-6 py-2">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium">Public For Join</span>
+                        <span className="text-sm font-medium">Inscripción pública</span>
                         <Switch
                           size="sm"
                           name="isPubliclyJoinable"
@@ -544,7 +548,7 @@ export const CreateEvent = () => {
                         />
                       </div>
                       <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium">Active Event</span>
+                      <span className="text-sm font-medium">Evento activo</span>
                       <Switch
                         size="sm"
                         name="active"
@@ -697,7 +701,7 @@ export const CreateEvent = () => {
                     <p className="border-b border-default-200 pb-2 font-semibold">Información Pública</p>
 
                     <Textarea
-                      label="About Our Allies"
+                      label="Sobre nuestros aliados"
                       name="aboutOurAllies"
                       placeholder="Información sobre socios y aliados. Ej: Este evento cuenta con el apoyo de GRIP Shipping como aliado estratégico..."
                       value={formData.aboutOurAllies || ""}

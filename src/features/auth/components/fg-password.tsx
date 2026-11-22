@@ -9,7 +9,7 @@ import { useNotifications } from "@/components/ui/notifications";
 
 // Simple schema for forgot password (email only)
 const forgotPasswordSchema = z.object({
-	email: z.string().min(1, "Requerido").email("Email inválido"),
+	email: z.string().min(1, "Requerido").email("Correo electrónico inválido"),
 });
 
 type ForgotPasswordValues = z.infer<typeof forgotPasswordSchema>;

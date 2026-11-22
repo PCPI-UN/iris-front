@@ -164,7 +164,7 @@ export const StudentDashboardTeamSection = ({
     if (!newMember.email) {
       addNotification({
         type: "error",
-        title: "Email requerido",
+        title: "Correo electrónico requerido",
         message: "Ingresa el correo del miembro.",
       });
       return;

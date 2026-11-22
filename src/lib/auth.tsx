@@ -135,8 +135,11 @@ const logout = async (): Promise<AuthResponse> => {
 };
 
 export const loginInputSchema = z.object({
-  email: z.string().min(1, 'Required').email('Invalid email'),
-  password: z.string().min(5, 'Required'),
+  email: z
+    .string()
+    .min(1, 'Este campo es obligatorio')
+    .email('Correo electrónico inválido'),
+  password: z.string().min(5, 'La contraseña debe tener al menos 5 caracteres'),
 });
 
 export type LoginInput = z.infer<typeof loginInputSchema>;
@@ -165,10 +168,13 @@ const loginWithEmailAndPassword = async (data: LoginInput): Promise<User> => {
 };
 
 export const registerInputSchema = z.object({
-  email: z.string().min(1, 'Required').email('Invalid email'),
-  firstName: z.string().min(1, 'Required'),
-  lastName: z.string().min(1, 'Required'),
-  password: z.string().min(5, 'Required'),
+  email: z
+    .string()
+    .min(1, 'Este campo es obligatorio')
+    .email('Correo electrónico inválido'),
+  firstName: z.string().min(1, 'Este campo es obligatorio'),
+  lastName: z.string().min(1, 'Este campo es obligatorio'),
+  password: z.string().min(5, 'La contraseña debe tener al menos 5 caracteres'),
 });
 
 export type RegisterInput = z.infer<typeof registerInputSchema>;

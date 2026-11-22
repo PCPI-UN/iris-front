@@ -1,13 +1,22 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Settings } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@/components/ui/modal';
-import { Switch } from '@/components/ui/switch';
-import { useUpsertRankingConfig } from '../api/upsert-ranking-config';
-import type { RankingConfigType } from '../types';
+import type { RankingConfigType } from "../types";
+
+import { useState } from "react";
+import { Settings } from "lucide-react";
+
+import { useUpsertRankingConfig } from "../api/upsert-ranking-config";
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+} from "@/components/ui/modal";
+import { Switch } from "@/components/ui/switch";
 
 type RankingConfigModalProps = {
   isOpen: boolean;
@@ -16,7 +25,10 @@ type RankingConfigModalProps = {
   onConfigChange: (config: RankingConfigType) => void;
   eventId?: number;
   rankingConfigId?: number;
-  onSaved?: (configId: number, config: RankingConfigType) => void | Promise<void>;
+  onSaved?: (
+    configId: number,
+    config: RankingConfigType,
+  ) => void | Promise<void>;
 };
 
 export const RankingConfigModal = ({
@@ -33,7 +45,8 @@ export const RankingConfigModal = ({
 
   const handleSave = async (onClose: () => void) => {
     if (!eventId) {
-      setSaveError('Se requiere un evento para guardar la configuración.');
+      setSaveError("Se requiere un evento para guardar la configuración.");
+
       return;
     }
 
@@ -48,25 +61,35 @@ export const RankingConfigModal = ({
 
       const savedConfigId = response?.data?.id ?? response?.id;
 
-      if (typeof savedConfigId === 'number') {
+      if (typeof savedConfigId === "number") {
         await onSaved?.(savedConfigId, config);
       }
 
       onClose();
     } catch (error) {
-      setSaveError(error instanceof Error ? error.message : 'No se pudo guardar la configuración');
+      setSaveError(
+        error instanceof Error
+          ? error.message
+          : "No se pudo guardar la configuración",
+      );
     }
   };
 
   return (
-    <Modal isOpen={isOpen} onOpenChange={onOpenChange} className="m-auto mx-5 lg:max-w-md">
+    <Modal
+      className="m-auto mx-5 lg:max-w-md"
+      isOpen={isOpen}
+      onOpenChange={onOpenChange}
+    >
       <ModalContent>
         {(onClose) => (
           <>
             <ModalHeader className="flex flex-col gap-1">
               <div className="flex items-center gap-2">
                 <Settings className="h-5 w-5 text-primary" />
-                <h2 className="text-lg font-bold">Configuración del Ranking</h2>
+                <h2 className="text-lg font-bold">
+                  Configuración de la Clasificación
+                </h2>
               </div>
             </ModalHeader>
 
@@ -77,11 +100,13 @@ export const RankingConfigModal = ({
                   Posiciones Visibles
                 </label>
                 <p className="text-xs text-default-500">
-                  0 = Mostrar lista completa del ranking
+                  0 = Mostrar lista completa de la clasificación
                 </p>
                 <Input
-                  type="number"
+                  className="mt-1"
                   min={0}
+                  placeholder="0"
+                  type="number"
                   value={String(config.visiblePositions)}
                   onChange={(e) =>
                     onConfigChange({
@@ -89,19 +114,17 @@ export const RankingConfigModal = ({
                       visiblePositions: parseInt(e.target.value) || 0,
                     })
                   }
-                  placeholder="0"
-                  className="mt-1"
                 />
               </div>
 
-              {/* Ranking visible en landing */}
+              {/* Clasificación visible en landing */}
               <div className="flex items-center justify-between rounded-lg border border-default-200 p-3 bg-default-50/50">
                 <div className="flex flex-col gap-1">
                   <label className="text-sm font-semibold text-foreground">
-                    Ranking en Landing Pública
+                    Clasificación en Landing Pública
                   </label>
                   <p className="text-xs text-default-500">
-                    Mostrar ranking en la página pública
+                    Mostrar clasificación en la página pública
                   </p>
                 </div>
                 <Switch
@@ -122,7 +145,7 @@ export const RankingConfigModal = ({
                     Puntaje Visible
                   </label>
                   <p className="text-xs text-default-500">
-                    Mostrar puntajes en el ranking
+                    Mostrar puntajes en la clasificación
                   </p>
                 </div>
                 <Switch
@@ -138,16 +161,18 @@ export const RankingConfigModal = ({
             </ModalBody>
 
             {saveError && (
-              <div className="px-6 text-sm text-danger-500">
-                {saveError}
-              </div>
+              <div className="px-6 text-sm text-danger-500">{saveError}</div>
             )}
 
             <ModalFooter>
               <Button color="default" variant="light" onPress={onClose}>
                 Cancelar
               </Button>
-              <Button color="primary" isLoading={saveRankingConfig.isPending} onPress={() => handleSave(onClose)}>
+              <Button
+                color="primary"
+                isLoading={saveRankingConfig.isPending}
+                onPress={() => handleSave(onClose)}
+              >
                 Guardar
               </Button>
             </ModalFooter>

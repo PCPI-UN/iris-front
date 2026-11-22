@@ -2,15 +2,15 @@ import {
   dehydrate,
   HydrationBoundary,
   QueryClient,
-} from '@tanstack/react-query';
+} from "@tanstack/react-query";
 
-import { getEventsQueryOptions } from '@/features/events/api/get-events';
+import { Events } from "./_components/events";
 
-import { Events } from './_components/events';
+import { getEventsQueryOptions } from "@/features/events/api/get-events";
 
 export const metadata = {
-  title: 'Events',
-  description: 'Events',
+  title: "Eventos",
+  description: "Eventos",
 };
 
 const EventsPage = async ({
@@ -38,4 +38,3 @@ const EventsPage = async ({
 };
 
 export default EventsPage;
-

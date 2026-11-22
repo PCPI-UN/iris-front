@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import {
   Folder,
@@ -6,14 +6,14 @@ import {
   MoreHorizontal,
   Trash2,
   type LucideIcon,
-} from "lucide-react"
+} from "lucide-react";
 
 import {
   Dropdown,
   DropdownTrigger,
   DropdownMenu,
   DropdownItem,
-} from "@/components/ui/dropdown"
+} from "@/components/ui/dropdown";
 import {
   SidebarGroup,
   SidebarGroupLabel,
@@ -21,22 +21,21 @@ import {
   SidebarMenuAction,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar"
-
-import { Link } from "@/components/ui/link"
+} from "@/components/ui/sidebar";
+import { Link } from "@/components/ui/link";
 
 export function NavProjects({
   projects,
 }: {
   projects: {
-    name: string
-    url: string
-    icon: LucideIcon
-  }[]
+    name: string;
+    url: string;
+    icon: LucideIcon;
+  }[];
 }) {
   return (
     <SidebarGroup className="group-data-[collapsible=icon]:hidden">
-      <SidebarGroupLabel>Projects</SidebarGroupLabel>
+      <SidebarGroupLabel>Proyectos</SidebarGroupLabel>
       <SidebarMenu>
         {projects.map((item) => (
           <SidebarMenuItem key={item.name}>
@@ -51,23 +50,33 @@ export function NavProjects({
                 <SidebarMenuAction asChild showOnHover>
                   <span className="flex items-center gap-2">
                     <MoreHorizontal />
-                    <span className="sr-only">More</span>
+                    <span className="sr-only">Más</span>
                   </span>
                 </SidebarMenuAction>
               </DropdownTrigger>
-              <DropdownMenu 
-                aria-label="Project actions"
-                className="w-48 rounded-lg"
+              <DropdownMenu
                 disallowEmptySelection
+                aria-label="Acciones del proyecto"
+                className="w-48 rounded-lg"
               >
-                <DropdownItem key="view" startContent={<Folder className="text-muted-foreground" />}>
-                  View Project
+                <DropdownItem
+                  key="view"
+                  startContent={<Folder className="text-muted-foreground" />}
+                >
+                  Ver proyecto
                 </DropdownItem>
-                <DropdownItem key="share" startContent={<Forward className="text-muted-foreground" />}>
-                  Share Project
+                <DropdownItem
+                  key="share"
+                  startContent={<Forward className="text-muted-foreground" />}
+                >
+                  Compartir proyecto
                 </DropdownItem>
-                <DropdownItem key="delete" startContent={<Trash2 className="text-muted-foreground" />} color="danger">
-                  Delete Project
+                <DropdownItem
+                  key="delete"
+                  color="danger"
+                  startContent={<Trash2 className="text-muted-foreground" />}
+                >
+                  Eliminar proyecto
                 </DropdownItem>
               </DropdownMenu>
             </Dropdown>
@@ -76,10 +85,10 @@ export function NavProjects({
         <SidebarMenuItem>
           <SidebarMenuButton className="text-sidebar-foreground/70">
             <MoreHorizontal className="text-sidebar-foreground/70" />
-            <span>More</span>
+            <span>Más</span>
           </SidebarMenuButton>
         </SidebarMenuItem>
       </SidebarMenu>
     </SidebarGroup>
-  )
+  );
 }

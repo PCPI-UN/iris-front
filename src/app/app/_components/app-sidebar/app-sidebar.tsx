@@ -40,11 +40,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         url: paths.home.getHref(),
       },
     }),
-    [user.data?.firstName, user.data?.lastName, user.data?.email]
+    [user.data?.firstName, user.data?.lastName, user.data?.email],
   );
 
   return (
-    <Sidebar collapsible="icon" className="app-sidebar" {...props}>
+    <Sidebar className="app-sidebar" collapsible="icon" {...props}>
       <SidebarHeader suppressHydrationWarning>
         <SidebarMenu>
           <SidebarMenuItem>
@@ -54,11 +54,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             >
               <Link href={data.enterprise.url}>
                 <Image
-                  src={data.enterprise.logo}
                   alt="Iris Logo"
-                  width={20}
-                  height={20}
                   className="!size-5"
+                  height={20}
+                  src={data.enterprise.logo}
+                  width={20}
                 />
                 <span className="text-base font-semibold">
                   {data.enterprise.name}
@@ -70,7 +70,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent suppressHydrationWarning>
         <SidebarGroup>
-          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+          <SidebarGroupLabel>Navegación</SidebarGroupLabel>
           <SidebarMenu>
             {menuItems.map((item) => (
               <SidebarMenuItem key={item.title}>

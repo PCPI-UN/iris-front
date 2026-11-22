@@ -1,18 +1,19 @@
-'use client';
+"use client";
 
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { ErrorBoundary } from 'react-error-boundary';
 import type { ThemeProviderProps } from "next-themes";
+
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import { ErrorBoundary } from "react-error-boundary";
 import * as React from "react";
 import { HeroUIProvider } from "@heroui/system";
 import { useRouter } from "next/navigation";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
 
-import { MainErrorFallback } from '@/components/errors/main';
-import { Notifications } from '@/components/ui/notifications';
-import { queryConfig } from '@/lib/react-query';
-import { enableMocking } from '@/testing/mocks';
+import { MainErrorFallback } from "@/components/errors/main";
+import { Notifications } from "@/components/ui/notifications";
+import { queryConfig } from "@/lib/react-query";
+import { enableMocking } from "@/testing/mocks";
 
 export interface ProvidersProps {
   children: React.ReactNode;
@@ -35,7 +36,7 @@ export function Providers({ children, themeProps }: ProvidersProps) {
         defaultOptions: queryConfig,
       }),
   );
-  
+
   const router = useRouter();
 
   React.useEffect(() => {
@@ -45,7 +46,7 @@ export function Providers({ children, themeProps }: ProvidersProps) {
   }, []);
 
   if (!mswReady) {
-    return <div>Loading...</div>;
+    return <div>Cargando...</div>;
   }
 
   return (

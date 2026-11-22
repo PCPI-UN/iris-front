@@ -80,7 +80,7 @@ export const RankingTab = ({
           <div className="flex items-center gap-3">
             <Trophy className="h-8 w-8 text-amber-500 shrink-0" />
             <div>
-              <h3 className="text-lg font-semibold">RANKING</h3>
+              <h3 className="text-lg font-semibold">CLASIFICACIÓN</h3>
               <p className="text-sm text-default-400">
                 {selectedEventName ?? "—"}
               </p>
@@ -111,7 +111,7 @@ export const RankingTab = ({
           {/* IDLE — no event/category selected */}
           {!canFetch && (
             <div className="flex min-h-[120px] items-center justify-center rounded-2xl border border-dashed border-default-200 text-sm text-default-500">
-              Selecciona un evento y una categoría para ver el ranking.
+              Selecciona un evento y una categoría para ver la clasificación.
             </div>
           )}
 
@@ -125,14 +125,14 @@ export const RankingTab = ({
           {/* ERROR */}
           {canFetch && isError && !isLoading && (
             <div className="flex min-h-[120px] items-center justify-center rounded-2xl border border-dashed border-danger-200 text-sm text-danger-500">
-              No se pudo cargar el ranking. Intenta nuevamente.
+              No se pudo cargar la clasificación. Intenta nuevamente.
             </div>
           )}
 
           {/* NO DATA */}
           {canFetch && !isLoading && !isError && data && items.length === 0 && (
             <div className="flex min-h-[180px] items-center justify-center rounded-2xl border border-dashed border-default-200 text-sm text-default-500">
-              No hay proyectos evaluados para mostrar el ranking.
+              No hay proyectos evaluados para mostrar la clasificación.
             </div>
           )}
 
@@ -140,7 +140,7 @@ export const RankingTab = ({
           {canFetch && !isLoading && !isError && items.length > 0 && (
             <>
               <div className="overflow-hidden rounded-2xl border border-default-200/80">
-                <Table aria-label="Ranking de proyectos" selectionMode="none">
+                <Table aria-label="Clasificación de proyectos" selectionMode="none">
                   <TableHeader>
                     <TableColumn className="w-16">Pos.</TableColumn>
                     <TableColumn>Proyecto</TableColumn>

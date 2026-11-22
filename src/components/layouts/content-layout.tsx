@@ -17,7 +17,7 @@ export const ContentLayout = ({ children, title = '' }: ContentLayoutProps) => {
       <div className="flex justify-between mx-auto max-w-7xl px-4 sm:px-6 md:px-8">
         <h1 className="text-2xl md:text-3xl font-semibold text-white">{title}</h1>
         {
-          title === 'Projects' &&
+          title === 'Proyectos' &&
         <Can permission={PERMISSIONS.readGrades}>
           <ExportEventReportButton
             eventId={eventId}

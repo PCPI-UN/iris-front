@@ -4,6 +4,13 @@ import type { ComponentProps } from "react";
 import { Can } from "@/components/auth/can";
 import { PERMISSIONS } from "@/lib/authorization";
 import { SquarePen } from "lucide-react";
+import { useEffect, useState } from "react";
+
+import { useCriterion } from "../api/get-criterion";
+import {
+  updateCriteriaInputSchema,
+  useUpdateCriteria,
+} from "../api/update-criteria";
 
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
@@ -19,14 +26,8 @@ import { useDisclosure } from "@/hooks/use-disclosure";
 import { useNotifications } from "@/components/ui/notifications";
 import { useUser } from "@/lib/auth";
 import { Select, SelectItem } from "@/components/ui/select";
-import { useEffect, useState } from "react";
 import { useEvents } from "@/features/events/api/get-events";
 import { useCategories } from "@/features/courses/api/get-categories";
-import { useCriterion } from "../api/get-criterion";
-import {
-  updateCriteriaInputSchema,
-  useUpdateCriteria,
-} from "../api/update-criteria";
 import { Input } from "@/components/ui/input";
 
 type UpdateCriteriaProps = {
@@ -48,7 +49,9 @@ const UpdateCriteriaContent = ({
   );
   const normalizeForUI = (raw?: number) => {
     const val = Number(raw ?? 0);
+
     if (val > 1) return Number(val.toFixed(3));
+
     return Number((val * 100).toFixed(3));
   };
   // weightPercent may have up to 3 decimals; weightInput preserves raw typed text
@@ -63,12 +66,14 @@ const UpdateCriteriaContent = ({
     }
     const dotCount = (raw.match(/\./g) || []).length;
     const commaCount = (raw.match(/,/g) || []).length;
+
     if (dotCount > 1 || commaCount > 1) {
       return "No puede tener más de un punto o más de una coma";
     }
     if (dotCount > 0 && commaCount > 0) {
       return "No puede mezclar punto y coma";
     }
+
     return null;
   };
 
@@ -78,8 +83,8 @@ const UpdateCriteriaContent = ({
       onSuccess: () => {
         addNotification({
           type: "success",
-          title: "Criteria Updated",
-          message: "The evaluation criteria has been updated successfully.",
+          title: "Criterio actualizado",
+          message: "El criterio de evaluación se actualizó correctamente.",
         });
         onClose();
       },
@@ -87,7 +92,7 @@ const UpdateCriteriaContent = ({
         addNotification({
           type: "error",
           title: "Error",
-          message: error?.message || "Failed to update criteria",
+          message: error?.message || "No se pudo actualizar el criterio",
         });
       },
     },
@@ -103,8 +108,10 @@ const UpdateCriteriaContent = ({
       const preselected = criterion.categoryIds
         ? new Set(criterion.categoryIds.map((id) => String(id)))
         : new Set<string>();
+
       setSelectedCategories(preselected);
       const initial = normalizeForUI(criterion.weight);
+
       setWeightPercent(initial);
       setWeightInput(String(initial));
       setNameLength(criterion.name?.length ?? 0);
@@ -113,6 +120,7 @@ const UpdateCriteriaContent = ({
 
   useEffect(() => {
     const available = availableWeightPercent;
+
     if (typeof available === "number") {
       if (weightPercent > available) {
         setWeightError(
@@ -137,11 +145,11 @@ const UpdateCriteriaContent = ({
   return (
     <>
       <Button
-        className="w-full"
-        variant="shadow"
-        size="sm"
         isIconOnly
         aria-label="Editar criterio"
+        className="w-full"
+        size="sm"
+        variant="shadow"
         onPress={() => {
           criterionQuery.refetch();
           onOpen();
@@ -150,23 +158,23 @@ const UpdateCriteriaContent = ({
         <SquarePen size={16} />
       </Button>
       <Modal
-        isOpen={isOpen}
-        onOpenChange={onOpenChange}
-        size="md"
-        scrollBehavior="inside"
         classNames={{
           base: "mx-3 my-4 max-h-[86dvh] sm:mx-0 sm:my-0 sm:max-h-none",
           body: "max-h-[58dvh] overflow-y-auto sm:max-h-none sm:overflow-visible",
         }}
+        isOpen={isOpen}
+        scrollBehavior="inside"
+        size="md"
+        onOpenChange={onOpenChange}
       >
         <ModalContent>
           {(onClose) => {
             if (criterionQuery.isLoading) {
               return (
                 <>
-                  <ModalHeader>Update Criteria</ModalHeader>
+                  <ModalHeader>Actualizar criterio</ModalHeader>
                   <ModalBody className="flex items-center justify-center py-12">
-                    <div>Loading...</div>
+                    <div>Cargando...</div>
                   </ModalBody>
                 </>
               );
@@ -175,12 +183,12 @@ const UpdateCriteriaContent = ({
             if (!criterion) {
               return (
                 <>
-                  <ModalHeader>Update Criteria</ModalHeader>
+                  <ModalHeader>Actualizar criterio</ModalHeader>
                   <ModalBody>
-                    <p>Criteria not found</p>
+                    <p>Criterio no encontrado</p>
                   </ModalBody>
                   <ModalFooter>
-                    <Button onPress={onClose}>Close</Button>
+                    <Button onPress={onClose}>Cerrar</Button>
                   </ModalFooter>
                 </>
               );
@@ -204,10 +212,12 @@ const UpdateCriteriaContent = ({
                       title: "Nombre muy largo",
                       message: `El nombre del criterio no puede superar ${CRITERION_NAME_MAX_LENGTH} caracteres.`,
                     });
+
                     return;
                   }
 
                   const data: any = {};
+
                   if (rawName) data.name = rawName;
                   if (rawData.description)
                     data.description = rawData.description;
@@ -216,6 +226,7 @@ const UpdateCriteriaContent = ({
                     0,
                     Math.min(100, Number(weightPercent) || 0),
                   );
+
                   normalizedWeightPercent = Number(
                     normalizedWeightPercent.toFixed(3),
                   );
@@ -231,6 +242,7 @@ const UpdateCriteriaContent = ({
                   try {
                     const values =
                       await updateCriteriaInputSchema.parseAsync(data);
+
                     await updateCriteriaMutation.mutateAsync({
                       data: values,
                       criterionId,
@@ -241,26 +253,27 @@ const UpdateCriteriaContent = ({
                 }}
               >
                 <ModalHeader className="flex flex-col gap-1">
-                  Update Criteria
+                  Actualizar criterio
                   <p className="text-sm font-normal text-gray-500">
-                    Update the evaluation criteria
+                    Actualiza el criterio de evaluación
                   </p>
                 </ModalHeader>
                 <ModalBody className="py-2">
                   <div className="mx-auto flex w-full max-w-sm min-w-0 flex-col gap-2 sm:max-w-md">
                     <Select
-                      label="Event"
-                      placeholder="Select an event"
+                      isRequired
                       defaultSelectedKeys={
                         criterion?.eventId ? [String(criterion.eventId)] : []
                       }
+                      isLoading={eventsQuery.isLoading}
+                      label="Evento"
+                      placeholder="Selecciona un evento"
                       onSelectionChange={(keys) => {
                         const id = Array.from(keys)[0] as string;
+
                         setSelectedEvent(id || "");
                         setSelectedCategories(new Set());
                       }}
-                      isLoading={eventsQuery.isLoading}
-                      isRequired
                     >
                       {events.map((event) => (
                         <SelectItem key={event.id}>{event.name}</SelectItem>
@@ -268,23 +281,24 @@ const UpdateCriteriaContent = ({
                     </Select>
 
                     <Select
-                      label="Categories"
+                      isDisabled={!selectedEvent}
+                      isLoading={!!selectedEvent && categoriesQuery.isLoading}
+                      label="Categorías"
                       placeholder={
                         selectedEvent
-                          ? "Select one or more categories"
-                          : "Select event first"
+                          ? "Selecciona una o más categorías"
+                          : "Selecciona primero un evento"
                       }
-                      selectionMode="multiple"
                       selectedKeys={selectedCategories}
+                      selectionMode="multiple"
                       onSelectionChange={(keys) => {
                         const set =
                           keys instanceof Set
                             ? keys
                             : new Set(Array.from(keys));
+
                         setSelectedCategories(set as Set<string>);
                       }}
-                      isDisabled={!selectedEvent}
-                      isLoading={!!selectedEvent && categoriesQuery.isLoading}
                     >
                       {selectedEvent ? (
                         categories.length ? (
@@ -293,40 +307,40 @@ const UpdateCriteriaContent = ({
                           ))
                         ) : (
                           <SelectItem key="no-categories" isDisabled>
-                            No categories
+                            Sin categorías
                           </SelectItem>
                         )
                       ) : (
                         <SelectItem key="select-event" isDisabled>
-                          Select event first
+                          Selecciona primero un evento
                         </SelectItem>
                       )}
                     </Select>
                     <Textarea
-                      label="Name"
-                      name="name"
+                      classNames={{ input: "max-h-24 overflow-y-auto" }}
                       defaultValue={criterion?.name ?? ""}
-                      placeholder="e.g., Technical Quality"
-                      maxLength={CRITERION_NAME_MAX_LENGTH}
-                      minRows={2}
-                      maxRows={3}
                       description={`${nameLength}/${CRITERION_NAME_MAX_LENGTH} caracteres`}
-                      isInvalid={nameLength > CRITERION_NAME_MAX_LENGTH}
                       errorMessage={`Máximo ${CRITERION_NAME_MAX_LENGTH} caracteres`}
+                      isInvalid={nameLength > CRITERION_NAME_MAX_LENGTH}
+                      label="Nombre"
+                      maxLength={CRITERION_NAME_MAX_LENGTH}
+                      maxRows={3}
+                      minRows={2}
+                      name="name"
+                      placeholder="ej. Calidad técnica"
                       onChange={(event) =>
                         setNameLength(event.target.value.length)
                       }
-                      classNames={{ input: "max-h-24 overflow-y-auto" }}
                     />
 
                     <Textarea
-                      label="Description"
-                      name="description"
-                      defaultValue={criterion?.description ?? ""}
-                      placeholder="Brief description of the criteria"
-                      minRows={2}
-                      maxRows={3}
                       classNames={{ input: "max-h-24 overflow-y-auto" }}
+                      defaultValue={criterion?.description ?? ""}
+                      label="Descripción"
+                      maxRows={3}
+                      minRows={2}
+                      name="description"
+                      placeholder="Breve descripción del criterio"
                     />
 
                     <div className="space-y-1.5">
@@ -338,61 +352,72 @@ const UpdateCriteriaContent = ({
                           {weightPercent}%
                         </span>
                       </div>
-                        <div className="flex items-center gap-3 min-w-0">
-                          <input
-                            type="range"
-                            min={0}
-                            max={100}
-                            step={1}
-                            value={Math.round(Number(weightPercent) || 0)}
-                            onChange={(event) => {
-                              const intVal = Math.round(Number(event.target.value));
-                              setWeightPercent(intVal);
-                              setWeightInput(String(intVal));
-                            }}
-                            className="w-full accent-primary"
-                            aria-label="Peso del criterio"
-                            aria-valuemin={0}
-                            aria-valuemax={100}
-                            aria-valuenow={Math.round(Number(weightPercent) || 0)}
-                          />
-                          <Input
-                            type="text"
-                            inputMode="decimal"
-                            pattern="[0-9.,]*"
-                            value={weightInput}
-                            onChange={(e: any) => {
-                              const raw = String(e.target.value);
-                              const error = validateWeightInput(raw);
-                              setWeightInput(raw);
+                      <div className="flex items-center gap-3 min-w-0">
+                        <input
+                          aria-label="Peso del criterio"
+                          aria-valuemax={100}
+                          aria-valuemin={0}
+                          aria-valuenow={Math.round(Number(weightPercent) || 0)}
+                          className="w-full accent-primary"
+                          max={100}
+                          min={0}
+                          step={1}
+                          type="range"
+                          value={Math.round(Number(weightPercent) || 0)}
+                          onChange={(event) => {
+                            const intVal = Math.round(
+                              Number(event.target.value),
+                            );
+
+                            setWeightPercent(intVal);
+                            setWeightInput(String(intVal));
+                          }}
+                        />
+                        <Input
+                          className="w-28 min-w-0 flex-shrink-0"
+                          inputMode="decimal"
+                          pattern="[0-9.,]*"
+                          type="text"
+                          value={weightInput}
+                          onBlur={() => {
+                            const error = validateWeightInput(weightInput);
+
+                            if (error) {
                               setWeightError(error);
-                              if (error) return;
-                              const numeric = raw.replace(",", ".");
-                              if (/^\d+(?:\.\d*)?$/.test(numeric)) {
-                                const parts = numeric.split(".");
-                                if (parts[1] && parts[1].length > 3) return;
-                                const parsed = Number(numeric);
-                                if (!Number.isNaN(parsed)) setWeightPercent(parsed);
-                              }
-                            }}
-                            onBlur={() => {
-                              const error = validateWeightInput(weightInput);
-                              if (error) {
-                                setWeightError(error);
-                                return;
-                              }
-                              const normalized = weightInput.replace(",", ".");
-                              let parsed = Number(normalized);
-                              if (!Number.isFinite(parsed)) parsed = 0;
-                              parsed = Math.max(0, Math.min(100, parsed));
-                              parsed = Number(parsed.toFixed(3));
-                              setWeightPercent(parsed);
-                              setWeightInput(String(parsed));
-                              setWeightError(null);
-                            }}
-                            className="w-28 min-w-0 flex-shrink-0"
-                          />
-                        </div>
+
+                              return;
+                            }
+                            const normalized = weightInput.replace(",", ".");
+                            let parsed = Number(normalized);
+
+                            if (!Number.isFinite(parsed)) parsed = 0;
+                            parsed = Math.max(0, Math.min(100, parsed));
+                            parsed = Number(parsed.toFixed(3));
+                            setWeightPercent(parsed);
+                            setWeightInput(String(parsed));
+                            setWeightError(null);
+                          }}
+                          onChange={(e: any) => {
+                            const raw = String(e.target.value);
+                            const error = validateWeightInput(raw);
+
+                            setWeightInput(raw);
+                            setWeightError(error);
+                            if (error) return;
+                            const numeric = raw.replace(",", ".");
+
+                            if (/^\d+(?:\.\d*)?$/.test(numeric)) {
+                              const parts = numeric.split(".");
+
+                              if (parts[1] && parts[1].length > 3) return;
+                              const parsed = Number(numeric);
+
+                              if (!Number.isNaN(parsed))
+                                setWeightPercent(parsed);
+                            }
+                          }}
+                        />
+                      </div>
                       <p className="text-xs text-default-500">
                         Rango permitido: 0% a 100%.
                       </p>
@@ -409,18 +434,18 @@ const UpdateCriteriaContent = ({
                 </ModalBody>
                 <ModalFooter>
                   <Button color="danger" variant="light" onPress={onClose}>
-                    Cancel
+                    Cancelar
                   </Button>
                   <Button
-                    type="submit"
-                    isLoading={updateCriteriaMutation.isPending}
                     disabled={
                       updateCriteriaMutation.isPending ||
                       !!weightError ||
                       nameLength > CRITERION_NAME_MAX_LENGTH
                     }
+                    isLoading={updateCriteriaMutation.isPending}
+                    type="submit"
                   >
-                    Save Changes
+                    Guardar cambios
                   </Button>
                 </ModalFooter>
               </Form>

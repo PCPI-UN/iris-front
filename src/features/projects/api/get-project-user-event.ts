@@ -6,7 +6,7 @@ import { QueryConfig } from "@/lib/react-query";
 import { Event, Project } from "@/types/api";
 
 export const getProjectInputSchema = z.object({
-  eventId: z.string().min(1, "Event ID is required"),
+  eventId: z.string().min(1, "El ID del evento es obligatorio"),
 });
 
 export type GetProjectInput = z.infer<typeof getProjectInputSchema>;
@@ -24,6 +24,7 @@ export const getProject = async ({
   eventId,
 }: GetProjectInput): Promise<ProjectByEventPayload | null> => {
   const validatedInput = getProjectInputSchema.parse({ eventId });
+
   try {
     const response = await api.get<any>(
       `/events/${validatedInput.eventId}/my-project`,
@@ -51,7 +52,7 @@ export const getProject = async ({
       };
     }
 
-    throw new Error("Invalid project response");
+    throw new Error("Respuesta inválida del proyecto");
   } catch (error) {
     // The backend answers 404 when the user has no project in the event.
     if (error instanceof ApiError && error.status === 404) {
