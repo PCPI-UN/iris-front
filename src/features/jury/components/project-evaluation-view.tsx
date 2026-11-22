@@ -34,13 +34,10 @@ import { Spinner } from "@heroui/spinner"
 import { normalizeCategoryId } from "@/lib/compat/category-legacy"
 import { EventType } from '@/types/api'
 import { documentLink, type DocumentRef } from "@/lib/document-link";
+import { useEventGradingScale } from "@/features/grading-scales/api/get-event-grading-scale"
+import { toScoreLevelOptions } from "@/features/grading-scales/utils/grading-scale"
 
-const SCORE_SCALE = [
-  { value: 1, label: "Insuficiente" },
-  { value: 2, label: "Aceptable" },
-  { value: 3, label: "Bueno" },
-  { value: 4, label: "Excelente" },
-]
+import { ScoreLevelPicker } from "./score-level-picker"
 
 type ProjectEvaluationViewProps = {
   projectId: string
@@ -80,6 +77,13 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
   const myEventsQuery = useMyEvents({ page: 1, queryConfig: { enabled: !!project?.eventId } })
   const currentEvent = myEventsQuery.data?.data?.find((e: any) => String(e.id) === String(project?.eventId))
   const showProjectCode = currentEvent?.eventType === EventType.Exposition
+
+  // Escala del evento: de "mis eventos" si la trae, si no de GET /events/:id (sin permiso → null)
+  const eventScaleQuery = useEventGradingScale({
+    eventId: Number(project?.eventId),
+    queryConfig: { enabled: Boolean(project?.eventId) && !currentEvent?.gradingScale },
+  })
+  const scoreOptions = toScoreLevelOptions(currentEvent?.gradingScale ?? eventScaleQuery.data)
 
   const {
     data: categoryCriteriaData,
@@ -372,37 +376,12 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
                         {criterion.name}
                       </p>
 
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-xs md:text-sm text-muted-foreground px-1">
-                          {SCORE_SCALE.map((scale) => (
-                            <span key={scale.value} className="flex-1 w-full text-center">
-                              {scale.label}
-                            </span>
-                          ))}
-                        </div>
-
-                        <div className="flex items-center justify-between gap-2 md:gap-4 bg-muted/5 border-border rounded-lg p-3 md:p-4">
-                          {SCORE_SCALE.map((scale) => (
-                            <button
-                              key={scale.value}
-                              onClick={() => handleScoreChange(criterion.id, scale.value)}
-                              className="flex flex-col items-center gap-2 cursor-pointer group flex-1"
-                            >
-                              <div
-                                className={`h-6 w-6 md:h-7 md:w-7 rounded-full border-2 flex items-center justify-center transition-all ${
-                                  scores[criterion.id] === scale.value
-                                    ? "border-primary bg-primary shadow-md scale-110"
-                                    : "border-muted-foreground/30 group-hover:border-muted-foreground/50"
-                                }`}
-                              >
-                                {scores[criterion.id] === scale.value && (
-                                  <div className="h-3 w-3 md:h-3.5 md:w-3.5 rounded-full bg-primary-foreground" />
-                                )}
-                              </div>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
+                      <ScoreLevelPicker
+                        criterionName={criterion.name}
+                        options={scoreOptions}
+                        value={scores[criterion.id]}
+                        onChange={(level) => handleScoreChange(criterion.id, level)}
+                      />
                     </div>
                   ))}
                 </div>

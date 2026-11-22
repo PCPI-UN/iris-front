@@ -1,5 +1,7 @@
 "use client";
 
+import { Can } from "@/components/auth/can";
+import { PERMISSIONS } from "@/lib/authorization";
 import { Plus } from "lucide-react";
 import { useState } from "react";
 
@@ -24,7 +26,7 @@ import {
 } from "../api/create-category";
 import { Input } from "@/components/ui/input";
 
-export const CreateCategory = () => {
+const CreateCategoryContent = () => {
   const { addNotification } = useNotifications();
   const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
   const [selectedEvent, setSelectedEvent] = useState<string>("");
@@ -157,3 +159,10 @@ export const CreateCategory = () => {
     </>
   );
 };
+
+// Only sessions that can call the endpoint see the action
+export const CreateCategory = () => (
+  <Can permission={PERMISSIONS.createEventMembers}>
+    <CreateCategoryContent />
+  </Can>
+);

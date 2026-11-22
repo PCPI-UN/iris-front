@@ -1,6 +1,7 @@
 'use client';
 
 import { useUser } from '@/lib/auth';
+import { canViewAdministration } from '@/lib/authorization';
 import { StudentDashboard } from '@/app/app/_components/student-dashboard';
 import { JuryDashboard } from '@/app/app/_components/jury-dashboard';
 import { useMyEvents } from '@/features/events/api/get-my-events';
@@ -20,23 +21,27 @@ export const EventDashboard = ({ eventId }: EventDashboardProps) => {
   const router = useRouter();
   const normalizedEventId = extractEventIdFromSlug(eventId).eventId;
 
+  const events = eventsQuery.data?.data || [];
+  const currentEvent = events.find((event) => String(event.id) === normalizedEventId || String(event.id) === String(eventId));
+  const isLoading = eventsQuery.isLoading || user.isLoading;
+  // Staff (read:events) without a role in this event uses the administration views.
+  // A staff member who is also juror or participant of the event keeps that dashboard.
+  const isStaffWithoutEventRole =
+    canViewAdministration(user.data) && !currentEvent?.role?.name;
+
   useEffect(() => {
-    // Si es ADMIN, redirigir al dashboard principal
-    if (user.data?.platformRoles.some(userRole => userRole.name === 'Admin')) {
+    if (!isLoading && isStaffWithoutEventRole) {
       router.replace('/app');
     }
-  }, [user.data?.platformRoles, router]);
+  }, [isLoading, isStaffWithoutEventRole, router]);
 
-  if (eventsQuery.isLoading || user.isLoading) {
+  if (isLoading) {
     return (
       <div className="flex h-48 w-full items-center justify-center">
         <Spinner size="lg" />
       </div>
     );
   }
-
-  const events = eventsQuery.data?.data || [];
-  const currentEvent = events.find((event) => String(event.id) === normalizedEventId || String(event.id) === String(eventId));
 
   // Renderizar el dashboard según el rol del usuario en este evento
   if (currentEvent?.role?.name === 'Juror') {
@@ -48,7 +53,7 @@ export const EventDashboard = ({ eventId }: EventDashboardProps) => {
   // del estudiante lo indica; nunca muestra el proyecto de otro evento.
   if (
     currentEvent?.role?.name === 'Participant' ||
-    user.data?.platformRoles?.some((r) => r.name === 'User')
+    !canViewAdministration(user.data)
   ) {
     return <StudentDashboard eventId={normalizedEventId || eventId} />;
   }

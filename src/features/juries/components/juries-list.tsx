@@ -22,6 +22,7 @@ import { InviteModal } from "./invite-modal";
 import { AcceptInvitationModal } from "./accept-invitation-modal";
 import { ResendInvitationButton } from "./resend-invitation-button";
 import type { InvitationStatus } from "@/types/api";
+import { getEmailStatusView } from "../utils/email-status";
 import { api } from "@/lib/api-client";
 
 export const JuriesList = () => {
@@ -254,6 +255,7 @@ const filteredInvitations = useMemo(() => {
     { key: "email", label: "Correo" },
     { key: "event", label: "Evento" },
     { key: "status", label: "Estado" },
+    { key: "emailStatus", label: "Envío del correo" },
     { key: "expiresAt", label: "Expira" },
     { key: "createdAt", label: "Fecha de invitación" },
     { key: "actions", label: "Acciones" },
@@ -310,6 +312,23 @@ const filteredInvitations = useMemo(() => {
                 >
                   {getStatusLabel(item.status)}
                 </Chip>
+              </TableCell>
+              <TableCell align="center">
+                {(() => {
+                  // Delivery of the invitation email (registered, sent or failed)
+                  const email = getEmailStatusView(item.emailStatus);
+                  return (
+                    <Chip
+                      className="w-full"
+                      color={email.color}
+                      size="sm"
+                      variant="flat"
+                      title={email.description}
+                    >
+                      {email.label}
+                    </Chip>
+                  );
+                })()}
               </TableCell>
               <TableCell align="center">
                 {item.expiresAt
