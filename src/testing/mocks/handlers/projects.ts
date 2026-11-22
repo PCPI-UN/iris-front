@@ -109,7 +109,10 @@ const mapProjectToDTO = (project: any): ProjectDTO => {
     projectCode: project.projectCode ?? "",
     eventNumber: project.eventNumber || "",
     createdAt: project.createdAt,
-    documents: project.documents ?? [],
+    // Like the gateway, the reads leave the INACTIVE documents out
+    documents: (project.documents ?? []).filter(
+      (document: { state?: string }) => document.state !== "INACTIVE"
+    ),
     reason: project.reason,
     participants: project.participants ?? [],
   };

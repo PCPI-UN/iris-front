@@ -15,7 +15,7 @@ import { RequestProjectModal } from "./request-change-modal";
 import { ViewDetails } from "./view-details";
 import { DataTable } from "@/components/data-table";
 import { columnsProject } from "./columns-project-table";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { readCategoryIdFromSearchParams } from "@/lib/compat/category-legacy";
 import { ParticipantsDetails } from "./participants-details";
 import { toEventTypeLabel } from "@/features/events/utils/event-enums";
@@ -57,30 +57,36 @@ export const ProjectList = () => {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [action, setAction] = useState<"approve" | "reject" | "request" | "change-state" | null>(null);
 
-  const handleApprove = (id: number) => {
-    setSelectedId(id);
-    setAction("approve");
-  };
-
-  const handleReject = (id: number) => {
-    setSelectedId(id);
-    setAction("reject");
-  };
-
-  const handleRequest = (id: number) => {
-    setSelectedId(id);
-    setAction("request");
-  };
-
   const handleChangeState = (id: number) => {
     setSelectedId(id);
     setAction("change-state");
   };
   const selectedProject = projects.find((project) => project.id === selectedId);
   {/* ======================== ACTIONS APPROVE, REJECT, REQUEST FOR TABLE ======================== */}
-  const columns = columnsProject({onApprove: handleApprove, onReject: handleReject, onRequest: handleRequest,
-    onChangeState: handleChangeState,
-  });
+  // Stable columns: DataTable renders each `Cell` as a component, so new functions on every
+  // render would remount the cells (and close the details modal) whenever the list refetches
+  const columns = useMemo(
+    () =>
+      columnsProject({
+        onApprove: (id) => {
+          setSelectedId(id);
+          setAction("approve");
+        },
+        onReject: (id) => {
+          setSelectedId(id);
+          setAction("reject");
+        },
+        onRequest: (id) => {
+          setSelectedId(id);
+          setAction("request");
+        },
+        onChangeState: (id) => {
+          setSelectedId(id);
+          setAction("change-state");
+        },
+      }),
+    [],
+  );
 
   const handlePageChange = (newPage: number) => {
     const params = new URLSearchParams();

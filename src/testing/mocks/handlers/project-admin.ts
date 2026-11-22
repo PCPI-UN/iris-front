@@ -633,11 +633,19 @@ export const projectAdminHandlers = [
             lastName,
           })),
       });
-      const before = snapshot(loaded.tutors);
-      const after = snapshot(tutors);
+      const before: Record<string, unknown> = snapshot(loaded.tutors);
+      const after: Record<string, unknown> = snapshot(tutors);
+
+      // Like the backend, only the fields that changed are recorded
+      for (const field of Object.keys(before)) {
+        if (JSON.stringify(before[field]) === JSON.stringify(after[field])) {
+          delete before[field];
+          delete after[field];
+        }
+      }
 
       await saveProject(projectId, { tutors });
-      if (JSON.stringify(before) !== JSON.stringify(after)) {
+      if (Object.keys(after).length > 0) {
         recordProjectChange(
           projectId,
           user,

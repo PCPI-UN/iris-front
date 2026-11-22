@@ -450,6 +450,17 @@ export const coursesHandlers = [
     }
   }),
 
+  // GET /events/courses/dropdown/:eventId: every category of the event (project forms and filters)
+  http.get(`${env.API_URL}/events/courses/dropdown/:eventId`, async ({ params }) => {
+    await networkDelay();
+    const internalEventId = toInternalPrefixedId(String(params.eventId), "event");
+    const courses = db.course
+      .getAll()
+      .filter((course) => String(course.eventId) === internalEventId);
+
+    return HttpResponse.json({ courses });
+  }),
+
   // Legacy route used by some selects
   http.get(`${env.API_URL}/courses-dropdown`, async ({ request }) => {
     await networkDelay();

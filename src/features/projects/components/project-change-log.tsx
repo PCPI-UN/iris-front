@@ -71,9 +71,21 @@ const formatValue = (field: string, value: unknown): string => {
     return value.length === 0
       ? "—"
       : value
-          .map((item) =>
-            typeof item === "object" ? JSON.stringify(item) : String(item),
-          )
+          .map((item) => {
+            if (item && typeof item === "object") {
+              // Pending tutors: { firstName, lastName, email }
+              const { firstName, lastName, email } = item as Record<string, unknown>;
+              const name = `${firstName ?? ""} ${lastName ?? ""}`.trim();
+
+              return name || email
+                ? [name || null, email ? `(${String(email)})` : null]
+                    .filter(Boolean)
+                    .join(" ")
+                : JSON.stringify(item);
+            }
+
+            return String(item);
+          })
           .join(", ");
   }
   if (typeof value === "object") {
