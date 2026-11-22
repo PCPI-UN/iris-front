@@ -25,7 +25,21 @@ const ROLE_LABELS: Record<string, string> = {
   Admin: "Administrador",
   User: "Estudiante",
   Participant: "Participante",
+  Tutor: "Tutor",
 };
+
+/**
+ * A PROJECT_TUTOR invitation (Iris#187) has no event: the gateway does not fill event or
+ * project for it, so it is recognised by its type or by the Tutor role.
+ */
+export const isTutorInvitation = (invitation: {
+  targetType?: string | null;
+  event?: unknown;
+  roles?: { name: string }[];
+}) =>
+  invitation.targetType === "PROJECT_TUTOR" ||
+  (!invitation.event &&
+    Boolean(invitation.roles?.some((role) => role.name === "Tutor")));
 
 export const Invitations = () => {
   const { data, isLoading, error } = useInvitations({ status: "PENDING" });
@@ -90,6 +104,47 @@ export const Invitations = () => {
     <div className="space-y-4">
       <div className="grid p-4 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {invitations.map((invitation) => {
+          if (isTutorInvitation(invitation)) {
+            const expiresAt = formatDateShort(invitation.expiresAt);
+
+            return (
+              <Card key={invitation.id} className="glass-card" shadow="sm">
+                <CardBody className="p-6 space-y-4 flex flex-col">
+                  <div className="flex items-start justify-between gap-2">
+                    <h3 className="text-xl font-semibold flex-1">
+                      Tutor de un proyecto
+                    </h3>
+                    <Chip color="secondary" size="sm" variant="flat">
+                      Tutor
+                    </Chip>
+                  </div>
+                  <p className="text-sm text-default-500">
+                    Te indicaron como tutor de un proyecto. Al aceptar quedas
+                    vinculado a él y recibes el rol de tutor.
+                  </p>
+                  <div className="flex items-center gap-2 p-1">
+                    <Clock className="h-4 w-4 text-default-400" />
+                    <div className="flex flex-col leading-tight">
+                      <span className="text-default-400 text-sm">Expira:</span>
+                      <span className="text-sm">{expiresAt.day}</span>
+                    </div>
+                  </div>
+                  <div className="mt-auto pt-2">
+                    <Button
+                      className="w-full transition-transform hover:scale-[1.01] md:text-base text-sm md:py-3 py-2 rounded-xl font-medium"
+                      color="primary"
+                      isDisabled={acceptMutation.isPending}
+                      isLoading={acceptMutation.isPending}
+                      onPress={() => handleAccept(invitation)}
+                    >
+                      Aceptar invitación
+                    </Button>
+                  </div>
+                </CardBody>
+              </Card>
+            );
+          }
+
           if (!invitation.event) return null;
 
           const start = formatDateShort(invitation.event.startDate);

@@ -2,7 +2,7 @@
 
 import { Card, CardBody, CardHeader } from "@heroui/react"
 import { Chip } from "@heroui/react"
-import { Users, FileText, Upload, CheckCircle2, AlertCircle } from "lucide-react"
+import { Users, FileText, Upload, CheckCircle2, AlertCircle, GraduationCap } from "lucide-react"
 import { WizardData } from "../project-wizard"
 import { useCategory } from "@/features/courses/api/get-category"
 import { getSemesterLabel, getCareerLabel } from "./constants-carrers-semesters"
@@ -84,6 +84,36 @@ export function ReviewStep({ data, eventType }: ReviewStepProps) {
           </div>
         </CardBody>
       </Card>
+
+      {/* Tutors Review (optional) */}
+      {(data.tutors.linked.length > 0 || data.tutors.pending.length > 0) && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <GraduationCap className="h-5 w-5 text-primary" />
+              <h3 className="text-lg font-semibold">Tutores</h3>
+              <Chip size="sm" color="primary" variant="flat">
+                {data.tutors.linked.length + data.tutors.pending.length}
+              </Chip>
+            </div>
+          </CardHeader>
+          <CardBody>
+            <ul className="space-y-2">
+              {data.tutors.linked.map((tutor) => (
+                <li key={`linked-${tutor.id}`} className="text-sm">
+                  {[tutor.firstName, tutor.lastName].filter(Boolean).join(" ")}
+                </li>
+              ))}
+              {data.tutors.pending.map((tutor) => (
+                <li key={`pending-${tutor.email}`} className="text-sm">
+                  {[tutor.firstName, tutor.lastName].filter(Boolean).join(" ")}
+                  <span className="text-default-500"> · {tutor.email} · Pendiente de invitación</span>
+                </li>
+              ))}
+            </ul>
+          </CardBody>
+        </Card>
+      )}
 
       {/* Project Details Review (Only for Exposition) */}
       {eventType === "Exposition" && (

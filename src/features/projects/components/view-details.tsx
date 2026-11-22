@@ -7,6 +7,8 @@ import { Project } from "@/types/api";
 import { Eye, FileText } from "lucide-react";
 import { ParticipantsDetails } from "./participants-details";
 import { documentLink } from "@/lib/document-link";
+import { EditTutors } from "./edit-tutors";
+import { TutorsList } from "./tutors-list";
 
 export const ViewDetails = ({project} : {project: Project}) => {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
@@ -37,6 +39,14 @@ export const ViewDetails = ({project} : {project: Project}) => {
                     <p className="text-sm font-light">
                         {project.description}
                     </p>
+                </section>
+
+                <section className="space-y-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <h2 className="font-medium bg-gradient-to-br from-white via-white/80 to-white bg-clip-text text-transparent inline-block">Tutores</h2>
+                    <EditTutors project={project} />
+                  </div>
+                  <TutorsList tutors={project.tutors} />
                 </section>
 
                 <section className="space-y-2">

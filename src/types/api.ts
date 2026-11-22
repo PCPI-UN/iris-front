@@ -168,11 +168,25 @@ export type Project = Entity<{
   documents: ProjectDocument[];
   jurorAssignments: ProjectAssignment[];
   pendingParticipants: ProjectParticipant[];
+  /** Tutors of the project, linked first and then pending; absent in projects read before tutors existed */
+  tutors?: ProjectTutor[];
   reason: string;
   evaluated: boolean;
   createdAt: number;
   updatedAt: number;
 }>;
+
+/**
+ * Tutor of a project (Iris#187): linked to a user (userId) or pending, typed in by the student.
+ * Linked tutors expose no email; pending ones do.
+ */
+export type ProjectTutor = {
+  userId?: number;
+  firstName: string;
+  lastName?: string;
+  pending: boolean;
+  email?: string;
+};
 
 export type ProjectDocument = Entity<{
   id: string;
