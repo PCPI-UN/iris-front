@@ -2,22 +2,9 @@
 
 import * as React from "react";
 import Image from "next/image";
-import {
-  Home,
-  Calendar,
-  Users as UsersIcon,
-  type LucideIcon,
-  Presentation,
-  ShieldCheck,
-  ArrowDownAZ,
-  SquareChartGantt,
-  Mail,
-  ChartNoAxesCombined,
-  PinIcon,
-} from "lucide-react";
 
 import { NavUser } from "./nav-user";
-
+import { getSidebarItems } from "./sidebar-items";
 import {
   Sidebar,
   SidebarContent,
@@ -37,80 +24,9 @@ import "@/features/landing/index.css";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const user = useUser();
-  const primaryRoleName =
-    user.data?.platformRoles?.[0]?.name ??
-    ((user.data as { role?: string } | undefined)?.role === "ADMIN"
-      ? "Admin"
-      : "User");
+  // Union of what every role of the session allows (not only the first role)
+  const menuItems = React.useMemo(() => getSidebarItems(user.data), [user.data]);
 
-  const getMenuItems = React.useMemo((): {
-    title: string;
-    url: string;
-    icon: LucideIcon;
-  }[] => {
-    switch (primaryRoleName) {
-      case "Admin":
-        return [
-          { title: "Dashboard", url: paths.app.root.getHref(), icon: Home },
-          { title: "Eventos", url: paths.app.events.getHref(), icon: Calendar },
-          {
-            title: "Eventos anteriores",
-            url: paths.app.pastEvents.getHref(),
-            icon: Calendar,
-          },
-          {
-            title: "Categorías",
-            url: paths.app.categories.getHref(),
-            icon: ArrowDownAZ,
-          },
-          {
-            title: "Proyectos",
-            url: paths.app.projects.getHref(),
-            icon: SquareChartGantt,
-          },
-          {
-            title: "Monitoreo",
-            url: paths.app.monitoring.getHref(),
-            icon: ChartNoAxesCombined,
-          },
-          {
-            title: "Criterios",
-            url: paths.app.criteria.getHref(),
-            icon: Presentation,
-          },
-          {
-            title: "Jurados",
-            url: paths.app.juries.getHref(),
-            icon: UsersIcon,
-          },
-          {
-            title: "Asignaciones",
-            url: paths.app.assignments.getHref(),
-            icon: PinIcon,
-          },
-          {
-            title: "Administradores",
-            url: paths.app.administrators.getHref(),
-            icon: ShieldCheck,
-          },
-        ];
-      case "User":
-        return [
-          { title: "Dashboard", url: paths.app.root.getHref(), icon: Home },
-          {
-            title: "Mis invitaciones",
-            url: paths.app.invitations.getHref(),
-            icon: Mail,
-          },
-        ];
-      default:
-        return [
-          { title: "Dashboard", url: paths.app.root.getHref(), icon: Home },
-        ];
-    }
-  }, [primaryRoleName]);
-
-  const menuItems = getMenuItems;
 
   const data = React.useMemo(
     () => ({

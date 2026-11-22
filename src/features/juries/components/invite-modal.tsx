@@ -39,7 +39,10 @@ export const InviteModal = () => {
       onSuccess: async () => {
         addNotification({
           type: "success",
-          title: "Jurado invitado exitosamente",
+          // The email is registered and sent in the background (not "sent" yet)
+          title: "Invitación registrada",
+          message:
+            'El correo al jurado se enviará en unos minutos. Su estado aparece en "Envío del correo".',
         });
         await queryClient.invalidateQueries({ queryKey: ["jury-invitations"] });
         setSelectedEventKey("");

@@ -1,5 +1,6 @@
 import { Event } from "@/types/api";
 import { toEventTypeCode, toEvaluationTypeCode } from "../utils/event-enums";
+import { normalizeGradingScale } from "@/features/grading-scales/utils/grading-scale";
 
 const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -172,6 +173,9 @@ export const normalizeEvent = (raw: any): Event => {
         : Boolean(raw?.isPublic),
     evaluationsOpened,
     resultsPublished: raw?.resultsPublished === true,
+    termId: typeof raw?.termId === "number" ? raw.termId : undefined,
+    // The gateway leaves false booleans out of the response
+    requiresCourse: raw?.requiresCourse === true,
     statusName: raw?.statusName ?? (active ? "ACTIVE" : "INACTIVE"),
     location: raw?.location,
     locationDetails,
@@ -182,6 +186,7 @@ export const normalizeEvent = (raw: any): Event => {
     inscriptionRequirements: raw?.inscriptionRequirements,
     aboutOurAllies: raw?.aboutOurAllies,
     evaluationType: toEvaluationTypeCode(raw?.evaluationType),
+    gradingScale: normalizeGradingScale(raw?.gradingScale),
     minimumTeamSize: raw?.minimumTeamSize,
     specificInscriptionDetails: raw?.specificInscriptionDetails,
     categories,

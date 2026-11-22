@@ -1,6 +1,7 @@
 import '@testing-library/jest-dom/vitest';
 
 import { initializeDb, resetDb } from '@/testing/mocks/db';
+import { resetGradingScalesMockState } from '@/testing/mocks/handlers/grading-scales';
 import { resetStudentDashboardMockState } from '@/testing/mocks/handlers/student-dashboard';
 import { server } from '@/testing/mocks/server';
 
@@ -57,5 +58,6 @@ beforeEach(() => {
 afterEach(() => {
   server.resetHandlers();
   resetStudentDashboardMockState();
+  resetGradingScalesMockState();
   resetDb();
 });

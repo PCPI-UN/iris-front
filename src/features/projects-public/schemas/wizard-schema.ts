@@ -27,6 +27,13 @@ const assignedNumberSchema = z.union([
   z.literal(''),
 ]).optional()
 
+/** NRC of the course section, looked up by the backend in the academic term of the event */
+export const nrcSchema = z
+  .string()
+  .trim()
+  .min(1, 'Debe ingresar el NRC del curso')
+  .max(20, 'El NRC no puede exceder 20 caracteres')
+
 export const projectSchema = z.object({
   projectCode: assignedNumberSchema,
   name: z.string().min(3, 'El nombre debe tener al menos 3 caracteres').max(255, 'El nombre no puede exceder 255 caracteres'),

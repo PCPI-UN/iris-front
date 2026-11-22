@@ -1,5 +1,8 @@
 "use client";
 
+import type { ComponentProps } from "react";
+import { Can } from "@/components/auth/can";
+import { PERMISSIONS } from "@/lib/authorization";
 import { Pencil, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -39,7 +42,7 @@ type CreateComponentProps = {
   eventId?: number;
 };
 
-export const CreateComponent = ({
+const CreateComponentContent = ({
   onCreated,
   onUpdated,
   componentToEdit,
@@ -295,3 +298,10 @@ export const CreateComponent = ({
     </>
   );
 };
+
+// Only sessions that can call the endpoint see the action
+export const CreateComponent = (props: ComponentProps<typeof CreateComponentContent>) => (
+  <Can permission={PERMISSIONS.manageEvents}>
+    <CreateComponentContent {...props} />
+  </Can>
+);

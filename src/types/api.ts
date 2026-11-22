@@ -1,3 +1,5 @@
+import type { GradingScale } from "@/features/grading-scales/utils/grading-scale";
+
 export type BaseEntity = {
   id: string;
   createdAt: number;
@@ -73,6 +75,13 @@ export enum EvaluationType {
   FINAL_PROJECTS = 3,
 }
 
+/** Academic term: 2026 + "10" is the term 202610 */
+export type Term = {
+  id: number;
+  year: number;
+  period: string;
+};
+
 export type Event = Entity<{
   id: number;
   name: string;
@@ -85,6 +94,10 @@ export type Event = Entity<{
   evaluationsOpened: boolean;
   /** When false, students do not see score, feedback, position or awards */
   resultsPublished: boolean;
+  /** Academic term of the event (GET /terms); -1 for events created before terms existed */
+  termId?: number;
+  /** true: each project must belong to a course section (NRC) of the term */
+  requiresCourse: boolean;
   statusName: string;
   location?: string;
   locationDetails?: string;
@@ -93,7 +106,10 @@ export type Event = Entity<{
   inscriptionCost?: number;
   inscriptionRequirements?: string;
   aboutOurAllies?: string;
+  /** @deprecated El backend usa `gradingScale`; solo se lee de eventos antiguos */
   evaluationType?: EvaluationType | "ZERO_TO_FIVE" | "ZERO_TO_HUNDRED" | "FINAL_PROJECTS";
+  /** Escala de calificación del evento (en `GET /events/:id` y en las respuestas de crear y editar) */
+  gradingScale?: GradingScale | null;
   eventType: EventType;
   minimumTeamSize?: number;
   specificInscriptionDetails?: {
@@ -250,7 +266,15 @@ export type JuryInvitation = {
   roles: InvitationRole[];
   event: Event;
   project: any | null;
+  /**
+   * Email delivery of the invitation (GET /invitations/events/:eventId, Iris#200).
+   * Absent when unknown: invitations older than the delivery log, or tutor invitations.
+   */
+  emailStatus?: InvitationEmailStatus;
 };
+
+/** PENDING: registered or waiting for a retry; SENT: delivered; FAILED: every attempt failed */
+export type InvitationEmailStatus = "PENDING" | "SENT" | "FAILED";
 
 export type InvitationsMeta = {
   total: number;

@@ -1,39 +1,94 @@
-import { User } from '@/types/api';
+import { User } from "@/types/api";
 
 import {
   canCreateEvent,
   canInviteJury,
+  canManageUserRoles,
   canUpdateProject,
+  canViewAdministration,
   canViewCategories,
-} from '../authorization';
+  canViewUsers,
+  hasAllPermissions,
+  hasAnyPermission,
+  hasPermission,
+} from "../authorization";
 
-const withRoles = (...names: string[]) =>
+const withPermissions = (permissions: string[], roleNames: string[] = []) =>
   ({
-    id: '1',
-    platformRoles: names.map((name) => ({ name })),
+    id: 1,
+    platformRoles: roleNames.map((name) => ({ name })),
+    platformPermissions: permissions,
   }) as unknown as User;
 
-describe('Authorization', () => {
-  const admin = withRoles('Admin');
-  const user = withRoles('User');
+// Same permissions as the backend catalogue (auth-service migration)
+const admin = withPermissions(
+  [
+    "read:events",
+    "manage:events",
+    "read:grades",
+    "read:users",
+    "manage:user_roles",
+    "manage:admins",
+  ],
+  ["Admin"],
+);
+const dean = withPermissions(
+  ["read:events", "read:grades", "read:users", "read:invitations"],
+  ["Dean"],
+);
+const student = withPermissions(
+  ["view:public_events", "manage:own_profile"],
+  ["User"],
+);
 
-  test('only Admin manages events, juries and projects', () => {
+describe("hasPermission", () => {
+  test("decides by the session permissions", () => {
+    expect(hasPermission(dean, "read:events")).toBe(true);
+    expect(hasPermission(dean, "manage:events")).toBe(false);
+    expect(hasPermission(null, "read:events")).toBe(false);
+    expect(hasPermission(undefined, "read:events")).toBe(false);
+  });
+
+  test("ignores the role name", () => {
+    // A user called "Admin" without permissions does not get access
+    const nameOnly = withPermissions([], ["Admin"]);
+    expect(canCreateEvent(nameOnly)).toBe(false);
+    expect(canViewAdministration(nameOnly)).toBe(false);
+  });
+
+  test("any / all", () => {
+    expect(hasAnyPermission(dean, ["manage:events", "read:grades"])).toBe(true);
+    expect(hasAllPermissions(dean, ["manage:events", "read:grades"])).toBe(
+      false,
+    );
+    expect(hasAllPermissions(dean, [])).toBe(false);
+  });
+});
+
+describe("Authorization helpers", () => {
+  test("writing events, juries and projects requires manage:events", () => {
     for (const can of [canCreateEvent, canInviteJury, canUpdateProject]) {
       expect(can(admin)).toBe(true);
-      expect(can(user)).toBe(false);
+      expect(can(dean)).toBe(false);
+      expect(can(student)).toBe(false);
       expect(can(null)).toBe(false);
-      expect(can(undefined)).toBe(false);
     }
   });
 
-  test('a user with several roles is Admin when one of them is', () => {
-    expect(canCreateEvent(withRoles('User', 'Admin'))).toBe(true);
+  test("a read-only role sees the administration but cannot write", () => {
+    expect(canViewAdministration(dean)).toBe(true);
+    expect(canViewUsers(dean)).toBe(true);
+    expect(canManageUserRoles(dean)).toBe(false);
   });
 
-  test('any signed-in user can view categories', () => {
+  test("students do not see the administration", () => {
+    expect(canViewAdministration(student)).toBe(false);
+    expect(canViewUsers(student)).toBe(false);
+  });
+
+  test("any signed-in user can view categories", () => {
     expect(canViewCategories(admin)).toBe(true);
-    expect(canViewCategories(user)).toBe(true);
+    expect(canViewCategories(student)).toBe(true);
     expect(canViewCategories(null)).toBe(false);
-    expect(canViewCategories(undefined)).toBe(false);
   });
 });

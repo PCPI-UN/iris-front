@@ -7,7 +7,8 @@ import {
 import { Projects } from "./_components/projects";
 
 import { getProjectsQueryOptions } from "@/features/projects/api/get-projects";
-import { RoleGuard } from "@/components/auth/role-guard";
+import { PermissionGuard } from '@/components/auth/permission-guard';
+import { PERMISSIONS } from '@/lib/authorization';
 
 export const metadata = {
   title: "Proyectos",
@@ -34,11 +35,11 @@ const ProjectsPage = async ({
   const dehydratedState = dehydrate(queryClient);
 
   return (
-    <RoleGuard roles={["Admin"]}>
+    <PermissionGuard permissions={[PERMISSIONS.readEvents]}>
       <HydrationBoundary state={dehydratedState}>
         <Projects />
       </HydrationBoundary>
-    </RoleGuard>
+    </PermissionGuard>
   );
 };
 

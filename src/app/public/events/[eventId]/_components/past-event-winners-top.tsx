@@ -68,8 +68,8 @@ const hasText = (value?: string | null) =>
 
 const VISIBLE_MEMBERS_LIMIT = 8;
 
-const getPositionLabel = (pos: number): string =>
-  pos === 1 ? '1° Lugar' : pos === 2 ? '2° Lugar' : '3° Lugar';
+// Before, every position from 3 on read "3° Lugar"
+const getPositionLabel = (pos: number): string => `${pos}° Lugar`;
 
 const getPositionBadgeClass = (pos: number): string =>
   pos === 1
@@ -83,11 +83,14 @@ const TopWinnerCard = ({
   categoryName,
   isExposition,
   showScore,
+  isCoWinner,
 }: {
   ranked: RankedProject;
   categoryName?: string;
   isExposition?: boolean;
   showScore?: boolean;
+  /** Shares the position with other projects of its category (same rounded average) */
+  isCoWinner?: boolean;
 }) => {
   const [membersExpanded, setMembersExpanded] = useState(false);
   const members = getParticipantLabels(ranked.project);
@@ -103,12 +106,19 @@ const TopWinnerCard = ({
       <div className="relative z-10 flex flex-col lg:flex-row items-start gap-6 w-full">
         <div className="flex-1 space-y-4">
           <div className="flex items-start justify-between gap-3 w-full">
-            <span
-              className={`${getPositionBadgeClass(ranked.position)} text-sm font-bold px-3 py-1 rounded-full uppercase tracking-wide`}
-              aria-label={`Posición ${ranked.position}: ${getPositionLabel(ranked.position)}`}
-            >
-              {getPositionLabel(ranked.position)}
-            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              <span
+                className={`${getPositionBadgeClass(ranked.position)} text-sm font-bold px-3 py-1 rounded-full uppercase tracking-wide`}
+                aria-label={`Posición ${ranked.position}: ${getPositionLabel(ranked.position)}${isCoWinner ? ', coganador' : ''}`}
+              >
+                {getPositionLabel(ranked.position)}
+              </span>
+              {isCoWinner && (
+                <Chip size="sm" variant="flat" color="warning" startContent={<Users className="h-3 w-3" />}>
+                  Coganador
+                </Chip>
+              )}
+            </div>
 
             {posterUrl && (
               <a
@@ -260,6 +270,16 @@ export function PastEventWinnersTop({
     return allWinners.filter((w) => w.position >= 1 && w.position <= appliedLimit);
   }, [allWinners, appliedLimit]);
 
+  // Positions come from the backend: in a category, projects sharing a position are co-winners
+  const coWinnerKeys = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const w of allWinners) {
+      const key = `${w.categoryId ?? 0}-${w.position}`;
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+    return new Set([...counts].filter(([, n]) => n > 1).map(([key]) => key));
+  }, [allWinners]);
+
   // Reset carousel index when winners change
   useEffect(() => {
     setCurrentIndex(0);
@@ -330,6 +350,7 @@ export function PastEventWinnersTop({
                 >
                   <TopWinnerCard
                     ranked={winner}
+                    isCoWinner={coWinnerKeys.has(`${winner.categoryId ?? 0}-${winner.position}`)}
                     categoryName={
                       winner.categoryId ? categoryMap.get(winner.categoryId) : undefined
                     }

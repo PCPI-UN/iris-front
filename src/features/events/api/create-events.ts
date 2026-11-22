@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 
 import { normalizeEventDatesForPayload } from "../utils/event-date-payload";
-import { toEventTypeLabel, toEvaluationTypeCode } from "../utils/event-enums";
+import { toEventTypeLabel } from "../utils/event-enums";
 
 import { getEventsQueryOptions } from "./get-events";
 import { normalizeEvent } from "./event-adapter";
@@ -34,15 +34,12 @@ export const createEventInputSchema = z.object({
   inscriptionRequirements: z.string().optional(),
   minimumTeamSize: z.coerce.number().optional(),
   aboutOurAllies: z.string().optional(),
-  evaluationType: z
-    .union([
-      z.literal(1),
-      z.literal(2),
-      z.literal(3),
-      z.enum(["ZERO_TO_FIVE", "ZERO_TO_HUNDRED", "FINAL_PROJECTS"]),
-      z.enum(["0-5", "0-100", "Proyectos Finales"]),
-    ])
-    .optional(),
+  /** Escala del catálogo (`GET /grading-scales`); una escala nueva se crea antes con `POST /grading-scales` */
+  gradingScaleId: z.number().int().positive().optional(),
+  // Academic term (GET /terms); the "no term" row -1 is not accepted
+  termId: z.coerce.number().int().min(1, "Este campo es obligatorio"),
+  // true: each project must belong to a course section (NRC) of the term
+  requiresCourse: z.boolean(),
   organizers: z.array(z.string()).optional(),
   collaborators: z.array(z.string()).optional(),
   // Estos campos se manejan en tablas relacionadas (EventInscriptionDetail, Category, etc)
@@ -83,10 +80,6 @@ export const createEvent = ({
     .post<Record<string, any>>("/events", {
       ...normalizeEventDatesForPayload(data),
       eventType: toEventTypeLabel(data.eventType),
-      evaluationType:
-        data.evaluationType === undefined
-          ? undefined
-          : toEvaluationTypeCode(data.evaluationType),
     })
     .then((response) =>
       normalizeEvent(

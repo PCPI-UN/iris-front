@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 
 import { normalizeEventDatesForPayload } from "../utils/event-date-payload";
-import { toEventTypeLabel, toEvaluationTypeCode } from "../utils/event-enums";
+import { toEventTypeLabel } from "../utils/event-enums";
 
 import { normalizeEvent } from "./event-adapter";
 import { getEventQueryOptions } from "./get-event";
@@ -42,6 +42,10 @@ export const updateEventInputSchema = z.object({
     .min(0, "Debe ser mayor o igual a 0")
     .optional(),
   aboutOurAllies: z.string().optional(),
+  // Not sent: unchanged. Events still in the "no term" row -1 can be edited without choosing one
+  termId: z.coerce.number().int().min(1).optional(),
+  // Not sent: unchanged. Projects already submitted keep their course section
+  requiresCourse: z.boolean().optional(),
   organizers: z.array(z.string()).optional(),
   collaborators: z.array(z.string()).optional(),
   // Estos campos se manejan en tablas relacionadas
@@ -76,15 +80,8 @@ export const updateEventInputSchema = z.object({
       }),
     )
     .optional(),
-  evaluationType: z
-    .union([
-      z.literal(1),
-      z.literal(2),
-      z.literal(3),
-      z.enum(["ZERO_TO_FIVE", "ZERO_TO_HUNDRED", "FINAL_PROJECTS"]),
-      z.enum(["0-5", "0-100", "Proyectos Finales"]),
-    ])
-    .optional(),
+  /** Escala del catálogo (`GET /grading-scales`); una escala nueva se crea antes con `POST /grading-scales` */
+  gradingScaleId: z.number().int().positive().optional(),
 });
 
 export type UpdateEventInput = z.infer<typeof updateEventInputSchema>;
@@ -103,10 +100,6 @@ export const updateEvent = ({
         normalizedPayload.eventType === undefined
           ? undefined
           : toEventTypeLabel(normalizedPayload.eventType),
-      evaluationType:
-        normalizedPayload.evaluationType === undefined
-          ? undefined
-          : toEvaluationTypeCode(normalizedPayload.evaluationType),
     })
     .then((response) =>
       normalizeEvent(

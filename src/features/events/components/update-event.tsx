@@ -10,15 +10,6 @@ import {
 import { Minus, Plus, SquarePen } from "lucide-react";
 import { useEffect, useState } from "react";
 
-import { useEvent } from "../api/get-event";
-import { updateEventInputSchema, useUpdateEvent } from "../api/update-event";
-import {
-  compareDateTimes,
-  getDatePart,
-  ensureDateTimeValue,
-} from "../utils/event-date-time";
-import { toEventTypeCode, toEvaluationTypeCode } from "../utils/event-enums";
-
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Form } from "@/components/ui/form";
@@ -39,6 +30,26 @@ import { useDisclosure } from "@/hooks/use-disclosure";
 import { useUser } from "@/lib/auth";
 import { canUpdateEvent } from "@/lib/authorization";
 import { useCategoriesDropdown } from "@/features/courses/api/get-categories-dropdown";
+
+import { useEvent } from "../api/get-event";
+import { updateEventInputSchema, useUpdateEvent } from "../api/update-event";
+import {
+  compareDateTimes,
+  getDatePart,
+  ensureDateTimeValue,
+} from "../utils/event-date-time";
+import { toEventTypeCode } from "../utils/event-enums";
+import { useCreateGradingScale } from "@/features/grading-scales/api/create-grading-scale";
+import { GradingScaleField } from "@/features/grading-scales/components/grading-scale-field";
+import {
+  isEventScaleLocked,
+  validateGradingScaleDraft,
+} from "@/features/grading-scales/utils/grading-scale";
+import {
+  GradingScaleSelection,
+  resolveGradingScaleId,
+} from "@/features/grading-scales/utils/grading-scale-selection";
+import { formatTermCode, useTerms } from "../api/get-terms";
 
 type UpdateEventProps = {
   eventId: number;
@@ -120,7 +131,9 @@ type UpdateEventFormState = {
   inscriptionCost: string;
   minimumTeamSize: string;
   aboutOurAllies: string;
-  evaluationType: 1 | 2 | 3;
+  /** "" while the event has no term: created before terms existed (-1) */
+  termId: string;
+  requiresCourse: boolean;
 };
 
 const INITIAL_FORM_STATE: UpdateEventFormState = {
@@ -142,7 +155,8 @@ const INITIAL_FORM_STATE: UpdateEventFormState = {
   inscriptionRequirements: "",
   minimumTeamSize: "",
   aboutOurAllies: "",
-  evaluationType: 1,
+  termId: "",
+  requiresCourse: true,
 };
 
 export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
@@ -156,6 +170,11 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
     { title: "", description: "" },
   ]);
   const [dateFieldErrors, setDateFieldErrors] = useState<DateFieldErrors>({});
+  const [scaleSelection, setScaleSelection] = useState<GradingScaleSelection>({
+    mode: "catalog",
+    scaleId: null,
+  });
+  const [showScaleErrors, setShowScaleErrors] = useState(false);
   const [organizers, setOrganizers] = useState<string[]>([""]);
   const [collaborators, setCollaborators] = useState<string[]>([""]);
   const [awards, setAwards] = useState<Award[]>([
@@ -163,7 +182,8 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
   ]);
 
   const eventQuery = useEvent({ eventId });
-
+  const termsQuery = useTerms({ queryConfig: { enabled: isOpen } });
+  const terms = termsQuery.data ?? [];
   useCategoriesDropdown({ eventId });
   const updateEventMutation = useUpdateEvent({
     mutationConfig: {
@@ -178,6 +198,8 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
       },
     },
   });
+
+  const createGradingScaleMutation = useCreateGradingScale();
 
   const user = useUser();
 
@@ -216,10 +238,11 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
           ? String(event.minimumTeamSize)
           : "",
       aboutOurAllies: event.aboutOurAllies ?? "",
-      evaluationType: toEvaluationTypeCode(
-        event.evaluationType,
-      ) as UpdateEventFormState["evaluationType"],
+      termId: event.termId && event.termId > 0 ? String(event.termId) : "",
+      requiresCourse: event.requiresCourse,
     });
+    setScaleSelection({ mode: "catalog", scaleId: event.gradingScale?.id ?? null });
+    setShowScaleErrors(false);
 
     setSpecificDetails(
       event.specificInscriptionDetails &&
@@ -281,6 +304,16 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
   }
 
   const event = eventQuery.data?.data;
+  const currentScale = event?.gradingScale ?? null;
+  const isScaleLocked = isEventScaleLocked(currentScale);
+
+  /** La escala nueva debe ser válida antes de seguir: 4 niveles con puntos que crecen */
+  const validateScaleSelection = () => {
+    if (scaleSelection.mode !== "new") return true;
+    const { isValid } = validateGradingScaleDraft(scaleSelection.draft);
+    setShowScaleErrors(!isValid);
+    return isValid;
+  };
 
   const validateDateFields = (targetStep: 1 | 2 | 3) => {
     const nextErrors: DateFieldErrors = {};
@@ -350,6 +383,10 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
       return;
     }
 
+    if (step === 1 && !validateScaleSelection()) {
+      return;
+    }
+
     if (step === 2 && !validateDateFields(2)) {
       return;
     }
@@ -366,6 +403,16 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
           message: "Corrige los campos de fecha y hora resaltados.",
         });
 
+        return;
+      }
+
+      if (!validateScaleSelection()) {
+        setStep(1);
+        addNotification({
+          type: "error",
+          title: "Escala de calificación inválida",
+          message: "Revisa el nombre, las etiquetas y los puntos de la escala nueva.",
+        });
         return;
       }
 
@@ -396,7 +443,9 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
             ? undefined
             : Number(formData.minimumTeamSize),
         aboutOurAllies: formData.aboutOurAllies || undefined,
-        evaluationType: formData.evaluationType,
+        // An event without term (-1) can be edited without choosing one: then termId is not sent
+        termId: formData.termId ? Number(formData.termId) : undefined,
+        requiresCourse: formData.requiresCourse,
         organizers: organizers.filter((value) => value.trim() !== ""),
         collaborators: collaborators.filter((value) => value.trim() !== ""),
         specificInscriptionDetails: specificDetails
@@ -426,7 +475,19 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
 
       const values = await updateEventInputSchema.parseAsync(dataToSubmit);
 
-      await updateEventMutation.mutateAsync({ data: values });
+      // La escala solo se envía si cambió: con evaluaciones el backend rechaza cualquier cambio.
+      // Una escala nueva se crea primero en el catálogo y el evento usa su id.
+      const { scaleId, created } = isScaleLocked
+        ? { scaleId: undefined, created: undefined }
+        : await resolveGradingScaleId(scaleSelection, (input) =>
+            createGradingScaleMutation.mutateAsync({ data: input }),
+          );
+      if (created) {
+        setScaleSelection({ mode: "catalog", scaleId: created.id });
+      }
+      const gradingScaleId = scaleId !== undefined && scaleId !== currentScale?.id ? scaleId : undefined;
+
+      await updateEventMutation.mutateAsync({ data: { ...values, gradingScaleId } });
     } catch (error) {
       console.error(error);
       addNotification({
@@ -624,29 +685,60 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                           <SelectItem key="1">Exposición</SelectItem>
                           <SelectItem key="2">Competencia</SelectItem>
                         </Select>
+                      </div>
+
+                      <GradingScaleField
+                        value={scaleSelection}
+                        onChange={setScaleSelection}
+                        currentScale={currentScale}
+                        isDisabled={isScaleLocked}
+                        disabledReason="La escala ya se usó para calificar evaluaciones: la escala del evento no se puede cambiar."
+                        showErrors={showScaleErrors}
+                      />
+
+                      <div className="flex flex-col sm:flex-row gap-4 sm:items-center">
                         <Select
-                          className="flex-1"
-                          label="Tipo de Evaluación"
-                          selectedKeys={
-                            new Set([String(formData.evaluationType)])
+                          label="Periodo Académico"
+                          placeholder={
+                            termsQuery.isLoading
+                              ? "Cargando periodos..."
+                              : "Sin periodo asignado"
                           }
+                          selectedKeys={formData.termId ? new Set([formData.termId]) : new Set([])}
                           onSelectionChange={(keys) => {
                             const selected = Array.from(keys)[0];
-
                             if (selected !== undefined) {
-                              setFormData((prev) => ({
-                                ...prev,
-                                evaluationType: toEvaluationTypeCode(
-                                  selected,
-                                ) as UpdateEventFormState["evaluationType"],
-                              }));
+                              setFormData((prev) => ({ ...prev, termId: String(selected) }));
                             }
                           }}
+                          isLoading={termsQuery.isLoading}
+                          description={
+                            formData.termId
+                              ? undefined
+                              : "Evento anterior a los periodos académicos. Asígnale uno para poder inscribir proyectos con NRC."
+                          }
+                          className="flex-1"
                         >
-                          <SelectItem key="1">0 - 5</SelectItem>
-                          <SelectItem key="2">0 - 100</SelectItem>
-                          <SelectItem key="3">Proyectos Finales</SelectItem>
+                          {terms.map((term) => (
+                            <SelectItem key={String(term.id)}>{formatTermCode(term)}</SelectItem>
+                          ))}
                         </Select>
+                        <div className="flex-1 flex items-center gap-2">
+                          <Switch
+                            size="sm"
+                            isSelected={formData.requiresCourse}
+                            onValueChange={(isSelected) =>
+                              setFormData((prev) => ({ ...prev, requiresCourse: isSelected }))
+                            }
+                            color="success"
+                          />
+                          <div className="flex flex-col">
+                            <span className="text-sm font-medium">Exige NRC</span>
+                            <span className="text-xs text-default-500">
+                              Los proyectos ya inscritos conservan su curso.
+                            </span>
+                          </div>
+                        </div>
                       </div>
 
                       <div className="pt-2 border-t border-default-200">

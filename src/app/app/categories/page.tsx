@@ -7,7 +7,8 @@ import {
 import { Categories } from "./_components/categories";
 
 import { getCategoriesQueryOptions } from "@/features/courses/api/get-categories";
-import { RoleGuard } from "@/components/auth/role-guard";
+import { PermissionGuard } from '@/components/auth/permission-guard';
+import { PERMISSIONS } from '@/lib/authorization';
 
 export const metadata = {
   title: "Categorías",
@@ -34,11 +35,11 @@ const CategoriesPage = async ({
   const dehydratedState = dehydrate(queryClient);
 
   return (
-    <RoleGuard roles={["Admin"]}>
+    <PermissionGuard permissions={[PERMISSIONS.readEvents]}>
       <HydrationBoundary state={dehydratedState}>
         <Categories />
       </HydrationBoundary>
-    </RoleGuard>
+    </PermissionGuard>
   );
 };
 

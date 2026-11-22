@@ -1,5 +1,7 @@
 'use client';
 
+import { Can } from '@/components/auth/can';
+import { PERMISSIONS } from '@/lib/authorization';
 import { useMemo, useState, useEffect } from 'react';
 import { Calendar, Users, Award, Folder, Search, Trophy, Download, Eye, Settings, RefreshCw } from 'lucide-react';
 import { Card, CardHeader } from '@/components/ui/card';
@@ -463,7 +465,9 @@ export const PastEventDashboard = ({ event, onBack }: Props) => {
                     <div className="mt-1 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
                         <p className="text-sm text-default-500 line-clamp-2">{event.description}</p>
                         <div className="shrink-0 flex flex-col items-start gap-2">
-                            <ExportEventReportButton eventId={event.id} label="Descargar reporte" />
+                            <Can permission={PERMISSIONS.readGrades}>
+                                <ExportEventReportButton eventId={event.id} label="Descargar reporte" />
+                            </Can>
                             <PublishResultsToggle
                                 eventId={event.id}
                                 resultsPublished={event.resultsPublished}
@@ -800,14 +804,17 @@ export const PastEventDashboard = ({ event, onBack }: Props) => {
                         <CardHeader className="pb-2 flex items-center justify-between">
                             <h3 className="text-lg font-semibold">Clasificación por categoría</h3>
                             <div className="flex items-center gap-1 md:gap-2">
-                                <Button
-                                    className="relative gap-2 border-2 border-default-300 hover:border-primary text-default-600 hover:text-primary hover:scale-105 transition-all duration-300 font-semibold px-4 py-2"
-                                    variant="bordered"
-                                    onPress={handleOpenRankingConfig}
-                                >
-                                    <Eye className="h-5 w-5" />
-                                    <Settings className="h-5 w-5" />
-                                </Button>
+                                {/* Ranking visibility is configured with manage:events */}
+                                <Can permission={PERMISSIONS.manageEvents}>
+                                    <Button
+                                        className="relative gap-2 border-2 border-default-300 hover:border-primary text-default-600 hover:text-primary hover:scale-105 transition-all duration-300 font-semibold px-4 py-2"
+                                        variant="bordered"
+                                        onPress={handleOpenRankingConfig}
+                                    >
+                                        <Eye className="h-5 w-5" />
+                                        <Settings className="h-5 w-5" />
+                                    </Button>
+                                </Can>
                                 <Button
                                     className="relative gap-2 border-2 border-default-300 hover:border-primary text-default-600 hover:text-primary hover:scale-105 transition-all duration-300 font-semibold px-4 py-2"
                                     variant="bordered"

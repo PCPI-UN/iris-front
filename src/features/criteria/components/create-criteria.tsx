@@ -1,5 +1,8 @@
 "use client";
 
+import type { ComponentProps } from "react";
+import { Can } from "@/components/auth/can";
+import { PERMISSIONS } from "@/lib/authorization";
 import { Plus } from "lucide-react";
 import { useState, useEffect } from "react";
 
@@ -32,7 +35,7 @@ type CreateCriteriaProps = {
 
 const CRITERION_NAME_MAX_LENGTH = 100;
 
-export const CreateCriteria = ({
+const CreateCriteriaContent = ({
   availableWeightPercent,
 }: CreateCriteriaProps) => {
   const { addNotification } = useNotifications();
@@ -392,3 +395,10 @@ export const CreateCriteria = ({
     </>
   );
 };
+
+// Only sessions that can call the endpoint see the action
+export const CreateCriteria = (props: ComponentProps<typeof CreateCriteriaContent>) => (
+  <Can permission={PERMISSIONS.manageEvents}>
+    <CreateCriteriaContent {...props} />
+  </Can>
+);

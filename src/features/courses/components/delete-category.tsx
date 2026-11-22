@@ -1,5 +1,8 @@
 "use client";
 
+import type { ComponentProps } from "react";
+import { Can } from "@/components/auth/can";
+import { PERMISSIONS } from "@/lib/authorization";
 import { Trash } from "lucide-react";
 
 import { useDeleteCategory } from "../api/delete-category";
@@ -21,11 +24,7 @@ type DeleteCategoryProps = {
   totalCategoriesPerEvent: number;
 };
 
-export const DeleteCategory = ({
-  id,
-  eventId,
-  totalCategoriesPerEvent,
-}: DeleteCategoryProps) => {
+const DeleteCategoryContent = ({ id, eventId, totalCategoriesPerEvent }: DeleteCategoryProps) => {
   const { addNotification } = useNotifications();
   const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
   const deleteCategoryMutation = useDeleteCategory({
@@ -99,3 +98,10 @@ export const DeleteCategory = ({
     </>
   );
 };
+
+// Only sessions that can call the endpoint see the action
+export const DeleteCategory = (props: ComponentProps<typeof DeleteCategoryContent>) => (
+  <Can permission={PERMISSIONS.deleteEventMembers}>
+    <DeleteCategoryContent {...props} />
+  </Can>
+);

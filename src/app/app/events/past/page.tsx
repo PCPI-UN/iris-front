@@ -5,7 +5,8 @@ import {
 } from "@tanstack/react-query";
 
 import { getEventsQueryOptions } from "@/features/events/api/get-events";
-import { RoleGuard } from "@/components/auth/role-guard";
+import { PermissionGuard } from "@/components/auth/permission-guard";
+import { PERMISSIONS } from "@/lib/authorization";
 import { GetPastEventsAdmin } from "@/features/events/components/get-past-events-admin";
 
 export const metadata = {
@@ -21,11 +22,11 @@ const PastEventsPage = async () => {
   const dehydratedState = dehydrate(queryClient);
 
   return (
-    <RoleGuard roles={["Admin"]}>
+    <PermissionGuard permissions={[PERMISSIONS.readEvents]}>
       <HydrationBoundary state={dehydratedState}>
         <GetPastEventsAdmin />
       </HydrationBoundary>
-    </RoleGuard>
+    </PermissionGuard>
   );
 };
 
