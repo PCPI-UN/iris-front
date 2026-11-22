@@ -92,6 +92,8 @@ const models = {
     documents: Array,
     reason: String,
     participants: Array,
+    pendingParticipants: Array,
+    tutors: Array,
     jurorAssignments: Array,
     createdAt: Date.now,
   },

@@ -32,7 +32,34 @@ const FIELD_LABELS: Record<string, string> = {
   courseId: "Categoría",
   participants: "Integrantes",
   tutorUserIds: "Tutores",
+  pendingTutors: "Tutores sin cuenta",
+  participant: "Integrante",
+  document: "Documento",
   documents: "Documentos",
+};
+
+const DOCUMENT_LABELS: Record<string, string> = {
+  LOGO: "Logo",
+  POSTER: "Póster",
+  SUPPORTING_DOCUMENT: "Documento de soporte",
+};
+
+/** Participant and document snapshots of the PARTICIPANTS and DOCUMENTS entries, in words */
+const describeObject = (field: string, value: Record<string, unknown>): string | null => {
+  if (field === "participant") {
+    const name = `${value.firstName ?? ""} ${value.lastName ?? ""}`.trim();
+    const kind = value.type === "PENDING" ? "pendiente" : "inscrito";
+
+    return [name || null, value.email ?? null, `(${kind})`].filter(Boolean).join(" ");
+  }
+  if (field === "document") {
+    const type = DOCUMENT_LABELS[String(value.type)] ?? String(value.type ?? "Documento");
+    const state = value.state === "INACTIVE" ? "inactivo" : "activo";
+
+    return `${type}, ${state}${value.url ? ` · ${String(value.url)}` : ""}`;
+  }
+
+  return null;
 };
 
 const formatValue = (field: string, value: unknown): string => {
@@ -49,7 +76,12 @@ const formatValue = (field: string, value: unknown): string => {
           )
           .join(", ");
   }
-  if (typeof value === "object") return JSON.stringify(value);
+  if (typeof value === "object") {
+    return (
+      describeObject(field, value as Record<string, unknown>) ??
+      JSON.stringify(value)
+    );
+  }
 
   return String(value);
 };

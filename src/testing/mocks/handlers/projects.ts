@@ -2,6 +2,8 @@ import { HttpResponse, http } from "msw";
 import { env } from "@/config/env";
 import { db, persistDb } from "../db";
 import { requireAuth, networkDelay } from "../utils";
+import { projectChangeLog, recordProjectChange } from "./project-change-log-store";
+import { toProjectReadResponse } from "./project-admin";
 
 type ProjectBody = {
   eventId: string;
@@ -185,21 +187,7 @@ type AdminChangeStateBody = {
   force?: boolean;
 };
 
-type MockChangeLogEntry = {
-  id: number;
-  action: "STATE";
-  actor: { id: number; name: string | null };
-  createdAt: string;
-  before: Record<string, unknown>;
-  after: Record<string, unknown>;
-  reason: string | null;
-};
-
 const ADMIN_PROJECT_STATES = ["UNDER_REVIEW", "APPROVED", "REJECTED", "REQUEST_CHANGES"];
-
-// In memory only: the mock server forgets the change log when it restarts
-const projectChangeLog = new Map<string, MockChangeLogEntry[]>();
-let nextChangeLogId = 1;
 
 export const projectsHandlers = [
   // PATCH /projects/:id/admin/state (manage:projects): 409 PROJECT_STATE_CHANGE_BLOCKED
@@ -269,20 +257,7 @@ export const projectsHandlers = [
       });
       await persistDb("project");
 
-      const entries = projectChangeLog.get(projectId) ?? [];
-      entries.unshift({
-        id: nextChangeLogId++,
-        action: "STATE",
-        actor: {
-          id: Number(user?.id) || 0,
-          name: user ? `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || null : null,
-        },
-        createdAt: new Date().toISOString(),
-        before: { state: project.state },
-        after: { state },
-        reason: trimmedReason,
-      });
-      projectChangeLog.set(projectId, entries);
+      recordProjectChange(projectId, user, "STATE", { state: project.state }, { state }, trimmedReason);
 
       return HttpResponse.json({ project: updated, failedEffects: [], warning: null });
     }
@@ -562,9 +537,7 @@ export const projectsHandlers = [
         );
       }
 
-      const project = db.project.findFirst({
-        where: { id: { equals: projectId } },
-      });
+      const project = toProjectReadResponse(projectId);
 
       if (!project) {
         return HttpResponse.json(
@@ -987,34 +960,4 @@ export const projectsHandlers = [
       }
     }
   ),
-
-  http.delete(`${env.API_URL}/projects/:id`, async ({ cookies, params }) => {
-    await networkDelay();
-    try {
-      const { error } = requireAuth(cookies);
-      if (error) {
-        return HttpResponse.json({ message: error }, { status: 401 });
-      }
-
-      const projectId = params.id as string;
-      const project = db.project.delete({
-        where: { id: { equals: projectId } },
-      });
-
-      if (!project) {
-        return HttpResponse.json(
-          { message: "Project not found" },
-          { status: 404 }
-        );
-      }
-
-      await persistDb("project");
-      return HttpResponse.json({ data: project });
-    } catch (error: any) {
-      return HttpResponse.json(
-        { message: error?.message || "Server Error" },
-        { status: 500 }
-      );
-    }
-  }),
 ];

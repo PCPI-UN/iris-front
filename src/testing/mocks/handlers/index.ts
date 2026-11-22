@@ -12,6 +12,7 @@ import { eventsHandlers } from "./events";
 import { teamsHandlers } from "./teams";
 import { criterionHandlers } from "./criterion";
 import { projectsHandlers } from "./projects";
+import { projectAdminHandlers } from "./project-admin";
 import { usersHandlers } from "./users";
 import { evaluationsHandlers } from "./evaluations";
 import { dashboardHandlers } from "./dashboard";
@@ -25,6 +26,8 @@ export const handlers = [
   ...authHandlers,
   ...coursesHandlers,
   ...eventsHandlers,
+  // Before projectsHandlers: /projects/tutor-candidates is not a project id
+  ...projectAdminHandlers,
   ...projectsHandlers,
   ...teamsHandlers,
   ...usersHandlers,

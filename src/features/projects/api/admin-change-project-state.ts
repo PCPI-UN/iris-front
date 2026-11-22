@@ -84,7 +84,10 @@ export const adminChangeProjectState = ({
     { suppressErrorNotification: true },
   );
 
-/** Every project list (state filters, search, jurors) and the change log of the project */
+/**
+ * Every project list (state filters, search, jurors), the project itself
+ * (["projects", id]), its administrative document list and its change log
+ */
 export const invalidateProjectQueries = (
   queryClient: ReturnType<typeof useQueryClient>,
   projectId: number,
@@ -92,6 +95,9 @@ export const invalidateProjectQueries = (
   Promise.all([
     queryClient.invalidateQueries({ queryKey: ["projects"] }),
     queryClient.invalidateQueries({ queryKey: ["projects-with-jurors"] }),
+    queryClient.invalidateQueries({
+      queryKey: ["admin-project-documents", projectId],
+    }),
     queryClient.invalidateQueries({
       queryKey: ["project-change-log", projectId],
     }),
