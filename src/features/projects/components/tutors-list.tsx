@@ -1,7 +1,7 @@
+import { tutorFullName } from "../utils/tutors";
+
 import { Chip } from "@/components/ui/chip";
 import { ProjectTutor } from "@/types/api";
-
-import { tutorFullName } from "../utils/tutors";
 
 type TutorsListProps = {
   tutors?: ProjectTutor[];
@@ -23,13 +23,13 @@ export const TutorsList = ({ tutors, className = "" }: TutorsListProps) => {
   );
 
   return (
-    <ul className={`flex flex-wrap gap-2 ${className}`} aria-label="Tutores">
+    <ul aria-label="Tutores" className={`flex flex-wrap gap-2 ${className}`}>
       {ordered.map((tutor, index) => (
         <li key={`${tutor.userId ?? tutor.email ?? index}`}>
           <Chip
-            variant="flat"
             color={tutor.pending ? "warning" : "primary"}
             size="sm"
+            variant="flat"
           >
             {tutorFullName(tutor)}
             {tutor.pending ? " · Pendiente" : ""}

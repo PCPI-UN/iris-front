@@ -1,9 +1,9 @@
 import { queryOptions, useQuery } from "@tanstack/react-query";
 
+import { isSearchLongEnough, TutorCandidate } from "../utils/tutors";
+
 import { api } from "@/lib/api-client";
 import { QueryConfig } from "@/lib/react-query";
-
-import { isSearchLongEnough, TutorCandidate } from "../utils/tutors";
 
 /** Users with the Tutor or Professor role matching the name; public, like the submission form */
 export const getTutorCandidates = async (

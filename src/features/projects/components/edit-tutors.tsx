@@ -3,6 +3,15 @@
 import { useState } from "react";
 import { Pencil } from "lucide-react";
 
+import { useSetProjectTutors } from "../api/set-project-tutors";
+import {
+  toTutorsPayload,
+  tutorsValueFromProject,
+  TutorsValue,
+} from "../utils/tutors";
+
+import { TutorsInput } from "./tutors-input";
+
 import { Button } from "@/components/ui/button";
 import {
   Modal,
@@ -16,14 +25,6 @@ import { useDisclosure } from "@/hooks/use-disclosure";
 import { Can } from "@/components/auth/can";
 import { PERMISSIONS } from "@/lib/authorization";
 import { Project } from "@/types/api";
-
-import { useSetProjectTutors } from "../api/set-project-tutors";
-import {
-  toTutorsPayload,
-  tutorsValueFromProject,
-  TutorsValue,
-} from "../utils/tutors";
-import { TutorsInput } from "./tutors-input";
 
 type EditTutorsProps = {
   project: Project;
@@ -67,10 +68,10 @@ export const EditTutors = ({ project }: EditTutorsProps) => {
   return (
     <Can permission={PERMISSIONS.manageEvents}>
       <Button
+        className="border-[#ffffff30] text-white"
         size="sm"
         variant="bordered"
         onPress={open}
-        className="border-[#ffffff30] text-white"
       >
         <Pencil className="h-3.5 w-3.5" />
         Editar tutores
@@ -78,9 +79,9 @@ export const EditTutors = ({ project }: EditTutorsProps) => {
 
       <Modal
         isOpen={isOpen}
-        onOpenChange={onOpenChange}
-        size="2xl"
         scrollBehavior="inside"
+        size="2xl"
+        onOpenChange={onOpenChange}
       >
         <ModalContent>
           {(onClose) => (
@@ -94,9 +95,9 @@ export const EditTutors = ({ project }: EditTutorsProps) => {
                   reciben su invitación al guardar.
                 </p>
                 <TutorsInput
+                  isDisabled={mutation.isPending}
                   value={value}
                   onChange={setValue}
-                  isDisabled={mutation.isPending}
                 />
               </ModalBody>
               <ModalFooter>

@@ -1,10 +1,10 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
+import { TutorsPayload } from "../utils/tutors";
+
 import { api } from "@/lib/api-client";
 import { MutationConfig } from "@/lib/react-query";
 import { ProjectTutor } from "@/types/api";
-
-import { TutorsPayload } from "../utils/tutors";
 
 /** Replaces the whole list of tutors; the ones left out are unlinked */
 export const setProjectTutors = async ({

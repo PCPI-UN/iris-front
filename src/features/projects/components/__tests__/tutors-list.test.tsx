@@ -1,6 +1,6 @@
-import { rtlRender, screen } from "@/testing/test-utils";
-
 import { TutorsList } from "../tutors-list";
+
+import { rtlRender, screen } from "@/testing/test-utils";
 
 test("shows linked tutors first and marks the pending ones", () => {
   rtlRender(
@@ -18,6 +18,7 @@ test("shows linked tutors first and marks the pending ones", () => {
   );
 
   const items = screen.getAllByRole("listitem").map((item) => item.textContent);
+
   expect(items).toEqual(["Ana Ruiz", "Laura Gómez · Pendiente"]);
 });
 

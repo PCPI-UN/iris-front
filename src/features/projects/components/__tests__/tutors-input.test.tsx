@@ -2,6 +2,9 @@ import { useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { http, HttpResponse } from "msw";
 
+import { EMPTY_TUTORS, TutorsValue } from "../../utils/tutors";
+import { TutorsInput } from "../tutors-input";
+
 import { server } from "@/testing/mocks/server";
 import {
   act,
@@ -11,14 +14,13 @@ import {
   waitFor,
 } from "@/testing/test-utils";
 
-import { EMPTY_TUTORS, TutorsValue } from "../../utils/tutors";
-import { TutorsInput } from "../tutors-input";
-
 let latest: TutorsValue = EMPTY_TUTORS;
 
 const Harness = () => {
   const [value, setValue] = useState<TutorsValue>(EMPTY_TUTORS);
+
   latest = value;
+
   return <TutorsInput value={value} onChange={setValue} />;
 };
 
@@ -26,6 +28,7 @@ const renderInput = () => {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
+
   return rtlRender(
     <QueryClientProvider client={queryClient}>
       <Harness />
@@ -40,9 +43,11 @@ describe("TutorsInput", () => {
 
   test("does not search before 3 letters", async () => {
     const requests: string[] = [];
+
     server.use(
       http.get("*/api/projects/tutor-candidates", ({ request }) => {
         requests.push(request.url);
+
         return HttpResponse.json([]);
       }),
     );
@@ -60,6 +65,7 @@ describe("TutorsInput", () => {
     server.use(
       http.get("*/api/projects/tutor-candidates", ({ request }) => {
         expect(new URL(request.url).searchParams.get("search")).toBe("lau");
+
         return HttpResponse.json([
           { id: 12, firstName: "Laura", lastName: "Gómez" },
         ]);

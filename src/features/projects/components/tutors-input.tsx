@@ -4,8 +4,6 @@ import { useEffect, useState } from "react";
 import { Button } from "@heroui/button";
 import { Search, UserPlus, X } from "lucide-react";
 
-import { Input } from "@/components/ui/input";
-
 import { useTutorCandidates } from "../api/get-tutor-candidates";
 import {
   isSearchLongEnough,
@@ -14,6 +12,8 @@ import {
   tutorFullName,
   TutorsValue,
 } from "../utils/tutors";
+
+import { Input } from "@/components/ui/input";
 
 type TutorsInputProps = {
   value: TutorsValue;
@@ -42,10 +42,10 @@ const TutorPill = ({
     <span>{label}</span>
     {onRemove && (
       <button
-        type="button"
-        onClick={onRemove}
         aria-label={`Quitar a ${name ?? label}`}
         className="rounded-full p-0.5 hover:bg-black/10"
+        type="button"
+        onClick={onRemove}
       >
         <X className="h-3.5 w-3.5" />
       </button>
@@ -68,6 +68,7 @@ export function TutorsInput({ value, onChange, isDisabled }: TutorsInputProps) {
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(search), 300);
+
     return () => clearTimeout(timer);
   }, [search]);
 
@@ -100,14 +101,18 @@ export function TutorsInput({ value, onChange, isDisabled }: TutorsInputProps) {
 
   const addPending = () => {
     const parsed = pendingTutorSchema.safeParse(pendingDraft);
+
     if (!parsed.success) {
       setPendingError(parsed.error.issues[0]?.message);
+
       return;
     }
 
     const email = parsed.data.email.toLowerCase();
+
     if (value.pending.some((tutor) => tutor.email.toLowerCase() === email)) {
       setPendingError("Ese correo ya está en la lista de tutores");
+
       return;
     }
 
@@ -126,14 +131,14 @@ export function TutorsInput({ value, onChange, isDisabled }: TutorsInputProps) {
     <div className="space-y-4">
       <div className="space-y-2">
         <Input
+          autoComplete="off"
+          description="Profesores y tutores registrados en Iris."
+          isDisabled={isDisabled}
           label="Buscar tutor"
           placeholder="Escriba al menos 3 letras del nombre o apellido"
-          description="Profesores y tutores registrados en Iris."
+          startContent={<Search className="h-4 w-4 text-default-400" />}
           value={search}
           onValueChange={setSearch}
-          startContent={<Search className="h-4 w-4 text-default-400" />}
-          isDisabled={isDisabled}
-          autoComplete="off"
         />
 
         {canSearch && (
@@ -153,10 +158,10 @@ export function TutorsInput({ value, onChange, isDisabled }: TutorsInputProps) {
             {results.map((candidate) => (
               <li key={candidate.id}>
                 <button
+                  className="w-full p-3 text-left text-sm transition-colors hover:bg-default-100"
+                  disabled={isDisabled}
                   type="button"
                   onClick={() => addLinked(candidate)}
-                  disabled={isDisabled}
-                  className="w-full p-3 text-left text-sm transition-colors hover:bg-default-100"
                 >
                   {tutorFullName(candidate)}
                 </button>
@@ -168,12 +173,12 @@ export function TutorsInput({ value, onChange, isDisabled }: TutorsInputProps) {
 
       {!showPendingForm ? (
         <Button
-          type="button"
-          size="sm"
-          variant="light"
-          startContent={<UserPlus className="h-4 w-4" />}
-          onPress={() => setShowPendingForm(true)}
           isDisabled={isDisabled}
+          size="sm"
+          startContent={<UserPlus className="h-4 w-4" />}
+          type="button"
+          variant="light"
+          onPress={() => setShowPendingForm(true)}
         >
           No encuentro al tutor
         </Button>
@@ -185,12 +190,12 @@ export function TutorsInput({ value, onChange, isDisabled }: TutorsInputProps) {
           </p>
           <div className="grid gap-3 sm:grid-cols-2">
             <Input
+              isRequired
               label="Nombre(s)"
               value={pendingDraft.firstName}
               onValueChange={(firstName) =>
                 setPendingDraft((prev) => ({ ...prev, firstName }))
               }
-              isRequired
             />
             <Input
               label="Apellido(s)"
@@ -201,31 +206,31 @@ export function TutorsInput({ value, onChange, isDisabled }: TutorsInputProps) {
             />
           </div>
           <Input
+            isRequired
             label="Correo del tutor"
             type="email"
             value={pendingDraft.email}
             onValueChange={(email) =>
               setPendingDraft((prev) => ({ ...prev, email }))
             }
-            isRequired
           />
           {pendingError && (
-            <p role="alert" className="text-sm text-danger">
+            <p className="text-sm text-danger" role="alert">
               {pendingError}
             </p>
           )}
           <div className="flex flex-wrap gap-2">
             <Button
-              type="button"
-              size="sm"
               color="primary"
+              size="sm"
+              type="button"
               onPress={addPending}
             >
               Agregar tutor
             </Button>
             <Button
-              type="button"
               size="sm"
+              type="button"
               variant="light"
               onPress={() => {
                 setShowPendingForm(false);
