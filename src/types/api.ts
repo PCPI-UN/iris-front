@@ -1,3 +1,5 @@
+import type { GradingScale } from "@/features/grading-scales/utils/grading-scale";
+
 export type BaseEntity = {
   id: string;
   createdAt: number;
@@ -93,7 +95,10 @@ export type Event = Entity<{
   inscriptionCost?: number;
   inscriptionRequirements?: string;
   aboutOurAllies?: string;
+  /** @deprecated El backend usa `gradingScale`; solo se lee de eventos antiguos */
   evaluationType?: EvaluationType | "ZERO_TO_FIVE" | "ZERO_TO_HUNDRED" | "FINAL_PROJECTS";
+  /** Escala de calificación del evento (en `GET /events/:id` y en las respuestas de crear y editar) */
+  gradingScale?: GradingScale | null;
   eventType: EventType;
   minimumTeamSize?: number;
   specificInscriptionDetails?: {

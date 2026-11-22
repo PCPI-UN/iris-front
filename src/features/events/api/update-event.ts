@@ -9,7 +9,7 @@ import { normalizeEvent } from "./event-adapter";
 import { getEventQueryOptions } from "./get-event";
 import { getEventsQueryOptions } from "./get-events";
 import { normalizeEventDatesForPayload } from '../utils/event-date-payload';
-import { toEventTypeLabel, toEvaluationTypeCode } from "../utils/event-enums";
+import { toEventTypeLabel } from "../utils/event-enums";
 
 export const updateEventInputSchema = z.object({
   id: z.number().positive(),
@@ -58,15 +58,8 @@ export const updateEventInputSchema = z.object({
       })
     )
     .optional(),
-  evaluationType: z
-    .union([
-      z.literal(1),
-      z.literal(2),
-      z.literal(3),
-      z.enum(["ZERO_TO_FIVE", "ZERO_TO_HUNDRED","FINAL_PROJECTS"]),
-      z.enum(["0-5", "0-100","Proyectos Finales"]),
-    ])
-    .optional(),
+  /** Escala del catálogo (`GET /grading-scales`); una escala nueva se crea antes con `POST /grading-scales` */
+  gradingScaleId: z.number().int().positive().optional(),
 });
 
 export type UpdateEventInput = z.infer<typeof updateEventInputSchema>;
@@ -85,10 +78,6 @@ export const updateEvent = ({
         normalizedPayload.eventType === undefined
           ? undefined
           : toEventTypeLabel(normalizedPayload.eventType),
-      evaluationType:
-        normalizedPayload.evaluationType === undefined
-          ? undefined
-          : toEvaluationTypeCode(normalizedPayload.evaluationType),
     })
     .then((response) =>
       normalizeEvent(response?.event ?? response?.data?.event ?? response?.data?.data ?? response?.data ?? response)
