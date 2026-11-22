@@ -1,5 +1,5 @@
 import { useUser } from "@/lib/auth";
-import { canUpdateProject } from "@/lib/authorization";
+import { canManageProjects, canUpdateProject } from "@/lib/authorization";
 import { Column } from "@/components/data-table";
 import { StatusBadge } from "@/components/ui/status-badge/status-badge";
 import { Project } from "@/types/api";
@@ -14,11 +14,12 @@ import {
 } from "@/components/ui/dropdown";
 import { Button } from "@/components/ui/button";
 
-const ProjectActions = ({ project, onApprove, onReject, onRequest }: {
+export const ProjectActions = ({ project, onApprove, onReject, onRequest, onChangeState }: {
   project: Project;
   onApprove: (id: number) => void;
   onReject: (id: number) => void;
   onRequest: (id: number) => void;
+  onChangeState: (id: number) => void;
 }) => {
   const shouldFetchReason =
     (project.state === "REJECTED" || project.state === "REQUEST_CHANGES") &&
@@ -34,6 +35,8 @@ const ProjectActions = ({ project, onApprove, onReject, onRequest }: {
   // Approve, reject and request changes are writes: manage:events
   const { data: user } = useUser();
   const canReview = canUpdateProject(user);
+  // Administrative correction from any state: manage:projects
+  const canChangeState = canManageProjects(user);
 
   const reason =
     project.reason?.trim() ||
@@ -52,49 +55,60 @@ const ProjectActions = ({ project, onApprove, onReject, onRequest }: {
         aria-label="Acciones del proyecto"
         className="w-fit min-w-48 max-w-[calc(100vw-2rem)] sm:max-w-xl"
       >
-        {project.state === "UNDER_REVIEW" && canReview ? (
-          <>
-            <DropdownItem key="request" onPress={() => onRequest(project.id)}>
-              Pedir cambios
-            </DropdownItem>
-
-            <DropdownItem key="reject" color="danger" onPress={() => onReject(project.id)}>
-              Rechazar
-            </DropdownItem>
-
-            <DropdownItem key="approve" onPress={() => onApprove(project.id)}>
-              Aprobar
-            </DropdownItem>
-          </>
-        ) : project.state === "UNDER_REVIEW" ? (
-          <DropdownItem key="under-review" isDisabled>
-            En revisión
-          </DropdownItem>
-        ) : project.state === "APPROVED" ? (
-          <DropdownItem
-            key="approved"
-            isDisabled
-            className="h-auto items-start py-2 text-sm leading-5 text-foreground"
-          >
-            <div className="whitespace-normal break-words text-left">Aprobado</div>
-          </DropdownItem>
-        ) : (
-          <DropdownItem
-            key="reason"
-            isDisabled
-            className="h-auto items-start py-2 text-sm leading-5 text-foreground"
-          >
-            <div className="max-w-[min(36rem,calc(100vw-4rem))] whitespace-normal break-words text-left">
-              {reason}
-            </div>
-          </DropdownItem>
-        )}
+        {[
+          ...(project.state === "UNDER_REVIEW" && canReview
+            ? [
+                <DropdownItem key="request" onPress={() => onRequest(project.id)}>
+                  Pedir cambios
+                </DropdownItem>,
+                <DropdownItem key="reject" color="danger" onPress={() => onReject(project.id)}>
+                  Rechazar
+                </DropdownItem>,
+                <DropdownItem key="approve" onPress={() => onApprove(project.id)}>
+                  Aprobar
+                </DropdownItem>,
+              ]
+            : project.state === "UNDER_REVIEW"
+              ? [
+                  <DropdownItem key="under-review" isDisabled>
+                    En revisión
+                  </DropdownItem>,
+                ]
+              : project.state === "APPROVED"
+                ? [
+                    <DropdownItem
+                      key="approved"
+                      isDisabled
+                      className="h-auto items-start py-2 text-sm leading-5 text-foreground"
+                    >
+                      <div className="whitespace-normal break-words text-left">Aprobado</div>
+                    </DropdownItem>,
+                  ]
+                : [
+                    <DropdownItem
+                      key="reason"
+                      isDisabled
+                      className="h-auto items-start py-2 text-sm leading-5 text-foreground"
+                    >
+                      <div className="max-w-[min(36rem,calc(100vw-4rem))] whitespace-normal break-words text-left">
+                        {reason}
+                      </div>
+                    </DropdownItem>,
+                  ]),
+          ...(canChangeState
+            ? [
+                <DropdownItem key="change-state" onPress={() => onChangeState(project.id)}>
+                  Cambiar estado
+                </DropdownItem>,
+              ]
+            : []),
+        ]}
       </DropdownMenu>
     </Dropdown>
   );
 };
 
-export const columnsProject = ({onApprove, onReject, onRequest}: {onApprove: (id: number) => void; onReject: (id: number) => void; onRequest: (id: number) => void;}): Column<Project>[] => {
+export const columnsProject = ({onApprove, onReject, onRequest, onChangeState}: {onApprove: (id: number) => void; onReject: (id: number) => void; onRequest: (id: number) => void; onChangeState: (id: number) => void;}): Column<Project>[] => {
 return [
   {
     title: "Código",
@@ -131,6 +145,7 @@ return [
       onApprove={onApprove}
       onReject={onReject}
       onRequest={onRequest}
+      onChangeState={onChangeState}
     />
   )},
   {

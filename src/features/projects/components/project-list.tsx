@@ -22,6 +22,9 @@ import { toEventTypeLabel } from "@/features/events/utils/event-enums";
 import { ProjectWithJurors, useProjectsWithJurors } from "../api/get-projects-with-jurors";
 import { SearchProjects } from "../../../components/search-project/search_projects";
 import { documentLink } from "@/lib/document-link";
+import { Can } from "@/components/auth/can";
+import { PERMISSIONS } from "@/lib/authorization";
+import { ChangeProjectStateModal } from "./change-state-modal";
 
 
 export const ProjectList = () => {
@@ -52,7 +55,7 @@ export const ProjectList = () => {
 
   {/* ======================== ACTIONS APPROVE, REJECT, REQUEST FOR TABLE ======================== */}
   const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [action, setAction] = useState<"approve" | "reject" | "request" | null>(null);
+  const [action, setAction] = useState<"approve" | "reject" | "request" | "change-state" | null>(null);
 
   const handleApprove = (id: number) => {
     setSelectedId(id);
@@ -68,8 +71,15 @@ export const ProjectList = () => {
     setSelectedId(id);
     setAction("request");
   };
+
+  const handleChangeState = (id: number) => {
+    setSelectedId(id);
+    setAction("change-state");
+  };
+  const selectedProject = projects.find((project) => project.id === selectedId);
   {/* ======================== ACTIONS APPROVE, REJECT, REQUEST FOR TABLE ======================== */}
   const columns = columnsProject({onApprove: handleApprove, onReject: handleReject, onRequest: handleRequest,
+    onChangeState: handleChangeState,
   });
 
   const handlePageChange = (newPage: number) => {
@@ -227,6 +237,15 @@ export const ProjectList = () => {
                         <ApproveProjectModal projectId={project.id} eventType={selectedEventType} />
                       </div>
                     )}
+                    <Can permission={PERMISSIONS.manageProjects}>
+                      <Button
+                        size="sm"
+                        onPress={() => handleChangeState(project.id)}
+                        className="w-full mb-2 bg-transparent border border-[#ffffff30] py-5 text-white hover:bg-[#eeeeee30]"
+                      >
+                        Cambiar estado
+                      </Button>
+                    </Can>
                       <div className="flex justify-center items-center">
                         <ViewDetails project={project}/>
                       </div>
@@ -274,6 +293,17 @@ export const ProjectList = () => {
           </>
         )}
       </div>
+
+      {selectedProject && (
+        <ChangeProjectStateModal
+          key={selectedProject.id}
+          project={selectedProject}
+          isOpen={action === "change-state"}
+          onOpenChange={(open) => {
+            if (!open) setAction(null);
+          }}
+        />
+      )}
 
       {/* ======================== PAGINATION ======================== */}
       {meta && meta.totalPages > 1 && (

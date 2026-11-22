@@ -7,6 +7,9 @@ import { Project } from "@/types/api";
 import { Eye, FileText } from "lucide-react";
 import { ParticipantsDetails } from "./participants-details";
 import { documentLink } from "@/lib/document-link";
+import { Can } from "@/components/auth/can";
+import { PERMISSIONS } from "@/lib/authorization";
+import { ProjectChangeLog } from "./project-change-log";
 
 export const ViewDetails = ({project} : {project: Project}) => {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
@@ -94,6 +97,12 @@ export const ViewDetails = ({project} : {project: Project}) => {
                     </>
                   )}
                 </section>
+                <Can permission={PERMISSIONS.manageProjects}>
+                  <section className="space-y-2">
+                    <h2 className="font-medium bg-gradient-to-br from-white via-white/80 to-white bg-clip-text text-transparent inline-block">Historial de cambios</h2>
+                    <ProjectChangeLog projectId={project.id} />
+                  </section>
+                </Can>
               </ModalBody>
               <ModalFooter />
             </>

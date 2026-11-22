@@ -18,6 +18,8 @@ export const PERMISSIONS = {
   readUsers: "read:users",
   createUsers: "create:users",
   manageUserRoles: "manage:user_roles",
+  /** Admin and FacultyAdmin: administrative corrections of a project (state, data) and its change log */
+  manageProjects: "manage:projects",
   /** Only the principal Admin: grants or removes Admin and FacultyAdmin */
   manageAdmins: "manage:admins",
 } as const;
@@ -61,6 +63,10 @@ export const canDeleteProject = (user: MaybeUser) =>
 
 export const canUpdateProject = (user: MaybeUser) =>
   hasPermission(user, PERMISSIONS.manageEvents);
+
+// Administrative corrections: PATCH /projects/:id/admin/state and GET /projects/:id/change-log
+export const canManageProjects = (user: MaybeUser) =>
+  hasPermission(user, PERMISSIONS.manageProjects);
 
 // Juries: POST /invitations/events/:eventId/jurors requires manage:events
 export const canInviteJury = (user: MaybeUser) =>
