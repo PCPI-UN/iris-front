@@ -777,4 +777,57 @@ export const projectAdminHandlers = [
       return HttpResponse.json(changed);
     },
   ),
+
+  // POST /projects/:projectId/documents (public): adds files; like the gateway it checks the
+  // types per request only and records nothing in the change log
+  http.post(
+    `${env.API_URL}/projects/:projectId/documents`,
+    async ({ request, params }) => {
+      await networkDelay();
+
+      const projectId = params.projectId as string;
+      const loaded = loadAdminProject(projectId);
+
+      if (!loaded) return notFound();
+
+      const form = await request.formData();
+      const files = form.getAll("files");
+      let metadata: Array<{ type?: string }> = [];
+
+      try {
+        metadata = JSON.parse(String(form.get("documents") ?? ""));
+      } catch {
+        return badRequest("El campo documents es obligatorio");
+      }
+      if (files.length === 0 || files.length !== metadata.length) {
+        return badRequest(
+          `La cantidad de archivos (${files.length}) no coincide con la cantidad de documentos descritos (${metadata.length})`,
+        );
+      }
+      const types = metadata.map((document) => String(document.type));
+
+      if (
+        types.some(
+          (type) => !["LOGO", "POSTER", "SUPPORTING_DOCUMENT"].includes(type),
+        )
+      ) {
+        return badRequest("Tipos de documento no válidos");
+      }
+
+      let nextId = Math.max(0, ...loaded.documents.map((d) => d.id)) + 1;
+      const added: MockDocument[] = types.map((type) => ({
+        id: nextId++,
+        projectId: Number(projectId) || 0,
+        type,
+        url: `https://placehold.co/400x400/png?text=${type}&v=${Date.now()}`,
+        state: "ACTIVE",
+      }));
+
+      await saveProject(projectId, {
+        documents: [...loaded.documents, ...added],
+      });
+
+      return HttpResponse.json({ documents: added }, { status: 201 });
+    },
+  ),
 ];

@@ -8,6 +8,9 @@ import { gatewayError, renderWithClient } from "./render-with-client";
 import { server } from "@/testing/mocks/server";
 import { screen, userEvent, waitFor, within } from "@/testing/test-utils";
 
+// Filling the form opens two HeroUI lists (career and semester): slower than the 5 s default
+vi.setConfig({ testTimeout: 15_000 });
+
 const enrolled = {
   userId: 42,
   studentCode: "200111",
@@ -46,8 +49,15 @@ const fillParticipant = async (user: ReturnType<typeof userEvent.setup>) => {
   await user.type(field(/^apellido/i), "Díaz");
   await user.type(field(/correo/i), "marta@uninorte.edu.co");
   await user.type(field(/código de estudiante/i), "200333");
-  await user.type(field(/semestre/i), "5");
-  await user.type(field(/carrera/i), "Ingeniería de Sistemas");
+  // Career and semester are lists, as in the registration form
+  await user.click(within(form).getByRole("button", { name: /carrera/i }));
+  await user.click(
+    await screen.findByRole("option", {
+      name: "Ingeniería de Sistemas y Computación",
+    }),
+  );
+  await user.click(within(form).getByRole("button", { name: /semestre/i }));
+  await user.click(await screen.findByRole("option", { name: "5to Semestre" }));
 
   return form;
 };
@@ -87,9 +97,8 @@ describe("AdminProjectParticipants", () => {
       await screen.findByText("El nombre es obligatorio"),
     ).toBeInTheDocument();
     expect(screen.getByText("El correo es obligatorio")).toBeInTheDocument();
-    expect(
-      screen.getByText("El semestre debe ser un número"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Selecciona la carrera")).toBeInTheDocument();
+    expect(screen.getByText("Selecciona el semestre")).toBeInTheDocument();
     expect(posted).not.toHaveBeenCalled();
   });
 
@@ -133,7 +142,8 @@ describe("AdminProjectParticipants", () => {
         email: "marta@uninorte.edu.co",
         studentCode: "200333",
         semester: "5",
-        career: "Ingeniería de Sistemas",
+        // The key of the career, like the registration form sends it
+        career: "ingenieria_sistemas",
         reason: "Faltaba",
       }),
     );

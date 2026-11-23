@@ -1,5 +1,7 @@
 "use client";
 
+import type { Selection } from "@react-types/shared";
+
 import { UserMinus, UserPlus } from "lucide-react";
 import { FormEvent, useState } from "react";
 
@@ -10,9 +12,14 @@ import {
   useAdminRemoveParticipant,
 } from "../../api/admin-project-participants";
 
+import {
+  CAREER_OPTIONS,
+  SEMESTER_OPTIONS,
+} from "@/features/projects-public/components/wizard-steps/constants-carrers-semesters";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNotifications } from "@/components/ui/notifications";
+import { Select, SelectItem } from "@/components/ui/select";
 
 type EnrolledParticipant = {
   userId: number;
@@ -69,13 +76,17 @@ export const validateParticipant = (
     errors.studentCode =
       "El código de estudiante no puede superar 20 caracteres";
   }
+  if (!participant.career.trim()) errors.career = "Selecciona la carrera";
   if (!/^\d+$/.test(participant.semester.trim())) {
-    errors.semester = "El semestre debe ser un número";
+    errors.semester = "Selecciona el semestre";
   }
-  if (!participant.career.trim()) errors.career = "La carrera es obligatoria";
 
   return errors;
 };
+
+/** First key of a single selection of a HeroUI Select ("" when cleared) */
+const firstKey = (keys: Selection) =>
+  keys === "all" ? "" : String(Array.from(keys)[0] ?? "");
 
 /** JOINED pending rows are the same people as the enrolled ones: they are removed as enrolled */
 const isStillPending = (participant: PendingParticipant) => {
@@ -332,25 +343,39 @@ export const AdminProjectParticipants = ({
             value={draft.studentCode}
             onValueChange={(value) => setDraftField("studentCode", value)}
           />
-          <Input
-            isRequired
-            errorMessage={draftErrors.semester}
-            inputMode="numeric"
-            isDisabled={isBusy}
-            isInvalid={Boolean(draftErrors.semester)}
-            label="Semestre"
-            value={draft.semester}
-            onValueChange={(value) => setDraftField("semester", value)}
-          />
-          <Input
+          {/* Same lists as the registration form, which stores the career key */}
+          <Select
             isRequired
             errorMessage={draftErrors.career}
             isDisabled={isBusy}
             isInvalid={Boolean(draftErrors.career)}
             label="Carrera"
-            value={draft.career}
-            onValueChange={(value) => setDraftField("career", value)}
-          />
+            placeholder="Seleccionar carrera"
+            selectedKeys={draft.career ? [draft.career] : []}
+            onSelectionChange={(keys) =>
+              setDraftField("career", firstKey(keys))
+            }
+          >
+            {CAREER_OPTIONS.map((option) => (
+              <SelectItem key={option.key}>{option.label}</SelectItem>
+            ))}
+          </Select>
+          <Select
+            isRequired
+            errorMessage={draftErrors.semester}
+            isDisabled={isBusy}
+            isInvalid={Boolean(draftErrors.semester)}
+            label="Semestre"
+            placeholder="Seleccionar semestre"
+            selectedKeys={draft.semester ? [draft.semester] : []}
+            onSelectionChange={(keys) =>
+              setDraftField("semester", firstKey(keys))
+            }
+          >
+            {SEMESTER_OPTIONS.map((option) => (
+              <SelectItem key={option.key}>{option.label}</SelectItem>
+            ))}
+          </Select>
         </div>
         {addError && (
           <p className="text-sm text-danger" role="alert">

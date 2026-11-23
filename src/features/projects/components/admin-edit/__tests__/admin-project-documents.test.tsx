@@ -24,6 +24,7 @@ const mockDocuments = (initial: MockDocument[]) => {
     reason: string | null;
   }> = [];
   const stateBodies: Array<Record<string, unknown>> = [];
+  const added: Array<{ documents: string | null; files: number }> = [];
 
   server.use(
     http.get("*/api/projects/:projectId/admin/documents", () =>
@@ -68,9 +69,28 @@ const mockDocuments = (initial: MockDocument[]) => {
         return HttpResponse.json({});
       },
     ),
+    http.post("*/api/projects/:projectId/documents", async ({ request }) => {
+      const form = await request.formData();
+      const metadata = form.get("documents") as string | null;
+      const [{ type }] = JSON.parse(metadata ?? "[{}]");
+
+      added.push({ documents: metadata, files: form.getAll("files").length });
+      documents = [
+        ...documents,
+        {
+          id: documents.length + 10,
+          projectId: 7,
+          url: `https://files.test/${String(type).toLowerCase()}-agregado.png`,
+          type,
+          state: "ACTIVE",
+        },
+      ];
+
+      return HttpResponse.json({}, { status: 201 });
+    }),
   );
 
-  return { replaced, stateBodies };
+  return { replaced, stateBodies, added };
 };
 
 const DOCUMENTS: MockDocument[] = [
@@ -196,6 +216,83 @@ describe("AdminProjectDocuments", () => {
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "El documento ya está activo",
+    );
+  });
+
+  test("offers to add only the types the project still has room for", async () => {
+    mockDocuments([
+      ...DOCUMENTS,
+      {
+        id: 3,
+        projectId: 7,
+        url: "https://files.test/soporte.pdf",
+        type: "SUPPORTING_DOCUMENT",
+        state: "ACTIVE",
+      },
+    ]);
+    renderWithClient(<AdminProjectDocuments projectId={7} />);
+    await screen.findByAltText("Logo del proyecto");
+
+    // 1 logo and 1 poster at most (an inactive one counts), 2 supporting documents
+    expect(
+      screen.queryByRole("button", { name: "Agregar logo" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Agregar póster" }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(section("Documento de soporte")).getByRole("button", {
+        name: "Agregar documento de soporte",
+      }),
+    ).toBeInTheDocument();
+  });
+
+  test("adds a missing logo with POST /projects/:id/documents", async () => {
+    const { added } = mockDocuments([DOCUMENTS[1]]);
+    const user = userEvent.setup();
+
+    renderWithClient(<AdminProjectDocuments projectId={7} />);
+    expect(
+      await screen.findByRole("button", { name: "Agregar logo" }),
+    ).toBeInTheDocument();
+    await user.upload(
+      screen.getByLabelText("Archivo de Logo para agregar"),
+      new File(["png"], "logo.png", { type: "image/png" }),
+    );
+
+    expect(await screen.findByAltText("Logo del proyecto")).toHaveAttribute(
+      "src",
+      "https://files.test/logo-agregado.png",
+    );
+    expect(added).toEqual([
+      { documents: JSON.stringify([{ type: "LOGO" }]), files: 1 },
+    ]);
+    expect(
+      screen.queryByRole("button", { name: "Agregar logo" }),
+    ).not.toBeInTheDocument();
+  });
+
+  test("shows the 400 of the backend when the file cannot be added", async () => {
+    mockDocuments([DOCUMENTS[1]]);
+    server.use(
+      http.post("*/api/projects/:projectId/documents", () =>
+        gatewayError(
+          400,
+          "No se pueden agregar archivos: las evaluaciones de este evento ya están abiertas",
+        ),
+      ),
+    );
+    const user = userEvent.setup();
+
+    renderWithClient(<AdminProjectDocuments projectId={7} />);
+    await screen.findByRole("button", { name: "Agregar logo" });
+    await user.upload(
+      screen.getByLabelText("Archivo de Logo para agregar"),
+      new File(["png"], "logo.png", { type: "image/png" }),
+    );
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "las evaluaciones de este evento ya están abiertas",
     );
   });
 });

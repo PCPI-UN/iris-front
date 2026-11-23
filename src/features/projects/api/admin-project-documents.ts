@@ -136,3 +136,50 @@ export const useChangeProjectDocumentState = () => {
       invalidateProjectQueries(queryClient, projectId),
   });
 };
+
+/**
+ * Most documents of each type a project can have, as POST /projects (creation) and
+ * POST /projects/:projectId/documents accept them
+ */
+export const DOCUMENT_TYPE_LIMITS: Record<AdminDocumentType, number> = {
+  LOGO: 1,
+  POSTER: 1,
+  SUPPORTING_DOCUMENT: 2,
+};
+
+export type AddProjectDocumentInput = {
+  projectId: number;
+  type: AdminDocumentType;
+  file: File;
+};
+
+/**
+ * Adds a document the project does not have (registration only asks for the poster, and only
+ * in expositions). There is no administrative endpoint for this yet: POST /projects/:projectId/documents
+ * leaves no change log entry and refuses files once the evaluations of the event are open or
+ * the event has ended (its 400 explains it).
+ */
+export const addProjectDocument = ({
+  projectId,
+  type,
+  file,
+}: AddProjectDocumentInput): Promise<unknown> => {
+  const body = new FormData();
+
+  body.append("files", file);
+  body.append("documents", JSON.stringify([{ type }]));
+
+  return api.post(`/projects/${projectId}/documents`, body, {
+    suppressErrorNotification: true,
+  });
+};
+
+export const useAddProjectDocument = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: addProjectDocument,
+    onSuccess: (_data, { projectId }) =>
+      invalidateProjectQueries(queryClient, projectId),
+  });
+};
