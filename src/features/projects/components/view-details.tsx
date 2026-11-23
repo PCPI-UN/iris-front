@@ -1,5 +1,7 @@
 "use client";
 
+import { ProjectCourse } from "./project-course";
+
 import { Button } from "@/components/ui/button";
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@/components/ui/modal";
 import { useDisclosure } from "@/hooks/use-disclosure";
@@ -42,6 +44,16 @@ export const ViewDetails = ({project} : {project: Project}) => {
                     <p className="text-sm font-light">
                         {project.description}
                     </p>
+                </section>
+
+                <section className="space-y-2">
+                  <h2 className="font-medium bg-gradient-to-br from-white via-white/80 to-white bg-clip-text text-transparent inline-block">
+                    Curso (NRC)
+                  </h2>
+                  <ProjectCourse
+                    eventId={project.eventId}
+                    projectId={project.id}
+                  />
                 </section>
 
                 <section className="space-y-2">

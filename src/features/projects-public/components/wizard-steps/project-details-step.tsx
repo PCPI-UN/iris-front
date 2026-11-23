@@ -83,6 +83,7 @@ export function ProjectDetailsStep({
 
       {requiresCourse && (
         <CourseSectionInput
+          eventId={eventId}
           value={project.nrc}
           onChange={(nrc) => onUpdate({ ...project, nrc })}
         />
