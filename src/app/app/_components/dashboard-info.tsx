@@ -1,23 +1,31 @@
 "use client";
 
+import { AdminSummaryCard } from "./admin-summary-card";
+
+import {
+  CurrentEventsSection,
+  PastEventsSection,
+} from "@/features/events/components/me-events-section";
 import { useUser } from "@/lib/auth";
 import { canViewAdministration } from "@/lib/authorization";
 
-import { AdminDashboard } from "./admin-dashboard";
-import { MemberDashboard } from "./member-dashboard";
-
+/**
+ * Panel for everyone: it does not label who the person is, it shows what they
+ * have. Administration appears with `read:events` (decided by permission, not
+ * by role name; the dean sees it read-only), then the events where they hold a
+ * role, one link per role, and the history.
+ */
 export const DashboardInfo = () => {
   const user = useUser();
 
-  // Decides by permission, not by role name: every role that reads events
-  // (admin, faculty admin, dean, event manager...) gets the administration
-  // dashboard, whose GET /dashboard/stats requires read:events.
-  if (canViewAdministration(user.data)) {
-    return <AdminDashboard />;
-  }
-
-  // Everyone else (students, and roles that are still like User: professor,
-  // tutor, department director) gets their events, each with the view of their
-  // role in it (juror or participant)
-  return <MemberDashboard />;
+  return (
+    <div className="dashboard-page space-y-7 pb-12">
+      <h1 className="text-2xl font-bold md:text-3xl">
+        Hola, {user.data?.firstName}
+      </h1>
+      {canViewAdministration(user.data) && <AdminSummaryCard />}
+      <CurrentEventsSection />
+      <PastEventsSection />
+    </div>
+  );
 };
