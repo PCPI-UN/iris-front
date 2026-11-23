@@ -7,6 +7,7 @@ import {
   Save,
   Trash,
 } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -41,6 +42,7 @@ import { useCategories } from "@/features/courses/api/get-categories";
 import { Criterion, CriterionComponent } from "@/types/api";
 
 import { useComponents } from "../api/get-components";
+import { rubricReadinessQueryKey } from "../api/get-rubric-readiness";
 import { deleteComponent, useDeleteComponent } from "../api/delete-component";
 import { useCriteria } from "../api/get-criteria";
 import { createCriteria } from "../api/create-criteria";
@@ -59,6 +61,7 @@ import {
   effectiveCriterionWeights,
   formatCriterionWeight,
 } from "../utils/criterion-weights";
+import { RubricReadiness } from "./rubric-readiness";
 import { CreateCriteriaContextual } from "./create-criteria-contextual";
 import { DeleteCriteria } from "./delete-criteria";
 
@@ -111,6 +114,7 @@ const normalizeComponentForCompare = (component: CriterionComponent) => ({
 
 export const CriteriaList = () => {
   const { addNotification } = useNotifications();
+  const queryClient = useQueryClient();
 
   const [selectedEventKey, setSelectedEventKey] = useState<string>("");
   const [selectedCategoryKey, setSelectedCategoryKey] = useState<string>("");
@@ -426,8 +430,9 @@ export const CriteriaList = () => {
       criteriaQuery.refetch(),
       allEventCriteriaQuery.refetch(),
       componentsQuery.refetch(),
+      queryClient.invalidateQueries({ queryKey: rubricReadinessQueryKey }),
     ]);
-  }, [allEventCriteriaQuery, componentsQuery, criteriaQuery]);
+  }, [allEventCriteriaQuery, componentsQuery, criteriaQuery, queryClient]);
 
   const registerCreatedComponent = useCallback(
     (component: CriterionComponent) => {
@@ -1055,6 +1060,17 @@ export const CriteriaList = () => {
             </CardBody>
           </Card>
         </div>
+      )}
+
+      {!!selectedEventId && availableComponents.length > 0 && (
+        <RubricReadiness
+          categories={categories.map((category) => ({
+            id: Number(category.id),
+            code: category.code,
+          }))}
+          components={availableComponents}
+          eventId={selectedEventId}
+        />
       )}
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">

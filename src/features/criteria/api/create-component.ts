@@ -43,6 +43,10 @@ export const useCreateComponent = ({
       queryClient.invalidateQueries({
         queryKey: ["criterions", "components"],
       });
+      // A new component without criteria leaves every category without a ready rubric
+      queryClient.invalidateQueries({
+        queryKey: ["criterions", "readiness"],
+      });
       onSuccess?.(data, variables, ...args);
     },
     ...restConfig,
