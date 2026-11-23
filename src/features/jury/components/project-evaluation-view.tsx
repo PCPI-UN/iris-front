@@ -472,7 +472,7 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
                       size="lg"
                       onClick={handleSubmit}
                       // Every criterion needs a level: the backend rejects an incomplete evaluation
-                      disabled={isSubmitting || missingCriteria.length > 0}
+                      isDisabled={isSubmitting || missingCriteria.length > 0}
                     >
                       {isSubmitting ? (
                         <span className="mr-2">Enviando...</span>
