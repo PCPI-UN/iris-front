@@ -6,6 +6,8 @@ import dayjs from "dayjs";
 
 import { useEvents } from "../api/get-events";
 
+import { EventTermLabel } from "./event-term-label";
+
 import { Card, CardBody } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 
@@ -88,6 +90,7 @@ export const GetPastEventsAdmin = () => {
                   </span>
                   <span>{formatDateShort(event.inscriptionDeadline)}</span>
                 </div>
+                <EventTermLabel termId={event.termId} />
               </div>
               <Button
                 className="mt-2 w-full font-semibold"

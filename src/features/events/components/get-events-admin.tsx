@@ -19,6 +19,8 @@ import { DeleteEvent } from "./delete-event";
 import { PublishResultsToggle } from "./publish-results-toggle";
 import { UpdateEvent } from "./update-event";
 
+import { EventTermLabel } from "./event-term-label";
+
 import { Snippet } from "@/components/ui/snippet";
 import { Card, CardBody } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
@@ -189,6 +191,7 @@ export const GetEventsAdmin = () => {
                     </span>
                     <span>{formatDateShort(event.inscriptionDeadline)}</span>
                   </div>
+                  <EventTermLabel termId={event.termId} />
                 </div>
 
                 {/* Access code + public badge */}

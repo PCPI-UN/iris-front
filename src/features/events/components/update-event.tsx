@@ -10,6 +10,8 @@ import {
 import { Minus, Plus, SquarePen } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { TermField } from "./term-field";
+
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Form } from "@/components/ui/form";
@@ -49,7 +51,6 @@ import {
   GradingScaleSelection,
   resolveGradingScaleId,
 } from "@/features/grading-scales/utils/grading-scale-selection";
-import { formatTermCode, useTerms } from "../api/get-terms";
 
 type UpdateEventProps = {
   eventId: number;
@@ -170,6 +171,7 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
     { title: "", description: "" },
   ]);
   const [dateFieldErrors, setDateFieldErrors] = useState<DateFieldErrors>({});
+  const [termError, setTermError] = useState<string | undefined>();
   const [scaleSelection, setScaleSelection] = useState<GradingScaleSelection>({
     mode: "catalog",
     scaleId: null,
@@ -182,8 +184,6 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
   ]);
 
   const eventQuery = useEvent({ eventId });
-  const termsQuery = useTerms({ queryConfig: { enabled: isOpen } });
-  const terms = termsQuery.data ?? [];
   useCategoriesDropdown({ eventId });
   const updateEventMutation = useUpdateEvent({
     mutationConfig: {
@@ -193,6 +193,7 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
           title: "Evento actualizado",
         });
         setDateFieldErrors({});
+        setTermError(undefined);
         setStep(1);
         onClose();
       },
@@ -376,8 +377,21 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
     return Object.keys(nextErrors).length === 0;
   };
 
+  /** An event is never saved without an academic term, also the ones created before terms existed */
+  const validateTerm = () => {
+    const isValid = Number(formData.termId) > 0;
+
+    setTermError(isValid ? undefined : "El periodo académico es requerido.");
+
+    return isValid;
+  };
+
   const handleNextStep = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    if (step === 1 && !validateTerm()) {
+      return;
+    }
 
     if (step === 1 && !validateDateFields(1)) {
       return;
@@ -396,6 +410,17 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
 
   const submitUpdate = async () => {
     try {
+      if (!validateTerm()) {
+        setStep(1);
+        addNotification({
+          type: "error",
+          title: "Periodo académico requerido",
+          message: "Elija o cree el periodo del evento antes de guardar.",
+        });
+
+        return;
+      }
+
       if (!validateDateFields(3)) {
         addNotification({
           type: "error",
@@ -443,8 +468,7 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
             ? undefined
             : Number(formData.minimumTeamSize),
         aboutOurAllies: formData.aboutOurAllies || undefined,
-        // An event without term (-1) can be edited without choosing one: then termId is not sent
-        termId: formData.termId ? Number(formData.termId) : undefined,
+        termId: Number(formData.termId),
         requiresCourse: formData.requiresCourse,
         organizers: organizers.filter((value) => value.trim() !== ""),
         collaborators: collaborators.filter((value) => value.trim() !== ""),
@@ -697,32 +721,22 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                       />
 
                       <div className="flex flex-col sm:flex-row gap-4 sm:items-center">
-                        <Select
-                          label="Periodo Académico"
-                          placeholder={
-                            termsQuery.isLoading
-                              ? "Cargando periodos..."
-                              : "Sin periodo asignado"
-                          }
-                          selectedKeys={formData.termId ? new Set([formData.termId]) : new Set([])}
-                          onSelectionChange={(keys) => {
-                            const selected = Array.from(keys)[0];
-                            if (selected !== undefined) {
-                              setFormData((prev) => ({ ...prev, termId: String(selected) }));
-                            }
-                          }}
-                          isLoading={termsQuery.isLoading}
+                        <TermField
+                          isRequired
                           description={
                             formData.termId
                               ? undefined
                               : "Evento anterior a los periodos académicos. Asígnale uno para poder inscribir proyectos con NRC."
                           }
-                          className="flex-1"
-                        >
-                          {terms.map((term) => (
-                            <SelectItem key={String(term.id)}>{formatTermCode(term)}</SelectItem>
-                          ))}
-                        </Select>
+                          errorMessage={termError}
+                          isOpen={isOpen}
+                          placeholder="Sin periodo asignado"
+                          value={formData.termId}
+                          onChange={(termId) => {
+                            setFormData((prev) => ({ ...prev, termId: String(termId) }));
+                            setTermError(undefined);
+                          }}
+                        />
                         <div className="flex-1 flex items-center gap-2">
                           <Switch
                             size="sm"

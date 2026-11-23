@@ -10,6 +10,9 @@ import {
   parseAbsoluteToLocal,
   type DateValue,
 } from "@internationalized/date";
+
+import { TermField } from "./term-field";
+
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
@@ -43,7 +46,6 @@ import {
   GradingScaleSelection,
   resolveGradingScaleId,
 } from "@/features/grading-scales/utils/grading-scale-selection";
-import { formatTermCode, useTerms } from "../api/get-terms";
 
 type Award = {
   title: string;
@@ -140,8 +142,6 @@ export const CreateEvent = () => {
   const createGradingScaleMutation = useCreateGradingScale();
 
   const user = useUser();
-  const termsQuery = useTerms({ queryConfig: { enabled: isOpen } });
-  const terms = termsQuery.data ?? [];
 
   if (!canCreateEvent(user?.data)) {
     return null;
@@ -468,38 +468,16 @@ export const CreateEvent = () => {
                     />
 
                     <div className="flex flex-col sm:flex-row gap-4 sm:items-center">
-                      <Select
-                        label="Periodo Académico"
-                        name="termId"
-                        placeholder={
-                          termsQuery.isLoading
-                            ? "Cargando periodos..."
-                            : "Seleccione el periodo del evento"
-                        }
-                        selectedKeys={formData.termId ? new Set([String(formData.termId)]) : new Set([])}
-                        onSelectionChange={(keys) => {
-                          const selected = Array.from(keys)[0];
-                          setFormData({
-                            ...formData,
-                            termId: selected === undefined ? undefined : Number(selected),
-                          });
+                      <TermField
+                        isRequired
+                        errorMessage={termError}
+                        isOpen={isOpen}
+                        value={formData.termId}
+                        onChange={(termId) => {
+                          setFormData({ ...formData, termId });
                           setTermError(undefined);
                         }}
-                        isLoading={termsQuery.isLoading}
-                        isInvalid={Boolean(termError)}
-                        errorMessage={termError}
-                        description={
-                          !termsQuery.isLoading && terms.length === 0
-                            ? "No hay periodos académicos creados."
-                            : undefined
-                        }
-                        isRequired
-                        className="flex-1"
-                      >
-                        {terms.map((term) => (
-                          <SelectItem key={String(term.id)}>{formatTermCode(term)}</SelectItem>
-                        ))}
-                      </Select>
+                      />
                       <div className="flex-1 flex items-center gap-2">
                         <Switch
                           size="sm"

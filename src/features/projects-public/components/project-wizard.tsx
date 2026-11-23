@@ -475,7 +475,11 @@ const handleSubmit = () => {
         <div>
           {currentStep === 1 && eventType === "Competition" && requiresCourse && (
             <div className="mb-6">
-              <CourseSectionInput value={wizardData.project.nrc} onChange={updateNrc} />
+              <CourseSectionInput
+                eventId={eventId}
+                value={wizardData.project.nrc}
+                onChange={updateNrc}
+              />
             </div>
           )}
           {currentStep === 1 && eventType === "Competition" && (
