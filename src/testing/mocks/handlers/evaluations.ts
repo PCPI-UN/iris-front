@@ -1,6 +1,7 @@
 import { HttpResponse, http } from 'msw';
 
 import { env } from '@/config/env';
+import type { EventCriteriaStats } from '@/features/evaluations/api/get-event-criteria-stats';
 
 import { db, persistDb } from '../db';
 import {
@@ -21,7 +22,59 @@ type EvaluationBody = {
   scores: EvaluationScore[];
 };
 
+/**
+ * The mock database stores no effective weights, so the component averages are a fixed
+ * case: scale 25/55/75/90 and one project graded 90/55/75/25 with weights
+ * 0.2667/0.1333/0.3/0.3 (grade 61.33).
+ */
+const eventCriteriaStatsFixture: EventCriteriaStats = {
+  maxScore: 90,
+  components: [
+    {
+      id: 1,
+      name: "Diseño",
+      weight: 0.4,
+      average: 78.33,
+      projectCount: 1,
+      criteria: [
+        { id: 1, name: "Planos", weight: 0.2667, average: 90 },
+        { id: 2, name: "Cálculo", weight: 0.1333, average: 55 },
+      ],
+    },
+    {
+      id: 2,
+      name: "Escrito",
+      weight: 0.3,
+      average: 75,
+      projectCount: 1,
+      criteria: [{ id: 3, name: "Informe", weight: 0.3, average: 75 }],
+    },
+    {
+      id: 3,
+      name: "Oral",
+      weight: 0.3,
+      average: 25,
+      projectCount: 1,
+      criteria: [{ id: 4, name: "Exposición", weight: 0.3, average: 25 }],
+    },
+  ],
+};
+
 export const evaluationsHandlers = [
+  http.get(
+    `${env.API_URL}/evaluations/events/:eventId/stats`,
+    async ({ cookies }) => {
+      await networkDelay();
+
+      const { error } = requireAuth(cookies);
+
+      if (error) {
+        return HttpResponse.json({ message: error }, { status: 401 });
+      }
+
+      return HttpResponse.json(eventCriteriaStatsFixture);
+    },
+  ),
   http.post(`${env.API_URL}/evaluations`, async ({ request, cookies }) => {
     await networkDelay();
     try {
