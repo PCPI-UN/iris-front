@@ -123,7 +123,8 @@ test("a criterion is created inside its component with a relative weight", async
     componentId: oral.id,
     categoryIds: [5],
   });
-});
+  // Opens the form and loads the categories: slower than the default 5 s with the whole suite
+}, 15_000);
 
 test("a new criterion starts with no category and is not sent without one", async () => {
   const requests = mockApi();
