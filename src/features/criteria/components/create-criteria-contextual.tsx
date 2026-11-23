@@ -533,7 +533,7 @@ const CreateCriteriaContextualContent = ({
                     description={
                       isCriterionLocked
                         ? "Una de sus categorías ya tiene evaluaciones: el peso no se puede cambiar."
-                        : `Frente a los otros criterios de ${component?.name ?? "su componente"} en la misma categoría. Con 1 en todos se reparten el componente por igual.`
+                        : `Frente a los otros criterios de ${component?.name ?? "su componente"} en la misma categoría.`
                     }
                     errorMessage={weightError ?? undefined}
                     inputMode="decimal"
