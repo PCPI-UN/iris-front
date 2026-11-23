@@ -227,7 +227,7 @@ export const projectAdminHandlers = [
       .trim()
       .toLowerCase();
 
-    if (search.length < 3) {
+    if (search.replace(/\s/g, "").length < 3) {
       return badRequest("La búsqueda necesita al menos 3 letras");
     }
     const words = search.split(/\s+/);

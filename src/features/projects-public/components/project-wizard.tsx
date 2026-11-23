@@ -33,6 +33,13 @@ import {
 import { paths } from "@/config/paths";
 import { appendLegacyCourseIdToFormData } from "@/lib/compat/category-legacy";
 import { CourseSectionInput } from "./wizard-steps/course-section-input";
+import { TutorsInput } from "@/features/projects/components/tutors-input";
+import {
+  EMPTY_TUTORS,
+  hasTutors,
+  toTutorsPayload,
+  TutorsValue,
+} from "@/features/projects/utils/tutors";
 
 export type Participant = {
   id: string;
@@ -62,6 +69,8 @@ export type WizardData = {
   participants: Participant[];
   project: ProjectData;
   documents: DocumentsData;
+  /** Optional: registered tutors and tutors typed in by email (Iris#187) */
+  tutors: TutorsValue;
 };
 
 const normalizeSemesterValue = (value: string) => value.match(/\d+/)?.[0] || value;
@@ -142,6 +151,7 @@ export function ProjectWizard({ eventId, eventType, requiresCourse = false }: Pr
       poster: null,
       additionalDocuments: [],
     },
+    tutors: EMPTY_TUTORS,
   });
 
   const competitionCategoriesQuery = useCategoriesDropdown({
@@ -199,6 +209,17 @@ export function ProjectWizard({ eventId, eventType, requiresCourse = false }: Pr
 
   const updateDocuments = (documents: DocumentsData) => {
     setWizardData((prev) => ({ ...prev, documents }));
+  };
+
+  const updateTutors = (tutors: TutorsValue) => {
+    setWizardData((prev) => ({ ...prev, tutors }));
+  };
+
+  /** The tutors travel as JSON in the multipart body; omitted when there are none */
+  const appendTutorsToFormData = (formData: FormData) => {
+    if (hasTutors(wizardData.tutors)) {
+      formData.append("tutors", JSON.stringify(toTutorsPayload(wizardData.tutors)));
+    }
   };
 
   const updateNrc = (nrc: string) => {
@@ -313,6 +334,7 @@ const handleSubmit = () => {
       formData.append("participants", payloadData.participants);
       formData.append("name", `Equipo de ${wizardData.participants.map(p => p.firstName).join("-")}`);
       appendNrcToFormData(formData);
+      appendTutorsToFormData(formData);
 
       createProjectMutation.mutate({ data: formData });
       return;
@@ -366,6 +388,7 @@ const handleSubmit = () => {
     formData.append("participants", payloadData.participants);
     formData.append("documents", payloadData.documents);
     appendNrcToFormData(formData);
+    appendTutorsToFormData(formData);
 
     payloadData.files.forEach(file => formData.append("files", file));
 
@@ -455,6 +478,15 @@ const handleSubmit = () => {
               <CourseSectionInput value={wizardData.project.nrc} onChange={updateNrc} />
             </div>
           )}
+          {currentStep === 1 && eventType === "Competition" && (
+            <div className="mb-6">
+              <h3 className="mb-1 text-base font-semibold text-foreground">Tutor del proyecto (opcional)</h3>
+              <p className="mb-3 text-sm text-muted-foreground">
+                Busque al tutor entre los profesores registrados o agréguelo con su nombre y correo.
+              </p>
+              <TutorsInput value={wizardData.tutors} onChange={updateTutors} />
+            </div>
+          )}
           {currentStep === 1 && (
             <ParticipantsStep
               participants={wizardData.participants}
@@ -469,6 +501,15 @@ const handleSubmit = () => {
               onUpdate={updateProject}
               requiresCourse={requiresCourse}
             />
+          )}
+          {currentStep === 2 && eventType === "Exposition" && (
+            <div className="mt-6">
+              <h3 className="mb-1 text-base font-semibold text-foreground">Tutor del proyecto (opcional)</h3>
+              <p className="mb-3 text-sm text-muted-foreground">
+                Busque al tutor entre los profesores registrados o agréguelo con su nombre y correo.
+              </p>
+              <TutorsInput value={wizardData.tutors} onChange={updateTutors} />
+            </div>
           )}
           {currentStep === 3 && eventType === "Exposition" && (
             <DocumentsStep

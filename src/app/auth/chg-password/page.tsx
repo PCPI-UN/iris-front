@@ -19,7 +19,7 @@ export default function Page() {
         : "Cambia tu contraseña",
     subtitle:
       tokenType === "ACCOUNT_SETUP"
-        ? "Fuiste invitado a hacer parte de este increíble evento, ahora debes establecer tu contraseña para poder continuar"
+        ? "Fuiste invitado a hacer parte de Iris, ahora debes establecer tu contraseña para poder continuar"
         : "Ingresa tu nueva contraseña para continuar",
   };
 

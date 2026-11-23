@@ -73,6 +73,10 @@ describe("administrative edit of a project", () => {
     expect(
       screen.queryByRole("button", { name: "Editar" }),
     ).not.toBeInTheDocument();
+    // manage:events keeps the tutor editor of the detail
+    expect(
+      screen.getByRole("button", { name: /editar tutores/i }),
+    ).toBeInTheDocument();
   });
 
   test("with manage:projects opens the edit mode with its sections", async () => {
@@ -82,6 +86,10 @@ describe("administrative edit of a project", () => {
     // The detail shows the category by its code
     expect(await screen.findByText("Software")).toBeInTheDocument();
     await user.click(await screen.findByRole("button", { name: "Editar" }));
+    // Tutors are edited in the Tutores tab, not with a second button in the detail
+    expect(
+      screen.queryByRole("button", { name: /editar tutores/i }),
+    ).not.toBeInTheDocument();
 
     expect(await screen.findByText("Editar proyecto")).toBeInTheDocument();
     for (const tab of [

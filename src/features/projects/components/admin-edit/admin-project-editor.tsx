@@ -3,7 +3,6 @@
 import { Tab, Tabs } from "@heroui/react";
 
 import { useProject } from "../../api/get-project";
-import { ProjectTutor } from "../../api/project-tutors";
 
 import { AdminProjectDocuments } from "./admin-project-documents";
 import {
@@ -14,6 +13,7 @@ import { AdminProjectParticipants } from "./admin-project-participants";
 import { AdminProjectTutors } from "./admin-project-tutors";
 
 import { Spinner } from "@/components/ui/spinner";
+import { ProjectTutor } from "@/types/api";
 
 /** GET /projects/:id as the gateway returns it (ProjectComplete) */
 type AdminEditableProject = AdminInfoProject & {
@@ -85,7 +85,9 @@ export const AdminProjectEditor = ({ projectId }: AdminProjectEditorProps) => {
         />
       </Tab>
       <Tab key="tutors" title="Tutores">
+        {/* Remounts when the tutors change outside this form (another admin, the detail) */}
         <AdminProjectTutors
+          key={JSON.stringify(project.tutors ?? [])}
           projectId={project.id}
           tutors={project.tutors ?? []}
         />

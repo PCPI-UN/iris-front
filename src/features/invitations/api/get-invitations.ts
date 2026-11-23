@@ -7,7 +7,8 @@ export type Invitation = {
   id: string;
   token: string;
   email: string;
-  targetType: "EVENT" | "PROJECT";
+  /** The gateway only fills it for EVENT and PROJECT: tutor invitations come without event and project */
+  targetType: "EVENT" | "PROJECT" | "PROJECT_TUTOR" | null;
   targetId: number;
   status: number;
   expiresAt: string;
