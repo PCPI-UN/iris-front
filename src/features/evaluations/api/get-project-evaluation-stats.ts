@@ -3,18 +3,17 @@ import { queryOptions, useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api-client';
 import { QueryConfig } from '@/lib/react-query';
 
-export type ProjectEvaluationCategoryStat = {
-  category: string;
-  averageScore: number;
-  weight: number;
-};
+import type { ComponentStats } from './get-event-criteria-stats';
 
 export type ProjectEvaluationStats = {
   projectId: number;
   averageGrade: number;
   evaluationCount: number;
-  categoryStats: ProjectEvaluationCategoryStat[];
   evaluatorIds: number[];
+  /** Average of each rubric component of the project, with the effective weights */
+  components: ComponentStats[];
+  /** Highest grade of the event's grading scale; absent when the event has none */
+  maxScore?: number;
 };
 
 export const getProjectEvaluationStats = async (

@@ -28,7 +28,7 @@ import { getProjectEvaluationStats, type ProjectEvaluationStats } from '@/featur
 import { useEvents } from '@/features/events/api/get-events';
 import { useCategoriesDropdown } from '@/features/courses/api/get-categories-dropdown';
 import { ProjectWithJurors, useProjectsWithJurors } from '@/features/projects/api/get-projects-with-jurors';
-import { useCriterions } from '@/features/criterions/api/get-criterions';
+import { useEventCriteriaStats } from '@/features/evaluations/api/get-event-criteria-stats';
 import { useQueries } from '@tanstack/react-query';
 import '@/features/landing/index.css';
 import { useEventsDropdown } from '@/features/events/api/get-events-dropdown';
@@ -77,8 +77,9 @@ export const MonitoringDashboard = ({ initialEventId, onBack, eventData }: Monit
     eventId: selectedEventId,
     queryConfig: { enabled: projectQueryEnabled },
   });
-  const criterionsQuery = useCriterions({
-    eventId: selectedEventId,
+  const criteriaStatsQuery = useEventCriteriaStats({
+    eventId: selectedEventId ?? 0,
+    categoryId: selectedCategoryId,
     queryConfig: { enabled: projectQueryEnabled && activeTab === 'statistics' },
   });
   const allProjectsQuery = useProjectsWithJurors({
@@ -393,12 +394,12 @@ export const MonitoringDashboard = ({ initialEventId, onBack, eventData }: Monit
 
       {activeTab === 'statistics' ? (
         <StatisticsTab
-          criterions={(criterionsQuery.data?.criterions ?? []).map((criterion) => ({
-            category: criterion.category,
-            name: criterion.name,
-          }))}
-          statisticsProjects={statisticsProjects}
-          allProjectStatsById={allProjectStatsById}
+          criteriaStats={{
+            data: criteriaStatsQuery.data,
+            isLoading: criteriaStatsQuery.isLoading,
+            isError: criteriaStatsQuery.isError,
+          }}
+          showCriteria={selectedCategoryId !== undefined}
           projectTotals={{
             uniqueJurorsCount: projectTotals.uniqueJurorsCount,
             total: projectTotals.total,
