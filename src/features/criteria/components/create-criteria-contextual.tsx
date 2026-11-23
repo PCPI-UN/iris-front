@@ -4,7 +4,7 @@ import type { ComponentProps } from "react";
 import { Can } from "@/components/auth/can";
 import { PERMISSIONS } from "@/lib/authorization";
 import { Pencil, Plus } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ZodError } from "zod";
 
 import { Button } from "@/components/ui/button";
@@ -39,6 +39,7 @@ import {
 } from "../utils/criterion-weights";
 
 const ALL_CATEGORIES_KEY = "__all_categories__";
+const NO_LOCKED_CATEGORIES: number[] = [];
 const CRITERION_NAME_MAX_LENGTH = 100;
 
 type CreateCriteriaContextualProps = {
@@ -64,6 +65,8 @@ type CreateCriteriaContextualProps = {
   buttonSize?: "sm" | "md" | "lg";
   buttonDisabled?: boolean;
   criterionToEdit?: Criterion;
+  /** Categories of the event with evaluations: they cannot be added to or removed from a criterion */
+  lockedCategoryIds?: number[];
   onCreated?: () => void;
   onUpdated?: () => void;
 };
@@ -83,12 +86,23 @@ const CreateCriteriaContextualContent = ({
   buttonSize = "sm",
   buttonDisabled = false,
   criterionToEdit,
+  lockedCategoryIds = NO_LOCKED_CATEGORIES,
   onCreated,
   onUpdated,
 }: CreateCriteriaContextualProps) => {
   const { addNotification } = useNotifications();
   const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
   const isEditing = !!criterionToEdit;
+  const lockedCategoryKeys = useMemo(
+    () => new Set(lockedCategoryIds.map(String)),
+    [lockedCategoryIds],
+  );
+  // A criterion of a category with evaluations only accepts changes of name and description
+  const isCriterionLocked =
+    isEditing &&
+    (criterionToEdit.categoryIds ?? []).some((categoryId) =>
+      lockedCategoryKeys.has(String(categoryId)),
+    );
   // A criterion keeps its component: loose criteria are assigned from the list
   const component = isEditing ? criterionToEdit.component : fixedComponent;
 
@@ -194,11 +208,16 @@ const CreateCriteriaContextualContent = ({
       }
       setSelectedCategoryKeys(criterionCategoryKeys);
     } else {
+      const openCategoryKeys = categories
+        .map((category) => String(category.id))
+        .filter((key) => !lockedCategoryKeys.has(key));
+
       setSelectedCategoryKeys(
-        new Set([
-          ALL_CATEGORIES_KEY,
-          ...categories.map((category) => String(category.id)),
-        ]),
+        new Set(
+          openCategoryKeys.length === categories.length
+            ? [ALL_CATEGORIES_KEY, ...openCategoryKeys]
+            : openCategoryKeys,
+        ),
       );
     }
 
@@ -209,6 +228,7 @@ const CreateCriteriaContextualContent = ({
     hasInitializedCategories,
     isEditing,
     isOpen,
+    lockedCategoryKeys,
   ]);
 
   const isPending =
@@ -452,6 +472,17 @@ const CreateCriteriaContextualContent = ({
                     selectionMode="multiple"
                     selectedKeys={selectedCategoryKeys}
                     onSelectionChange={handleCategorySelectionChange}
+                    // "Todas" would add or remove the categories with evaluations too
+                    disabledKeys={
+                      lockedCategoryKeys.size > 0
+                        ? [ALL_CATEGORIES_KEY, ...lockedCategoryKeys]
+                        : []
+                    }
+                    description={
+                      lockedCategoryKeys.size > 0
+                        ? "Las categorías con evaluaciones no se pueden agregar ni quitar."
+                        : undefined
+                    }
                     isDisabled={!selectedEventKey || categories.length === 0}
                     isLoading={!!selectedEventKey && categoriesQuery.isLoading}
                     renderValue={categoryRenderValue}
@@ -494,10 +525,15 @@ const CreateCriteriaContextualContent = ({
                   />
                   <Input
                     isRequired
-                    description={`Frente a los otros criterios de ${component?.name ?? "su componente"} en la misma categoría. Con 1 en todos se reparten el componente por igual.`}
+                    description={
+                      isCriterionLocked
+                        ? "Una de sus categorías ya tiene evaluaciones: el peso no se puede cambiar."
+                        : `Frente a los otros criterios de ${component?.name ?? "su componente"} en la misma categoría. Con 1 en todos se reparten el componente por igual.`
+                    }
                     errorMessage={weightError ?? undefined}
                     inputMode="decimal"
                     isInvalid={!!weightError}
+                    isReadOnly={isCriterionLocked}
                     label="Peso relativo"
                     name="weight"
                     type="text"

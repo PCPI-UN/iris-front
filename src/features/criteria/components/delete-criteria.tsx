@@ -20,11 +20,14 @@ import { useDisclosure } from "@/hooks/use-disclosure";
 
 type DeleteCriteriaProps = {
   criterionId: number;
+  /** The criterion belongs to a category with evaluations */
+  isDisabled?: boolean;
   onDeleted?: () => void;
 };
 
 const DeleteCriteriaContent = ({
   criterionId,
+  isDisabled = false,
   onDeleted,
 }: DeleteCriteriaProps) => {
   const { addNotification } = useNotifications();
@@ -58,6 +61,7 @@ const DeleteCriteriaContent = ({
         color="danger"
         isIconOnly
         aria-label="Eliminar criterio"
+        isDisabled={isDisabled}
         onPress={() => onOpen()}
       >
         <Trash size={16} />

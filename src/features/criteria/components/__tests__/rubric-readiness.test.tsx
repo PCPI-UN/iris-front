@@ -45,6 +45,7 @@ test("the fields the gateway leaves out are read as false, 0 and empty lists", (
   ).toEqual({
     eventId: 7,
     componentsWeight: 0,
+    componentsLocked: false,
     categories: [
       {
         courseId: 5,
@@ -52,6 +53,7 @@ test("the fields the gateway leaves out are read as false, 0 and empty lists", (
         criteriaCount: 0,
         missingComponentIds: [],
         criteriaWithoutComponent: [],
+        locked: false,
       },
     ],
   });

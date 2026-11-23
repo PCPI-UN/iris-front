@@ -25,7 +25,12 @@ const mockApi = () => {
       HttpResponse.json({ data: [{ id: eventId, name: "Feria 2026" }] }),
     ),
     http.get("*/api/events/courses/all", () =>
-      HttpResponse.json({ courses: [{ id: 5, code: "IST-101" }] }),
+      HttpResponse.json({
+        courses: [
+          { id: 5, code: "IST-101" },
+          { id: 6, code: "IST-102" },
+        ],
+      }),
     ),
     http.post("*/api/criterions", async ({ request }) => {
       const body = await request.json();
@@ -94,7 +99,7 @@ test("a criterion is created inside its component with a relative weight", async
     name: "Claridad",
     weight: 10,
     componentId: oral.id,
-    categoryIds: [5],
+    categoryIds: [5, 6],
   });
 });
 
@@ -133,7 +138,7 @@ test("editing a criterion keeps its component", async () => {
     description: "",
     weight: 10,
     active: true,
-    categoryIds: [5],
+    categoryIds: [5, 6],
     component: oral,
   } as unknown as Criterion;
 
@@ -165,4 +170,66 @@ test("editing a criterion keeps its component", async () => {
   await waitFor(() => expect(requests).toHaveLength(1));
   expect(requests[0]).toMatchObject({ method: "PUT", body: { weight: 9 } });
   expect(requests[0].body).not.toHaveProperty("componentId");
+});
+
+test("a new criterion leaves out the categories that already have evaluations", async () => {
+  const requests = mockApi();
+
+  renderForm(
+    <CreateCriteriaContextual
+      defaultEventId={String(eventId)}
+      fixedComponent={oral}
+      lockedCategoryIds={[5]}
+    />,
+  );
+
+  await userEvent.click(
+    screen.getByRole("button", { name: /agregar criterio/i }),
+  );
+  await userEvent.type(screen.getByLabelText(/nombre/i), "Claridad");
+  await waitFor(() =>
+    expect(
+      screen.getByRole("button", { name: /categorías/i }),
+    ).toHaveTextContent("IST-102"),
+  );
+  expect(
+    screen.getByText(/con evaluaciones no se pueden agregar ni quitar/i),
+  ).toBeInTheDocument();
+  await userEvent.click(
+    screen.getByRole("button", { name: /crear criterio/i }),
+  );
+
+  await waitFor(() => expect(requests).toHaveLength(1));
+  expect(requests[0].body.categoryIds).toEqual([6]);
+});
+
+test("a criterion of an evaluated category keeps its weight", async () => {
+  mockApi();
+  const criterion = {
+    id: 30,
+    eventId,
+    name: "Claridad",
+    description: "",
+    weight: 10,
+    active: true,
+    categoryIds: [5],
+    component: oral,
+  } as unknown as Criterion;
+
+  renderForm(
+    <CreateCriteriaContextual
+      criterionToEdit={criterion}
+      defaultEventId={String(eventId)}
+      lockedCategoryIds={[5]}
+    />,
+  );
+
+  await userEvent.click(
+    screen.getByRole("button", { name: /editar criterio/i }),
+  );
+
+  expect(screen.getByLabelText(/peso relativo/i)).toHaveAttribute("readonly");
+  expect(
+    screen.getByText(/ya tiene evaluaciones: el peso no se puede cambiar/i),
+  ).toBeInTheDocument();
 });

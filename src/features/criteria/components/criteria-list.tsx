@@ -3,6 +3,7 @@
 import {
   AlertTriangle,
   ChevronDown,
+  Lock,
   RotateCcw,
   Save,
   Trash,
@@ -42,7 +43,10 @@ import { useCategories } from "@/features/courses/api/get-categories";
 import { Criterion, CriterionComponent } from "@/types/api";
 
 import { useComponents } from "../api/get-components";
-import { rubricReadinessQueryKey } from "../api/get-rubric-readiness";
+import {
+  rubricReadinessQueryKey,
+  useRubricReadiness,
+} from "../api/get-rubric-readiness";
 import { deleteComponent, useDeleteComponent } from "../api/delete-component";
 import { useCriteria } from "../api/get-criteria";
 import { createCriteria } from "../api/create-criteria";
@@ -183,6 +187,27 @@ export const CriteriaList = () => {
     eventId: selectedEventId,
     queryConfig: { enabled: !!selectedEventKey },
   });
+
+  // Once there are evaluations the backend refuses the changes that alter the rubric used to grade
+  const readinessQuery = useRubricReadiness({
+    eventId: selectedEventId ?? 0,
+    queryConfig: { enabled: !!selectedEventId },
+  });
+  const componentsLocked = !!readinessQuery.data?.componentsLocked;
+  const lockedCategoryIds = useMemo(
+    () =>
+      (readinessQuery.data?.categories ?? [])
+        .filter((category) => category.locked)
+        .map((category) => category.courseId),
+    [readinessQuery.data],
+  );
+  const isCriterionLocked = useCallback(
+    (criterion: Criterion) =>
+      (criterion.categoryIds ?? []).some((categoryId) =>
+        lockedCategoryIds.includes(categoryId),
+      ),
+    [lockedCategoryIds],
+  );
 
   const updateCriteriaMutation = useUpdateCriteria();
   const deleteComponentMutation = useDeleteComponent();
@@ -861,6 +886,7 @@ export const CriteriaList = () => {
     const emphasizeLoose = options?.emphasizeLoose;
     const compact = options?.compact;
     const selectedAssignment = assignmentByCriterion[criterion.id] || "";
+    const isLocked = isCriterionLocked(criterion);
 
     return (
       <Card
@@ -909,6 +935,7 @@ export const CriteriaList = () => {
                 <CreateCriteriaContextual
                   defaultEventId={selectedEventKey}
                   criterionToEdit={criterion}
+                  lockedCategoryIds={lockedCategoryIds}
                   buttonVariant="flat"
                   buttonColor="default"
                   onUpdated={() => {
@@ -918,6 +945,7 @@ export const CriteriaList = () => {
                 />
                 <DeleteCriteria
                   criterionId={criterion.id}
+                  isDisabled={isLocked}
                   onDeleted={() => {
                     markUnsavedChanges();
                     refetchCriteriaState();
@@ -956,16 +984,18 @@ export const CriteriaList = () => {
                             {component.name}
                           </SelectItem>
                         ))}
-                        <SelectItem key={ADD_COMPONENT_KEY}>
-                          Añadir nuevo componente
-                        </SelectItem>
+                        {!componentsLocked && (
+                          <SelectItem key={ADD_COMPONENT_KEY}>
+                            Añadir nuevo componente
+                          </SelectItem>
+                        )}
                       </>
                     </Select>
                   </div>
                   <Button
                     size="sm"
                     color="primary"
-                    isDisabled={!selectedAssignment}
+                    isDisabled={!selectedAssignment || isLocked}
                     onPress={() => handleAssignToComponent(criterion)}
                     isLoading={assignPendingId === criterion.id}
                   >
@@ -1076,7 +1106,7 @@ export const CriteriaList = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">
           <CreateComponent
-            isDisabled={!selectedEventKey}
+            isDisabled={!selectedEventKey || componentsLocked}
             eventId={selectedEventId}
             onCreated={(component) => {
               if (!selectedEventKey) return;
@@ -1246,6 +1276,17 @@ export const CriteriaList = () => {
         </Card>
       ) : mode === "components" ? (
         <div className="space-y-3">
+          {componentsLocked && (
+            <div
+              className="flex items-center gap-2 rounded-lg border border-default-300 bg-default-100 px-3 py-2 text-sm text-default-600"
+              role="status"
+            >
+              <Lock className="size-4 shrink-0" />
+              El evento ya tiene evaluaciones: los componentes no se pueden
+              crear, eliminar ni cambiar de peso, y los criterios de las
+              categorías evaluadas solo admiten cambios de nombre y descripción.
+            </div>
+          )}
           {availableComponents.length > 0 && !componentsWeightIsFull && (
             <div
               className="flex items-center gap-2 rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-sm text-warning"
@@ -1320,6 +1361,12 @@ export const CriteriaList = () => {
                         <CreateCriteriaContextual
                           defaultEventId={selectedEventKey}
                           fixedComponent={component}
+                          lockedCategoryIds={lockedCategoryIds}
+                          // Every category has evaluations: a new criterion would not fit any
+                          buttonDisabled={
+                            categories.length > 0 &&
+                            lockedCategoryIds.length >= categories.length
+                          }
                           buttonLabel="Agregar criterio"
                           buttonVariant="flat"
                           buttonColor="primary"
@@ -1331,6 +1378,7 @@ export const CriteriaList = () => {
                         <CreateComponent
                           componentToEdit={component}
                           eventId={selectedEventId}
+                          isWeightLocked={componentsLocked}
                           onUpdated={(updatedComponent) => {
                             markUnsavedChanges();
                             setCreatedComponentsByEvent((prev) => {
@@ -1355,6 +1403,7 @@ export const CriteriaList = () => {
                           color="danger"
                           isIconOnly
                           aria-label="Eliminar componente"
+                          isDisabled={componentsLocked}
                           isLoading={deletePendingId === component.id}
                           onPress={() => {
                             setDeleteComponentMode("reassign");

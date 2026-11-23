@@ -139,6 +139,39 @@ test("renaming a component without touching its weight does not send the weight"
   });
 });
 
+test("once the event has evaluations the weight is read-only and only the name is sent", async () => {
+  const requests = mockApi();
+
+  renderForm(
+    <CreateComponent
+      componentToEdit={otherComponents[1]}
+      eventId={eventId}
+      isWeightLocked
+    />,
+  );
+
+  await userEvent.click(
+    screen.getByRole("button", { name: /editar componente/i }),
+  );
+  const weight = screen.getByLabelText(/peso en la nota/i);
+
+  expect(weight).toHaveAttribute("readonly");
+  expect(
+    screen.getByText(/ya tiene evaluaciones: el peso no se puede cambiar/i),
+  ).toBeInTheDocument();
+
+  const name = screen.getByLabelText(/nombre/i);
+
+  await userEvent.clear(name);
+  await userEvent.type(name, "Presentación oral");
+  await userEvent.click(
+    screen.getByRole("button", { name: /guardar cambios/i }),
+  );
+
+  await waitFor(() => expect(requests).toHaveLength(1));
+  expect(requests[0].body).not.toHaveProperty("weight");
+});
+
 test("the backend refusal is shown inside the form", async () => {
   mockApi({ updateStatus: 400 });
   renderForm(

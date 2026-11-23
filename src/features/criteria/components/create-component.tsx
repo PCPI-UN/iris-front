@@ -49,6 +49,8 @@ type CreateComponentProps = {
   onUpdated?: (component: CriterionComponent) => void;
   componentToEdit?: CriterionComponent;
   isDisabled?: boolean;
+  /** The event has evaluations: the weight stays as it is and only the name can change */
+  isWeightLocked?: boolean;
   isOpen?: boolean;
   onOpenChange?: (isOpen: boolean) => void;
   hideTrigger?: boolean;
@@ -60,6 +62,7 @@ const CreateComponentContent = ({
   onUpdated,
   componentToEdit,
   isDisabled = false,
+  isWeightLocked = false,
   isOpen: isOpenProp,
   onOpenChange,
   hideTrigger = false,
@@ -321,12 +324,17 @@ const CreateComponentContent = ({
 
                   <Input
                     isRequired
-                    description={eventWeightHint}
+                    description={
+                      isWeightLocked
+                        ? "El evento ya tiene evaluaciones: el peso no se puede cambiar."
+                        : eventWeightHint
+                    }
                     endContent={
                       <span className="text-small text-default-400">%</span>
                     }
                     errorMessage={weightError ?? undefined}
                     isInvalid={weightTouched && !!weightError}
+                    isReadOnly={isWeightLocked}
                     label="Peso en la nota"
                     max={100}
                     min={0.01}
