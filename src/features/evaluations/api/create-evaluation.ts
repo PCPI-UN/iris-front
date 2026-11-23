@@ -24,7 +24,10 @@ export const createEvaluation = ({
 }: {
   data: CreateEvaluationInput;
 }): Promise<any> => {
-  return api.post(`/evaluations/projects/evaluate`, data);
+  // The jury view shows its own message for the errors
+  return api.post(`/evaluations/projects/evaluate`, data, {
+    suppressErrorNotification: true,
+  });
 };
 
 type UseCreateEvaluationOptions = {

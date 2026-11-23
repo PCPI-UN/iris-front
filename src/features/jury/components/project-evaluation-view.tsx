@@ -38,6 +38,7 @@ import { useEventGradingScale } from "@/features/grading-scales/api/get-event-gr
 import { toScoreLevelOptions } from "@/features/grading-scales/utils/grading-scale"
 
 import { ScoreLevelPicker } from "./score-level-picker"
+import { jurorEvaluationErrorMessage } from "../utils/evaluation-error"
 
 type ProjectEvaluationViewProps = {
   projectId: string
@@ -50,6 +51,7 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
   const [comments, setComments] = useState("")
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [showMissing, setShowMissing] = useState(false)
   const { addNotification } = useNotifications()
 
   const { mutate } = useCreateEvaluation({
@@ -62,8 +64,13 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
         setIsSubmitting(false)
         router.push(`/app/events/${project?.eventId}`)
       },
-      onError: () => {
+      onError: (error) => {
         setIsSubmitting(false)
+        addNotification({
+          type: "error",
+          title: "No se pudo enviar la evaluación",
+          message: jurorEvaluationErrorMessage(error?.message),
+        })
       },
     },
   })
@@ -120,6 +127,12 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
 
   const allSections = backendSections
   const currentSection = allSections[currentPage] ?? allSections[0]
+  // The backend rejects an evaluation that leaves any criterion of the rubric without a score
+  const missingCriteria = allSections.flatMap((section, sectionIndex) =>
+    section.subcriteria
+      .filter((criterion) => scores[criterion.id] === undefined)
+      .map((criterion) => ({ ...criterion, sectionIndex })),
+  )
 
   const handleScoreChange = (criterionId: string, value: number) => {
     setScores((prev) => ({
@@ -131,9 +144,9 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
   const handleSubmit = () => {
     if (isSubmitting) return
 
-    const hasAnyScore = Object.keys(scores).length > 0
-    if (!hasAnyScore) {
-      alert("Por favor, proporcione calificaciones antes de enviar")
+    if (missingCriteria.length > 0) {
+      setShowMissing(true)
+      setCurrentPage(missingCriteria[0].sectionIndex)
       return
     }
 
@@ -369,6 +382,24 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
                   </h3>
                 </div>
 
+                {/* On the last section it explains why "Enviar evaluación" is disabled */}
+                {(showMissing || currentPage === allSections.length - 1) &&
+                  missingCriteria.length > 0 && (
+                  <div
+                    className="flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-sm text-warning"
+                    role="alert"
+                  >
+                    <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                    <span>
+                      Falta calificar {missingCriteria.length} criterio(s):{" "}
+                      {missingCriteria
+                        .map((criterion) => criterion.name)
+                        .join(", ")}
+                      .
+                    </span>
+                  </div>
+                )}
+
                 <div className="space-y-6 md:space-y-8">
                   {currentSection?.subcriteria?.map((criterion) => (
                     <div key={criterion.id} className="space-y-3 md:space-y-4">
@@ -440,7 +471,8 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
                       color="primary"
                       size="lg"
                       onClick={handleSubmit}
-                      disabled={isSubmitting}
+                      // Every criterion needs a level: the backend rejects an incomplete evaluation
+                      isDisabled={isSubmitting || missingCriteria.length > 0}
                     >
                       {isSubmitting ? (
                         <span className="mr-2">Enviando...</span>
