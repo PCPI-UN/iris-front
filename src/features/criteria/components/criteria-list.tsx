@@ -55,6 +55,10 @@ import {
   sumComponentWeights,
   toWeightPercent,
 } from "../utils/component-weights";
+import {
+  effectiveCriterionWeights,
+  formatCriterionWeight,
+} from "../utils/criterion-weights";
 import { CreateCriteriaContextual } from "./create-criteria-contextual";
 import { DeleteCriteria } from "./delete-criteria";
 
@@ -368,31 +372,6 @@ export const CriteriaList = () => {
     return map;
   }, [criteria]);
 
-  const totalWeightPercent = useMemo(
-    () =>
-      criteria.reduce(
-        (total, criterion) =>
-          total + Math.round(Number(criterion.weight || 0) * 100),
-        0,
-      ),
-    [criteria],
-  );
-
-  const availableWeightForNewCriterion = useMemo(
-    () => Math.max(0, 100 - totalWeightPercent),
-    [totalWeightPercent],
-  );
-
-  const availableWeightForCriterionEdit = useCallback(
-    (criterionId?: number) => {
-      if (!criterionId) return Math.max(0, 100 - totalWeightPercent);
-      const c = criteria.find((x) => x.id === criterionId);
-      const own = c ? Math.round(Number(c.weight || 0) * 100) : 0;
-      return Math.max(0, 100 - (totalWeightPercent - own));
-    },
-    [criteria, totalWeightPercent],
-  );
-
   // The component weights are shared by every category of the event and must add up to 100 %
   const componentsWeight = useMemo(
     () => sumComponentWeights(availableComponents),
@@ -405,29 +384,34 @@ export const CriteriaList = () => {
       ? "text-danger"
       : "text-warning";
 
+  // The weight of a criterion in the grade depends on the category: it is only shown when one is chosen
+  const selectedCategoryId = toPositiveInt(selectedCategoryKey);
+  const effectiveWeights = useMemo(
+    () =>
+      selectedCategoryId
+        ? effectiveCriterionWeights(
+            availableComponents,
+            criteria,
+            selectedCategoryId,
+          )
+        : null,
+    [availableComponents, criteria, selectedCategoryId],
+  );
+
   const componentSummaryRows = useMemo(
     () =>
-      availableComponents.map((component) => {
-        const componentCriteria = criteriaByComponent.get(component.id) ?? [];
-        const totalCriteriaWeight = componentCriteria.reduce(
-          (sum, c) => sum + Number(c.weight || 0),
-          0,
-        );
-        return {
-          id: component.id,
-          name: component.name,
-          criteriaCount: componentCriteria.length,
-          criteriaWeightPercent: totalCriteriaWeight * 100,
-        };
-      }),
+      availableComponents.map((component) => ({
+        id: component.id,
+        name: component.name,
+        criteriaCount: (criteriaByComponent.get(component.id) ?? []).length,
+        weightPercent: toWeightPercent(component.weight),
+      })),
     [availableComponents, criteriaByComponent],
   );
 
   const hasValidationErrors = hasComponentsAvailable && looseCount > 0;
-  const weightDeltaTo100 = 100 - totalWeightPercent;
-  const hasExactWeight100 = totalWeightPercent === 100;
   const canSave =
-    hasUnsavedChanges && !hasValidationErrors && hasExactWeight100;
+    hasUnsavedChanges && !hasValidationErrors && componentsWeightIsFull;
 
   const markUnsavedChanges = useCallback(() => {
     if (!selectedEventKey) return;
@@ -584,6 +568,8 @@ export const CriteriaList = () => {
           };
 
           if (!current) {
+            // The backend only creates criteria inside a component
+            if (!restoredComponentId) continue;
             await createCriteria({
               data: {
                 eventId: payload.eventId,
@@ -591,9 +577,7 @@ export const CriteriaList = () => {
                 description: payload.description,
                 weight: payload.weight,
                 categoryIds: payload.categoryIds,
-                ...(restoredComponentId
-                  ? { componentId: restoredComponentId }
-                  : {}),
+                componentId: restoredComponentId,
               },
             });
             continue;
@@ -911,17 +895,15 @@ export const CriteriaList = () => {
               </div>
 
               <div className="flex shrink-0 flex-col items-end gap-1.5 sm:flex-row sm:items-center sm:justify-end sm:gap-2">
-                <Chip size="sm" color="primary" variant="flat">
-                    {(Number(criterion.weight || 0) * 100).toFixed(1)}%
+                <Chip color="primary" size="sm" variant="flat">
+                  {formatCriterionWeight(
+                    criterion.weight,
+                    effectiveWeights?.get(criterion.id),
+                  )}
                 </Chip>
                 <CreateCriteriaContextual
                   defaultEventId={selectedEventKey}
-                  availableComponents={availableComponents}
-                  requireComponentSelection={hasComponentsAvailable}
                   criterionToEdit={criterion}
-                  availableWeightPercent={availableWeightForCriterionEdit(
-                    criterion.id,
-                  )}
                   buttonVariant="flat"
                   buttonColor="default"
                   onUpdated={() => {
@@ -1077,19 +1059,6 @@ export const CriteriaList = () => {
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">
-          {!hasComponentsAvailable && (
-            <CreateCriteriaContextual
-              defaultEventId={selectedEventKey}
-              availableComponents={availableComponents}
-              requireComponentSelection={false}
-              buttonDisabled={!selectedEventKey}
-              availableWeightPercent={availableWeightForNewCriterion}
-              onCreated={() => {
-                markUnsavedChanges();
-                refetchCriteriaState();
-              }}
-            />
-          )}
           <CreateComponent
             isDisabled={!selectedEventKey}
             eventId={selectedEventId}
@@ -1123,23 +1092,6 @@ export const CriteriaList = () => {
         </div>
 
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:items-end">
-          {!!selectedEventKey && (
-            <p
-              className={`text-xs ${
-                hasExactWeight100
-                  ? "text-success"
-                  : weightDeltaTo100 > 0
-                    ? "text-warning"
-                    : "text-danger"
-              }`}
-            >
-              {hasExactWeight100
-                ? `Acumulado: ${totalWeightPercent}% (completo)`
-                : weightDeltaTo100 > 0
-                  ? `Acumulado: ${totalWeightPercent}% · Falta: ${weightDeltaTo100}% para llegar a 100%`
-                  : `Acumulado: ${totalWeightPercent}% · Sobra: ${Math.abs(weightDeltaTo100)}% sobre 100%`}
-            </p>
-          )}
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
             {hasUnsavedChanges && (
               <Button
@@ -1233,7 +1185,7 @@ export const CriteriaList = () => {
               <TableHeader>
                 <TableColumn>COMPONENTE</TableColumn>
                 <TableColumn align="center">CRITERIOS</TableColumn>
-                <TableColumn align="center">PESO CRITERIOS</TableColumn>
+                <TableColumn align="center">PESO EN LA NOTA</TableColumn>
               </TableHeader>
               <TableBody
                 items={componentSummaryRows}
@@ -1245,7 +1197,7 @@ export const CriteriaList = () => {
                     <TableCell align="center">{row.criteriaCount}</TableCell>
                     <TableCell align="center">
                       <Chip size="sm" color="default" variant="flat">
-                        {row.criteriaWeightPercent.toFixed(1)}%
+                        {row.weightPercent} %
                       </Chip>
                     </TableCell>
                   </TableRow>
@@ -1271,8 +1223,8 @@ export const CriteriaList = () => {
               No hay criterios ni componentes aún
             </p>
             <p className="text-sm mt-1">
-              Usa los botones de arriba para iniciar la configuración de
-              evaluación.
+              Crea un componente con su peso en la nota y agrega sus criterios
+              desde él.
             </p>
           </CardBody>
         </Card>
@@ -1352,14 +1304,9 @@ export const CriteriaList = () => {
                         <CreateCriteriaContextual
                           defaultEventId={selectedEventKey}
                           fixedComponent={component}
-                          availableComponents={availableComponents}
-                          requireComponentSelection
                           buttonLabel="Agregar criterio"
                           buttonVariant="flat"
                           buttonColor="primary"
-                          availableWeightPercent={
-                            availableWeightForNewCriterion
-                          }
                           onCreated={() => {
                             markUnsavedChanges();
                             refetchCriteriaState();
@@ -1569,7 +1516,8 @@ export const CriteriaList = () => {
                   <p className="rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-warning">
                     No puedes guardar aún:{" "}
                     {[
-                      !hasExactWeight100 && "el peso total debe ser 100%",
+                      !componentsWeightIsFull &&
+                        "los componentes deben sumar 100 %",
                       hasValidationErrors &&
                         "todos los criterios deben estar asignados a un componente",
                     ]

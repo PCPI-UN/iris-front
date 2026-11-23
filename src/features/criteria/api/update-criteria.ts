@@ -18,11 +18,8 @@ export const updateCriteriaInputSchema = z.object({
     .max(100, "Máximo 100 caracteres")
     .optional(),
   description: z.string().optional(),
-  weight: z
-    .number()
-    .min(0, "La ponderación debe ser mayor o igual a 0")
-    .max(1, "La ponderación debe ser menor o igual a 1")
-    .optional(),
+  // Relative to the other criteria of the same component and category
+  weight: z.number().positive("El peso debe ser mayor que 0").optional(),
   eventId: z.number().min(1, "El evento es obligatorio").optional(),
 
   categoryIds: z

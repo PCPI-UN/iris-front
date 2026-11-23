@@ -13,16 +13,14 @@ export const createCriteriaInputSchema = z.object({
     .min(1, "Este campo es obligatorio")
     .max(100, "Máximo 100 caracteres"),
   description: z.string().optional(),
-  weight: z
-    .number()
-    .min(0, "La ponderación debe ser mayor o igual a 0")
-    .max(1, "La ponderación debe ser menor o igual a 1"),
+  // Relative to the other criteria of the same component and category
+  weight: z.number().positive("El peso debe ser mayor que 0"),
 
   categoryIds: z
     .array(z.number().min(1, "La categoría es obligatoria"))
     .min(1, "Debes seleccionar al menos una categoría"),
   category: z.string().optional(),
-  componentId: z.number().min(1).optional(),
+  componentId: z.number().min(1, "El componente es obligatorio"),
 });
 
 export type CreateCriteriaInput = z.infer<typeof createCriteriaInputSchema>;
