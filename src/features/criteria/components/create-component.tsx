@@ -5,6 +5,7 @@ import { Can } from "@/components/auth/can";
 import { PERMISSIONS } from "@/lib/authorization";
 import { Pencil, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
+import { ZodError } from "zod";
 
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
@@ -30,6 +31,18 @@ import {
   updateComponentInputSchema,
   useUpdateComponent,
 } from "../api/update-component";
+import { useComponents } from "../api/get-components";
+import {
+  exceedsFullWeight,
+  isFullWeight,
+  sumComponentWeights,
+  toWeightFraction,
+  toWeightPercent,
+  validateWeightPercent,
+} from "../utils/component-weights";
+
+const initialWeightInput = (component?: CriterionComponent) =>
+  component ? String(toWeightPercent(component.weight)) : "";
 
 type CreateComponentProps = {
   onCreated?: (component: CriterionComponent) => void;
@@ -73,9 +86,18 @@ const CreateComponentContent = ({
         ? String(eventId)
         : "",
   );
+  const [weightInput, setWeightInput] = useState<string>(
+    initialWeightInput(componentToEdit),
+  );
+  const [weightTouched, setWeightTouched] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
   const eventsQuery = useEventsDropdown();
   const events = eventsQuery.data?.data ?? [];
- 
+  const selectedEventId = Number(selectedEventKey) || undefined;
+  const componentsQuery = useComponents({
+    eventId: selectedEventId,
+    queryConfig: { enabled: isOpen && !!selectedEventId },
+  });
 
   useEffect(() => {
     if (!isOpen) return;
@@ -86,7 +108,31 @@ const CreateComponentContent = ({
           ? String(eventId)
           : "",
     );
+    setWeightInput(initialWeightInput(componentToEdit));
+    setWeightTouched(false);
+    setFormError(null);
   }, [componentToEdit, eventId, isOpen]);
+
+  const weightError = validateWeightPercent(weightInput);
+  const otherComponentsWeight = sumComponentWeights(
+    (componentsQuery.data?.components ?? []).filter(
+      (component) => component.eventId === selectedEventId,
+    ),
+    componentToEdit?.id,
+  );
+  const eventWeightWithThis =
+    otherComponentsWeight +
+    (weightError ? 0 : toWeightFraction(Number(weightInput)));
+  const eventWeightHint = componentsQuery.isSuccess
+    ? `Otros componentes del evento: ${toWeightPercent(otherComponentsWeight)} %. ` +
+      (weightError
+        ? ""
+        : isFullWeight(eventWeightWithThis)
+          ? "Con este, el evento suma 100 %."
+          : exceedsFullWeight(eventWeightWithThis)
+            ? `Con este sumaría ${toWeightPercent(eventWeightWithThis)} %: los componentes no pueden pasar de 100 %.`
+            : `Con este suma ${toWeightPercent(eventWeightWithThis)} %; para poder evaluar deben sumar 100 %.`)
+    : undefined;
 
   const normalizeComponent = (
     componentResponse: any,
@@ -125,11 +171,7 @@ const CreateComponentContent = ({
         closeModal();
       },
       onError: (error: any) => {
-        addNotification({
-          type: "error",
-          title: "Error",
-          message: error?.message || "No se pudo crear el componente.",
-        });
+        setFormError(error?.message || "No se pudo crear el componente.");
       },
     },
   });
@@ -151,11 +193,7 @@ const CreateComponentContent = ({
         closeModal();
       },
       onError: (error: any) => {
-        addNotification({
-          type: "error",
-          title: "Error",
-          message: error?.message || "No se pudo actualizar el componente.",
-        });
+        setFormError(error?.message || "No se pudo actualizar el componente.");
       },
     },
   });
@@ -188,27 +226,35 @@ const CreateComponentContent = ({
               id={isEditing ? "update-component" : "create-component"}
               onSubmit={async (event) => {
                 event.preventDefault();
+                setFormError(null);
 
                 if (!selectedEventKey) {
-                  addNotification({
-                    type: "error",
-                    title: "Error",
-                    message: "Debes seleccionar un evento primero.",
-                  });
+                  setFormError("Debes seleccionar un evento primero.");
+
+                  return;
+                }
+
+                if (weightError) {
+                  setWeightTouched(true);
+
                   return;
                 }
 
                 const form = event.target as HTMLFormElement;
                 const formData = new FormData(form);
                 const rawData = Object.fromEntries(formData);
+                // An unchanged weight is not sent: the backend refuses weight changes once the event has
+                // evaluations, and renaming must still work then
+                const weightChanged =
+                  !isEditing ||
+                  weightInput !== initialWeightInput(componentToEdit);
 
                 const payload = {
                   name: String(rawData.name || "").trim(),
-                  // The backend requires a small positive weight for components.
-                  // Send the minimal allowed weight (0.01) so creation succeeds
-                  // while the UI ignores component weight for calculations.
-                  weight: 0.01,
                   eventId: Number(selectedEventKey),
+                  ...(weightChanged
+                    ? { weight: toWeightFraction(Number(weightInput)) }
+                    : {}),
                 };
 
                 try {
@@ -224,12 +270,14 @@ const CreateComponentContent = ({
                       await createComponentInputSchema.parseAsync(payload);
                     await createComponentMutation.mutateAsync({ data: values });
                   }
-                } catch (error: any) {
-                  addNotification({
-                    type: "error",
-                    title: "Error de validación",
-                    message: error?.message || "Revisa los datos ingresados.",
-                  });
+                } catch (error) {
+                  // Backend errors are already shown by onError
+                  if (error instanceof ZodError) {
+                    setFormError(
+                      error.issues[0]?.message ??
+                        "Revisa los datos ingresados.",
+                    );
+                  }
                 }
               }}
             >
@@ -270,6 +318,37 @@ const CreateComponentContent = ({
                     defaultValue={componentToEdit?.name ?? ""}
                     isRequired
                   />
+
+                  <Input
+                    isRequired
+                    description={eventWeightHint}
+                    endContent={
+                      <span className="text-small text-default-400">%</span>
+                    }
+                    errorMessage={weightError ?? undefined}
+                    isInvalid={weightTouched && !!weightError}
+                    label="Peso en la nota"
+                    max={100}
+                    min={0.01}
+                    name="weight"
+                    placeholder="Ej: 30"
+                    step={0.01}
+                    type="number"
+                    value={weightInput}
+                    onValueChange={(value) => {
+                      setWeightInput(value);
+                      setWeightTouched(true);
+                    }}
+                  />
+
+                  {formError && (
+                    <div
+                      className="rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger"
+                      role="alert"
+                    >
+                      {formError}
+                    </div>
+                  )}
                 </div>
               </ModalBody>
 

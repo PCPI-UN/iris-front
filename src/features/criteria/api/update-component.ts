@@ -15,7 +15,7 @@ export const updateComponentInputSchema = z.object({
   description: z.string().optional(),
   weight: z
     .number()
-    .min(0, "La ponderación debe ser mayor o igual a 0")
+    .gt(0, "La ponderación debe ser mayor que 0")
     .max(1, "La ponderación debe ser menor o igual a 1")
     .optional(),
 });
@@ -29,7 +29,10 @@ export const updateComponent = ({
   componentId: number;
   data: UpdateComponentInput;
 }): Promise<CriterionComponent> => {
-  return api.put(`/criterions/components/${componentId}`, data);
+  // The form shows the error itself
+  return api.put(`/criterions/components/${componentId}`, data, {
+    suppressErrorNotification: true,
+  });
 };
 
 type UseUpdateComponentOptions = {

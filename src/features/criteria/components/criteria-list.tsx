@@ -49,6 +49,12 @@ import { updateCriteria, useUpdateCriteria } from "../api/update-criteria";
 import { createComponent } from "../api/create-component";
 import { updateComponent } from "../api/update-component";
 import { CreateComponent } from "./create-component";
+import {
+  exceedsFullWeight,
+  isFullWeight,
+  sumComponentWeights,
+  toWeightPercent,
+} from "../utils/component-weights";
 import { CreateCriteriaContextual } from "./create-criteria-contextual";
 import { DeleteCriteria } from "./delete-criteria";
 
@@ -387,7 +393,17 @@ export const CriteriaList = () => {
     [criteria, totalWeightPercent],
   );
 
-  // Components do not have independent weights in the UI anymore.
+  // The component weights are shared by every category of the event and must add up to 100 %
+  const componentsWeight = useMemo(
+    () => sumComponentWeights(availableComponents),
+    [availableComponents],
+  );
+  const componentsWeightIsFull = isFullWeight(componentsWeight);
+  const componentsWeightColor = componentsWeightIsFull
+    ? "text-success"
+    : exceedsFullWeight(componentsWeight)
+      ? "text-danger"
+      : "text-warning";
 
   const componentSummaryRows = useMemo(
     () =>
@@ -1044,6 +1060,18 @@ export const CriteriaList = () => {
               <p className="text-2xl font-bold">{availableComponents.length}</p>
             </CardBody>
           </Card>
+          <Card className="glass-card shadow-sm">
+            <CardHeader className="pb-2 justify-center">
+              <p className="text-xs font-medium text-default-500">
+                Peso de los componentes
+              </p>
+            </CardHeader>
+            <CardBody className="pt-0 text-center">
+              <p className={`text-2xl font-bold ${componentsWeightColor}`}>
+                {toWeightPercent(componentsWeight)} %
+              </p>
+            </CardBody>
+          </Card>
         </div>
       )}
 
@@ -1250,6 +1278,17 @@ export const CriteriaList = () => {
         </Card>
       ) : mode === "components" ? (
         <div className="space-y-3">
+          {availableComponents.length > 0 && !componentsWeightIsFull && (
+            <div
+              className="flex items-center gap-2 rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-sm text-warning"
+              role="alert"
+            >
+              <AlertTriangle className="size-4 shrink-0" />
+              Los componentes suman {toWeightPercent(componentsWeight)} %. Para
+              poder evaluar el evento deben sumar 100 %: ajusta el peso de cada
+              componente desde su botón de editar.
+            </div>
+          )}
           {looseCount > 0 && (
             <div className="space-y-2">
               <div className="rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger">
@@ -1301,7 +1340,8 @@ export const CriteriaList = () => {
                                 {component.name}
                               </p>
                               <p className="text-xs text-default-500">
-                                {componentCriteria.length} criterio(s)
+                                {toWeightPercent(component.weight)} % de la nota
+                                · {componentCriteria.length} criterio(s)
                               </p>
                             </div>
                           </div>
