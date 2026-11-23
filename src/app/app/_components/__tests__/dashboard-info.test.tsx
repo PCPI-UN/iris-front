@@ -45,9 +45,11 @@ const meEvent = (
 const mockApi = ({
   current = [],
   past = [],
+  pendingInvitations = 0,
 }: {
   current?: unknown[];
   past?: unknown[];
+  pendingInvitations?: number;
 }) => {
   const requests: URLSearchParams[] = [];
 
@@ -63,6 +65,18 @@ const mockApi = ({
         meta: { total: list.length, currentPage: 1, totalPages: 1 },
       });
     }),
+    http.get("*/api/invitations/me", () =>
+      HttpResponse.json({
+        invitations: [],
+        meta: {
+          total: pendingInvitations,
+          itemsOnCurrentPage: 0,
+          itemsPerPage: 1,
+          currentPage: 1,
+          totalPages: 1,
+        },
+      }),
+    ),
     http.get("*/api/dashboard/stats", () =>
       HttpResponse.json({
         activeEvents: 3,
@@ -129,9 +143,10 @@ describe("DashboardInfo", () => {
 
     expect(await screen.findByText("Administración")).toBeInTheDocument();
     expect(await screen.findByText("12")).toBeInTheDocument();
-    expect(
-      screen.getByRole("link", { name: /Abrir panel de administración/i }),
-    ).toHaveAttribute("href", "/app/admin");
+    expect(screen.getByRole("link", { name: /Abrir panel/i })).toHaveAttribute(
+      "href",
+      "/app/admin",
+    );
     expect(
       await screen.findByRole("link", { name: /como jurado/i }),
     ).toBeInTheDocument();
@@ -147,7 +162,7 @@ describe("DashboardInfo", () => {
       await screen.findByText(/No tienes eventos en curso/i),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: /Abrir panel de administración/i }),
+      screen.getByRole("link", { name: /Abrir panel/i }),
     ).toBeInTheDocument();
   });
 
@@ -160,6 +175,25 @@ describe("DashboardInfo", () => {
     ).toBeInTheDocument();
     expect(screen.getByText(/inscribirte a un evento/i)).toBeInTheDocument();
     expect(screen.queryByText("Administración")).not.toBeInTheDocument();
+  });
+
+  it("pending invitations show a notice that opens the invitations page", async () => {
+    mockApi({ pendingInvitations: 2 });
+    renderPanel();
+
+    expect(
+      await screen.findByRole("link", {
+        name: /Tienes 2 invitaciones pendientes/i,
+      }),
+    ).toHaveAttribute("href", "/app/invitations");
+  });
+
+  it("no pending invitations, no notice", async () => {
+    mockApi({ current: [meEvent(5, "Feria de Ingeniería", ["JURY"])] });
+    renderPanel();
+
+    await screen.findByRole("link", { name: /como jurado/i });
+    expect(screen.queryByText(/invitaci/i)).not.toBeInTheDocument();
   });
 
   it("the history only asks for past events when it is opened", async () => {

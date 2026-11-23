@@ -1,16 +1,18 @@
 "use client";
 
+import type { LucideIcon } from "lucide-react";
+
 import { useState } from "react";
 import Link from "next/link";
 import { keepPreviousData } from "@tanstack/react-query";
 import dayjs from "dayjs";
-import type { LucideIcon } from "lucide-react";
 import {
   Archive,
   ArrowRight,
   Calendar,
   CalendarDays,
   ChevronDown,
+  Clock,
   CircleDot,
   DoorClosed,
   History,
@@ -39,26 +41,30 @@ export const ME_EVENTS_PAGE_SIZE = 6;
 
 const STATUS_BADGES: Record<
   string,
-  { label: string; style: string; icon: LucideIcon }
+  { label: string; style: string; glow: string; icon: LucideIcon }
 > = {
   AVAILABLE: {
     label: "Activo",
     style: "border-emerald-400/50 bg-emerald-500/20 text-emerald-300",
+    glow: "bg-emerald-500/20",
     icon: CircleDot,
   },
   UPCOMING: {
     label: "Inscripciones abiertas",
     style: "border-sky-400/50 bg-sky-500/20 text-sky-300",
+    glow: "bg-sky-500/20",
     icon: UserPlus,
   },
   REGISTRATION_CLOSED: {
     label: "Inscripciones cerradas",
     style: "border-orange-400/50 bg-orange-500/15 text-orange-300",
+    glow: "bg-orange-500/15",
     icon: DoorClosed,
   },
   CLOSED: {
     label: "Cerrado",
     style: "border-white/10 bg-white/5 text-slate-400",
+    glow: "bg-white/5",
     icon: Archive,
   },
 };
@@ -81,11 +87,31 @@ const formatRange = (event: MeEvent) => {
   return `${start.format("D MMM, YYYY")} – ${end.format("D MMM, YYYY")}`;
 };
 
+/** "Empieza en 3 días", "Termina mañana"... the time left to the next date of the event */
+export const describeTimeLeft = (event: MeEvent, now = dayjs()) => {
+  const starts = dayjs(event.startDate);
+  const hasStarted = !starts.isAfter(now);
+  const target = hasStarted ? dayjs(event.endDate ?? event.startDate) : starts;
+  const days = target.startOf("day").diff(now.startOf("day"), "day");
+  const verb = hasStarted ? "Termina" : "Empieza";
+
+  if (days <= 0) return `${verb} hoy`;
+  if (days === 1) return `${verb} mañana`;
+
+  return `${verb} en ${days} días`;
+};
+
+/** Square tile of an event in progress: status, name, dates and one entry per role */
 const MeEventCard = ({ event }: { event: MeEvent }) => {
   const badge = STATUS_BADGES[event.statusName];
 
   return (
-    <div className="flex w-full flex-col gap-3 rounded-2xl border border-white/10 bg-[#0e101a]/70 p-4 backdrop-blur-xl sm:p-5">
+    <article className="relative flex w-full flex-col overflow-hidden rounded-3xl border border-white/10 bg-[#0e101a]/80 p-5 backdrop-blur-xl transition-colors hover:border-white/20 sm:min-h-72 [&>*]:shrink-0">
+      <span
+        aria-hidden="true"
+        className={`pointer-events-none absolute -right-14 -top-14 size-44 rounded-full blur-3xl ${badge?.glow ?? "bg-cyan-500/10"}`}
+      />
+
       <div className="flex flex-wrap items-center gap-2">
         {badge && (
           <span
@@ -100,34 +126,47 @@ const MeEventCard = ({ event }: { event: MeEvent }) => {
         </span>
       </div>
 
-      <h3 className="line-clamp-2 break-words text-base font-bold text-white sm:text-lg">
+      <h3 className="mt-4 line-clamp-3 break-words text-xl font-bold leading-snug text-white">
         {event.name}
       </h3>
 
-      <p className="flex items-center gap-1.5 text-xs text-slate-400">
+      <p className="mt-2 flex items-center gap-1.5 text-xs text-slate-400">
         <Calendar className="size-3.5 shrink-0 text-cyan-400" />
         <span className="truncate">{formatRange(event)}</span>
       </p>
 
+      <p className="mt-4 inline-flex w-fit items-center gap-1.5 rounded-lg bg-white/5 px-2.5 py-1 text-xs font-medium text-slate-300">
+        <Clock aria-hidden="true" className="size-3.5 text-slate-400" />
+        {describeTimeLeft(event)}
+      </p>
+
       {/* One link per role: each opens the event with the view of that role */}
-      <ul
-        aria-label={`Tus roles en ${event.name}`}
-        className="mt-auto flex flex-col gap-2"
-      >
-        {event.roles.map((role) => (
-          <li key={role}>
-            <Link
-              aria-label={`Abrir ${event.name} como ${EVENT_ROLE_LABELS[role].toLowerCase()}`}
-              className={`flex min-h-[44px] items-center justify-between gap-3 rounded-xl border px-3 py-2 text-sm font-semibold transition-colors hover:brightness-125 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 ${EVENT_ROLE_STYLES[role]}`}
-              href={getEventDashboardHref(event.id, role)}
-            >
-              {EVENT_ROLE_LABELS[role]}
-              <ArrowRight aria-hidden="true" className="size-4 shrink-0" />
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </div>
+      <div className="mt-auto pt-5">
+        <p className="mb-2 text-[11px] font-medium uppercase tracking-wider text-slate-500">
+          Entrar como
+        </p>
+        <ul
+          aria-label={`Tus roles en ${event.name}`}
+          className="flex flex-col gap-2"
+        >
+          {event.roles.map((role) => (
+            <li key={role}>
+              <Link
+                aria-label={`Abrir ${event.name} como ${EVENT_ROLE_LABELS[role].toLowerCase()}`}
+                className={`group flex min-h-[44px] items-center justify-between gap-3 rounded-xl border px-3 text-sm font-semibold transition-all hover:brightness-125 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 ${EVENT_ROLE_STYLES[role]}`}
+                href={getEventDashboardHref(event.id, role)}
+              >
+                {EVENT_ROLE_LABELS[role]}
+                <ArrowRight
+                  aria-hidden="true"
+                  className="size-4 shrink-0 transition-transform group-hover:translate-x-0.5"
+                />
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </article>
   );
 };
 
@@ -158,11 +197,14 @@ const EventsList = ({
   status,
   emptyMessage,
   compact = false,
+  leading,
 }: {
   status: MeEventsStatus;
   emptyMessage: React.ReactNode;
   /** Past events as plain rows instead of cards */
   compact?: boolean;
+  /** Tile placed before the events in the grid (the administration one) */
+  leading?: React.ReactNode;
 }) => {
   const [page, setPage] = useState(1);
   const eventsQuery = useMeEvents({
@@ -176,16 +218,31 @@ const EventsList = ({
   const events = eventsQuery.data?.data ?? [];
   const totalPages = eventsQuery.data?.meta?.totalPages ?? 1;
 
+  // With a leading tile, loading and errors take one tile so it stays in place
+  const withLeading = (tile: React.ReactNode) =>
+    leading ? (
+      <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <li className="flex">{leading}</li>
+        <li className="flex">
+          <div className="flex w-full flex-col items-center justify-center rounded-3xl border border-white/10 bg-[#0e101a]/70 p-5 text-center backdrop-blur-xl sm:min-h-72">
+            {tile}
+          </div>
+        </li>
+      </ul>
+    ) : (
+      tile
+    );
+
   if (eventsQuery.isLoading) {
-    return (
+    return withLeading(
       <div className="flex h-32 items-center justify-center">
         <Spinner size="lg" />
-      </div>
+      </div>,
     );
   }
 
   if (eventsQuery.isError) {
-    return (
+    return withLeading(
       <div className="rounded-2xl border border-white/10 bg-[#0e101a]/70 p-5 text-center backdrop-blur-xl">
         <p className="text-sm text-slate-300">
           No se pudieron cargar tus eventos.
@@ -197,11 +254,11 @@ const EventsList = ({
         >
           Reintentar
         </Button>
-      </div>
+      </div>,
     );
   }
 
-  if (events.length === 0) {
+  if (events.length === 0 && compact) {
     return (
       <div className="rounded-2xl border border-white/10 bg-[#0e101a]/70 p-5 text-center backdrop-blur-xl">
         {emptyMessage}
@@ -220,12 +277,24 @@ const EventsList = ({
           ))}
         </ul>
       ) : (
-        <ul className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {leading && <li className="flex">{leading}</li>}
           {events.map((event) => (
             <li key={event.id} className="flex">
               <MeEventCard event={event} />
             </li>
           ))}
+          {events.length === 0 && (
+            <li className="flex">
+              <div className="flex w-full flex-col items-center justify-center gap-3 rounded-3xl border border-dashed border-white/15 p-6 text-center sm:min-h-72">
+                <CalendarDays
+                  aria-hidden="true"
+                  className="size-8 text-slate-500"
+                />
+                {emptyMessage}
+              </div>
+            </li>
+          )}
         </ul>
       )}
 
@@ -245,7 +314,11 @@ const EventsList = ({
 };
 
 /** Events that have not ended, each with one link per role of the person */
-export const CurrentEventsSection = () => (
+export const CurrentEventsSection = ({
+  leading,
+}: {
+  leading?: React.ReactNode;
+}) => (
   <section aria-labelledby="current-events-title" className="space-y-3">
     <h2
       className="flex items-center gap-2 text-base font-bold tracking-tight text-white sm:text-lg"
@@ -264,6 +337,7 @@ export const CurrentEventsSection = () => (
           </p>
         </>
       }
+      leading={leading}
       status="current"
     />
   </section>
@@ -297,12 +371,12 @@ export const PastEventsSection = () => {
       {open && (
         <div id="past-events-panel">
           <EventsList
+            compact
             emptyMessage={
               <p className="text-sm text-slate-300">
                 Aún no tienes eventos anteriores.
               </p>
             }
-            compact
             status="past"
           />
         </div>
