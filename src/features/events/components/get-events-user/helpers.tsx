@@ -43,7 +43,7 @@ export const getRoleLabel = (role?: RoleName) => {
 
 export const getEventKindLabel = (eventType?: number) => {
   if (eventType === EventType.Competition) return "Competencia";
-  if (eventType === EventType.Exposition) return "Presentacion";
+  if (eventType === EventType.Exposition) return "Presentación";
 
   return "Evento";
 };

@@ -2,9 +2,9 @@
 
 import { useUser } from "@/lib/auth";
 import { canViewAdministration } from "@/lib/authorization";
-import { StudentGeneralDashboardView } from "@/features/student-dashboard";
 
 import { AdminDashboard } from "./admin-dashboard";
+import { MemberDashboard } from "./member-dashboard";
 
 export const DashboardInfo = () => {
   const user = useUser();
@@ -17,6 +17,7 @@ export const DashboardInfo = () => {
   }
 
   // Everyone else (students, and roles that are still like User: professor,
-  // tutor, department director) gets their own dashboard with their events
-  return <StudentGeneralDashboardView />;
+  // tutor, department director) gets their events, each with the view of their
+  // role in it (juror or participant)
+  return <MemberDashboard />;
 };
