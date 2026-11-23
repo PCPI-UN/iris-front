@@ -208,17 +208,8 @@ const CreateCriteriaContextualContent = ({
       }
       setSelectedCategoryKeys(criterionCategoryKeys);
     } else {
-      const openCategoryKeys = categories
-        .map((category) => String(category.id))
-        .filter((key) => !lockedCategoryKeys.has(key));
-
-      setSelectedCategoryKeys(
-        new Set(
-          openCategoryKeys.length === categories.length
-            ? [ALL_CATEGORIES_KEY, ...openCategoryKeys]
-            : openCategoryKeys,
-        ),
-      );
+      // A new criterion starts with no category: the admin picks the ones it applies to
+      setSelectedCategoryKeys(new Set());
     }
 
     setHasInitializedCategories(true);
@@ -360,15 +351,27 @@ const CreateCriteriaContextualContent = ({
 
                 if (weight === null) return;
 
+                const categoryIds = Array.from(selectedCategoryKeys)
+                  .map((categoryId) => Number(categoryId))
+                  .filter((categoryId) => Number.isFinite(categoryId));
+
+                if (categoryIds.length === 0) {
+                  addNotification({
+                    type: "error",
+                    title: "Categoría requerida",
+                    message:
+                      "Selecciona al menos una categoría para el criterio.",
+                  });
+                  return;
+                }
+
                 // The component of an existing criterion is not sent, so it never changes from here
                 const payload = {
                   eventId: Number(selectedEventKey),
                   name: rawName.trim(),
                   description: String(rawData.description || "").trim(),
                   weight,
-                  categoryIds: Array.from(selectedCategoryKeys)
-                    .map((categoryId) => Number(categoryId))
-                    .filter((categoryId) => Number.isFinite(categoryId)),
+                  categoryIds,
                   ...(!isEditing && fixedComponent
                     ? { componentId: fixedComponent.id }
                     : {}),
@@ -472,12 +475,7 @@ const CreateCriteriaContextualContent = ({
                     selectionMode="multiple"
                     selectedKeys={selectedCategoryKeys}
                     onSelectionChange={handleCategorySelectionChange}
-                    // "Todas" would add or remove the categories with evaluations too
-                    disabledKeys={
-                      lockedCategoryKeys.size > 0
-                        ? [ALL_CATEGORIES_KEY, ...lockedCategoryKeys]
-                        : []
-                    }
+                    disabledKeys={[...lockedCategoryKeys]}
                     description={
                       lockedCategoryKeys.size > 0
                         ? "Las categorías con evaluaciones no se pueden agregar ni quitar."
@@ -489,7 +487,14 @@ const CreateCriteriaContextualContent = ({
                   >
                     {categories.length > 0 ? (
                       [
-                        <SelectItem key={ALL_CATEGORIES_KEY}>Todas</SelectItem>,
+                        // "Todas" would add or remove the categories with evaluations too
+                        ...(lockedCategoryKeys.size === 0
+                          ? [
+                              <SelectItem key={ALL_CATEGORIES_KEY}>
+                                Todas
+                              </SelectItem>,
+                            ]
+                          : []),
                         ...categories.map((category) => (
                           <SelectItem key={String(category.id)}>
                             {category.code}
@@ -543,24 +548,28 @@ const CreateCriteriaContextualContent = ({
                 </div>
               </ModalBody>
 
-             <ModalFooter className="px-4 pt-2 sm:px-6">
-  <Button
-    color="danger"
-    variant="flat"
-    onPress={closeModal}
-    isDisabled={isPending}
-  >
-    Cancelar
-  </Button>
-  <Button
-    type="submit"
-    color="primary"
-    isLoading={isPending}
-    isDisabled={isPending || !!weightError || nameLength > CRITERION_NAME_MAX_LENGTH}
-  >
-    {isEditing ? "Guardar cambios" : "Crear criterio"}
-  </Button>
-</ModalFooter>
+              <ModalFooter className="px-4 pt-2 sm:px-6">
+                <Button
+                  color="danger"
+                  variant="flat"
+                  onPress={closeModal}
+                  isDisabled={isPending}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  color="primary"
+                  isLoading={isPending}
+                  isDisabled={
+                    isPending ||
+                    !!weightError ||
+                    nameLength > CRITERION_NAME_MAX_LENGTH
+                  }
+                >
+                  {isEditing ? "Guardar cambios" : "Crear criterio"}
+                </Button>
+              </ModalFooter>
             </Form>
           )}
         </ModalContent>
@@ -570,7 +579,9 @@ const CreateCriteriaContextualContent = ({
 };
 
 // Only sessions that can call the endpoint see the action
-export const CreateCriteriaContextual = (props: ComponentProps<typeof CreateCriteriaContextualContent>) => (
+export const CreateCriteriaContextual = (
+  props: ComponentProps<typeof CreateCriteriaContextualContent>,
+) => (
   <Can permission={PERMISSIONS.manageEvents}>
     <CreateCriteriaContextualContent {...props} />
   </Can>

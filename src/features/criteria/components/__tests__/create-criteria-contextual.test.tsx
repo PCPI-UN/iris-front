@@ -6,6 +6,8 @@ import { http, HttpResponse } from "msw";
 
 import { CreateCriteriaContextual } from "../create-criteria-contextual";
 
+import { useNotifications } from "@/components/ui/notifications";
+
 import { server } from "@/testing/mocks/server";
 import { rtlRender, screen, userEvent, waitFor } from "@/testing/test-utils";
 
@@ -51,6 +53,30 @@ const mockApi = () => {
   return requests;
 };
 
+// HeroUI keeps a hidden native <select multiple> in sync with its listbox; picking there
+// changes the selection the same way as clicking the option
+const categoriesSelect = async () => {
+  const select = await waitFor(() => {
+    const found = document.querySelector<HTMLSelectElement>("select[multiple]");
+
+    expect(found?.options.length).toBeGreaterThan(1);
+
+    return found!;
+  });
+
+  return select;
+};
+
+// In jsdom the hidden select only takes one option per change
+const pickCategory = async (name: string) => {
+  const select = await categoriesSelect();
+  const option = Array.from(select.options).find(
+    (item) => item.textContent === name,
+  );
+
+  await userEvent.selectOptions(select, option!);
+};
+
 const renderForm = (ui: ReactNode) => {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
@@ -84,11 +110,7 @@ test("a criterion is created inside its component with a relative weight", async
 
   await userEvent.clear(weight);
   await userEvent.type(weight, "10");
-  await waitFor(() =>
-    expect(
-      screen.getByRole("button", { name: /categorías/i }),
-    ).toHaveTextContent("Todas"),
-  );
+  await pickCategory("IST-101");
   await userEvent.click(
     screen.getByRole("button", { name: /crear criterio/i }),
   );
@@ -99,8 +121,37 @@ test("a criterion is created inside its component with a relative weight", async
     name: "Claridad",
     weight: 10,
     componentId: oral.id,
-    categoryIds: [5, 6],
+    categoryIds: [5],
   });
+});
+
+test("a new criterion starts with no category and is not sent without one", async () => {
+  const requests = mockApi();
+
+  renderForm(
+    <CreateCriteriaContextual
+      defaultEventId={String(eventId)}
+      fixedComponent={oral}
+    />,
+  );
+
+  await userEvent.click(
+    screen.getByRole("button", { name: /agregar criterio/i }),
+  );
+  await userEvent.type(screen.getByLabelText(/nombre/i), "Claridad");
+  const select = await categoriesSelect();
+
+  expect(select.selectedOptions).toHaveLength(0);
+  await userEvent.click(
+    screen.getByRole("button", { name: /crear criterio/i }),
+  );
+
+  await waitFor(() =>
+    expect(useNotifications.getState().notifications).toContainEqual(
+      expect.objectContaining({ title: "Categoría requerida" }),
+    ),
+  );
+  expect(requests).toHaveLength(0);
 });
 
 test("a weight of 0 is not sent", async () => {
@@ -172,7 +223,7 @@ test("editing a criterion keeps its component", async () => {
   expect(requests[0].body).not.toHaveProperty("componentId");
 });
 
-test("a new criterion leaves out the categories that already have evaluations", async () => {
+test("a new criterion cannot pick the categories that already have evaluations", async () => {
   const requests = mockApi();
 
   renderForm(
@@ -187,14 +238,15 @@ test("a new criterion leaves out the categories that already have evaluations", 
     screen.getByRole("button", { name: /agregar criterio/i }),
   );
   await userEvent.type(screen.getByLabelText(/nombre/i), "Claridad");
-  await waitFor(() =>
-    expect(
-      screen.getByRole("button", { name: /categorías/i }),
-    ).toHaveTextContent("IST-102"),
-  );
   expect(
     screen.getByText(/con evaluaciones no se pueden agregar ni quitar/i),
   ).toBeInTheDocument();
+  const select = await categoriesSelect();
+
+  expect(
+    Array.from(select.options).map((item) => item.textContent),
+  ).not.toContain("Todas");
+  await pickCategory("IST-102");
   await userEvent.click(
     screen.getByRole("button", { name: /crear criterio/i }),
   );
