@@ -1,7 +1,8 @@
 'use client';
 
 import { Can } from '@/components/auth/can';
-import { PERMISSIONS } from '@/lib/authorization';
+import { useUser } from '@/lib/auth';
+import { hasPermission, PERMISSIONS } from '@/lib/authorization';
 import { useMemo, useState, useEffect } from 'react';
 import { Calendar, Users, Award, Folder, Search, Trophy, Download, Eye, Settings, RefreshCw } from 'lucide-react';
 import { Card, CardHeader } from '@/components/ui/card';
@@ -19,6 +20,8 @@ import { useCategoriesDropdown } from '@/features/courses/api/get-categories-dro
 import { getUniqueJurors, getJurorKey } from '@/features/monitoring/utils/calculations';
 import { normalizeText } from '@/features/monitoring/utils/filters';
 import { getProjectEvaluationStats } from '@/features/evaluations/api/get-project-evaluation-stats';
+import { useEventCriteriaStats } from '@/features/evaluations/api/get-event-criteria-stats';
+import { CriteriaPerformanceCard } from '@/features/monitoring/components/criteria-performance-card';
 import { ParticipantsDetails } from '@/features/projects/components/participants-details';
 import { ExportEventReportButton } from '@/features/reports/components/export-event-report-button';
 import { PublishResultsToggle } from '@/features/events/components/publish-results-toggle';
@@ -75,6 +78,13 @@ export const PastEventDashboard = ({ event, onBack }: Props) => {
     const projects = projectsQuery.data?.data ?? [];
 
     const categoriesQuery = useCategoriesDropdown({ eventId: event.id, queryConfig: { enabled: Boolean(event.id) } });
+    const { data: currentUser } = useUser();
+    const canReadGrades = hasPermission(currentUser, PERMISSIONS.readGrades);
+    const criteriaStatsQuery = useEventCriteriaStats({
+        eventId: event.id,
+        categoryId: selectedCategoryId,
+        queryConfig: { enabled: Boolean(event.id) && activeTab === 'statistics' && canReadGrades },
+    });
 
     const totals = useMemo(() => {
         const jurorKeys = new Set<string>();
@@ -644,6 +654,15 @@ export const PastEventDashboard = ({ event, onBack }: Props) => {
                                 </div>
                             </Card>
                         </div>
+
+                        <Can permission={PERMISSIONS.readGrades}>
+                            <CriteriaPerformanceCard
+                                stats={criteriaStatsQuery.data}
+                                isLoading={criteriaStatsQuery.isLoading}
+                                isError={criteriaStatsQuery.isError}
+                                showCriteria={selectedCategoryId !== undefined}
+                            />
+                        </Can>
                     </div>
                 )}
 
