@@ -869,6 +869,8 @@ export const eventsHandlers = [
       const url = new URL(request.url);
       const page = Number(url.searchParams.get("page") || 1);
       const validPage = validatePage(page);
+      // Like the gateway: limit 1-50, 10 by default
+      const limit = Math.min(50, Math.max(1, Number(url.searchParams.get("limit")) || PAGE_SIZE));
 
       const memberships = db.eventMembership?.findMany({
         where: {
@@ -898,12 +900,12 @@ export const eventsHandlers = [
         });
 
       const total = myEvents.length;
-      const pagination = calculatePagination(total, validPage);
-      const startIndex = PAGE_SIZE * (pagination.page - 1);
-      const endIndex = startIndex + PAGE_SIZE;
-      const paginatedEvents = myEvents.slice(startIndex, endIndex);
+      const totalPages = Math.max(1, Math.ceil(total / limit));
+      const pagination = { page: Math.min(validPage, totalPages), total, totalPages };
+      const startIndex = limit * (pagination.page - 1);
+      const paginatedEvents = myEvents.slice(startIndex, startIndex + limit);
 
-      return HttpResponse.json(toDualResponse(paginatedEvents, pagination));
+      return HttpResponse.json({ ...toDualResponse(paginatedEvents, pagination), limit });
     } catch (error: any) {
       return HttpResponse.json(
         { message: error?.message || "Server Error" },

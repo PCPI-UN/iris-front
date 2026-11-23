@@ -7,7 +7,7 @@ import { useUser } from "@/lib/auth";
 import { canViewAdministration } from "@/lib/authorization";
 import { StudentDashboard } from "@/app/app/_components/student-dashboard";
 import { JuryDashboard } from "@/app/app/_components/jury-dashboard";
-import { useMyEvents } from "@/features/events/api/get-my-events";
+import { useMyEvent } from "@/features/events/api/get-my-events";
 import { Spinner } from "@/components/ui/spinner";
 import { EventType } from "@/types/api";
 import { extractEventIdFromSlug } from "@/features/events/utils/resolve-join-target";
@@ -18,13 +18,13 @@ type EventDashboardProps = {
 
 export const EventDashboard = ({ eventId }: EventDashboardProps) => {
   const user = useUser();
-  const eventsQuery = useMyEvents({ page: 1 });
   const router = useRouter();
   const normalizedEventId = extractEventIdFromSlug(eventId).eventId;
+  // Searches every page of my-events: the event may not be among the first ones
+  const eventQuery = useMyEvent(normalizedEventId || String(eventId));
 
-  const events = eventsQuery.data?.data || [];
-  const currentEvent = events.find((event) => String(event.id) === normalizedEventId || String(event.id) === String(eventId));
-  const isLoading = eventsQuery.isLoading || user.isLoading;
+  const currentEvent = eventQuery.data ?? undefined;
+  const isLoading = eventQuery.isLoading || user.isLoading;
   // Staff (read:events) without a role in this event uses the administration views.
   // A staff member who is also juror or participant of the event keeps that dashboard.
   const isStaffWithoutEventRole =
