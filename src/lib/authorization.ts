@@ -58,13 +58,10 @@ export const canUpdateEvent = (user: MaybeUser) =>
 export const canCreateProject = (user: MaybeUser) =>
   hasPermission(user, PERMISSIONS.manageEvents);
 
-export const canDeleteProject = (user: MaybeUser) =>
-  hasPermission(user, PERMISSIONS.manageEvents);
-
 export const canUpdateProject = (user: MaybeUser) =>
   hasPermission(user, PERMISSIONS.manageEvents);
 
-// Administrative corrections: PATCH /projects/:id/admin/state and GET /projects/:id/change-log
+// Administrative corrections: PATCH /projects/:id/admin(/state), participants, documents and GET /projects/:id/change-log
 export const canManageProjects = (user: MaybeUser) =>
   hasPermission(user, PERMISSIONS.manageProjects);
 
