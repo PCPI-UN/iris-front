@@ -42,12 +42,9 @@ export const getMeEvents = async ({
   limit?: number;
 }): Promise<{ data: MeEvent[]; meta: Meta }> => {
   const response = await api.get<{
-      events?: any[];
-      meta?: { currentPage?: number; total?: number; totalPages?: number };
-    }>(
-    `/me/events`,
-    { params: { status, page, limit } },
-  );
+    events?: any[];
+    meta?: { currentPage?: number; total?: number; totalPages?: number };
+  }>(`/me/events`, { params: { status, page, limit } });
 
   const data = (response?.events ?? []).map((raw) => ({
     ...normalizeEvent(raw),
@@ -95,4 +92,38 @@ export const useMeEvents = ({
   useQuery({
     ...getMeEventsQueryOptions({ status, page, limit }),
     ...queryConfig,
+  });
+
+/**
+ * The session's membership in one event (with all its roles), or null when the
+ * person has no role in it. There is no endpoint for a single event, so it
+ * walks the pages of GET /me/events, the ones in progress first and then the
+ * past ones.
+ */
+export const findMeEvent = async (eventId: string): Promise<MeEvent | null> => {
+  for (const status of ["current", "past"] as const) {
+    let page = 1;
+    let totalPages = 1;
+
+    do {
+      const { data, meta } = await getMeEvents({
+        status,
+        page,
+        limit: ME_EVENTS_MAX_LIMIT,
+      });
+      const event = data.find((item) => String(item.id) === eventId);
+
+      if (event) return event;
+      totalPages = meta.totalPages;
+      page += 1;
+    } while (page <= totalPages);
+  }
+
+  return null;
+};
+
+export const useMeEvent = (eventId: string) =>
+  useQuery({
+    queryKey: ["events", "me", "event", eventId],
+    queryFn: () => findMeEvent(eventId),
   });
