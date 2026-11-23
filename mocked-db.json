@@ -750,6 +750,14 @@
                     "email": "carlos@iris.com"
                 }
             ],
+            "tutors": [
+                {
+                    "firstName": "María",
+                    "lastName": "García",
+                    "email": "maria@iris.com",
+                    "pending": false
+                }
+            ],
             "jurorAssignments": [
                 {
                     "memberUserId": "user-002"
