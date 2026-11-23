@@ -122,12 +122,11 @@ test("the evaluation is not sent until every criterion has a level", async () =>
     await screen.findByRole("radio", { name: "Destaca (30 puntos)" }),
   );
   await user.click(screen.getByRole("button", { name: /siguiente/i }));
-  await user.click(screen.getByRole("button", { name: /enviar evaluación/i }));
 
+  expect(screen.getByRole("button", { name: /enviar evaluación/i })).toBeDisabled();
   expect(screen.getByRole("alert")).toHaveTextContent(
     "Falta calificar 1 criterio(s): Funcionamiento.",
   );
-  expect(screen.queryByText(/confirmar envío/i)).not.toBeInTheDocument();
 
   await user.click(screen.getByRole("radio", { name: "Cumple (20 puntos)" }));
   expect(screen.queryByRole("alert")).not.toBeInTheDocument();

@@ -38,6 +38,7 @@ import { useEventGradingScale } from "@/features/grading-scales/api/get-event-gr
 import { toScoreLevelOptions } from "@/features/grading-scales/utils/grading-scale"
 
 import { ScoreLevelPicker } from "./score-level-picker"
+import { jurorEvaluationErrorMessage } from "../utils/evaluation-error"
 
 type ProjectEvaluationViewProps = {
   projectId: string
@@ -63,8 +64,13 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
         setIsSubmitting(false)
         router.push(`/app/events/${project?.eventId}`)
       },
-      onError: () => {
+      onError: (error) => {
         setIsSubmitting(false)
+        addNotification({
+          type: "error",
+          title: "No se pudo enviar la evaluación",
+          message: jurorEvaluationErrorMessage(error?.message),
+        })
       },
     },
   })
@@ -376,7 +382,9 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
                   </h3>
                 </div>
 
-                {showMissing && missingCriteria.length > 0 && (
+                {/* On the last section it explains why "Enviar evaluación" is disabled */}
+                {(showMissing || currentPage === allSections.length - 1) &&
+                  missingCriteria.length > 0 && (
                   <div
                     className="flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-sm text-warning"
                     role="alert"
@@ -463,7 +471,8 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
                       color="primary"
                       size="lg"
                       onClick={handleSubmit}
-                      disabled={isSubmitting}
+                      // Every criterion needs a level: the backend rejects an incomplete evaluation
+                      disabled={isSubmitting || missingCriteria.length > 0}
                     >
                       {isSubmitting ? (
                         <span className="mr-2">Enviando...</span>
