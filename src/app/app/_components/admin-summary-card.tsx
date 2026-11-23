@@ -46,8 +46,11 @@ export const AdminSummaryCard = () => {
         <dl className="grid grid-cols-3 gap-3">
           {figures.map(({ label, value, icon: Icon }) => (
             <div key={label} className="min-w-0">
-              <dt className="flex items-center gap-1.5 truncate text-xs text-slate-400">
-                <Icon aria-hidden="true" className="size-3.5 shrink-0" />
+              <dt className="flex items-start gap-1.5 text-xs leading-tight text-slate-400">
+                <Icon
+                  aria-hidden="true"
+                  className="mt-px hidden size-3.5 shrink-0 sm:block"
+                />
                 {label}
               </dt>
               <dd className="text-xl font-bold text-white">{value ?? "–"}</dd>
