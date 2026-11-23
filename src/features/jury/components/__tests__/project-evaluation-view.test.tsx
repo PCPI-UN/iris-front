@@ -20,7 +20,17 @@ const customScale = {
   ],
 };
 
-const mockEvaluationData = ({ eventResponse }: { eventResponse: () => Response }) => {
+const oneSection = [
+  { category: "Diseño", weight: 1, criterions: [{ id: 11, name: "Claridad" }] },
+];
+
+const mockEvaluationData = ({
+  eventResponse,
+  sections = oneSection,
+}: {
+  eventResponse: () => Response;
+  sections?: typeof oneSection;
+}) => {
   server.use(
     http.get("*/api/projects/:projectId", () =>
       HttpResponse.json({
@@ -34,9 +44,7 @@ const mockEvaluationData = ({ eventResponse }: { eventResponse: () => Response }
       }),
     ),
     http.get("*/api/criterions/course/:categoryId", () =>
-      HttpResponse.json({
-        categories: [{ category: "Diseño", weight: 1, criterions: [{ id: 11, name: "Claridad" }] }],
-      }),
+      HttpResponse.json({ categories: sections }),
     ),
     http.get("*/api/events/my-events", () =>
       HttpResponse.json({ data: [{ id: 5, name: "Feria", eventType: "Exposition" }] }),
@@ -88,4 +96,41 @@ test("without access to the event scale the juror sees the default labels, witho
   }
   expect(screen.queryByText(/pts$/)).not.toBeInTheDocument();
   expect(useNotifications.getState().notifications).toHaveLength(0);
+});
+
+test("the evaluation is not sent until every criterion has a level", async () => {
+  mockEvaluationData({
+    eventResponse: () =>
+      HttpResponse.json({ event: { id: 5, gradingScale: customScale } }),
+    sections: [
+      {
+        category: "Diseño",
+        weight: 0.5,
+        criterions: [{ id: 11, name: "Claridad" }],
+      },
+      {
+        category: "Prototipo",
+        weight: 0.5,
+        criterions: [{ id: 12, name: "Funcionamiento" }],
+      },
+    ],
+  });
+  renderView();
+  const user = userEvent.setup();
+
+  await user.click(
+    await screen.findByRole("radio", { name: "Destaca (30 puntos)" }),
+  );
+  await user.click(screen.getByRole("button", { name: /siguiente/i }));
+  await user.click(screen.getByRole("button", { name: /enviar evaluación/i }));
+
+  expect(screen.getByRole("alert")).toHaveTextContent(
+    "Falta calificar 1 criterio(s): Funcionamiento.",
+  );
+  expect(screen.queryByText(/confirmar envío/i)).not.toBeInTheDocument();
+
+  await user.click(screen.getByRole("radio", { name: "Cumple (20 puntos)" }));
+  expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: /enviar evaluación/i }));
+  expect(await screen.findByText(/confirmar envío/i)).toBeInTheDocument();
 });

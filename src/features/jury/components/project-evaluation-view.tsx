@@ -50,6 +50,7 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
   const [comments, setComments] = useState("")
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [showMissing, setShowMissing] = useState(false)
   const { addNotification } = useNotifications()
 
   const { mutate } = useCreateEvaluation({
@@ -120,6 +121,12 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
 
   const allSections = backendSections
   const currentSection = allSections[currentPage] ?? allSections[0]
+  // The backend rejects an evaluation that leaves any criterion of the rubric without a score
+  const missingCriteria = allSections.flatMap((section, sectionIndex) =>
+    section.subcriteria
+      .filter((criterion) => scores[criterion.id] === undefined)
+      .map((criterion) => ({ ...criterion, sectionIndex })),
+  )
 
   const handleScoreChange = (criterionId: string, value: number) => {
     setScores((prev) => ({
@@ -131,9 +138,9 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
   const handleSubmit = () => {
     if (isSubmitting) return
 
-    const hasAnyScore = Object.keys(scores).length > 0
-    if (!hasAnyScore) {
-      alert("Por favor, proporcione calificaciones antes de enviar")
+    if (missingCriteria.length > 0) {
+      setShowMissing(true)
+      setCurrentPage(missingCriteria[0].sectionIndex)
       return
     }
 
@@ -368,6 +375,22 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
                     {currentSection?.name}
                   </h3>
                 </div>
+
+                {showMissing && missingCriteria.length > 0 && (
+                  <div
+                    className="flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-sm text-warning"
+                    role="alert"
+                  >
+                    <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                    <span>
+                      Falta calificar {missingCriteria.length} criterio(s):{" "}
+                      {missingCriteria
+                        .map((criterion) => criterion.name)
+                        .join(", ")}
+                      .
+                    </span>
+                  </div>
+                )}
 
                 <div className="space-y-6 md:space-y-8">
                   {currentSection?.subcriteria?.map((criterion) => (
