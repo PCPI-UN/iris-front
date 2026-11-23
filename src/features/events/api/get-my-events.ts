@@ -6,9 +6,6 @@ import { api } from "@/lib/api-client";
 import { QueryConfig } from "@/lib/react-query";
 import { Meta, Event } from "@/types/api";
 
-/** Largest page GET /events/my-events accepts */
-export const MY_EVENTS_MAX_LIMIT = 50;
-
 export const getMyEvents = async (
   { page, limit }: { page?: number; limit?: number } = { page: 1 },
 ): Promise<{ data: Event[]; meta: Meta }> => {
@@ -43,36 +40,5 @@ export const useMyEvents = ({
   return useQuery({
     ...getMyEventsQueryOptions({ page, limit }),
     ...queryConfig,
-  });
-};
-
-/**
- * The session's membership in one event (with its role), or null when the user
- * has no role in it. There is no endpoint for a single event, so it walks the
- * pages of GET /events/my-events until it finds it.
- */
-export const findMyEvent = async (eventId: string): Promise<Event | null> => {
-  let page = 1;
-  let totalPages = 1;
-
-  do {
-    const { data, meta } = await getMyEvents({
-      page,
-      limit: MY_EVENTS_MAX_LIMIT,
-    });
-    const event = data.find((item) => String(item.id) === eventId);
-
-    if (event) return event;
-    totalPages = meta?.totalPages ?? 1;
-    page += 1;
-  } while (page <= totalPages);
-
-  return null;
-};
-
-export const useMyEvent = (eventId: string) => {
-  return useQuery({
-    queryKey: ["events", "my-events", "event", eventId],
-    queryFn: () => findMyEvent(eventId),
   });
 };
