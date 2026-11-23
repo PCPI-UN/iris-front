@@ -3,7 +3,13 @@
 import { useState } from "react";
 import Link from "next/link";
 import { keepPreviousData } from "@tanstack/react-query";
-import { Calendar, CalendarDays, ChevronDown, History } from "lucide-react";
+import {
+  ArrowRight,
+  Calendar,
+  CalendarDays,
+  ChevronDown,
+  History,
+} from "lucide-react";
 
 import {
   type MeEvent,
@@ -83,16 +89,17 @@ const MeEventCard = ({ event }: { event: MeEvent }) => {
       {/* One link per role: each opens the event with the view of that role */}
       <ul
         aria-label={`Tus roles en ${event.name}`}
-        className="mt-auto flex flex-wrap gap-2"
+        className="mt-auto flex flex-col gap-2"
       >
         {event.roles.map((role) => (
           <li key={role}>
             <Link
               aria-label={`Abrir ${event.name} como ${EVENT_ROLE_LABELS[role].toLowerCase()}`}
-              className={`inline-flex min-h-[44px] items-center rounded-full border px-3 text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 ${EVENT_ROLE_STYLES[role]}`}
+              className={`flex min-h-[44px] items-center justify-between gap-3 rounded-xl border px-3 py-2 text-sm font-semibold transition-colors hover:brightness-125 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 ${EVENT_ROLE_STYLES[role]}`}
               href={getEventDashboardHref(event.id, role)}
             >
               {EVENT_ROLE_LABELS[role]}
+              <ArrowRight aria-hidden="true" className="size-4 shrink-0" />
             </Link>
           </li>
         ))}
@@ -101,12 +108,38 @@ const MeEventCard = ({ event }: { event: MeEvent }) => {
   );
 };
 
+/** Past event: name and one small link per role, no card */
+const MeEventHistoryRow = ({ event }: { event: MeEvent }) => (
+  <div className="flex flex-col gap-1.5 py-3">
+    <span className="text-sm text-slate-200">{event.name}</span>
+    <ul
+      aria-label={`Tus roles en ${event.name}`}
+      className="flex flex-wrap gap-1.5"
+    >
+      {event.roles.map((role) => (
+        <li key={role}>
+          <Link
+            aria-label={`Abrir ${event.name} como ${EVENT_ROLE_LABELS[role].toLowerCase()}`}
+            className={`inline-flex min-h-[44px] items-center rounded-full border px-2.5 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 ${EVENT_ROLE_STYLES[role]}`}
+            href={getEventDashboardHref(event.id, role)}
+          >
+            {EVENT_ROLE_LABELS[role]}
+          </Link>
+        </li>
+      ))}
+    </ul>
+  </div>
+);
+
 const EventsList = ({
   status,
   emptyMessage,
+  compact = false,
 }: {
   status: MeEventsStatus;
   emptyMessage: React.ReactNode;
+  /** Past events as plain rows instead of cards */
+  compact?: boolean;
 }) => {
   const [page, setPage] = useState(1);
   const eventsQuery = useMeEvents({
@@ -155,13 +188,23 @@ const EventsList = ({
 
   return (
     <>
-      <ul className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
-        {events.map((event) => (
-          <li key={event.id} className="flex">
-            <MeEventCard event={event} />
-          </li>
-        ))}
-      </ul>
+      {compact ? (
+        <ul className="divide-y divide-white/5 rounded-2xl border border-white/10 bg-[#0e101a]/70 px-4 backdrop-blur-xl sm:px-5">
+          {events.map((event) => (
+            <li key={event.id}>
+              <MeEventHistoryRow event={event} />
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <ul className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          {events.map((event) => (
+            <li key={event.id} className="flex">
+              <MeEventCard event={event} />
+            </li>
+          ))}
+        </ul>
+      )}
 
       {totalPages > 1 && (
         <div className="flex justify-center pt-1">
@@ -185,7 +228,7 @@ export const CurrentEventsSection = () => (
       className="flex items-center gap-2 text-base font-bold tracking-tight text-white sm:text-lg"
       id="current-events-title"
     >
-      <CalendarDays className="size-4.5 text-cyan-400" />
+      <CalendarDays aria-hidden="true" className="size-4.5 text-cyan-400" />
       <span>En curso</span>
     </h2>
     <EventsList
@@ -234,6 +277,7 @@ export const PastEventsSection = () => {
                 Aún no tienes eventos anteriores.
               </p>
             }
+            compact
             status="past"
           />
         </div>

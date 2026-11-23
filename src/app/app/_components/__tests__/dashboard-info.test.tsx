@@ -180,7 +180,7 @@ describe("DashboardInfo", () => {
         name: /Feria 2025 como participante/i,
       }),
     ).toBeInTheDocument();
-    expect(screen.getByText("Cerrado")).toBeInTheDocument();
+    expect(screen.getByText("Feria 2025")).toBeInTheDocument();
     expect(requests.map((params) => params.get("status"))).toEqual([
       "current",
       "past",
