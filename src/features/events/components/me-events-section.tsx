@@ -3,12 +3,18 @@
 import { useState } from "react";
 import Link from "next/link";
 import { keepPreviousData } from "@tanstack/react-query";
+import dayjs from "dayjs";
+import type { LucideIcon } from "lucide-react";
 import {
+  Archive,
   ArrowRight,
   Calendar,
   CalendarDays,
   ChevronDown,
+  CircleDot,
+  DoorClosed,
   History,
+  UserPlus,
 } from "lucide-react";
 
 import {
@@ -22,7 +28,7 @@ import {
   getEventDashboardHref,
 } from "../utils/event-roles";
 
-import { formatDateShort, getEventKindLabel } from "./get-events-user/helpers";
+import { getEventKindLabel } from "./get-events-user/helpers";
 
 import { Button } from "@/components/ui/button";
 import { Pagination } from "@/components/ui/pagination";
@@ -31,32 +37,48 @@ import { Spinner } from "@/components/ui/spinner";
 /** Cards per page */
 export const ME_EVENTS_PAGE_SIZE = 6;
 
-const STATUS_BADGES: Record<string, { label: string; style: string }> = {
+const STATUS_BADGES: Record<
+  string,
+  { label: string; style: string; icon: LucideIcon }
+> = {
   AVAILABLE: {
     label: "Activo",
-    style: "border-emerald-500/40 bg-emerald-500/15 text-emerald-300",
+    style: "border-emerald-400/50 bg-emerald-500/20 text-emerald-300",
+    icon: CircleDot,
   },
   UPCOMING: {
-    label: "Inscripciones",
-    style: "border-sky-500/40 bg-sky-500/15 text-sky-300",
+    label: "Inscripciones abiertas",
+    style: "border-sky-400/50 bg-sky-500/20 text-sky-300",
+    icon: UserPlus,
   },
   REGISTRATION_CLOSED: {
     label: "Inscripciones cerradas",
-    style: "border-slate-500/40 bg-slate-500/15 text-slate-300",
+    style: "border-orange-400/50 bg-orange-500/15 text-orange-300",
+    icon: DoorClosed,
   },
   CLOSED: {
     label: "Cerrado",
     style: "border-white/10 bg-white/5 text-slate-400",
+    icon: Archive,
   },
 };
 
+/** "20 – 22 feb, 2026"; the month and the year appear once when they repeat */
 const formatRange = (event: MeEvent) => {
-  const start = formatDateShort(event.startDate).day;
+  const start = dayjs(event.startDate).locale("es");
 
-  if (!event.endDate) return start;
-  const end = formatDateShort(event.endDate).day;
+  if (!event.endDate) return start.format("D MMM, YYYY");
+  const end = dayjs(event.endDate).locale("es");
 
-  return start === end ? start : `${start} – ${end}`;
+  if (start.isSame(end, "day")) return start.format("D MMM, YYYY");
+  if (start.isSame(end, "month")) {
+    return `${start.format("D")} – ${end.format("D MMM, YYYY")}`;
+  }
+  if (start.isSame(end, "year")) {
+    return `${start.format("D MMM")} – ${end.format("D MMM, YYYY")}`;
+  }
+
+  return `${start.format("D MMM, YYYY")} – ${end.format("D MMM, YYYY")}`;
 };
 
 const MeEventCard = ({ event }: { event: MeEvent }) => {
@@ -67,8 +89,9 @@ const MeEventCard = ({ event }: { event: MeEvent }) => {
       <div className="flex flex-wrap items-center gap-2">
         {badge && (
           <span
-            className={`rounded-full border px-2.5 py-0.5 text-xs font-semibold ${badge.style}`}
+            className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold ${badge.style}`}
           >
+            <badge.icon aria-hidden="true" className="size-3" />
             {badge.label}
           </span>
         )}
@@ -256,16 +279,18 @@ export const PastEventsSection = () => {
         <button
           aria-controls="past-events-panel"
           aria-expanded={open}
-          className="flex min-h-[44px] items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+          className="flex min-h-[44px] w-full items-center justify-between gap-2 rounded-xl border border-white/10 bg-white/5 px-4 text-sm font-semibold text-slate-200 transition-colors hover:border-white/20 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
           id="past-events-title"
           type="button"
           onClick={() => setOpen((value) => !value)}
         >
-          <History className="size-4.5 text-cyan-400" />
-          <span>Historial</span>
+          <span className="flex items-center gap-2">
+            <History aria-hidden="true" className="size-4 text-slate-400" />
+            Historial de eventos
+          </span>
           <ChevronDown
             aria-hidden="true"
-            className={`size-4 transition-transform ${open ? "rotate-180" : ""}`}
+            className={`size-4 text-slate-400 transition-transform ${open ? "rotate-180" : ""}`}
           />
         </button>
       </h2>

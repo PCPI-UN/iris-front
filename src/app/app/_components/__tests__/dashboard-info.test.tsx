@@ -118,7 +118,7 @@ describe("DashboardInfo", () => {
       }),
     ).toHaveAttribute("href", "/app/events/4/dashboard?rol=participante");
     expect(screen.getByText("Hola, Laura")).toBeInTheDocument();
-    expect(screen.getByText("Inscripciones")).toBeInTheDocument();
+    expect(screen.getByText("Inscripciones abiertas")).toBeInTheDocument();
     expect(screen.queryByText("Administración")).not.toBeInTheDocument();
   });
 
@@ -130,7 +130,7 @@ describe("DashboardInfo", () => {
     expect(await screen.findByText("Administración")).toBeInTheDocument();
     expect(await screen.findByText("12")).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: /Ver panel de administración/i }),
+      screen.getByRole("link", { name: /Abrir panel de administración/i }),
     ).toHaveAttribute("href", "/app/admin");
     expect(
       await screen.findByRole("link", { name: /como jurado/i }),
@@ -147,8 +147,8 @@ describe("DashboardInfo", () => {
       await screen.findByText(/No tienes eventos en curso/i),
     ).toBeInTheDocument();
     expect(
-      screen.queryByRole("link", { name: /Abrir/i }),
-    ).not.toBeInTheDocument();
+      screen.getByRole("link", { name: /Abrir panel de administración/i }),
+    ).toBeInTheDocument();
   });
 
   it("Sofía: no events and no administration explains how to join one", async () => {

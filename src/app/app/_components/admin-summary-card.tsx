@@ -6,14 +6,10 @@ import { ArrowRight, Shield } from "lucide-react";
 import { useDashboardStats } from "@/features/dashboard/api/get-dashboard-stats";
 import { Spinner } from "@/components/ui/spinner";
 import { paths } from "@/config/paths";
-import { useUser } from "@/lib/auth";
-import { canUpdateEvent } from "@/lib/authorization";
 
 /** Entry to the administration panel with its main figures; read-only staff (the dean) is marked */
 export const AdminSummaryCard = () => {
-  const user = useUser();
   const { data: stats, isLoading } = useDashboardStats();
-  const readOnly = !canUpdateEvent(user.data);
 
   const figures = [
     { label: "eventos activos", value: stats?.activeEvents },
@@ -29,11 +25,6 @@ export const AdminSummaryCard = () => {
       >
         <Shield aria-hidden="true" className="size-4.5 text-pink-400" />
         <span>Administración</span>
-        {readOnly && (
-          <span className="rounded-full border border-white/15 px-2 py-0.5 text-xs font-normal text-slate-400">
-            solo lectura
-          </span>
-        )}
       </h2>
       <Link
         className="flex flex-col gap-4 rounded-2xl border border-white/10 bg-[#0e101a]/70 p-4 backdrop-blur-xl transition-colors hover:border-pink-500/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-400 sm:p-5 md:flex-row md:items-center md:justify-between"
@@ -56,7 +47,7 @@ export const AdminSummaryCard = () => {
           </dl>
         )}
         <span className="flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-pink-500/40 bg-pink-500/10 px-4 text-sm font-semibold text-pink-300">
-          {readOnly ? "Ver" : "Abrir"} panel de administración
+          Abrir panel de administración
           <ArrowRight aria-hidden="true" className="size-4 shrink-0" />
         </span>
       </Link>
