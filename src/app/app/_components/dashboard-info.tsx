@@ -19,7 +19,7 @@ export const DashboardInfo = () => {
   const user = useUser();
 
   return (
-    <div className="dashboard-page space-y-7 pb-12">
+    <div className="dashboard-page max-w-3xl space-y-7 pb-12">
       <h1 className="text-2xl font-bold md:text-3xl">
         Hola, {user.data?.firstName}
       </h1>
