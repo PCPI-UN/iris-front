@@ -3,6 +3,7 @@ import {
   Calendar,
   ChartNoAxesCombined,
   Home,
+  LayoutDashboard,
   type LucideIcon,
   Mail,
   PinIcon,
@@ -36,6 +37,12 @@ const SIDEBAR_ITEMS: SidebarItem[] = [
     url: paths.app.root.getHref(),
     icon: Home,
     permissions: [],
+  },
+  {
+    title: "Administración",
+    url: paths.app.admin.getHref(),
+    icon: LayoutDashboard,
+    permissions: [PERMISSIONS.readEvents],
   },
   {
     title: "Eventos",

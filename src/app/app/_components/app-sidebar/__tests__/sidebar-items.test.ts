@@ -24,6 +24,7 @@ const ADMIN_PERMISSIONS = [
 test("the admin sees every view", () => {
   expect(titles(withPermissions(ADMIN_PERMISSIONS, ["Admin"]))).toEqual([
     "Dashboard",
+    "Administración",
     "Eventos",
     "Eventos anteriores",
     "Categorías",
@@ -61,7 +62,7 @@ test("a read-only role (dean) sees the read views but not the write-only ones", 
 test("a new role works by its permissions, not by its name", () => {
   const newRole = withPermissions(["read:events"], ["SomeNewRole"]);
   expect(titles(newRole)).toEqual(
-    expect.arrayContaining(["Eventos", "Categorías", "Proyectos", "Criterios"]),
+    expect.arrayContaining(["Administración", "Eventos", "Categorías", "Proyectos", "Criterios"]),
   );
 });
 
