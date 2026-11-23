@@ -100,12 +100,9 @@ test("components that do not add up to 100 % block every category", async () => 
   );
   renderPanel();
 
+  // The event-wide total is explained once, in the notice above the rubric
   expect(
-    await screen.findByText(
-      /ninguna categoría está lista mientras los componentes sumen 70 %/i,
-    ),
+    await screen.findByText("Los componentes deben sumar 100 %."),
   ).toBeInTheDocument();
-  expect(
-    screen.getByText("Los componentes deben sumar 100 %."),
-  ).toBeInTheDocument();
+  expect(screen.queryByText(/ninguna categoría está lista/i)).toBeNull();
 });

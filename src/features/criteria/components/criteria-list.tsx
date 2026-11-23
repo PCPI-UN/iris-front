@@ -1055,6 +1055,34 @@ export const CriteriaList = () => {
         </div>
       </div>
 
+      {/* Event-wide notices go before the totals, where they are seen first */}
+      {!!selectedEventKey && (
+        <div className="space-y-3">
+          {componentsLocked && (
+            <div
+              className="flex items-center gap-2 rounded-lg border border-default-300 bg-default-100 px-3 py-2 text-sm text-default-600"
+              role="status"
+            >
+              <Lock className="size-4 shrink-0" />
+              El evento ya tiene evaluaciones: los componentes no se pueden
+              crear, eliminar ni cambiar de peso, y los criterios de las
+              categorías evaluadas solo admiten cambios de nombre y descripción.
+            </div>
+          )}
+          {availableComponents.length > 0 && !componentsWeightIsFull && (
+            <div
+              className="flex items-center gap-2 rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-sm text-warning"
+              role="alert"
+            >
+              <AlertTriangle className="size-4 shrink-0" />
+              Los componentes suman {toWeightPercent(componentsWeight)} %. Para
+              poder evaluar el evento deben sumar 100 %: ajusta el peso de cada
+              componente desde su botón de editar.
+            </div>
+          )}
+        </div>
+      )}
+
       {!!selectedEventKey && (
         <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-3">
           <Card className="glass-card shadow-sm">
@@ -1276,28 +1304,6 @@ export const CriteriaList = () => {
         </Card>
       ) : mode === "components" ? (
         <div className="space-y-3">
-          {componentsLocked && (
-            <div
-              className="flex items-center gap-2 rounded-lg border border-default-300 bg-default-100 px-3 py-2 text-sm text-default-600"
-              role="status"
-            >
-              <Lock className="size-4 shrink-0" />
-              El evento ya tiene evaluaciones: los componentes no se pueden
-              crear, eliminar ni cambiar de peso, y los criterios de las
-              categorías evaluadas solo admiten cambios de nombre y descripción.
-            </div>
-          )}
-          {availableComponents.length > 0 && !componentsWeightIsFull && (
-            <div
-              className="flex items-center gap-2 rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-sm text-warning"
-              role="alert"
-            >
-              <AlertTriangle className="size-4 shrink-0" />
-              Los componentes suman {toWeightPercent(componentsWeight)} %. Para
-              poder evaluar el evento deben sumar 100 %: ajusta el peso de cada
-              componente desde su botón de editar.
-            </div>
-          )}
           {looseCount > 0 && (
             <div className="space-y-2">
               <div className="rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger">

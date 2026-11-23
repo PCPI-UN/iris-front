@@ -92,6 +92,26 @@ test("a new component sends its weight as a fraction and shows what the event ad
   });
 });
 
+test("a weight over what the event has left is not sent", async () => {
+  const requests = mockApi();
+
+  renderForm(<CreateComponent eventId={eventId} />);
+
+  await userEvent.click(
+    screen.getByRole("button", { name: /agregar componente/i }),
+  );
+  await userEvent.type(screen.getByLabelText(/nombre/i), "Prototipo");
+  await userEvent.type(screen.getByLabelText(/peso en la nota/i), "40");
+
+  expect(
+    await screen.findByText(/otros componentes del evento: 70 %/i),
+  ).toHaveTextContent(/sumaría 110 %/i);
+  expect(
+    screen.getByRole("button", { name: /crear componente/i }),
+  ).toBeDisabled();
+  expect(requests).toHaveLength(0);
+});
+
 test("a weight of 0 % is not sent", async () => {
   const requests = mockApi();
 

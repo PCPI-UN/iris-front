@@ -137,6 +137,13 @@ const CreateComponentContent = ({
             : `Con este suma ${toWeightPercent(eventWeightWithThis)} %; para poder evaluar deben sumar 100 %.`)
     : undefined;
 
+  // The backend rejects a total over 100 %: the form does not send it
+  const exceedsEventWeight =
+    componentsQuery.isSuccess &&
+    !isWeightLocked &&
+    !weightError &&
+    exceedsFullWeight(eventWeightWithThis);
+
   const normalizeComponent = (
     componentResponse: any,
   ): CriterionComponent | null => {
@@ -373,7 +380,7 @@ const CreateComponentContent = ({
                   type="submit"
                   color="primary"
                   isLoading={isPending}
-                  isDisabled={isPending}
+                  isDisabled={isPending || exceedsEventWeight}
                 >
                   {isEditing ? "Guardar cambios" : "Crear componente"}
                 </Button>
@@ -387,7 +394,9 @@ const CreateComponentContent = ({
 };
 
 // Only sessions that can call the endpoint see the action
-export const CreateComponent = (props: ComponentProps<typeof CreateComponentContent>) => (
+export const CreateComponent = (
+  props: ComponentProps<typeof CreateComponentContent>,
+) => (
   <Can permission={PERMISSIONS.manageEvents}>
     <CreateComponentContent {...props} />
   </Can>

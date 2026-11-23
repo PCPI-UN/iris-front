@@ -6,7 +6,6 @@ import {
   RubricCategoryReadiness,
   useRubricReadiness,
 } from "../api/get-rubric-readiness";
-import { isFullWeight, toWeightPercent } from "../utils/component-weights";
 
 import { Can } from "@/components/auth/can";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
@@ -84,12 +83,6 @@ const RubricReadinessContent = ({
           </p>
         ) : (
           <>
-            {!!readiness && !isFullWeight(readiness.componentsWeight) && (
-              <p className="text-sm text-warning">
-                Ninguna categoría está lista mientras los componentes sumen{" "}
-                {toWeightPercent(readiness.componentsWeight)} % y no 100 %.
-              </p>
-            )}
             {rows.length === 0 ? (
               <p className="text-sm text-default-500">
                 El evento no tiene categorías.
