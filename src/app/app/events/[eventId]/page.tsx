@@ -4,7 +4,8 @@ import {
   QueryClient,
 } from '@tanstack/react-query';
 import Project from './_components/project';
-import { getJuryProjectsQueryOptions } from '@/features/projects-public/api/get-jury-project';
+import { getJuryAssignedProjectsQueryOptions } from '@/features/projects-public/api/get-jury-project';
+import { extractEventIdFromSlug } from '@/features/events/utils/resolve-join-target';
 import { PermissionGuard } from '@/components/auth/permission-guard';
 
 const ProjectJuryPage = async ({ params }: { params: Promise<{ eventId: string }> }) => {
@@ -13,7 +14,10 @@ const ProjectJuryPage = async ({ params }: { params: Promise<{ eventId: string }
     
     const queryClient = new QueryClient();
 
-    await queryClient.prefetchQuery(getJuryProjectsQueryOptions({ eventId: Number(eventId) }));
+    const parsedEventId = Number(extractEventIdFromSlug(eventId).eventId);
+    if (Number.isFinite(parsedEventId) && parsedEventId > 0) {
+        await queryClient.prefetchQuery(getJuryAssignedProjectsQueryOptions(parsedEventId));
+    }
 
     const dehydratedState = dehydrate(queryClient);
 

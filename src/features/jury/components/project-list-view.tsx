@@ -1,7 +1,7 @@
 "use client"
 
 import { ProjectCard } from "./project-card"
-import { useJuryProjects } from "@/features/projects-public/api/get-jury-project"
+import { useJuryAssignedProjects } from "@/features/projects-public/api/get-jury-project"
 import { Spinner } from "@/components/ui/spinner"
 import { useRouter } from "next/navigation"
 import { Button } from "@heroui/button"
@@ -31,12 +31,9 @@ export function ProjectListView({ eventId, showProjectCode = false }: ProjectLis
     );
   };
 
-  const eventsQuery = useJuryProjects({
-    page: 1,
-    eventId: hasValidEventId ? parsedEventId : undefined,
-  });
+  const eventsQuery = useJuryAssignedProjects({ eventId: parsedEventId });
 
-  const projects = eventsQuery.data?.data || [];
+  const projects = eventsQuery.data ?? [];
   const projectDetailsQueries = useQueries({
     queries: projects.map((project) => ({
       ...getProjectQueryOptions(String(project.id)),
