@@ -2,6 +2,7 @@
 
 import { Select, SelectItem } from '@/components/ui/select/select';
 import { type Event } from '@/types/api';
+import { ALL_CATEGORIES_KEY } from '../utils/constants';
 
 type MonitoringDashboardFiltersProps = {
   events: Event[];
@@ -61,17 +62,26 @@ export const MonitoringDashboardFilters = ({
               ? 'Todas las categorías'
               : 'Selecciona un evento primero'
           }
-          selectedKeys={selectedCategoryId ? [String(selectedCategoryId)] : []}
+          selectedKeys={
+            selectedCategoryId
+              ? [String(selectedCategoryId)]
+              : categories.length
+                ? [ALL_CATEGORIES_KEY]
+                : []
+          }
           onSelectionChange={(keys) => onCategoryChange(keys as Set<string>)}
           isDisabled={!selectedEventId}
           isLoading={categoriesLoading}
         >
           {categories.length ? (
-            categories.map((category) => (
-              <SelectItem key={String(category.id)}>
-                {category.code}
-              </SelectItem>
-            ))
+            [
+              <SelectItem key={ALL_CATEGORIES_KEY}>Todas las categorías</SelectItem>,
+              ...categories.map((category) => (
+                <SelectItem key={String(category.id)}>
+                  {category.code}
+                </SelectItem>
+              )),
+            ]
           ) : (
             <SelectItem key="no-categories" isDisabled>
               {selectedEventId ? 'No hay categorías' : 'Selecciona un evento primero'}
