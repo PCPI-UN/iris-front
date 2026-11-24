@@ -15,6 +15,8 @@ export type CategoryCriteriaGroup = {
   criterions: {
     id: number;
     name: string;
+    /** Effective weight in the grade, as a fraction of 1; absent when the criterion has no component */
+    weight?: number;
   }[];
 };
 
