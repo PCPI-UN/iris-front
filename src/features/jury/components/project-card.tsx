@@ -27,13 +27,7 @@ export function ProjectCard({ project, showProjectCode = false }: { project: any
     return `Documento ${index + 1}`
   }
 
-    const projectLabel =
-                (showProjectCode
-                        ? project.projectCode ||
-                            project._projectCode ||
-                            project.data?.projectCode ||
-                            project.data?._projectCode
-                        : null) || null;
+    const projectLabel = showProjectCode ? project.projectCode || null : null;
     return (
         <Card
             className="glass-card w-full rounded-xl border border-default-200 hover:border-primary transition-all duration-150 hover:scale-[1.01]"

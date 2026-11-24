@@ -6,8 +6,6 @@ import { Spinner } from "@/components/ui/spinner"
 import { useRouter } from "next/navigation"
 import { Button } from "@heroui/button"
 import { ArrowLeft } from "lucide-react"
-import { useQueries } from "@tanstack/react-query"
-import { getProjectQueryOptions } from "@/features/projects/api/get-project"
 import { extractEventIdFromSlug } from "@/features/events/utils/resolve-join-target"
 
 type ProjectListViewProps = {
@@ -21,30 +19,10 @@ export function ProjectListView({ eventId, showProjectCode = false }: ProjectLis
   const parsedEventId = Number(normalizedEventId);
   const hasValidEventId = Number.isFinite(parsedEventId) && parsedEventId > 0;
 
-  const extractProjectCode = (project: any) => {
-    return (
-      project?.projectCode ??
-      project?._projectCode ??
-      project?.data?.projectCode ??
-      project?.data?._projectCode ??
-      null
-    );
-  };
-
   const eventsQuery = useJuryAssignedProjects({ eventId: parsedEventId });
 
+  // Each project already brings its code (`projectCode`) and the juror's evaluation
   const projects = eventsQuery.data ?? [];
-  const projectDetailsQueries = useQueries({
-    queries: projects.map((project) => ({
-      ...getProjectQueryOptions(String(project.id)),
-      enabled: !!project.id,
-    })),
-  });
-
-  const projectsWithCode = projects.map((project, index) => ({
-    ...project,
-    projectCode: extractProjectCode(project) ?? extractProjectCode(projectDetailsQueries[index]?.data),
-  }));
 
   const isLoading = eventsQuery.isLoading;
 
@@ -91,7 +69,7 @@ export function ProjectListView({ eventId, showProjectCode = false }: ProjectLis
         <div className="space-y-4">
           <h2 className="text-lg font-semibold text-foreground">{showProjectCode ? 'Proyectos por Evaluar' : 'Equipos por Evaluar'}</h2>
           <div className="grid gap-6 p-4 sm:grid-cols-1 lg:grid-cols-2">
-            {projectsWithCode.filter(p => !p.evaluated).map(project => (
+            {notEvaluatedProjects.map(project => (
               <ProjectCard key={project.id} project={project} showProjectCode={showProjectCode} />
             ))}
           </div>
@@ -102,7 +80,7 @@ export function ProjectListView({ eventId, showProjectCode = false }: ProjectLis
         <div className="space-y-4">
           <h2 className="text-lg font-semibold text-foreground">{showProjectCode ? 'Proyectos Evaluados' : 'Equipos Evaluados'}</h2>
           <div className="grid gap-6 p-4 sm:grid-cols-1 lg:grid-cols-2">
-            {projectsWithCode.filter(p => p.evaluated).map(project => (
+            {evaluatedProjects.map(project => (
               <ProjectCard key={project.id} project={project} showProjectCode={showProjectCode} />
             ))}
           </div>
