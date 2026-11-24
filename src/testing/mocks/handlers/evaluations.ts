@@ -75,6 +75,48 @@ export const evaluationsHandlers = [
       return HttpResponse.json(eventCriteriaStatsFixture);
     },
   ),
+  // POST /evaluations/projects/evaluate: the juror sends a level (1-4) per criterion. The mock
+  // keeps the levels (GET /projects/assigned-projects returns them) and, without the event's
+  // scale, uses their average as the grade.
+  http.post(`${env.API_URL}/evaluations/projects/evaluate`, async ({ request, cookies }) => {
+    await networkDelay();
+    const { user, error } = requireAuth(cookies);
+    if (error || !user) {
+      return HttpResponse.json({ message: error || 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = (await request.json()) as {
+      projectId: number;
+      comments?: string;
+      scores: { criterionId: number; score: number }[];
+    };
+    // Mock projects use "project-002" or a plain id; the front sends a number
+    const rawProjectId = String(body.projectId);
+    const projectId = db.project.findFirst({ where: { id: { equals: rawProjectId } } })
+      ? rawProjectId
+      : `project-${rawProjectId.padStart(3, '0')}`;
+    const memberUserId = String(user.id);
+    const existing = db.evaluation.findFirst({
+      where: { projectId: { equals: projectId }, memberUserId: { equals: memberUserId } },
+    });
+    if (existing) {
+      return HttpResponse.json({ message: 'Ya evaluaste este proyecto' }, { status: 409 });
+    }
+
+    const grade =
+      body.scores.reduce((sum, score) => sum + score.score, 0) / Math.max(1, body.scores.length);
+    const evaluation = db.evaluation.create({
+      projectId,
+      memberUserId,
+      grade,
+      comments: body.comments ?? '',
+      scores: body.scores,
+    });
+    await persistDb('evaluation');
+
+    return HttpResponse.json(evaluation, { status: 201 });
+  }),
+
   http.post(`${env.API_URL}/evaluations`, async ({ request, cookies }) => {
     await networkDelay();
     try {
