@@ -8,26 +8,32 @@ export class ApiError extends Error {
   readonly code?: string;
   /** Extra data of the cause sent by the gateway */
   readonly details?: unknown;
+  /** Full parsed JSON error payload when returned by the API */
+  readonly data?: unknown;
 
   constructor(
     message: string,
     status: number,
-    extra: { code?: string; details?: unknown } = {},
+    extra: { code?: string; details?: unknown; data?: unknown } = {},
   ) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
     this.code = extra.code;
     this.details = extra.details;
+    this.data = extra.data;
   }
 }
 
-const readErrorExtra = (json: unknown): { code?: string; details?: unknown } => {
+const readErrorExtra = (
+  json: unknown,
+): { code?: string; details?: unknown; data?: unknown } => {
   if (!json || typeof json !== 'object') return {};
   const { code, details } = json as { code?: unknown; details?: unknown };
   return {
     code: typeof code === 'string' ? code : undefined,
     details,
+    data: json,
   };
 };
 
@@ -224,7 +230,7 @@ async function fetchApi<T>(
   if (!response.ok) {
     // Try to parse error body, but handle empty responses gracefully
     let message = response.statusText;
-    let extra: { code?: string; details?: unknown } = {};
+    let extra: { code?: string; details?: unknown; data?: unknown } = {};
     try {
       const text = await response.text();
       if (text) {

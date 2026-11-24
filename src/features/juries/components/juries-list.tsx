@@ -10,7 +10,11 @@ import {
   TableRow,
   TableCell,
 } from "@/components/ui/table";
-import { SearchIcon } from "lucide-react";
+import { FileSpreadsheet, SearchIcon } from "lucide-react";
+import { Can } from "@/components/auth/can";
+import { Button } from "@/components/ui/button";
+import { paths } from "@/config/paths";
+import { PERMISSIONS } from "@/lib/authorization";
 import { Chip } from "@/components/ui/chip";
 import { useJuryInvitations } from "../api/get-juries";
 import { Spinner } from "@/components/ui/spinner";
@@ -206,6 +210,20 @@ const filteredInvitations = useMemo(() => {
               ))}
             </Select>
             <InviteModal />
+            <Can permission={PERMISSIONS.manageEvents}>
+              <Button
+                size="sm"
+                variant="bordered"
+                startContent={<FileSpreadsheet className="h-4 w-4" />}
+                onPress={() =>
+                  router.push(
+                    paths.app.assignmentsImport.getHref(selectedEventKey || null),
+                  )
+                }
+              >
+                Importar Excel
+              </Button>
+            </Can>
           </div>
         </div>
 

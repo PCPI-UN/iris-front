@@ -18,9 +18,11 @@ import { evaluationsHandlers } from "./evaluations";
 import { dashboardHandlers } from "./dashboard";
 import { studentDashboardHandlers } from "./student-dashboard";
 import { gradingScalesHandlers } from "./grading-scales";
+import { jurorImportsHandlers } from "./juror-imports";
 
 export const handlers = [
   ...studentDashboardHandlers,
+  ...jurorImportsHandlers,
   ...juriesHandlers,
   ...administratorsHandlers,
   ...authHandlers,

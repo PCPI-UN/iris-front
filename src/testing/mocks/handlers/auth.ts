@@ -4,6 +4,7 @@ import { env } from "@/config/env";
 
 import { db, persistDb } from "../db";
 import {
+  ADMIN_PLATFORM_PERMISSIONS,
   authenticate,
   hash,
   requireAuth,
@@ -67,7 +68,7 @@ export const authHandlers = [
               scope: "platform",
             },
           ],
-          platformPermissions: role === "ADMIN" ? ["*"] : [],
+          platformPermissions: role === "ADMIN" ? [...ADMIN_PLATFORM_PERMISSIONS] : [],
           password: hash(userObject.password),
           teamId,
         } as any);
