@@ -3,8 +3,10 @@
 import * as React from "react";
 import Image from "next/image";
 
+import { NavMyEvents } from "./nav-my-events";
 import { NavUser } from "./nav-user";
-import { getSidebarItems } from "./sidebar-items";
+import { getSidebarItems, type SidebarItem } from "./sidebar-items";
+
 import {
   Sidebar,
   SidebarContent,
@@ -25,8 +27,12 @@ import "@/features/landing/index.css";
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const user = useUser();
   // Union of what every role of the session allows (not only the first role)
-  const menuItems = React.useMemo(() => getSidebarItems(user.data), [user.data]);
-
+  const menuItems = React.useMemo(
+    () => getSidebarItems(user.data),
+    [user.data],
+  );
+  const personalItems = menuItems.filter((item) => item.group === "personal");
+  const adminItems = menuItems.filter((item) => item.group === "admin");
 
   const data = React.useMemo(
     () => ({
@@ -69,26 +75,36 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent suppressHydrationWarning>
-        <SidebarGroup>
-          <SidebarGroupLabel>Navegación</SidebarGroupLabel>
-          <SidebarMenu>
-            {menuItems.map((item) => (
-              <SidebarMenuItem key={item.title}>
-                <SidebarMenuButton asChild>
-                  <Link href={item.url}>
-                    <item.icon />
-                    <span>{item.title}</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
-          </SidebarMenu>
-        </SidebarGroup>
+        <NavGroup items={personalItems} />
+        <NavMyEvents />
+        {adminItems.length > 0 && (
+          <NavGroup items={adminItems} label="Administración" />
+        )}
       </SidebarContent>
       <SidebarFooter suppressHydrationWarning>
         <NavUser user={data.user} />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
+  );
+}
+
+function NavGroup({ items, label }: { items: SidebarItem[]; label?: string }) {
+  return (
+    <SidebarGroup>
+      {label && <SidebarGroupLabel>{label}</SidebarGroupLabel>}
+      <SidebarMenu>
+        {items.map((item) => (
+          <SidebarMenuItem key={item.title}>
+            <SidebarMenuButton asChild tooltip={item.title}>
+              <Link href={item.url}>
+                <item.icon />
+                <span>{item.title}</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        ))}
+      </SidebarMenu>
+    </SidebarGroup>
   );
 }

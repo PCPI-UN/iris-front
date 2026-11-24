@@ -3,6 +3,7 @@ import {
   Calendar,
   ChartNoAxesCombined,
   Home,
+  LayoutDashboard,
   type LucideIcon,
   Mail,
   PinIcon,
@@ -17,8 +18,15 @@ import { paths } from "@/config/paths";
 import { hasAnyPermission, Permission, PERMISSIONS } from "@/lib/authorization";
 import { User } from "@/types/api";
 
+/**
+ * The same sections as the panel at /app: what is the person's own, and the
+ * administration views
+ */
+export type SidebarGroupId = "personal" | "admin";
+
 export type SidebarItem = {
   title: string;
+  group: SidebarGroupId;
   url: string;
   icon: LucideIcon;
   /** Any of these opens the item; the same permission its page requires. Empty: any session */
@@ -32,76 +40,95 @@ export type SidebarItem = {
  */
 const SIDEBAR_ITEMS: SidebarItem[] = [
   {
-    title: "Dashboard",
+    title: "Inicio",
+    group: "personal",
     url: paths.app.root.getHref(),
     icon: Home,
     permissions: [],
   },
   {
+    title: "Mis invitaciones",
+    group: "personal",
+    url: paths.app.invitations.getHref(),
+    icon: Mail,
+    permissions: [],
+  },
+  {
+    title: "Resumen",
+    group: "admin",
+    url: paths.app.admin.getHref(),
+    icon: LayoutDashboard,
+    permissions: [PERMISSIONS.readEvents],
+  },
+  {
     title: "Eventos",
+    group: "admin",
     url: paths.app.events.getHref(),
     icon: Calendar,
     permissions: [PERMISSIONS.readEvents],
   },
   {
     title: "Eventos anteriores",
+    group: "admin",
     url: paths.app.pastEvents.getHref(),
     icon: Calendar,
     permissions: [PERMISSIONS.readEvents],
   },
   {
     title: "Categorías",
+    group: "admin",
     url: paths.app.categories.getHref(),
     icon: ArrowDownAZ,
     permissions: [PERMISSIONS.readEvents],
   },
   {
     title: "Proyectos",
+    group: "admin",
     url: paths.app.projects.getHref(),
     icon: SquareChartGantt,
     permissions: [PERMISSIONS.readEvents],
   },
   {
     title: "Monitoreo",
+    group: "admin",
     url: paths.app.monitoring.getHref(),
     icon: ChartNoAxesCombined,
     permissions: [PERMISSIONS.readGrades],
   },
   {
     title: "Criterios",
+    group: "admin",
     url: paths.app.criteria.getHref(),
     icon: Presentation,
     permissions: [PERMISSIONS.readEvents],
   },
   {
     title: "Jurados",
+    group: "admin",
     url: paths.app.juries.getHref(),
     icon: UsersIcon,
     permissions: [PERMISSIONS.readEventMembers],
   },
   {
     title: "Asignaciones",
+    group: "admin",
     url: paths.app.assignments.getHref(),
     icon: PinIcon,
     permissions: [PERMISSIONS.manageEvents],
   },
   {
     title: "Administradores",
+    group: "admin",
     url: paths.app.administrators.getHref(),
     icon: ShieldCheck,
     permissions: [PERMISSIONS.readUsers],
   },
   {
     title: "Usuarios y roles",
+    group: "admin",
     url: paths.app.users.getHref(),
     icon: UserCog,
     permissions: [PERMISSIONS.readUsers],
-  },
-  {
-    title: "Mis invitaciones",
-    url: paths.app.invitations.getHref(),
-    icon: Mail,
-    permissions: [],
   },
 ];
 

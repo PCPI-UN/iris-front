@@ -78,6 +78,9 @@ export const paths = {
       getHref: () => "/app/monitoreo",
       roles: ["Admin"],
     },
+    admin: {
+      getHref: () => "/app/admin",
+    },
     juries: {
       getHref: () => "/app/juries",
     },

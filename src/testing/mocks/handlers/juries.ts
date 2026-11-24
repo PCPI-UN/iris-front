@@ -34,6 +34,51 @@ const calculatePagination = (total: number, page: number, pageSize: number = PAG
 };
 
 export const juriesHandlers = [
+  // The session's invitations; derived from the jury rows of its email
+  http.get(`${env.API_URL}/invitations/me`, async ({ cookies, request }) => {
+    await networkDelay();
+
+    const { error, user } = requireAuth(cookies);
+    if (error || !user) {
+      return HttpResponse.json({ message: error }, { status: 401 });
+    }
+
+    const url = new URL(request.url);
+    const status = (url.searchParams.get("status") || "PENDING").toLowerCase();
+    const page = Number(url.searchParams.get("page") || 1);
+    const limit = Number(url.searchParams.get("limit") || PAGE_SIZE);
+    const invitations = db.jury
+      .getAll()
+      .filter((jury) => jury.email === user.email && jury.invitationStatus === status)
+      .map((jury) => {
+        const event = db.event.findFirst({
+          where: { id: { equals: String((jury.eventIds ?? [])[0] ?? "") } },
+        });
+
+        return {
+          id: String(jury.id),
+          token: `token-${jury.id}`,
+          email: jury.email,
+          targetType: "EVENT",
+          targetId: event?.id,
+          status: 0,
+          expiresAt: new Date(Date.now() + 7 * 86400000).toISOString(),
+          roleIds: [4],
+          roles: [{ id: 4, name: "Juror", description: "Jurado", scope: "EVENT" }],
+          event: event ?? null,
+          project: null,
+          createdAt: new Date(jury.createdAt ?? Date.now()).toISOString(),
+        };
+      });
+    const pagination = calculatePagination(invitations.length, page, limit);
+    const start = (page - 1) * limit;
+
+    return HttpResponse.json({
+      invitations: invitations.slice(start, start + limit),
+      meta: pagination,
+    });
+  }),
+
   http.get(`${env.API_URL}/invitations/events/:eventId`, async ({ cookies, request, params }) => {
     await networkDelay();
 

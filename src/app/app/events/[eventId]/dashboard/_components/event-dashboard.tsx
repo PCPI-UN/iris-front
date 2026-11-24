@@ -1,15 +1,18 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 
 import { useUser } from "@/lib/auth";
 import { canViewAdministration } from "@/lib/authorization";
 import { StudentDashboard } from "@/app/app/_components/student-dashboard";
 import { JuryDashboard } from "@/app/app/_components/jury-dashboard";
-import { useMyEvents } from "@/features/events/api/get-my-events";
+import { useMeEvent } from "@/features/events/api/get-me-events";
+import {
+  EVENT_ROLE_LABELS,
+  resolveEventRole,
+} from "@/features/events/utils/event-roles";
 import { Spinner } from "@/components/ui/spinner";
-import { EventType } from "@/types/api";
 import { extractEventIdFromSlug } from "@/features/events/utils/resolve-join-target";
 
 type EventDashboardProps = {
@@ -18,17 +21,23 @@ type EventDashboardProps = {
 
 export const EventDashboard = ({ eventId }: EventDashboardProps) => {
   const user = useUser();
-  const eventsQuery = useMyEvents({ page: 1 });
   const router = useRouter();
   const normalizedEventId = extractEventIdFromSlug(eventId).eventId;
+  const requestedRole = useSearchParams()?.get("rol");
+  // Searches every page of /me/events (current and past): the event may not be among the first ones
+  const eventQuery = useMeEvent(normalizedEventId || String(eventId));
 
-  const events = eventsQuery.data?.data || [];
-  const currentEvent = events.find((event) => String(event.id) === normalizedEventId || String(event.id) === String(eventId));
-  const isLoading = eventsQuery.isLoading || user.isLoading;
+  const currentEvent = eventQuery.data ?? undefined;
+  // `?rol=` picks the view when the person holds several roles in the event;
+  // one they do not hold is ignored and the first they hold opens
+  const eventRole = currentEvent
+    ? resolveEventRole(requestedRole, currentEvent.roles)
+    : undefined;
+  const isLoading = eventQuery.isLoading || user.isLoading;
   // Staff (read:events) without a role in this event uses the administration views.
   // A staff member who is also juror or participant of the event keeps that dashboard.
   const isStaffWithoutEventRole =
-    canViewAdministration(user.data) && !currentEvent?.role?.name;
+    canViewAdministration(user.data) && !eventRole;
 
   useEffect(() => {
     if (!isLoading && isStaffWithoutEventRole) {
@@ -45,7 +54,7 @@ export const EventDashboard = ({ eventId }: EventDashboardProps) => {
   }
 
   // Renderizar el dashboard según el rol del usuario en este evento
-  if (currentEvent?.role?.name === "Juror") {
+  if (currentEvent && eventRole === "JURY") {
     return (
       <JuryDashboard
         eventId={normalizedEventId || eventId}
@@ -58,10 +67,24 @@ export const EventDashboard = ({ eventId }: EventDashboardProps) => {
   // un evento pasado desde su historial). Si no tiene proyecto en el evento, el dashboard
   // del estudiante lo indica; nunca muestra el proyecto de otro evento.
   if (
-    currentEvent?.role?.name === "Participant" ||
-    !canViewAdministration(user.data)
+    eventRole === "PARTICIPANT" ||
+    (!eventRole && !canViewAdministration(user.data))
   ) {
     return <StudentDashboard eventId={normalizedEventId || eventId} />;
+  }
+
+  // Tutor, professor and director have no view yet
+  if (eventRole) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 space-y-4">
+        <p className="text-lg text-default-500">
+          Vista de {EVENT_ROLE_LABELS[eventRole].toLowerCase()} próximamente
+        </p>
+        <p className="text-sm text-default-400">
+          Aún no hay un panel para este rol en el evento.
+        </p>
+      </div>
+    );
   }
 
   // Si no tiene rol definido en el evento

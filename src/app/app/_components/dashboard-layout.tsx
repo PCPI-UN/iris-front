@@ -44,7 +44,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
                 <Breadcrumb>
                   <BreadcrumbList>
                     <BreadcrumbItem>
-                      <BreadcrumbLink href="/app">Dashboard</BreadcrumbLink>
+                      <BreadcrumbLink href="/app">Inicio</BreadcrumbLink>
                     </BreadcrumbItem>
                   </BreadcrumbList>
                 </Breadcrumb>

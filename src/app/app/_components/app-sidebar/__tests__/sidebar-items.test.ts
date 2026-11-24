@@ -1,6 +1,6 @@
-import { User } from "@/types/api";
-
 import { getSidebarItems } from "../sidebar-items";
+
+import { User } from "@/types/api";
 
 const withPermissions = (permissions: string[], roleNames: string[] = []) =>
   ({
@@ -23,7 +23,9 @@ const ADMIN_PERMISSIONS = [
 
 test("the admin sees every view", () => {
   expect(titles(withPermissions(ADMIN_PERMISSIONS, ["Admin"]))).toEqual([
-    "Dashboard",
+    "Inicio",
+    "Mis invitaciones",
+    "Resumen",
     "Eventos",
     "Eventos anteriores",
     "Categorías",
@@ -34,7 +36,6 @@ test("the admin sees every view", () => {
     "Asignaciones",
     "Administradores",
     "Usuarios y roles",
-    "Mis invitaciones",
   ]);
 });
 
@@ -44,6 +45,7 @@ test("a read-only role (dean) sees the read views but not the write-only ones", 
     ["Dean"],
   );
   const menu = titles(dean);
+
   expect(menu).toEqual(
     expect.arrayContaining([
       "Eventos",
@@ -60,16 +62,36 @@ test("a read-only role (dean) sees the read views but not the write-only ones", 
 
 test("a new role works by its permissions, not by its name", () => {
   const newRole = withPermissions(["read:events"], ["SomeNewRole"]);
+
   expect(titles(newRole)).toEqual(
-    expect.arrayContaining(["Eventos", "Categorías", "Proyectos", "Criterios"]),
+    expect.arrayContaining([
+      "Resumen",
+      "Eventos",
+      "Categorías",
+      "Proyectos",
+      "Criterios",
+    ]),
   );
 });
 
-test("a student only sees the dashboard and their invitations", () => {
-  expect(titles(withPermissions(["view:public_events"], ["User"]))).toEqual([
-    "Dashboard",
+test("a student only sees the personal items, with no administration", () => {
+  const student = getSidebarItems(
+    withPermissions(["view:public_events"], ["User"]),
+  );
+
+  expect(student.map((item) => item.title)).toEqual([
+    "Inicio",
     "Mis invitaciones",
   ]);
+  expect(student.every((item) => item.group === "personal")).toBe(true);
+});
+
+test("every view other than the personal ones hangs from Administración", () => {
+  const admin = getSidebarItems(withPermissions(ADMIN_PERMISSIONS, ["Admin"]));
+
+  expect(
+    admin.filter((item) => item.group === "personal").map((item) => item.title),
+  ).toEqual(["Inicio", "Mis invitaciones"]);
 });
 
 test("the menu is the union of every role, not only the first one", () => {
@@ -78,6 +100,7 @@ test("the menu is the union of every role, not only the first one", () => {
     ["view:public_events", ...ADMIN_PERMISSIONS],
     ["User", "Admin"],
   );
+
   expect(titles(twoRoles)).toContain("Eventos");
 });
 
