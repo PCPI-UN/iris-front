@@ -35,6 +35,9 @@ const percentageOf = (average: number, maxScore?: number) =>
     ? Math.min(Math.max((average / maxScore) * 100, 0), 100)
     : null;
 
+/** The backend sends an empty name for the criteria without component */
+const componentLabel = (name: string) => name.trim() || "Sin componente";
+
 const EmptyState = ({ message }: { message: string }) => (
   <div className="flex min-h-[180px] items-center justify-center rounded-2xl border border-dashed border-default-200 text-sm text-default-500">
     {message}
@@ -78,14 +81,14 @@ export const CriteriaPerformanceCard = ({
 
           return (
             <div
-              key={component.id ?? `sin-componente-${component.name}`}
+              key={component.id ?? "sin-componente"}
               className="space-y-2 rounded-2xl border border-default-200/70 bg-background/80 p-3"
               data-testid="component-stats"
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold text-foreground md:text-base">
-                    {component.name}
+                    {componentLabel(component.name)}
                   </p>
                   <p className="text-[11px] text-default-400 md:text-xs">
                     Peso {formatWeight(component.weight)} ·{" "}

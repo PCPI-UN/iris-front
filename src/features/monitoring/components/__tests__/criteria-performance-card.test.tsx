@@ -80,6 +80,31 @@ describe("CriteriaPerformanceCard", () => {
     expect(within(design).queryByText(/%$/)).not.toBeInTheDocument();
   });
 
+  it("labels the criteria without component, which come with an empty name", () => {
+    rtlRender(
+      <CriteriaPerformanceCard
+        showCriteria
+        stats={{
+          maxScore: 90,
+          components: [
+            {
+              name: "",
+              weight: 0.3,
+              average: 75,
+              projectCount: 1,
+              criteria: [{ id: 3, name: "Bitácora", weight: 0.3, average: 75 }],
+            },
+          ],
+        }}
+      />,
+    );
+
+    const row = componentRow("Sin componente");
+
+    expect(within(row).getByText("Bitácora")).toBeInTheDocument();
+    expect(within(row).getByText(/Peso 30 %/)).toBeInTheDocument();
+  });
+
   it("says there is nothing to show without evaluated components", () => {
     rtlRender(
       <CriteriaPerformanceCard
