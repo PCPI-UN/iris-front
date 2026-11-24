@@ -58,6 +58,10 @@ export const paths = {
       getHref: () => "/app/invitations",
       roles: ["User"],
     },
+    academicHistory: {
+      getHref: () => "/app/academic-history",
+      roles: ["Admin", "User"],
+    },
     events: {
       getHref: () => "/app/events",
       roles: ["Admin"],

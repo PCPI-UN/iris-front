@@ -25,6 +25,7 @@ test("the admin sees every view", () => {
   expect(titles(withPermissions(ADMIN_PERMISSIONS, ["Admin"]))).toEqual([
     "Inicio",
     "Mis invitaciones",
+    "Mi trayectoria",
     "Resumen",
     "Eventos",
     "Eventos anteriores",
@@ -82,6 +83,7 @@ test("a student only sees the personal items, with no administration", () => {
   expect(student.map((item) => item.title)).toEqual([
     "Inicio",
     "Mis invitaciones",
+    "Mi trayectoria",
   ]);
   expect(student.every((item) => item.group === "personal")).toBe(true);
 });
@@ -91,7 +93,7 @@ test("every view other than the personal ones hangs from Administración", () =>
 
   expect(
     admin.filter((item) => item.group === "personal").map((item) => item.title),
-  ).toEqual(["Inicio", "Mis invitaciones"]);
+  ).toEqual(["Inicio", "Mis invitaciones", "Mi trayectoria"]);
 });
 
 test("the menu is the union of every role, not only the first one", () => {
