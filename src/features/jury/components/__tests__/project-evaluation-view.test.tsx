@@ -185,3 +185,23 @@ test("a project not assigned to the juror shows no form", async () => {
   ).toBeInTheDocument();
   expect(screen.queryByRole("radio")).not.toBeInTheDocument();
 });
+
+test("a rejected evaluation explains why inside the card, without a toast", async () => {
+  mockEvaluationData({
+    eventResponse: () => HttpResponse.json({ event: { id: 5, gradingScale: customScale } }),
+  });
+  server.use(
+    http.post("*/api/evaluations/projects/evaluate", () =>
+      HttpResponse.json({ message: "El periodo de evaluación terminó" }, { status: 400 }),
+    ),
+  );
+  renderView();
+  const user = userEvent.setup();
+
+  await user.click(await screen.findByRole("radio", { name: "Destaca (30 puntos)" }));
+  await user.click(screen.getByRole("button", { name: /enviar evaluación/i }));
+  await user.click(await screen.findByRole("button", { name: /confirmar y enviar/i }));
+
+  expect(await screen.findByRole("alert")).toHaveTextContent("El periodo de evaluación terminó");
+  expect(useNotifications.getState().notifications).toHaveLength(0);
+});

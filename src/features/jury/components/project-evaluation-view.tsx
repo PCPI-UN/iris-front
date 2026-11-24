@@ -54,6 +54,8 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showMissing, setShowMissing] = useState(false)
+  // Shown inside the evaluation card: a floating toast covered the page title
+  const [submitError, setSubmitError] = useState<string | null>(null)
   const { addNotification } = useNotifications()
 
   const { mutate } = useCreateEvaluation({
@@ -68,11 +70,7 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
       },
       onError: (error) => {
         setIsSubmitting(false)
-        addNotification({
-          type: "error",
-          title: "No se pudo enviar la evaluación",
-          message: jurorEvaluationErrorMessage(error?.message),
-        })
+        setSubmitError(jurorEvaluationErrorMessage(error?.message))
       },
     },
   })
@@ -178,6 +176,7 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
   const handleConfirmSubmit = () => {
     setIsConfirmModalOpen(false)
     setIsSubmitting(true)
+    setSubmitError(null)
 
     const payload: any = {
       projectId: Number(projectId),
@@ -509,6 +508,16 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
                         disabled={isSubmitting}
                       />
                     </div>
+
+                    {submitError && (
+                      <div
+                        className="flex items-start gap-2 rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger"
+                        role="alert"
+                      >
+                        <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                        <span>{submitError}</span>
+                      </div>
+                    )}
 
                     <Button
                       className="w-full transition-transform hover:scale-[1.01] text-sm md:text-base"
