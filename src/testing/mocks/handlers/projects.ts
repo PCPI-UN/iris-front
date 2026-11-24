@@ -280,6 +280,54 @@ export const projectsHandlers = [
     }
   ),
 
+  // GET /projects/assigned-projects: the juror's projects in an event, with their own
+  // evaluation (`score` as the level 1-4). Before "/projects/:projectId", which also matches it.
+  http.get(`${env.API_URL}/projects/assigned-projects`, async ({ cookies, request }) => {
+    await networkDelay();
+    const { user, error } = requireAuth(cookies);
+    if (error || !user) {
+      return HttpResponse.json({ message: error || "Unauthorized" }, { status: 401 });
+    }
+
+    const url = new URL(request.url);
+    const rawEventId = url.searchParams.get("eventId") ?? "";
+    const page = Math.max(1, Number(url.searchParams.get("page") || 1));
+    const pageSize = Math.max(1, Number(url.searchParams.get("pageSize") || 20));
+    const userId = String((user as any)?.id ?? (user as any)?.userId ?? "");
+    const eventId = rawEventId ? toInternalPrefixedId(rawEventId, "event") : "";
+
+    const assigned = db.project
+      .getAll()
+      .filter((p) => !eventId || String(p.eventId) === eventId)
+      .filter((p) => isUserAssignedToProject(p, userId));
+
+    const items = assigned.slice((page - 1) * pageSize, page * pageSize).map((project) => {
+      const evaluation = db.evaluation.findFirst({
+        where: {
+          projectId: { equals: String(project.id) },
+          memberUserId: { equals: userId },
+        },
+      });
+
+      return {
+        ...mapProjectToDTO(project),
+        projectCode: project.projectCode || undefined,
+        evaluated: Boolean(evaluation),
+        ...(evaluation && {
+          evaluation: {
+            id: evaluation.id,
+            grade: evaluation.grade,
+            comments: evaluation.comments || undefined,
+            date: new Date(evaluation.createdAt).toISOString(),
+            scores: (evaluation.scores ?? []) as unknown[],
+          },
+        }),
+      };
+    });
+
+    return HttpResponse.json({ items, page, pageSize, total: assigned.length });
+  }),
+
   // Contract used by src/features/projects/api/get-projects.ts
   http.get(`${env.API_URL}/projects/by-event/:eventId`, async ({ cookies, request, params }) => {
     await networkDelay();
