@@ -23,7 +23,6 @@ import {
 } from '@/components/ui/table';
 import { Spinner } from '@/components/ui/spinner';
 import { useUser } from '@/lib/auth';
-import { normalizeCategoryId } from '@/lib/compat/category-legacy';
 import { getProjectEvaluationStats, type ProjectEvaluationStats } from '@/features/evaluations/api/get-project-evaluation-stats';
 import { useEvents } from '@/features/events/api/get-events';
 import { useCategoriesDropdown } from '@/features/courses/api/get-categories-dropdown';
@@ -36,7 +35,7 @@ import { useEventsDropdown } from '@/features/events/api/get-events-dropdown';
 import { MonitoringDashboardProps, ProjectEvaluationProgress, ProjectEvaluationSummary } from '@/features/monitoring/types';
 import { stateColors, stateLabels } from '@/features/monitoring/utils/constants';
 import { formatDate } from '@/features/monitoring/utils/formatting';
-import { buildCategoryEvaluationStats, getJurorKey, getUniqueJurors } from '@/features/monitoring/utils/calculations';
+import { buildCategoryEvaluationStats, getJurorKey, getStatisticsProjects, getUniqueJurors } from '@/features/monitoring/utils/calculations';
 import { normalizeText } from '@/features/monitoring/utils/filters';
 import { useMonitoringFilters } from '@/features/monitoring/hooks/use-monitoring-filters';
 import { MonitoringDashboardHeader } from '@/features/monitoring/components/monitoring-dashboard-header';
@@ -189,15 +188,7 @@ export const MonitoringDashboard = ({ initialEventId, onBack, eventData }: Monit
   }, [allProjectEvaluationStatsQueries, allProjects]);
 
   const statisticsProjects = useMemo(
-    () =>
-      (selectedCategoryId
-        ? allProjects.filter(
-            (project): project is ProjectWithJurors & { categoryId: number } =>
-              Number(normalizeCategoryId(project)) === selectedCategoryId,
-          )
-        : allProjects.filter(
-            (project): project is ProjectWithJurors & { categoryId: number } => project.categoryId !== undefined,
-          )) as Array<{ id: number; categoryId: number; evaluated?: boolean } & ProjectWithJurors>,
+    () => getStatisticsProjects(allProjects, selectedCategoryId),
     [allProjects, selectedCategoryId],
   );
 
