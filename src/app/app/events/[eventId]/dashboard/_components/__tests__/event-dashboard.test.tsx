@@ -48,6 +48,14 @@ const meEvent = (id: number, roles: string[]) => ({
   roles,
 });
 
+/** The juror's projects in the event: the header counts the evaluated ones */
+const useAssignedProjectsHandler = (items: { id: number; evaluated: boolean }[]) =>
+  server.use(
+    http.get("*/api/projects/assigned-projects", () =>
+      HttpResponse.json({ items, page: 1, pageSize: 50, total: items.length }),
+    ),
+  );
+
 const otherEvents = Array.from({ length: 50 }, (_, index) =>
   meEvent(100 + index, ["PARTICIPANT"]),
 );
@@ -93,6 +101,7 @@ const renderDashboard = (eventId: string) => {
 describe("EventDashboard", () => {
   beforeEach(() => {
     search = "";
+    useAssignedProjectsHandler([]);
     replace.mockClear();
   });
 
@@ -109,6 +118,21 @@ describe("EventDashboard", () => {
     expect(screen.queryByText("Panel del estudiante")).not.toBeInTheDocument();
     expect(requests.map((params) => params.get("page"))).toEqual(["1", "2"]);
     expect(requests[0].get("limit")).toBe("50");
+  });
+
+  it("the juror header shows the event name and how many projects are evaluated", async () => {
+    useMeEventsHandler({ current: [meEvent(14, ["JURY"])] });
+    useAssignedProjectsHandler([
+      { id: 1, evaluated: true },
+      { id: 2, evaluated: true },
+      { id: 3, evaluated: false },
+      { id: 4, evaluated: false },
+      { id: 5, evaluated: false },
+    ]);
+    renderDashboard("14");
+
+    expect(await screen.findByText("Evento 14")).toBeInTheDocument();
+    expect(await screen.findByText("2 de 5 evaluados")).toBeInTheDocument();
   });
 
   it("finds an event that already ended in the past list", async () => {

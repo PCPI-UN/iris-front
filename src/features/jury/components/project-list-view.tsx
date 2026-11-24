@@ -3,9 +3,6 @@
 import { ProjectCard } from "./project-card"
 import { useJuryAssignedProjects } from "@/features/projects-public/api/get-jury-project"
 import { Spinner } from "@/components/ui/spinner"
-import { useRouter } from "next/navigation"
-import { Button } from "@heroui/button"
-import { ArrowLeft } from "lucide-react"
 import { extractEventIdFromSlug } from "@/features/events/utils/resolve-join-target"
 import { maxGradeOf, useJurorEvent } from "../hooks/use-juror-event"
 
@@ -15,7 +12,6 @@ type ProjectListViewProps = {
 };
 
 export function ProjectListView({ eventId, showProjectCode = false }: ProjectListViewProps) {
-  const router = useRouter();
   const normalizedEventId = extractEventIdFromSlug(eventId).eventId;
   const parsedEventId = Number(normalizedEventId);
   const hasValidEventId = Number.isFinite(parsedEventId) && parsedEventId > 0;
@@ -58,16 +54,6 @@ export function ProjectListView({ eventId, showProjectCode = false }: ProjectLis
 
   return (
     <div className="space-y-8">
-      <div>
-        <Button
-          variant="light"
-          className="gap-2"
-          onClick={() => router.push('/app')}
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Volver
-        </Button>
-      </div>
       {notEvaluatedProjects.length > 0 && (
         <div className="space-y-4">
           <h2 className="text-lg font-semibold text-foreground">{showProjectCode ? 'Proyectos por Evaluar' : 'Equipos por Evaluar'}</h2>

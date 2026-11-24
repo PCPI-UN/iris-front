@@ -40,6 +40,7 @@ import { useJuryAssignedProjects } from "@/features/projects-public/api/get-jury
 import { ScoreLevelPicker } from "./score-level-picker"
 import { jurorEvaluationErrorMessage } from "../utils/evaluation-error"
 import { maxGradeOf, useJurorEvent } from "../hooks/use-juror-event"
+import { getEventDashboardHref } from "@/features/events/utils/event-roles"
 
 type ProjectEvaluationViewProps = {
   projectId: string
@@ -63,7 +64,7 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
           title: "Evaluación enviada exitosamente",
         })
         setIsSubmitting(false)
-        router.push(`/app/events/${project?.eventId}`)
+        router.push(getEventDashboardHref(project?.eventId, "JURY"))
       },
       onError: (error) => {
         setIsSubmitting(false)
@@ -124,7 +125,7 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
         <p className="text-base md:text-lg font-semibold">
           Este proyecto no está asignado a tu evaluación
         </p>
-        <Button variant="light" onClick={() => router.push(project?.eventId ? `/app/events/${project.eventId}` : "/app")}>
+        <Button variant="light" onClick={() => router.push(project?.eventId ? getEventDashboardHref(project.eventId, "JURY") : "/app")}>
           Volver
         </Button>
       </div>
@@ -195,7 +196,7 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
 
   const handleGoBack = () => {
     if (project?.eventId) {
-      router.push(`/app/events/${project.eventId}`)
+      router.push(getEventDashboardHref(project.eventId, "JURY"))
     } else {
       router.push("/app")
     }

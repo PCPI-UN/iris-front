@@ -58,7 +58,7 @@ export const EventDashboard = ({ eventId }: EventDashboardProps) => {
     return (
       <JuryDashboard
         eventId={normalizedEventId || eventId}
-        eventType={currentEvent.eventType}
+        event={currentEvent}
       />
     );
   }
