@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@heroui/button"
 import { ArrowLeft } from "lucide-react"
 import { extractEventIdFromSlug } from "@/features/events/utils/resolve-join-target"
+import { maxGradeOf, useJurorEvent } from "../hooks/use-juror-event"
 
 type ProjectListViewProps = {
   eventId: string;
@@ -23,6 +24,8 @@ export function ProjectListView({ eventId, showProjectCode = false }: ProjectLis
 
   // Each project already brings its code (`projectCode`) and the juror's evaluation
   const projects = eventsQuery.data ?? [];
+  const { gradingScale } = useJurorEvent(hasValidEventId ? parsedEventId : undefined);
+  const maxGrade = maxGradeOf(gradingScale);
 
   const isLoading = eventsQuery.isLoading;
 
@@ -70,7 +73,7 @@ export function ProjectListView({ eventId, showProjectCode = false }: ProjectLis
           <h2 className="text-lg font-semibold text-foreground">{showProjectCode ? 'Proyectos por Evaluar' : 'Equipos por Evaluar'}</h2>
           <div className="grid gap-6 p-4 sm:grid-cols-1 lg:grid-cols-2">
             {notEvaluatedProjects.map(project => (
-              <ProjectCard key={project.id} project={project} showProjectCode={showProjectCode} />
+              <ProjectCard key={project.id} project={project} showProjectCode={showProjectCode} maxGrade={maxGrade} />
             ))}
           </div>
         </div>
@@ -81,7 +84,7 @@ export function ProjectListView({ eventId, showProjectCode = false }: ProjectLis
           <h2 className="text-lg font-semibold text-foreground">{showProjectCode ? 'Proyectos Evaluados' : 'Equipos Evaluados'}</h2>
           <div className="grid gap-6 p-4 sm:grid-cols-1 lg:grid-cols-2">
             {evaluatedProjects.map(project => (
-              <ProjectCard key={project.id} project={project} showProjectCode={showProjectCode} />
+              <ProjectCard key={project.id} project={project} showProjectCode={showProjectCode} maxGrade={maxGrade} />
             ))}
           </div>
         </div>

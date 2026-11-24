@@ -1,14 +1,22 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardBody } from "@/components/ui/card";
-import { FileText, Users } from "lucide-react";
+import { CheckCircle2, FileText, Users } from "lucide-react";
 import { AvatarGroup } from "@/features/projects/components/avatar-icon";
 import { useRouter } from "next/navigation";
 import { paths } from "@/config/paths";
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@/components/ui/dropdown";
 import { ChevronDown, ExternalLink } from "lucide-react";
 import { documentLink, type DocumentRef } from "@/lib/document-link";
+import { formatPoints } from "@/features/grading-scales/utils/grading-scale";
 
-export function ProjectCard({ project, showProjectCode = false }: { project: any; showProjectCode?: boolean }) {
+type ProjectCardProps = {
+    project: any;
+    showProjectCode?: boolean;
+    /** Highest grade of the event's scale, to show the juror's grade as "4.2 / 5" */
+    maxGrade?: number;
+};
+
+export function ProjectCard({ project, showProjectCode = false, maxGrade }: ProjectCardProps) {
     const router = useRouter();
     const documents = project?.documents ?? [];
 
@@ -176,13 +184,27 @@ export function ProjectCard({ project, showProjectCode = false }: { project: any
                         )}
                     </div>
 
+                    {project.evaluated && typeof project.evaluation?.grade === "number" && (
+                        <div className="flex items-center gap-2 rounded-lg border border-success/30 bg-success/10 px-3 py-2 text-sm">
+                            <CheckCircle2 className="h-4 w-4 text-success" />
+                            <span className="font-medium">Tu nota:</span>
+                            <span className="font-semibold">
+                                {formatPoints(project.evaluation.grade)}
+                                {maxGrade !== undefined ? ` / ${formatPoints(maxGrade)}` : ""}
+                            </span>
+                        </div>
+                    )}
+
+                    {/* An evaluated project opens its evaluation read-only */}
                     <Button
                         className="mt-6 w-full transition-transform"
                         color="primary"
+                        variant={project.evaluated ? "bordered" : "solid"}
                         onPress={() => router.push(paths.app.evaluations.getHref(project.id))}
-                        isDisabled={project.evaluated}
                     >
-                        {project.evaluated ? "Evaluado" : (showProjectCode ? "Evaluar Proyecto" : "Evaluar Equipo")}
+                        {project.evaluated
+                            ? "Ver evaluación"
+                            : (showProjectCode ? "Evaluar Proyecto" : "Evaluar Equipo")}
                     </Button>
                 </div>
             </CardBody>

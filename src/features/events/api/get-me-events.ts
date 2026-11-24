@@ -126,4 +126,6 @@ export const useMeEvent = (eventId: string) =>
   useQuery({
     queryKey: ["events", "me", "event", eventId],
     queryFn: () => findMeEvent(eventId),
+    // Without an id there is nothing to look for (e.g. the project has not loaded yet)
+    enabled: Boolean(eventId),
   });
