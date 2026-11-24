@@ -23,22 +23,23 @@ import {
   ChevronRight,
   ChevronDown,
   ExternalLink,
+  CheckCircle2,
 } from "lucide-react"
 import { useProject } from "@/features/projects/api/get-project"
 import { AvatarGroup } from "@/features/projects/components/avatar-icon"
 import { useCategoryCriteria } from "@/features/criteria/api/get-category-criterion"
-import { useMyEvents } from '@/features/events/api/get-my-events'
 import { useCreateEvaluation } from "@/features/evaluations/api/create-evaluation"
 import { useNotifications } from "@/components/ui/notifications"
 import { Spinner } from "@heroui/spinner"
 import { normalizeCategoryId } from "@/lib/compat/category-legacy"
 import { EventType } from '@/types/api'
 import { documentLink, type DocumentRef } from "@/lib/document-link";
-import { useEventGradingScale } from "@/features/grading-scales/api/get-event-grading-scale"
-import { toScoreLevelOptions } from "@/features/grading-scales/utils/grading-scale"
+import { formatPoints, toScoreLevelOptions } from "@/features/grading-scales/utils/grading-scale"
+import { useJuryAssignedProjects } from "@/features/projects-public/api/get-jury-project"
 
 import { ScoreLevelPicker } from "./score-level-picker"
 import { jurorEvaluationErrorMessage } from "../utils/evaluation-error"
+import { maxGradeOf, useJurorEvent } from "../hooks/use-juror-event"
 
 type ProjectEvaluationViewProps = {
   projectId: string
@@ -81,16 +82,22 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
   const projectCategoryId = normalizeCategoryId(project ?? {}) ?? ""
   const documents = project?.documents ?? []
 
-  const myEventsQuery = useMyEvents({ page: 1, queryConfig: { enabled: !!project?.eventId } })
-  const currentEvent = myEventsQuery.data?.data?.find((e: any) => String(e.id) === String(project?.eventId))
+  // Searches every page of /me/events, not only the first one
+  const { event: currentEvent, gradingScale } = useJurorEvent(project?.eventId)
   const showProjectCode = currentEvent?.eventType === EventType.Exposition
+  const scoreOptions = toScoreLevelOptions(gradingScale)
+  const maxGrade = maxGradeOf(gradingScale)
 
-  // Escala del evento: de "mis eventos" si la trae, si no de GET /events/:id (sin permiso → null)
-  const eventScaleQuery = useEventGradingScale({
-    eventId: Number(project?.eventId),
-    queryConfig: { enabled: Boolean(project?.eventId) && !currentEvent?.gradingScale },
-  })
-  const scoreOptions = toScoreLevelOptions(currentEvent?.gradingScale ?? eventScaleQuery.data)
+  // The juror's own list says whether the project is assigned and already evaluated
+  const assignedQuery = useJuryAssignedProjects({ eventId: Number(project?.eventId) })
+  const assignedProject = assignedQuery.data?.find((item) => String(item.id) === String(projectId))
+  const isNotAssigned = assignedQuery.isSuccess && !assignedProject
+  const submittedEvaluation = assignedProject?.evaluated ? assignedProject.evaluation : undefined
+  const isReadOnly = Boolean(submittedEvaluation)
+  const submittedScores: Record<string, number> = Object.fromEntries(
+    (submittedEvaluation?.scores ?? []).map((score) => [String(score.criterionId), score.score]),
+  )
+  const shownScores = isReadOnly ? submittedScores : scores
 
   const {
     data: categoryCriteriaData,
@@ -102,10 +109,24 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
     },
   })
 
-  if (isProjectLoading || isCategoryCriteriaLoading) {
+  if (isProjectLoading || isCategoryCriteriaLoading || assignedQuery.isLoading) {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
         <Spinner size="lg" />
+      </div>
+    )
+  }
+
+  if (isNotAssigned) {
+    return (
+      <div className="flex min-h-[320px] flex-col items-center justify-center gap-3 text-center">
+        <AlertCircle className="h-10 w-10 text-warning" />
+        <p className="text-base md:text-lg font-semibold">
+          Este proyecto no está asignado a tu evaluación
+        </p>
+        <Button variant="light" onClick={() => router.push(project?.eventId ? `/app/events/${project.eventId}` : "/app")}>
+          Volver
+        </Button>
       </div>
     )
   }
@@ -128,7 +149,7 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
   const allSections = backendSections
   const currentSection = allSections[currentPage] ?? allSections[0]
   // The backend rejects an evaluation that leaves any criterion of the rubric without a score
-  const missingCriteria = allSections.flatMap((section, sectionIndex) =>
+  const missingCriteria = isReadOnly ? [] : allSections.flatMap((section, sectionIndex) =>
     section.subcriteria
       .filter((criterion) => scores[criterion.id] === undefined)
       .map((criterion) => ({ ...criterion, sectionIndex })),
@@ -367,11 +388,23 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
               <CardHeader className="p-4 md:p-6">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div>
-                    <p className="text-base md:text-lg font-semibold">Evaluación de Jurado</p>
+                    <p className="text-base md:text-lg font-semibold">
+                      {isReadOnly ? "Evaluación enviada" : "Evaluación de Jurado"}
+                    </p>
                     <p className="text-xs md:text-sm text-muted-foreground mt-1">
                       Sección {currentPage + 1} de {allSections.length}
                     </p>
                   </div>
+                  {submittedEvaluation && (
+                    <div className="flex items-center gap-2 rounded-lg border border-success/30 bg-success/10 px-3 py-2 text-sm">
+                      <CheckCircle2 className="h-4 w-4 text-success" />
+                      <span className="font-medium">Tu nota:</span>
+                      <span className="font-semibold">
+                        {formatPoints(submittedEvaluation.grade)}
+                        {maxGrade !== undefined ? ` / ${formatPoints(maxGrade)}` : ""}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </CardHeader>
 
@@ -410,8 +443,9 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
                       <ScoreLevelPicker
                         criterionName={criterion.name}
                         options={scoreOptions}
-                        value={scores[criterion.id]}
+                        value={shownScores[criterion.id]}
                         onChange={(level) => handleScoreChange(criterion.id, level)}
+                        disabled={isReadOnly}
                       />
                     </div>
                   ))}
@@ -450,7 +484,16 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
                   )}
                 </div>
 
-                {currentPage === allSections.length - 1 && (
+                {currentPage === allSections.length - 1 && isReadOnly && (
+                  <div className="space-y-2 pt-3 md:pt-4">
+                    <p className="text-xs md:text-sm font-medium">Comentarios y Retroalimentación</p>
+                    <p className="text-sm text-muted-foreground whitespace-pre-line">
+                      {submittedEvaluation?.comments?.trim() || "Sin comentarios"}
+                    </p>
+                  </div>
+                )}
+
+                {currentPage === allSections.length - 1 && !isReadOnly && (
                   <>
                     <div className="space-y-2 pt-3 md:pt-4">
                       <Label htmlFor="comments" className="text-xs md:text-sm font-medium">

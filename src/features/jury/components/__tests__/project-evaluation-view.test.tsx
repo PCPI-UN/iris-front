@@ -27,11 +27,17 @@ const oneSection = [
 const mockEvaluationData = ({
   eventResponse,
   sections = oneSection,
+  assigned = [{ id: 7, evaluated: false }],
 }: {
   eventResponse: () => Response;
   sections?: typeof oneSection;
+  assigned?: Record<string, unknown>[];
 }) => {
   server.use(
+    // Before "/projects/:projectId", which would also match it
+    http.get("*/api/projects/assigned-projects", () =>
+      HttpResponse.json({ items: assigned, page: 1, pageSize: 50, total: assigned.length }),
+    ),
     http.get("*/api/projects/:projectId", () =>
       HttpResponse.json({
         id: 7,
@@ -46,8 +52,14 @@ const mockEvaluationData = ({
     http.get("*/api/criterions/course/:categoryId", () =>
       HttpResponse.json({ categories: sections }),
     ),
-    http.get("*/api/events/my-events", () =>
-      HttpResponse.json({ data: [{ id: 5, name: "Feria", eventType: "Exposition" }] }),
+    http.get("*/api/me/events", ({ request }) =>
+      HttpResponse.json({
+        events:
+          new URL(request.url).searchParams.get("status") === "current"
+            ? [{ id: 5, name: "Feria", eventType: "Exposition", roles: ["JURY"] }]
+            : [],
+        meta: { total: 1, currentPage: 1, totalPages: 1, itemsPerPage: 50 },
+      }),
     ),
     http.get("*/api/events/5", eventResponse),
   );
@@ -132,4 +144,44 @@ test("the evaluation is not sent until every criterion has a level", async () =>
   expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   await user.click(screen.getByRole("button", { name: /enviar evaluación/i }));
   expect(await screen.findByText(/confirmar envío/i)).toBeInTheDocument();
+});
+
+test("a submitted evaluation is shown read-only, with its levels, comments and grade", async () => {
+  mockEvaluationData({
+    eventResponse: () => HttpResponse.json({ event: { id: 5, gradingScale: customScale } }),
+    assigned: [
+      {
+        id: 7,
+        evaluated: true,
+        evaluation: {
+          id: 3,
+          grade: 30,
+          comments: "Buen prototipo",
+          scores: [{ criterionId: 11, score: 3 }],
+        },
+      },
+    ],
+  });
+  renderView();
+
+  const chosen = await screen.findByRole("radio", { name: "Destaca (30 puntos)" });
+  expect(chosen).toHaveAttribute("aria-checked", "true");
+  expect(chosen).toBeDisabled();
+  expect(screen.getByText("Evaluación enviada")).toBeInTheDocument();
+  expect(await screen.findByText("30 / 40")).toBeInTheDocument();
+  expect(screen.getByText("Buen prototipo")).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: /enviar evaluación/i })).not.toBeInTheDocument();
+});
+
+test("a project not assigned to the juror shows no form", async () => {
+  mockEvaluationData({
+    eventResponse: () => HttpResponse.json({ event: { id: 5, gradingScale: customScale } }),
+    assigned: [{ id: 8, evaluated: false }],
+  });
+  renderView();
+
+  expect(
+    await screen.findByText("Este proyecto no está asignado a tu evaluación"),
+  ).toBeInTheDocument();
+  expect(screen.queryByRole("radio")).not.toBeInTheDocument();
 });

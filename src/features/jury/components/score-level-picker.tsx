@@ -7,7 +7,9 @@ type ScoreLevelPickerProps = {
   criterionName: string;
   options: ScoreLevelOption[];
   value?: number;
-  onChange: (level: number) => void;
+  onChange?: (level: number) => void;
+  /** Submitted evaluation: shows the chosen level and cannot be changed */
+  disabled?: boolean;
 };
 
 /**
@@ -19,6 +21,7 @@ export const ScoreLevelPicker = ({
   options,
   value,
   onChange,
+  disabled = false,
 }: ScoreLevelPickerProps) => {
   return (
     <div className="space-y-2" role="radiogroup" aria-label={criterionName}>
@@ -50,8 +53,11 @@ export const ScoreLevelPicker = ({
               role="radio"
               aria-checked={isSelected}
               aria-label={accessibleName}
-              onClick={() => onChange(option.value)}
-              className="flex flex-col items-center gap-2 cursor-pointer group flex-1"
+              disabled={disabled}
+              onClick={() => onChange?.(option.value)}
+              className={`flex flex-col items-center gap-2 group flex-1 ${
+                disabled ? "cursor-default" : "cursor-pointer"
+              }`}
             >
               <div
                 className={`h-6 w-6 md:h-7 md:w-7 rounded-full border-2 flex items-center justify-center transition-all ${
