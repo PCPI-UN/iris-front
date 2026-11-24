@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import type { MonitoringTab, ProjectFilterState, SortOrder } from '../types';
 import { readCategoryIdFromSearchParams } from '@/lib/compat/category-legacy';
+import { ALL_CATEGORIES_KEY } from '../utils/constants';
 import { isProjectState, parseOptionalId, parsePage } from '../utils/parsers';
 
 type UseMonitoringFiltersParams = {
@@ -85,7 +86,10 @@ export const useMonitoringFilters = ({ initialEventId }: UseMonitoringFiltersPar
 
   const handleCategoryChange = (keys: Set<string>) => {
     const selected = Array.from(keys)[0];
-    updateParams({ categoryId: selected ? Number(selected) : null }, { resetPage: true });
+    updateParams(
+      { categoryId: selected && selected !== ALL_CATEGORIES_KEY ? Number(selected) : null },
+      { resetPage: true },
+    );
   };
 
   const handlePageChange = (page: number) => {

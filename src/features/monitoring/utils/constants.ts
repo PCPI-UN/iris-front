@@ -1,6 +1,9 @@
 import type { ProjectWithJurors } from '@/features/projects/api/get-projects-with-jurors';
 import type { ProjectFilterState } from '../types';
 
+/** Key of the category Select option that clears the category filter */
+export const ALL_CATEGORIES_KEY = 'all';
+
 export const projectStateOptions: Array<{
   key: ProjectFilterState;
   label: string;
