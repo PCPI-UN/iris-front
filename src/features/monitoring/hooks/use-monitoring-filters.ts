@@ -38,7 +38,8 @@ export const useMonitoringFilters = ({ initialEventId }: UseMonitoringFiltersPar
   const selectedEventIdFromUrl = initialEventId ?? Number(searchParams?.get('event'));
   const activeTab = useMemo(() => {
     const viewParam = searchParams?.get('view');
-    return (viewParam === 'projects' ? 'projects' : viewParam === 'ranking' ? 'ranking' : 'statistics') as MonitoringTab;
+    const tabs: MonitoringTab[] = ['projects', 'ranking', 'awards'];
+    return tabs.find((tab) => tab === viewParam) ?? 'statistics';
   }, [searchParams]);
   const currentPage = useMemo(() => parsePage(searchParams?.get('page')), [searchParams]);
   const selectedCategoryId = useMemo(
