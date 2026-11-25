@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { AlertCircle, ArrowLeft, BookOpen } from "lucide-react";
+import { AlertCircle, ArrowLeft, BookOpen, Download } from "lucide-react";
 
+import { downloadAcademicDiploma } from "@/features/academic/api/get-academic-diploma";
 import { useAcademicEvents } from "@/features/academic/api/get-academic-events";
 import { useAcademicProject } from "@/features/academic/api/get-academic-project";
 import { useAcademicRegistrations } from "@/features/academic/api/get-academic-registrations";
@@ -22,8 +24,10 @@ import { GRADE_STATUS_LABELS } from "@/features/academic/utils/academic-grades";
 import { formatCourse } from "@/features/academic/utils/academic-labels";
 import {
   TEACHING_PROFILES,
+  type TeachingProfile,
   teachingProfileFromSlug,
 } from "@/features/academic/utils/academic-profiles";
+import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { paths } from "@/config/paths";
 import { ApiError } from "@/lib/api-client";
@@ -46,9 +50,59 @@ const BackLink = ({
   </Link>
 );
 
+/** Award diploma of the project, the same PDF its students download */
+const DiplomaButton = ({
+  profile,
+  projectId,
+}: {
+  profile: TeachingProfile;
+  projectId: number;
+}) => {
+  const [downloading, setDownloading] = useState(false);
+  const [failed, setFailed] = useState(false);
+
+  const download = async () => {
+    setDownloading(true);
+    setFailed(false);
+    try {
+      await downloadAcademicDiploma(profile, projectId);
+    } catch {
+      setFailed(true);
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-1">
+      <Button
+        fullWidth
+        className="min-h-[44px]"
+        color="primary"
+        isLoading={downloading}
+        startContent={
+          downloading ? undefined : (
+            <Download aria-hidden="true" className="size-4" />
+          )
+        }
+        variant="flat"
+        onPress={() => void download()}
+      >
+        Descargar diploma
+      </Button>
+      {failed && (
+        <p className="text-xs text-red-400" role="alert">
+          No se pudo descargar el diploma. Intenta de nuevo.
+        </p>
+      )}
+    </div>
+  );
+};
+
 /**
  * Detail of a project of the session's scope: data, students, tutor, evaluation
  * progress and, once it may be seen, the result and each juror's evaluation.
+ * Director and dean also download the diploma of an awarded project.
  */
 export const TeachingProjectDetail = ({
   profileSlug,
@@ -209,6 +263,9 @@ export const TeachingProjectDetail = ({
                 result={result}
                 statusLabel={GRADE_STATUS_LABELS[evaluation.gradeStatus]}
               />
+              {project.diplomaAvailable && (
+                <DiplomaButton profile={profile} projectId={project.id} />
+              )}
               <JurorEvaluations
                 evaluations={result.evaluations}
                 maxScore={result.maxScore}

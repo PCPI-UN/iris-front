@@ -12,3 +12,4 @@ export * from "./registration-counters";
 export * from "./score-distribution";
 export * from "./student-list";
 export * from "./tutor-block";
+export * from "./semester-history";

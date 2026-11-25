@@ -43,9 +43,11 @@ export const EventDashboard = ({ eventId }: EventDashboardProps) => {
   // A staff member who is also juror or participant of the event keeps that dashboard.
   const isStaffWithoutEventRole =
     canViewAdministration(user.data) && !eventRole;
-  // Professor and tutor of the event use the screen of that academic profile, on this event
+  // Professor, tutor and director of the event use the screen of that academic profile, on this event
   const teachingProfile =
-    (eventRole === "PROFESSOR" || eventRole === "TUTOR") &&
+    (eventRole === "PROFESSOR" ||
+      eventRole === "TUTOR" ||
+      eventRole === "DIRECTOR") &&
     profilesQuery.data?.includes(eventRole)
       ? eventRole
       : undefined;
@@ -83,8 +85,8 @@ export const EventDashboard = ({ eventId }: EventDashboardProps) => {
   if (currentEvent && eventRole === "JURY") {
     return (
       <JuryDashboard
-        eventId={normalizedEventId || eventId}
         event={currentEvent}
+        eventId={normalizedEventId || eventId}
       />
     );
   }
@@ -99,7 +101,7 @@ export const EventDashboard = ({ eventId }: EventDashboardProps) => {
     return <StudentDashboard eventId={normalizedEventId || eventId} />;
   }
 
-  // Director has no view yet; professor and tutor without that academic profile neither
+  // Professor, tutor or director without that academic profile has no view
   if (eventRole) {
     return (
       <div className="flex flex-col items-center justify-center h-64 space-y-4">

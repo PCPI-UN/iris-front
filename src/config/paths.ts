@@ -118,12 +118,12 @@ export const paths = {
     criteria: {
       getHref: () => "/app/criteria",
     },
-    /** Teaching screen of one academic profile (`professor`, `tutor`); `?event=` picks the event */
+    /** Teaching screen of one academic profile (`professor`, `director`...); `?event=` picks the event */
     teaching: {
       getHref: (
         profileSlug: string,
         eventId?: number | string,
-        tab?: "grades",
+        tab?: "grades" | "history",
       ) => {
         const params = new URLSearchParams();
 

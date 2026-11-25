@@ -8,6 +8,7 @@ import { GradesTab } from "./grades-tab";
 import { ProjectsTab } from "./projects-tab";
 
 import { useAcademicEvents } from "@/features/academic/api/get-academic-events";
+import { SemesterHistory } from "@/features/academic/components";
 import {
   TEACHING_PROFILES,
   teachingProfileFromSlug,
@@ -17,17 +18,19 @@ import { Select, SelectItem } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import { paths } from "@/config/paths";
 
-type TeachingTab = "projects" | "grades";
+type TeachingTab = "projects" | "grades" | "history";
 
 const TABS: { id: TeachingTab; label: string }[] = [
   { id: "projects", label: "Proyectos" },
   { id: "grades", label: "Notas" },
+  { id: "history", label: "Historial" },
 ];
 
 /**
- * Teaching screen, the same for professor and tutor: only the profile sent to
- * the back changes, and the back limits events and projects to its scope
- * (course sections or tutored projects).
+ * Teaching screen, the same for every academic profile: only the profile sent
+ * to the back changes, and the back limits events and projects to its scope
+ * (course sections, tutored projects, department or faculty). Director and dean
+ * add the Historial tab.
  */
 export const TeachingView = ({ profileSlug }: { profileSlug: string }) => {
   const router = useRouter();
@@ -42,8 +45,10 @@ export const TeachingView = ({ profileSlug }: { profileSlug: string }) => {
   const requestedEvent = Number(searchParams?.get("event"));
   // An event outside the list (or none) opens the newest one
   const event = events.find((item) => item.id === requestedEvent) ?? events[0];
+  const tabs = TABS.filter(({ id }) => id !== "history" || texts.history);
+  const requestedTab = searchParams?.get("tab");
   const tab: TeachingTab =
-    searchParams?.get("tab") === "grades" ? "grades" : "projects";
+    tabs.find(({ id }) => id === requestedTab)?.id ?? "projects";
 
   const setParams = (changes: Record<string, string | undefined>) => {
     const params = new URLSearchParams(searchParams?.toString());
@@ -70,13 +75,17 @@ export const TeachingView = ({ profileSlug }: { profileSlug: string }) => {
             {texts.label}
           </p>
           <h1 className="break-words text-2xl font-bold tracking-tight md:text-3xl">
-            {event?.name ?? "Proyectos académicos"}
+            {tab === "history"
+              ? "Historial por semestre"
+              : (event?.name ?? "Proyectos académicos")}
           </h1>
           <p className="text-sm text-slate-400">
-            {texts.description} en el evento
+            {tab === "history"
+              ? `Eventos con ${texts.description.toLowerCase()}`
+              : `${texts.description} en el evento`}
           </p>
         </div>
-        {events.length > 1 && event && (
+        {tab !== "history" && events.length > 1 && event && (
           <Select
             aria-label="Evento"
             className="w-full md:w-72"
@@ -128,7 +137,7 @@ export const TeachingView = ({ profileSlug }: { profileSlug: string }) => {
             className="flex gap-6 border-b border-white/10"
             role="tablist"
           >
-            {TABS.map(({ id, label }) => (
+            {tabs.map(({ id, label }) => (
               <button
                 key={id}
                 aria-controls={`teaching-${id}`}
@@ -162,8 +171,15 @@ export const TeachingView = ({ profileSlug }: { profileSlug: string }) => {
                 eventId={event.id}
                 profile={profile}
               />
-            ) : (
+            ) : tab === "grades" ? (
               <GradesTab key={event.id} eventId={event.id} profile={profile} />
+            ) : (
+              <SemesterHistory
+                events={events}
+                getHref={(eventId) =>
+                  paths.app.teaching.getHref(texts.slug, eventId)
+                }
+              />
             )}
           </div>
         </>
