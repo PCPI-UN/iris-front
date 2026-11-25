@@ -110,7 +110,7 @@ test("no session, no menu", () => {
   expect(getSidebarItems(null)).toEqual([]);
 });
 
-test("one entry per academic profile with a teaching screen, after the invitations", () => {
+test("one entry per academic profile with a teaching screen, after the personal entries", () => {
   expect(
     getSidebarItems(withPermissions([]), ["DEAN", "TUTOR", "PROFESSOR"]).map(
       (item) => [item.title, item.url],
@@ -118,6 +118,7 @@ test("one entry per academic profile with a teaching screen, after the invitatio
   ).toEqual([
     ["Inicio", "/app"],
     ["Mis invitaciones", "/app/invitations"],
+    ["Mi trayectoria", "/app/academic-history"],
     ["Profesor", "/app/teaching/professor"],
     ["Tutor", "/app/teaching/tutor"],
   ]);

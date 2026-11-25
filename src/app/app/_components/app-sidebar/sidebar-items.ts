@@ -12,6 +12,7 @@ import {
   Presentation,
   ShieldCheck,
   SquareChartGantt,
+  UserCheck,
   UserCog,
   Users as UsersIcon,
 } from "lucide-react";
@@ -152,13 +153,13 @@ const teachingItems = (profiles: AcademicProfile[]): SidebarItem[] =>
     title: TEACHING_PROFILES[profile].label,
     group: "personal",
     url: paths.app.teaching.getHref(TEACHING_PROFILES[profile].slug),
-    icon: profile === "TUTOR" ? GraduationCap : BookOpenCheck,
+    icon: profile === "TUTOR" ? UserCheck : BookOpenCheck,
     permissions: [],
   }));
 
 /**
  * `profiles`: academic profiles of the session (GET /academic/profiles); their
- * entries go right after the invitations.
+ * entries go after the other personal entries (Inicio, Mis invitaciones, Mi trayectoria).
  */
 export const getSidebarItems = (
   user: User | null | undefined,
@@ -169,12 +170,8 @@ export const getSidebarItems = (
     (item) =>
       item.permissions.length === 0 || hasAnyPermission(user, item.permissions),
   );
-  const afterInvitations =
-    items.findIndex((item) => item.url === paths.app.invitations.getHref()) + 1;
+  const personal = items.filter((item) => item.group === "personal");
+  const rest = items.filter((item) => item.group !== "personal");
 
-  return [
-    ...items.slice(0, afterInvitations),
-    ...teachingItems(profiles),
-    ...items.slice(afterInvitations),
-  ];
+  return [...personal, ...teachingItems(profiles), ...rest];
 };
