@@ -22,7 +22,7 @@ type AwardCardProps = {
   rankingById: Map<number, TopProject>;
   onEdit: (award: CategoryAward) => void;
   onDelete: (award: CategoryAward, winners: AwardWinner[]) => void;
-  onAssign: (award: CategoryAward, winners: AwardWinner[]) => void;
+  onAssign: (award: CategoryAward) => void;
   onRemoveWinner: (
     award: CategoryAward,
     winner: AwardWinner,
@@ -168,7 +168,7 @@ export const AwardCard = ({
               isDisabled={winnersQuery.isLoading || winnersQuery.isError}
               size="sm"
               variant="flat"
-              onPress={() => onAssign(award, winners)}
+              onPress={() => onAssign(award)}
             >
               <Plus className="h-4 w-4" />
               {winners.length > 0 ? "Agregar coganador" : "Asignar ganador"}

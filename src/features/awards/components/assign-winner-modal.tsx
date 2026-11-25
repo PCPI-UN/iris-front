@@ -1,14 +1,14 @@
 "use client";
 
 import type { TopProject } from "@/features/monitoring/api/get-top-projects";
-import type { AwardWinner, CategoryAward } from "../types";
+import type { CategoryAward } from "../types";
 
 import { Checkbox } from "@heroui/react";
 import { Radio, RadioGroup } from "@heroui/radio";
 import { Medal } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
-import { useAssignAwardWinners } from "../api/award-winners";
+import { useAssignAwardWinners, useAwardWinners } from "../api/award-winners";
 import {
   buildWinnersToAssign,
   formatGrade,
@@ -33,7 +33,6 @@ type AssignWinnerModalProps = {
   award: CategoryAward;
   /** Full ranking of the category (approved projects with evaluations) */
   ranking: TopProject[];
-  winners: AwardWinner[];
 };
 
 export const AssignWinnerModal = ({
@@ -41,7 +40,6 @@ export const AssignWinnerModal = ({
   onOpenChange,
   award,
   ranking,
-  winners,
 }: AssignWinnerModalProps) => {
   const { addNotification } = useNotifications();
   const [selectedProjectId, setSelectedProjectId] = useState<string>("");
@@ -54,6 +52,11 @@ export const AssignWinnerModal = ({
     setIncludeCoWinners(true);
     setSaveError(null);
   }, [isOpen]);
+
+  // The live winners, not a copy taken when the modal opened: if some co-winners are saved
+  // before a POST fails, the query is refreshed and a retry does not send them again
+  const winnersQuery = useAwardWinners({ awardId: award.id });
+  const winners = useMemo(() => winnersQuery.data ?? [], [winnersQuery.data]);
 
   const eligible = useMemo(
     () => getEligibleProjects(ranking, winners),
@@ -181,7 +184,11 @@ export const AssignWinnerModal = ({
               </Button>
               <Button
                 color="primary"
-                isDisabled={eligible.length === 0}
+                isDisabled={
+                  eligible.length === 0 ||
+                  winnersQuery.isLoading ||
+                  winnersQuery.isError
+                }
                 isLoading={assignWinners.isPending}
                 onPress={() => void handleAssign(onClose)}
               >

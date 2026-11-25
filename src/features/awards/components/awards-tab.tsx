@@ -93,7 +93,6 @@ export const AwardsTab = ({
   }>({ isOpen: false });
   const [assignState, setAssignState] = useState<{
     award: CategoryAward;
-    winners: AwardWinner[];
   } | null>(null);
   const [confirmation, setConfirmation] = useState<PendingConfirmation | null>(
     null,
@@ -211,9 +210,7 @@ export const AwardsTab = ({
                       key={award.id}
                       award={award}
                       rankingById={rankingById}
-                      onAssign={(item, winners) =>
-                        setAssignState({ award: item, winners })
-                      }
+                      onAssign={(item) => setAssignState({ award: item })}
                       onDelete={(item, winners) =>
                         openConfirmation({
                           kind: "delete-award",
@@ -258,7 +255,6 @@ export const AwardsTab = ({
           isOpen
           award={assignState.award}
           ranking={ranking}
-          winners={assignState.winners}
           onOpenChange={(open) => !open && setAssignState(null)}
         />
       )}

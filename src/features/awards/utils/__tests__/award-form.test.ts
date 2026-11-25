@@ -28,6 +28,21 @@ test("parses a valid award, with the value in pesos", () => {
   });
 });
 
+test("accepts whole pesos with or without thousands separators", () => {
+  for (const value of ["3000000", "3.000.000", "3,000,000", "$3 000 000"]) {
+    expect(parseAwardForm(draft({ value })).values?.value).toBe(3000000);
+  }
+  expect(parseAwardForm(draft({ value: "$ 500" })).values?.value).toBe(500);
+});
+
+test("rejects decimals instead of reading them as a bigger amount", () => {
+  for (const value of ["12,5", "1.500,50", "1500.50", "1,50", "1.000,000"]) {
+    expect(parseAwardForm(draft({ value })).errors?.value).toBe(
+      "El valor debe ser un monto en pesos, sin decimales",
+    );
+  }
+});
+
 test("an empty value means the award has no monetary value", () => {
   expect(parseAwardForm(draft({ value: "  " })).values?.value).toBeUndefined();
 });

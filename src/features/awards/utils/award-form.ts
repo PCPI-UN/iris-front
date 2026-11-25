@@ -23,9 +23,13 @@ export const awardFormSchema = z.object({
     .optional()
     .transform((raw, ctx) => {
       if (!raw) return undefined;
-      // Pesos without decimals: "3.000.000", "3,000,000" and "$3 000 000" are the same value
-      const digits = raw.replace(/[$.,\s]/g, "");
-      const parsed = /^\d+$/.test(digits) ? Number(digits) : NaN;
+      // Pesos without decimals: "3000000", "3.000.000", "3,000,000" and "$3 000 000" are the same
+      // value. Separators only count as thousands separators (groups of 3 digits, all the same
+      // separator), so "12,5" or "1.500,50" are rejected instead of read as 125 or 150050.
+      const isWholePesos = /^\$?\s*(\d+|\d{1,3}([.,\s])\d{3}(\2\d{3})*)$/.test(
+        raw,
+      );
+      const parsed = isWholePesos ? Number(raw.replace(/[$.,\s]/g, "")) : NaN;
 
       if (!Number.isFinite(parsed)) {
         ctx.addIssue({

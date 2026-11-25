@@ -331,6 +331,59 @@ test("assigns only the chosen project when the co-winners are left out", async (
   ).toBeInTheDocument();
 });
 
+test("a retry after a partial failure does not assign the saved co-winner twice", async () => {
+  seedAwardsMockState({ awards: [award(1, "Primer puesto", 1)] });
+  const postedProjects: number[] = [];
+  let failBeta = true;
+
+  server.use(
+    http.post("*/events/award-winners", async ({ request }) => {
+      const body = (await request.clone().json()) as { projectId: number };
+
+      postedProjects.push(body.projectId);
+      if (body.projectId === 11 && failBeta) {
+        failBeta = false;
+
+        return HttpResponse.json({ message: "Error" }, { status: 500 });
+      }
+      // Any other request goes on to the default handler, which saves it
+    }),
+  );
+  renderTab();
+
+  const card = await cardOf("Primer puesto");
+
+  await clickWhenEnabled(
+    await within(card).findByRole("button", {
+      name: /asignar ganador a primer puesto/i,
+    }),
+  );
+  const dialog = await screen.findByRole("dialog");
+
+  // Alfa is saved, its co-winner Beta fails
+  await userEvent.click(within(dialog).getByRole("radio", { name: /alfa/i }));
+  await userEvent.click(
+    within(dialog).getByRole("button", { name: "Asignar" }),
+  );
+  expect(await within(dialog).findByRole("alert")).toBeInTheDocument();
+
+  // The modal reads the refreshed winners: Alfa is no longer offered
+  await waitFor(() =>
+    expect(
+      within(dialog).queryByRole("radio", { name: /alfa/i }),
+    ).not.toBeInTheDocument(),
+  );
+  await userEvent.click(within(dialog).getByRole("radio", { name: /beta/i }));
+  await clickWhenEnabled(
+    within(dialog).getByRole("button", { name: "Asignar" }),
+  );
+
+  await waitForDialogToClose();
+  expect(await within(card).findByText("Beta")).toBeInTheDocument();
+  expect(within(card).getAllByText("Alfa")).toHaveLength(1);
+  expect(postedProjects).toEqual([10, 11, 11]);
+});
+
 test("removes a winner after confirming", async () => {
   seedAwardsMockState({
     awards: [award(1, "Primer puesto", 1)],
