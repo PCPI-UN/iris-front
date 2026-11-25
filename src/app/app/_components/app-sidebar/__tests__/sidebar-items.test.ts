@@ -121,5 +121,6 @@ test("one entry per academic profile with a teaching screen, after the personal 
     ["Mi trayectoria", "/app/academic-history"],
     ["Profesor", "/app/teaching/professor"],
     ["Tutor", "/app/teaching/tutor"],
+    ["Decanatura", "/app/teaching/dean"],
   ]);
 });

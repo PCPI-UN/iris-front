@@ -280,7 +280,13 @@ export type StatsBlock = {
   distribution: ScoreBucket[] | null;
 };
 
-/** GET /academic/stats?eventId&profile */
+/** Numbers of one department; projects without a course section go under a null department */
+export type DepartmentStats = StatsBlock & {
+  departmentId: number | null;
+  departmentName: string | null;
+};
+
+/** GET /academic/stats?eventId&profile[&groupBy=department] */
 export type AcademicStats = {
   eventId: number;
   eventName: string;
@@ -290,4 +296,6 @@ export type AcademicStats = {
   /** Top of the event's grading scale; null without a scale or while hidden */
   maxScore: number | null;
   overall: StatsBlock | null;
+  /** Only with groupBy=department: by name, the null department last; [] while hidden */
+  departments?: DepartmentStats[];
 };
