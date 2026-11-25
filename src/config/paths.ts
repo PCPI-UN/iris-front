@@ -108,6 +108,15 @@ export const paths = {
     criteria: {
       getHref: () => "/app/criteria",
     },
+    /** Projects of the session's academic scope (professor, tutor); `?evento=` picks the event */
+    teaching: {
+      getHref: (eventId?: number | string) =>
+        `/app/docencia${eventId ? `?evento=${encodeURIComponent(String(eventId))}` : ""}`,
+    },
+    teachingProject: {
+      getHref: (projectId: number | string) =>
+        `/app/docencia/proyectos/${encodeURIComponent(String(projectId))}`,
+    },
   },
   public: {
     project: {
