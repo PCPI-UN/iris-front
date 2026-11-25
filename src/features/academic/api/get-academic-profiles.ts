@@ -7,22 +7,19 @@ import { QueryConfig } from "@/lib/react-query";
 
 /**
  * Academic profiles of the session (from its platform roles); empty for anyone
- * without one. A failure counts as none: the entries simply do not show.
+ * without one. A failure is an error, not "no profiles", so it is not cached as
+ * such: the entries stay hidden meanwhile and the teaching screen offers a retry.
  */
 export const getAcademicProfiles = async (): Promise<AcademicProfile[]> => {
-  try {
-    const response = await api.get<unknown>("/academic/profiles", {
-      suppressErrorNotification: true,
-    });
+  const response = await api.get<unknown>("/academic/profiles", {
+    suppressErrorNotification: true,
+  });
 
-    return Array.isArray(response)
-      ? response.filter((value): value is AcademicProfile =>
-          ACADEMIC_PROFILES.includes(value as AcademicProfile),
-        )
-      : [];
-  } catch {
-    return [];
-  }
+  return Array.isArray(response)
+    ? response.filter((value): value is AcademicProfile =>
+        ACADEMIC_PROFILES.includes(value as AcademicProfile),
+      )
+    : [];
 };
 
 export const getAcademicProfilesQueryOptions = () =>
