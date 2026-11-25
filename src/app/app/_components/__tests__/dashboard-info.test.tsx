@@ -166,6 +166,27 @@ describe("DashboardInfo", () => {
     ).toBeInTheDocument();
   });
 
+  it("Ana: professor and tutor sees the event once, with one entry per role", async () => {
+    mockApi({
+      current: [meEvent(5, "Feria de Ingeniería", ["PROFESSOR", "TUTOR"])],
+    });
+    renderPanel();
+
+    expect(
+      await screen.findByRole("link", {
+        name: "Abrir Feria de Ingeniería como profesor",
+      }),
+    ).toHaveAttribute("href", "/app/events/5/dashboard?rol=profesor");
+    expect(
+      screen.getByRole("link", {
+        name: "Abrir Feria de Ingeniería como tutor",
+      }),
+    ).toHaveAttribute("href", "/app/events/5/dashboard?rol=tutor");
+    expect(screen.getByText("Proyectos de tus cursos")).toBeInTheDocument();
+    // No tile per academic profile repeats the event
+    expect(screen.getAllByText("Feria de Ingeniería")).toHaveLength(1);
+  });
+
   it("Sofía: no events and no administration explains how to join one", async () => {
     mockApi({});
     renderPanel();

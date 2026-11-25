@@ -17,8 +17,10 @@ import { canViewAdministration } from "@/lib/authorization";
  * Panel for everyone: it does not label who the person is, it shows what they
  * have. Administration appears with `read:events` (decided by permission, not
  * by role name; the dean sees it read-only), then the events where they hold a
- * role, one link per role, and the history. Administration and the events
- * share one grid of square tiles; pending invitations go first, as a notice.
+ * role, one entry per role (professor and tutor open their teaching screen on
+ * that event), and the history. Administration and the events share one grid of
+ * square tiles; pending invitations go first, as a notice. The teaching screens of
+ * other events are reached from the menu.
  */
 export const DashboardInfo = () => {
   const user = useUser();
@@ -35,9 +37,9 @@ export const DashboardInfo = () => {
       </header>
       <PendingInvitationsBanner />
       <CurrentEventsSection
-        leading={
-          canViewAdministration(user.data) ? <AdminSummaryCard /> : undefined
-        }
+        leading={[
+          canViewAdministration(user.data) && <AdminSummaryCard key="admin" />,
+        ]}
       />
       <PastEventsSection />
     </div>

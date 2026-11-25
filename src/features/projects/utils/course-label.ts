@@ -1,4 +1,4 @@
-/** Course section (NRC) of a project, as the academic read endpoints return it */
+/** Course section (NRC) of a project, as the project and academic read endpoints return it */
 export type ProjectCourse = {
   nrc: string;
   name: string;

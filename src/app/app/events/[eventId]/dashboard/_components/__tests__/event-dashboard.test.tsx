@@ -7,6 +7,7 @@ import { server } from "@/testing/mocks/server";
 import { rtlRender, screen } from "@/testing/test-utils";
 
 let search = "";
+let profiles: string[] = [];
 const replace = vi.fn();
 
 vi.mock("next/navigation", () => ({
@@ -101,7 +102,11 @@ const renderDashboard = (eventId: string) => {
 describe("EventDashboard", () => {
   beforeEach(() => {
     search = "";
+    profiles = [];
     useAssignedProjectsHandler([]);
+    server.use(
+      http.get("*/api/academic/profiles", () => HttpResponse.json(profiles)),
+    );
     replace.mockClear();
   });
 
@@ -165,7 +170,7 @@ describe("EventDashboard", () => {
     },
   );
 
-  it("shows a placeholder for the tutor role, which has no view yet", async () => {
+  it("shows a placeholder for a tutor without the academic profile", async () => {
     search = "rol=tutor";
     useMeEventsHandler({ current: [meEvent(14, ["JURY", "TUTOR"])] });
     renderDashboard("14");
@@ -173,5 +178,16 @@ describe("EventDashboard", () => {
     expect(
       await screen.findByText("Vista de tutor próximamente"),
     ).toBeInTheDocument();
+  });
+
+  it("opens the professor screen on the event for a professor profile", async () => {
+    search = "rol=profesor";
+    profiles = ["PROFESSOR", "TUTOR"];
+    useMeEventsHandler({ current: [meEvent(14, ["JURY", "PROFESSOR"])] });
+    renderDashboard("14");
+
+    await vi.waitFor(() =>
+      expect(replace).toHaveBeenCalledWith("/app/teaching/professor?event=14"),
+    );
   });
 });

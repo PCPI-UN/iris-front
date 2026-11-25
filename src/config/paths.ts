@@ -118,6 +118,15 @@ export const paths = {
     criteria: {
       getHref: () => "/app/criteria",
     },
+    /** Teaching screen of one academic profile (`professor`, `tutor`); `?event=` picks the event */
+    teaching: {
+      getHref: (profileSlug: string, eventId?: number | string) =>
+        `/app/teaching/${profileSlug}${eventId ? `?event=${encodeURIComponent(String(eventId))}` : ""}`,
+    },
+    teachingProject: {
+      getHref: (profileSlug: string, projectId: number | string) =>
+        `/app/teaching/${profileSlug}/projects/${encodeURIComponent(String(projectId))}`,
+    },
   },
   public: {
     project: {

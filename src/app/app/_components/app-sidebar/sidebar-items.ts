@@ -1,5 +1,6 @@
 import {
   ArrowDownAZ,
+  BookOpenCheck,
   Calendar,
   ChartNoAxesCombined,
   GraduationCap,
@@ -11,11 +12,17 @@ import {
   Presentation,
   ShieldCheck,
   SquareChartGantt,
+  UserCheck,
   UserCog,
   Users as UsersIcon,
 } from "lucide-react";
 
 import { paths } from "@/config/paths";
+import { AcademicProfile } from "@/features/academic/types";
+import {
+  TEACHING_PROFILES,
+  teachingProfilesOf,
+} from "@/features/academic/utils/academic-profiles";
 import { hasAnyPermission, Permission, PERMISSIONS } from "@/lib/authorization";
 import { User } from "@/types/api";
 
@@ -140,13 +147,31 @@ const SIDEBAR_ITEMS: SidebarItem[] = [
   },
 ];
 
+/** One personal entry per academic profile of the session with a teaching screen */
+const teachingItems = (profiles: AcademicProfile[]): SidebarItem[] =>
+  teachingProfilesOf(profiles).map((profile) => ({
+    title: TEACHING_PROFILES[profile].label,
+    group: "personal",
+    url: paths.app.teaching.getHref(TEACHING_PROFILES[profile].slug),
+    icon: profile === "TUTOR" ? UserCheck : BookOpenCheck,
+    permissions: [],
+  }));
+
+/**
+ * `profiles`: academic profiles of the session (GET /academic/profiles); their
+ * entries go after the other personal entries (Inicio, Mis invitaciones, Mi trayectoria).
+ */
 export const getSidebarItems = (
   user: User | null | undefined,
-): SidebarItem[] =>
-  user
-    ? SIDEBAR_ITEMS.filter(
-        (item) =>
-          item.permissions.length === 0 ||
-          hasAnyPermission(user, item.permissions),
-      )
-    : [];
+  profiles: AcademicProfile[] = [],
+): SidebarItem[] => {
+  if (!user) return [];
+  const items = SIDEBAR_ITEMS.filter(
+    (item) =>
+      item.permissions.length === 0 || hasAnyPermission(user, item.permissions),
+  );
+  const personal = items.filter((item) => item.group === "personal");
+  const rest = items.filter((item) => item.group !== "personal");
+
+  return [...personal, ...teachingItems(profiles), ...rest];
+};

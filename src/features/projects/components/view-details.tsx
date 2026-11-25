@@ -108,8 +108,8 @@ export const ViewDetails = ({project} : {project: Project}) => {
                     Curso (NRC)
                   </h2>
                   <ProjectCourse
+                    course={project.academicCourse}
                     eventId={project.eventId}
-                    projectId={project.id}
                   />
                 </section>
 

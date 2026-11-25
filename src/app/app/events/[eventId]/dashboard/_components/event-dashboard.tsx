@@ -5,6 +5,8 @@ import { useEffect } from "react";
 
 import { useUser } from "@/lib/auth";
 import { canViewAdministration } from "@/lib/authorization";
+import { useAcademicProfiles } from "@/features/academic/api/get-academic-profiles";
+import { TEACHING_PROFILES } from "@/features/academic/utils/academic-profiles";
 import { StudentDashboard } from "@/app/app/_components/student-dashboard";
 import { JuryDashboard } from "@/app/app/_components/jury-dashboard";
 import { useMeEvent } from "@/features/events/api/get-me-events";
@@ -14,6 +16,7 @@ import {
 } from "@/features/events/utils/event-roles";
 import { Spinner } from "@/components/ui/spinner";
 import { extractEventIdFromSlug } from "@/features/events/utils/resolve-join-target";
+import { paths } from "@/config/paths";
 
 type EventDashboardProps = {
   eventId: string;
@@ -33,19 +36,42 @@ export const EventDashboard = ({ eventId }: EventDashboardProps) => {
   const eventRole = currentEvent
     ? resolveEventRole(requestedRole, currentEvent.roles)
     : undefined;
-  const isLoading = eventQuery.isLoading || user.isLoading;
+  const profilesQuery = useAcademicProfiles();
+  const isLoading =
+    eventQuery.isLoading || user.isLoading || profilesQuery.isLoading;
   // Staff (read:events) without a role in this event uses the administration views.
   // A staff member who is also juror or participant of the event keeps that dashboard.
   const isStaffWithoutEventRole =
     canViewAdministration(user.data) && !eventRole;
+  // Professor and tutor of the event use the screen of that academic profile, on this event
+  const teachingProfile =
+    (eventRole === "PROFESSOR" || eventRole === "TUTOR") &&
+    profilesQuery.data?.includes(eventRole)
+      ? eventRole
+      : undefined;
+  const opensTeaching = Boolean(teachingProfile);
 
   useEffect(() => {
-    if (!isLoading && isStaffWithoutEventRole) {
+    if (isLoading) return;
+    if (teachingProfile && currentEvent) {
+      router.replace(
+        paths.app.teaching.getHref(
+          TEACHING_PROFILES[teachingProfile].slug,
+          currentEvent.id,
+        ),
+      );
+    } else if (isStaffWithoutEventRole) {
       router.replace("/app");
     }
-  }, [isLoading, isStaffWithoutEventRole, router]);
+  }, [
+    isLoading,
+    teachingProfile,
+    currentEvent,
+    isStaffWithoutEventRole,
+    router,
+  ]);
 
-  if (isLoading) {
+  if (isLoading || opensTeaching) {
     return (
       <div className="flex h-48 w-full items-center justify-center">
         <Spinner size="lg" />
@@ -73,7 +99,7 @@ export const EventDashboard = ({ eventId }: EventDashboardProps) => {
     return <StudentDashboard eventId={normalizedEventId || eventId} />;
   }
 
-  // Tutor, professor and director have no view yet
+  // Director has no view yet; professor and tutor without that academic profile neither
   if (eventRole) {
     return (
       <div className="flex flex-col items-center justify-center h-64 space-y-4">
