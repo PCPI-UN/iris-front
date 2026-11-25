@@ -1,9 +1,18 @@
 /**
- * Shapes of the gateway's /academic endpoints (read only, permission
- * `read:academic_projects`). The back decides which projects the session sees
- * (tutored, its course sections, its department or all); the views never
- * filter by role.
+ * Shapes of the gateway's /academic endpoints (read only). Every call names the
+ * academic profile it reads as (`profile`); the back limits the projects to that
+ * profile's scope (tutored projects, course sections, department...).
  */
+
+/** Academic profiles of the session, from its platform roles (GET /academic/profiles) */
+export const ACADEMIC_PROFILES = [
+  "PROFESSOR",
+  "TUTOR",
+  "DIRECTOR",
+  "DEAN",
+] as const;
+
+export type AcademicProfile = (typeof ACADEMIC_PROFILES)[number];
 
 /** Review state of a project */
 export type ProjectReviewState =

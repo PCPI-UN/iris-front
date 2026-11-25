@@ -1,12 +1,17 @@
 import { queryOptions, useQuery } from "@tanstack/react-query";
 
-import { AcademicProjectsPage, ProjectReviewState } from "../types";
+import {
+  AcademicProfile,
+  AcademicProjectsPage,
+  ProjectReviewState,
+} from "../types";
 import { toReviewState } from "../utils/academic-labels";
 
 import { api } from "@/lib/api-client";
 import { QueryConfig } from "@/lib/react-query";
 
 export type AcademicProjectsFilters = {
+  profile: AcademicProfile;
   eventId: number;
   state?: ProjectReviewState;
   academicCourseId?: number;
@@ -17,6 +22,7 @@ export type AcademicProjectsFilters = {
 };
 
 export const getAcademicProjects = async ({
+  profile,
   eventId,
   state,
   academicCourseId,
@@ -28,6 +34,7 @@ export const getAcademicProjects = async ({
     "/academic/projects",
     {
       params: {
+        profile,
         eventId,
         state,
         academicCourseId,
@@ -53,7 +60,7 @@ export const getAcademicProjectsQueryOptions = (
   filters: AcademicProjectsFilters,
 ) =>
   queryOptions({
-    queryKey: ["academic", "projects", filters],
+    queryKey: ["academic", filters.profile, "projects", filters],
     queryFn: () => getAcademicProjects(filters),
   });
 
