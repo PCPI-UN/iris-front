@@ -20,16 +20,20 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 import { useUser } from "@/lib/auth";
+import { useAcademicProfiles } from "@/features/academic/api/get-academic-profiles";
 import { paths } from "@/config/paths";
 import { Link } from "@/components/ui/link";
 import "@/features/landing/index.css";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const user = useUser();
+  const profilesQuery = useAcademicProfiles({
+    queryConfig: { enabled: Boolean(user.data) },
+  });
   // Union of what every role of the session allows (not only the first role)
   const menuItems = React.useMemo(
-    () => getSidebarItems(user.data),
-    [user.data],
+    () => getSidebarItems(user.data, profilesQuery.data),
+    [user.data, profilesQuery.data],
   );
   const personalItems = menuItems.filter((item) => item.group === "personal");
   const adminItems = menuItems.filter((item) => item.group === "admin");

@@ -7,7 +7,7 @@ import { server } from "@/testing/mocks/server";
 import { rtlRender, screen } from "@/testing/test-utils";
 
 let search = "";
-let permissions: string[] = [];
+let profiles: string[] = [];
 const replace = vi.fn();
 
 vi.mock("next/navigation", () => ({
@@ -26,7 +26,7 @@ vi.mock("@/lib/auth", async () => {
         id: "u1",
         email: "ana@iris.local",
         platformRoles: [],
-        platformPermissions: permissions,
+        platformPermissions: [],
       },
       isLoading: false,
     }),
@@ -102,8 +102,11 @@ const renderDashboard = (eventId: string) => {
 describe("EventDashboard", () => {
   beforeEach(() => {
     search = "";
-    permissions = [];
+    profiles = [];
     useAssignedProjectsHandler([]);
+    server.use(
+      http.get("*/api/academic/profiles", () => HttpResponse.json(profiles)),
+    );
     replace.mockClear();
   });
 
@@ -167,7 +170,7 @@ describe("EventDashboard", () => {
     },
   );
 
-  it("shows a placeholder for a tutor without read:academic_projects", async () => {
+  it("shows a placeholder for a tutor without the academic profile", async () => {
     search = "rol=tutor";
     useMeEventsHandler({ current: [meEvent(14, ["JURY", "TUTOR"])] });
     renderDashboard("14");
@@ -177,14 +180,14 @@ describe("EventDashboard", () => {
     ).toBeInTheDocument();
   });
 
-  it("opens Docencia on the event for a professor with read:academic_projects", async () => {
+  it("opens the professor screen on the event for a professor profile", async () => {
     search = "rol=profesor";
-    permissions = ["read:academic_projects"];
+    profiles = ["PROFESSOR", "TUTOR"];
     useMeEventsHandler({ current: [meEvent(14, ["JURY", "PROFESSOR"])] });
     renderDashboard("14");
 
     await vi.waitFor(() =>
-      expect(replace).toHaveBeenCalledWith("/app/docencia?evento=14"),
+      expect(replace).toHaveBeenCalledWith("/app/teaching/professor?event=14"),
     );
   });
 });

@@ -1,41 +1,78 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, BookOpenCheck } from "lucide-react";
+import { ArrowRight, BookOpenCheck, GraduationCap } from "lucide-react";
 
 import { useAcademicEvents } from "@/features/academic/api/get-academic-events";
+import {
+  TEACHING_PROFILES,
+  type TeachingProfile,
+} from "@/features/academic/utils/academic-profiles";
 import { Spinner } from "@/components/ui/spinner";
 import { paths } from "@/config/paths";
 
-/** Square entry to Docencia (projects of the session's courses and tutoring), a tile of the home grid */
-export const TeachingSummaryCard = () => {
-  const { data: events, isLoading } = useAcademicEvents();
+/** Same colors as the professor and tutor roles of the event cards */
+const TILE_STYLES: Record<
+  TeachingProfile,
+  {
+    tile: string;
+    glow: string;
+    badge: string;
+    icon: string;
+    button: string;
+  }
+> = {
+  PROFESSOR: {
+    tile: "border-emerald-500/25 from-emerald-500/15 hover:border-emerald-400/50 hover:shadow-emerald-500/10 focus-visible:ring-emerald-400",
+    glow: "bg-emerald-500/20",
+    badge: "border-emerald-400/30 bg-emerald-500/15",
+    icon: "text-emerald-300",
+    button:
+      "border-emerald-500/40 bg-emerald-500/10 text-emerald-200 group-hover:bg-emerald-500/20",
+  },
+  TUTOR: {
+    tile: "border-violet-500/25 from-violet-500/15 hover:border-violet-400/50 hover:shadow-violet-500/10 focus-visible:ring-violet-400",
+    glow: "bg-violet-500/20",
+    badge: "border-violet-400/30 bg-violet-500/15",
+    icon: "text-violet-300",
+    button:
+      "border-violet-500/40 bg-violet-500/10 text-violet-200 group-hover:bg-violet-500/20",
+  },
+};
+
+/** Square entry to the teaching screen of one academic profile, a tile of the home grid */
+export const TeachingSummaryCard = ({
+  profile,
+}: {
+  profile: TeachingProfile;
+}) => {
+  const { data: events, isLoading } = useAcademicEvents({ profile });
   const latest = events?.[0];
+  const texts = TEACHING_PROFILES[profile];
+  const styles = TILE_STYLES[profile];
+  const Icon = profile === "TUTOR" ? GraduationCap : BookOpenCheck;
 
   return (
     <Link
-      className="group relative flex w-full flex-col gap-5 overflow-hidden rounded-3xl border border-emerald-500/25 bg-gradient-to-br from-emerald-500/15 via-[#0e101a]/80 to-[#0e101a]/80 p-5 backdrop-blur-xl transition-all hover:-translate-y-0.5 hover:border-emerald-400/50 hover:shadow-lg hover:shadow-emerald-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 sm:min-h-72 [&>*]:shrink-0"
-      href={paths.app.teaching.getHref()}
+      className={`group relative flex w-full flex-col gap-5 overflow-hidden rounded-3xl border bg-gradient-to-br via-[#0e101a]/80 to-[#0e101a]/80 p-5 backdrop-blur-xl transition-all hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 sm:min-h-72 [&>*]:shrink-0 ${styles.tile}`}
+      href={paths.app.teaching.getHref(texts.slug)}
     >
       <span
         aria-hidden="true"
-        className="pointer-events-none absolute -right-14 -top-14 size-44 rounded-full bg-emerald-500/20 blur-3xl"
+        className={`pointer-events-none absolute -right-14 -top-14 size-44 rounded-full blur-3xl ${styles.glow}`}
       />
 
       <div className="flex items-center gap-3">
-        <span className="flex size-10 shrink-0 items-center justify-center rounded-2xl border border-emerald-400/30 bg-emerald-500/15">
-          <BookOpenCheck
-            aria-hidden="true"
-            className="size-5 text-emerald-300"
-          />
+        <span
+          className={`flex size-10 shrink-0 items-center justify-center rounded-2xl border ${styles.badge}`}
+        >
+          <Icon aria-hidden="true" className={`size-5 ${styles.icon}`} />
         </span>
         <div className="min-w-0">
           <h2 className="text-lg font-bold leading-tight text-white">
-            Docencia
+            {texts.label}
           </h2>
-          <p className="text-xs text-slate-400">
-            Proyectos de tus cursos y tutorías
-          </p>
+          <p className="text-xs text-slate-400">{texts.description}</p>
         </div>
       </div>
 
@@ -60,7 +97,9 @@ export const TeachingSummaryCard = () => {
         </dl>
       )}
 
-      <span className="mt-auto flex min-h-[44px] items-center justify-between gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 text-sm font-semibold text-emerald-200 transition-colors group-hover:bg-emerald-500/20">
+      <span
+        className={`mt-auto flex min-h-[44px] items-center justify-between gap-2 rounded-xl border px-4 text-sm font-semibold transition-colors ${styles.button}`}
+      >
         Ver proyectos
         <ArrowRight
           aria-hidden="true"

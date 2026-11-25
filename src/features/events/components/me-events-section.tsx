@@ -203,7 +203,7 @@ const EventsList = ({
   emptyMessage: React.ReactNode;
   /** Past events as plain rows instead of cards */
   compact?: boolean;
-  /** Tiles placed before the events in the grid (administration, Docencia) */
+  /** Tiles placed before the events in the grid (administration, academic profiles) */
   leading?: React.ReactNode;
 }) => {
   const leadingTiles = Children.toArray(leading);

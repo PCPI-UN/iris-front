@@ -107,3 +107,16 @@ test("the menu is the union of every role, not only the first one", () => {
 test("no session, no menu", () => {
   expect(getSidebarItems(null)).toEqual([]);
 });
+
+test("one entry per academic profile with a teaching screen, after the invitations", () => {
+  expect(
+    getSidebarItems(withPermissions([]), ["DEAN", "TUTOR", "PROFESSOR"]).map(
+      (item) => [item.title, item.url],
+    ),
+  ).toEqual([
+    ["Inicio", "/app"],
+    ["Mis invitaciones", "/app/invitations"],
+    ["Profesor", "/app/teaching/professor"],
+    ["Tutor", "/app/teaching/tutor"],
+  ]);
+});

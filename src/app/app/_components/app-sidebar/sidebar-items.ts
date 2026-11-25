@@ -3,6 +3,7 @@ import {
   BookOpenCheck,
   Calendar,
   ChartNoAxesCombined,
+  GraduationCap,
   Home,
   LayoutDashboard,
   type LucideIcon,
@@ -16,6 +17,11 @@ import {
 } from "lucide-react";
 
 import { paths } from "@/config/paths";
+import { AcademicProfile } from "@/features/academic/types";
+import {
+  TEACHING_PROFILES,
+  teachingProfilesOf,
+} from "@/features/academic/utils/academic-profiles";
 import { hasAnyPermission, Permission, PERMISSIONS } from "@/lib/authorization";
 import { User } from "@/types/api";
 
@@ -53,13 +59,6 @@ const SIDEBAR_ITEMS: SidebarItem[] = [
     url: paths.app.invitations.getHref(),
     icon: Mail,
     permissions: [],
-  },
-  {
-    title: "Docencia",
-    group: "personal",
-    url: paths.app.teaching.getHref(),
-    icon: BookOpenCheck,
-    permissions: [PERMISSIONS.readAcademicProjects],
   },
   {
     title: "Resumen",
@@ -140,13 +139,35 @@ const SIDEBAR_ITEMS: SidebarItem[] = [
   },
 ];
 
+/** One personal entry per academic profile of the session with a teaching screen */
+const teachingItems = (profiles: AcademicProfile[]): SidebarItem[] =>
+  teachingProfilesOf(profiles).map((profile) => ({
+    title: TEACHING_PROFILES[profile].label,
+    group: "personal",
+    url: paths.app.teaching.getHref(TEACHING_PROFILES[profile].slug),
+    icon: profile === "TUTOR" ? GraduationCap : BookOpenCheck,
+    permissions: [],
+  }));
+
+/**
+ * `profiles`: academic profiles of the session (GET /academic/profiles); their
+ * entries go right after the invitations.
+ */
 export const getSidebarItems = (
   user: User | null | undefined,
-): SidebarItem[] =>
-  user
-    ? SIDEBAR_ITEMS.filter(
-        (item) =>
-          item.permissions.length === 0 ||
-          hasAnyPermission(user, item.permissions),
-      )
-    : [];
+  profiles: AcademicProfile[] = [],
+): SidebarItem[] => {
+  if (!user) return [];
+  const items = SIDEBAR_ITEMS.filter(
+    (item) =>
+      item.permissions.length === 0 || hasAnyPermission(user, item.permissions),
+  );
+  const afterInvitations =
+    items.findIndex((item) => item.url === paths.app.invitations.getHref()) + 1;
+
+  return [
+    ...items.slice(0, afterInvitations),
+    ...teachingItems(profiles),
+    ...items.slice(afterInvitations),
+  ];
+};

@@ -20,8 +20,6 @@ export const PERMISSIONS = {
   manageUserRoles: "manage:user_roles",
   /** Admin and FacultyAdmin: administrative corrections of a project (state, data) and its change log */
   manageProjects: "manage:projects",
-  /** Read-only academic views (/academic/*): the back limits the projects to the session's scope */
-  readAcademicProjects: "read:academic_projects",
   /** Only the principal Admin: grants or removes Admin and FacultyAdmin */
   manageAdmins: "manage:admins",
 } as const;
@@ -45,10 +43,6 @@ export const hasAllPermissions = (user: MaybeUser, permissions: Permission[]) =>
 /** Staff that reads events (admin, faculty admin, dean, event manager...) */
 export const canViewAdministration = (user: MaybeUser) =>
   hasPermission(user, PERMISSIONS.readEvents);
-
-/** Professor, tutor, director, dean...: the projects of their academic scope */
-export const canViewTeaching = (user: MaybeUser) =>
-  hasPermission(user, PERMISSIONS.readAcademicProjects);
 
 // Events
 export const canCreateEvent = (user: MaybeUser) =>
