@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Cookies from 'js-cookie';
 import { HttpResponse, http } from 'msw';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AUTH_COOKIE, encode, sanitizeUser } from '@/testing/mocks/utils';
 import { db } from '@/testing/mocks/db';
@@ -60,7 +60,7 @@ const realDashboard = {
       finalScore: null,
       award: null,
       isCurrent: true,
-      certificates: [],
+      diplomaAvailable: false,
     },
     {
       id: 4,
@@ -72,7 +72,7 @@ const realDashboard = {
       finalScore: null,
       award: null,
       isCurrent: false,
-      certificates: [],
+      diplomaAvailable: false,
     },
     {
       id: 1,
@@ -84,7 +84,7 @@ const realDashboard = {
       finalScore: 81,
       award: 'Segundo puesto',
       isCurrent: false,
-      certificates: [],
+      diplomaAvailable: true,
     },
   ],
   bySemester: [],
@@ -477,4 +477,85 @@ describe('Dashboard del estudiante con respuestas reales del gateway', () => {
       screen.getByRole('button', { name: /Reintentar/i }),
     ).toBeInTheDocument();
   });
+});
+
+describe('Descarga del diploma en la trayectoria', () => {
+  const createObjectURL = vi.fn(() => 'blob:diploma');
+  const revokeObjectURL = vi.fn();
+
+  beforeEach(() => {
+    Cookies.remove(AUTH_COOKIE);
+    authenticateTestUser('aki@iris.local');
+    URL.createObjectURL = createObjectURL;
+    URL.revokeObjectURL = revokeObjectURL;
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    createObjectURL.mockClear();
+    revokeObjectURL.mockClear();
+  });
+
+  it('solo ofrece el diploma en los eventos con diplomaAvailable y lo descarga del evento', async () => {
+    const requested: string[] = [];
+    useRealBackendResponses();
+    server.use(
+      http.get('*/api/events/:eventId/my-project/diploma', ({ params }) => {
+        requested.push(String(params.eventId));
+        return new HttpResponse('%PDF-1.4', {
+          headers: {
+            'Content-Type': 'application/pdf',
+            'Content-Disposition':
+              'attachment; filename="diploma_Sistema_de_riego_inteligente.pdf"',
+          },
+        });
+      }),
+    );
+    const click = vi
+      .spyOn(HTMLAnchorElement.prototype, 'click')
+      .mockImplementation(() => {});
+
+    render(<StudentGeneralDashboardView />, { wrapper: createWrapper() });
+
+    const buttons = await screen.findAllByRole('button', {
+      name: /Descargar Diploma \(PDF\)/i,
+    });
+    // Solo el evento 1 trae diplomaAvailable: true
+    expect(buttons).toHaveLength(1);
+    expect(screen.queryByText(/En trámite/i)).not.toBeInTheDocument();
+
+    await userEvent.click(buttons[0]);
+
+    await vi.waitFor(() => expect(click).toHaveBeenCalledTimes(1));
+    expect(requested).toEqual(['1']);
+    const anchor = click.mock.contexts[0] as HTMLAnchorElement;
+    expect(anchor.download).toBe('diploma_Sistema_de_riego_inteligente.pdf');
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  it.each([
+    [403, 'Los resultados del evento aún no se han publicado'],
+    [404, 'Este evento no tiene un diploma configurado'],
+  ])(
+    'muestra el mensaje del backend si la descarga responde %i',
+    async (status, message) => {
+      useRealBackendResponses();
+      server.use(
+        http.get('*/api/events/:eventId/my-project/diploma', () =>
+          HttpResponse.json({ message }, { status }),
+        ),
+      );
+
+      render(<StudentGeneralDashboardView />, { wrapper: createWrapper() });
+
+      await userEvent.click(
+        await screen.findByRole('button', {
+          name: /Descargar Diploma \(PDF\)/i,
+        }),
+      );
+
+      expect(await screen.findByRole('alert')).toHaveTextContent(message);
+      expect(createObjectURL).not.toHaveBeenCalled();
+    },
+  );
 });

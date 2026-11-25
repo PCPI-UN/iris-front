@@ -79,9 +79,8 @@ describe('Student Dashboard Backend Integration (MSW Mock Server)', () => {
       finalScore: 4.38,
     });
     expect(data.trajectory).toHaveLength(2);
-    expect(data.trajectory[0].certificates?.[0].downloadUrl).toBe(
-      '/api/certificates/cert-reg-1/download',
-    );
+    expect(data.trajectory[0].diplomaAvailable).toBe(true);
+    expect(data.trajectory[0]).not.toHaveProperty('certificates');
   });
 
   it('Endpoint 2: GET /events/:eventId/my-project respeta las reglas de negocio de canEdit en eventos activos vs históricos', async () => {
@@ -157,23 +156,34 @@ describe('Student Dashboard Backend Integration (MSW Mock Server)', () => {
     );
   });
 
-  it('Endpoint 5: GET /certificates/:certificateId/download entrega PDF (200) si está emitido y 409 Conflict si está en trámite', async () => {
+  it('Endpoint 5: GET /events/:eventId/my-project/diploma entrega el PDF solo con diplomaAvailable y responde 403/404 como el gateway', async () => {
     await authenticateTestUser('carlos@iris.com');
 
-    // Certificado emitido -> 200 OK application/pdf
-    const issuedRes = await fetch('/api/certificates/cert-h-prev-1/download');
-    expect(issuedRes.status).toBe(200);
-    expect(issuedRes.headers.get('content-type')).toContain('application/pdf');
-    expect(issuedRes.headers.get('content-disposition')).toContain(
-      'Diploma_cert-h-prev-1.pdf',
+    // Evento con diploma -> 200 application/pdf con el nombre del proyecto
+    const okRes = await fetch('/api/events/2/my-project/diploma');
+    expect(okRes.status).toBe(200);
+    expect(okRes.headers.get('content-type')).toContain('application/pdf');
+    expect(okRes.headers.get('content-disposition')).toContain(
+      'diploma_Acelerador_de_Renderizado_Fotorrealista_Ray-Tracing.pdf',
     );
 
-    // Certificado en trámite (isIssued: false) -> 409 Conflict
-    const pendingRes = await fetch('/api/certificates/cert-h-curr/download');
-    expect(pendingRes.status).toBe(409);
-    const pendingBody = await pendingRes.json();
-    expect(pendingBody.message).toBe(
-      'El certificado aún se encuentra en trámite de emisión institucional',
+    // Premio publicado, pero el evento no tiene diseño de diploma -> 404
+    const noDesignRes = await fetch('/api/events/3/my-project/diploma');
+    expect(noDesignRes.status).toBe(404);
+    expect((await noDesignRes.json()).message).toBe(
+      'Este evento no tiene un diploma configurado',
+    );
+
+    // Sin proyecto en el evento -> 404
+    const noProjectRes = await fetch('/api/events/999/my-project/diploma');
+    expect(noProjectRes.status).toBe(404);
+
+    // Resultados sin publicar -> 403
+    await authenticateTestUser('student.prepub@iris.com');
+    const prepubRes = await fetch('/api/events/3/my-project/diploma');
+    expect(prepubRes.status).toBe(403);
+    expect((await prepubRes.json()).message).toBe(
+      'Los resultados del evento aún no se han publicado',
     );
   });
 

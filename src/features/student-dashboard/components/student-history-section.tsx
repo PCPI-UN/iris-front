@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
@@ -11,20 +11,75 @@ import {
   CheckCircle2,
   FolderGit2,
   Download,
-  Sparkles,
-  ShieldCheck,
-  Clock,
   FileText,
+  AlertCircle,
   ArrowRight,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AcademicParticipation } from '../types';
-import { getCertificateDownloadUrl } from '../api/get-student-dashboard';
+import {
+  downloadMyDiploma,
+  getDiplomaErrorMessage,
+} from '../api/get-student-dashboard';
 import { formatScoreWithMax } from '../utils/format-score';
 
 export interface StudentHistorySectionProps {
   trajectory: AcademicParticipation[];
 }
+
+const DiplomaDownload = ({
+  eventId,
+  projectName,
+}: {
+  eventId: string | number;
+  projectName: string;
+}) => {
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleDownload = async () => {
+    setIsDownloading(true);
+    setError(null);
+    try {
+      await downloadMyDiploma(eventId);
+    } catch (err) {
+      setError(getDiplomaErrorMessage(err));
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  return (
+    <div className="pt-3 border-t border-white/10 space-y-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="text-[11px] font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+          <Award className="size-3.5 text-pink-400" />
+          <span>Diploma de premio del evento</span>
+        </span>
+        <Button
+          size="sm"
+          variant="flat"
+          isLoading={isDownloading}
+          onPress={handleDownload}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-pink-500/40 bg-pink-500/20 px-3 py-1.5 text-xs font-semibold text-pink-200 hover:bg-pink-500/30 transition-all shadow-sm"
+          title={`Descargar el diploma de ${projectName}`}
+        >
+          {!isDownloading && <Download className="size-3.5" />}
+          <span>Descargar Diploma (PDF)</span>
+        </Button>
+      </div>
+      {error && (
+        <p
+          role="alert"
+          className="flex items-center gap-1.5 text-xs text-red-300"
+        >
+          <AlertCircle className="size-3.5 shrink-0 text-red-400" />
+          <span>{error}</span>
+        </p>
+      )}
+    </div>
+  );
+};
 
 export const StudentHistorySection = ({
   trajectory,
@@ -193,86 +248,12 @@ export const StudentHistorySection = ({
                     )}
                   </div>
 
-                  {/* Certificados y Diplomas Oficiales Asociados al Evento */}
-                  {item.certificates && item.certificates.length > 0 && (
-                    <div className="pt-3 border-t border-white/10 space-y-2.5">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                          <Award className="size-3.5 text-pink-400" />
-                          <span>Diplomas y Certificados Oficiales del Evento</span>
-                        </span>
-                        <span className="text-[10px] font-mono text-slate-400">
-                          {item.certificates.length} {item.certificates.length === 1 ? 'documento oficial' : 'documentos oficiales'}
-                        </span>
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                        {item.certificates.map((cert) => {
-                          const isWinner =
-                            cert.type === 'WINNER' || cert.type === 'CO_WINNER';
-                          return (
-                            <motion.div
-                              key={cert.id}
-                              whileHover={{ y: -1 }}
-                              transition={{ duration: 0.12 }}
-                              className="flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-black/40 p-2.5 transition-colors hover:border-pink-500/30 hover:bg-black/60"
-                            >
-                              <div className="flex items-center gap-2.5 min-w-0">
-                                <div
-                                  className={`flex size-8 shrink-0 items-center justify-center rounded-lg border text-xs font-bold ${
-                                    isWinner
-                                      ? 'border-amber-500/30 bg-amber-500/15 text-amber-300'
-                                      : 'border-pink-500/30 bg-pink-500/15 text-pink-400'
-                                  }`}
-                                >
-                                  {isWinner ? (
-                                    <Sparkles className="size-4" />
-                                  ) : (
-                                    <ShieldCheck className="size-4" />
-                                  )}
-                                </div>
-                                <div className="min-w-0">
-                                  <p
-                                    className="text-xs font-semibold text-white truncate"
-                                    title={cert.title}
-                                  >
-                                    {cert.title}
-                                  </p>
-                                  {cert.issuedDate && (
-                                    <p className="text-[10px] text-slate-400 font-mono">
-                                      Emitido el: {cert.issuedDate}
-                                    </p>
-                                  )}
-                                </div>
-                              </div>
-
-                              <div className="shrink-0">
-                                {cert.isIssued ? (
-                                  <motion.a
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
-                                    href={getCertificateDownloadUrl(cert.id)}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="inline-flex items-center gap-1.5 rounded-lg border border-pink-500/40 bg-pink-500/20 px-3 py-1.5 text-xs font-semibold text-pink-200 hover:bg-pink-500/30 transition-all shadow-sm"
-                                  >
-                                    <Download className="size-3.5" />
-                                    <span>Descargar Diploma (PDF)</span>
-                                  </motion.a>
-                                ) : (
-                                  <div
-                                    className="flex items-center gap-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-300"
-                                    title="El certificado se encuentra en proceso formal de emisión por la secretaría académica"
-                                  >
-                                    <Clock className="size-3 text-amber-400" />
-                                    <span>En trámite de emisión</span>
-                                  </div>
-                                )}
-                              </div>
-                            </motion.div>
-                          );
-                        })}
-                      </div>
-                    </div>
+                  {/* Diploma de premio del evento (solo si el backend lo ofrece) */}
+                  {item.diplomaAvailable && item.eventId != null && (
+                    <DiplomaDownload
+                      eventId={item.eventId}
+                      projectName={item.projectName}
+                    />
                   )}
                 </motion.div>
               </div>

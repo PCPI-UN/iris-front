@@ -77,7 +77,7 @@ export const scenarioInReview: StudentDashboardData = {
       courseName: 'Diseño de Software 2',
       projectName: 'Optimizador de Rutas para Transporte Masivo',
       isCurrent: true,
-      certificates: [],
+      diplomaAvailable: false,
     },
     {
       id: 'traj-rev-2',
@@ -88,21 +88,9 @@ export const scenarioInReview: StudentDashboardData = {
       projectName: 'Simulador de Enrutamiento para Redes Definidas por Software',
       finalScore: 4.45,
       isCurrent: false,
-      certificates: [
-        {
-          id: 'cert-rev-1',
-          title: 'Certificado de Participación',
-          eventName: 'Feria de Innovación 2025-2',
-          semester: '2025-2',
-          type: 'PARTICIPATION',
-          isIssued: true,
-          downloadUrl: 'https://example.com/diploma-laura-2025-2.pdf',
-          issuedDate: '2025-11-25',
-        },
-      ],
+      diplomaAvailable: false,
     },
   ],
-  certificates: [],
 };
 
 /**
@@ -180,7 +168,7 @@ export const scenarioPrePublication: StudentDashboardData = {
       courseName: 'Sistemas Embebidos',
       projectName: 'Dispositivo IoT para Monitorización de Calidad del Aire',
       isCurrent: true,
-      certificates: [],
+      diplomaAvailable: false,
     },
     {
       id: 'traj-pre-2',
@@ -191,30 +179,7 @@ export const scenarioPrePublication: StudentDashboardData = {
       projectName: 'Sensor ultrasónico de presencia para iluminación inteligente',
       finalScore: 4.2,
       isCurrent: false,
-      certificates: [
-        {
-          id: 'cert-pre-1',
-          title: 'Certificado de Participación',
-          eventName: 'Feria de Innovación 2025-2',
-          semester: '2025-2',
-          type: 'PARTICIPATION',
-          isIssued: true,
-          downloadUrl: 'https://example.com/diploma-2025-2.pdf',
-          issuedDate: '2025-11-20',
-        },
-      ],
-    },
-  ],
-  certificates: [
-    {
-      id: 'cert-pre-1',
-      title: 'Certificado de Participación',
-      eventName: 'Feria de Innovación 2025-2',
-      semester: '2025-2',
-      type: 'PARTICIPATION',
-      isIssued: true,
-      downloadUrl: 'https://example.com/diploma-2025-2.pdf',
-      issuedDate: '2025-11-20',
+      diplomaAvailable: false,
     },
   ],
 };
@@ -352,19 +317,7 @@ export const scenarioPublishedRegular: StudentDashboardData = {
       finalScore: 4.38,
       award: '3° Lugar',
       isCurrent: true,
-      certificates: [
-        {
-          id: 'cert-reg-1',
-          eventId: 3,
-          title: 'Mención Destacada - 3° Puesto',
-          eventName: 'Feria de Ingeniería & Ciencias 2026-1',
-          semester: '2026-1',
-          type: 'HONOR_MENTION',
-          isIssued: true,
-          downloadUrl: 'https://example.com/diploma-2026-1.pdf',
-          issuedDate: '2026-06-15',
-        },
-      ],
+      diplomaAvailable: true,
     },
     {
       id: 'traj-reg-2',
@@ -376,19 +329,7 @@ export const scenarioPublishedRegular: StudentDashboardData = {
       finalScore: 4.7,
       award: 'Mención de Honor',
       isCurrent: false,
-      certificates: [
-        {
-          id: 'cert-reg-2',
-          eventId: 2,
-          title: 'Mención de Honor',
-          eventName: 'Feria de Ciencias 2025-2',
-          semester: '2025-2',
-          type: 'HONOR_MENTION',
-          isIssued: true,
-          downloadUrl: 'https://example.com/diploma-2025-2.pdf',
-          issuedDate: '2025-11-28',
-        },
-      ],
+      diplomaAvailable: true,
       projectDetails: {
         id: 'proj-reg-hist-002',
         eventId: 2,
@@ -479,28 +420,6 @@ export const scenarioPublishedRegular: StudentDashboardData = {
         consolidatedFeedback:
           'Destacable rigor en el procesamiento del corpus bibliográfico y óptimo rendimiento del motor semántico. El jurado resalta el valor añadido para la comunidad investigadora de la universidad.',
       },
-    },
-  ],
-  certificates: [
-    {
-      id: 'cert-reg-1',
-      title: 'Mención Destacada - 3° Puesto',
-      eventName: 'Feria de Ingeniería & Ciencias 2026-1',
-      semester: '2026-1',
-      type: 'HONOR_MENTION',
-      isIssued: true,
-      downloadUrl: 'https://example.com/diploma-2026-1.pdf',
-      issuedDate: '2026-06-15',
-    },
-    {
-      id: 'cert-reg-2',
-      title: 'Mención de Honor',
-      eventName: 'Feria de Ciencias 2025-2',
-      semester: '2025-2',
-      type: 'HONOR_MENTION',
-      isIssued: true,
-      downloadUrl: 'https://example.com/diploma-2025-2.pdf',
-      issuedDate: '2025-11-28',
     },
   ],
 };
@@ -628,18 +547,7 @@ export const scenarioCoWinnerTie: StudentDashboardData = {
       finalScore: 4.88,
       award: '1° Puesto - Coganador',
       isCurrent: true,
-      certificates: [
-        {
-          id: 'cert-win-1',
-          title: 'Diploma de Honor: Primer Lugar - Coganador',
-          eventName: 'Feria de Ingeniería & Ciencias 2026-1',
-          semester: '2026-1',
-          type: 'CO_WINNER',
-          isIssued: true,
-          downloadUrl: 'https://example.com/diploma-primer-lugar-coganador.pdf',
-          issuedDate: '2026-06-20',
-        },
-      ],
+      diplomaAvailable: true,
     },
     {
       id: 'traj-win-2',
@@ -651,40 +559,7 @@ export const scenarioCoWinnerTie: StudentDashboardData = {
       finalScore: 4.8,
       award: '1° Puesto',
       isCurrent: false,
-      certificates: [
-        {
-          id: 'cert-win-2',
-          title: 'Diploma de Honor: Primer Lugar',
-          eventName: 'Feria de Ciencias 2025-2',
-          semester: '2025-2',
-          type: 'WINNER',
-          isIssued: true,
-          downloadUrl: 'https://example.com/diploma-primer-lugar-2025-2.pdf',
-          issuedDate: '2025-11-30',
-        },
-      ],
-    },
-  ],
-  certificates: [
-    {
-      id: 'cert-win-1',
-      title: 'Diploma de Honor: Primer Lugar - Coganador',
-      eventName: 'Feria de Ingeniería & Ciencias 2026-1',
-      semester: '2026-1',
-      type: 'CO_WINNER',
-      isIssued: true,
-      downloadUrl: 'https://example.com/diploma-primer-lugar-coganador.pdf',
-      issuedDate: '2026-06-20',
-    },
-    {
-      id: 'cert-win-2',
-      title: 'Diploma de Honor: Primer Lugar',
-      eventName: 'Feria de Ciencias 2025-2',
-      semester: '2025-2',
-      type: 'WINNER',
-      isIssued: true,
-      downloadUrl: 'https://example.com/diploma-primer-lugar-2025-2.pdf',
-      issuedDate: '2025-11-30',
+      diplomaAvailable: true,
     },
   ],
 };
@@ -796,17 +671,8 @@ export const scenarioHistoricalTrajectory: StudentDashboardData = {
       finalScore: 4.65,
       award: '2° Lugar',
       isCurrent: true,
-      certificates: [
-        {
-          id: 'cert-h-curr',
-          eventId: 3,
-          title: 'Diploma de Segundo Lugar',
-          eventName: 'Feria de Ingeniería & Ciencias 2026-1',
-          semester: '2026-1',
-          type: 'HONOR_MENTION',
-          isIssued: false, // En proceso de emisión oficial
-        },
-      ],
+      // Premio publicado, pero el evento no tiene diseño de diploma
+      diplomaAvailable: false,
     },
     {
       id: 'traj-h-2',
@@ -818,19 +684,7 @@ export const scenarioHistoricalTrajectory: StudentDashboardData = {
       finalScore: 4.75,
       award: 'Mención de Honor',
       isCurrent: false,
-      certificates: [
-        {
-          id: 'cert-h-prev-1',
-          eventId: 2,
-          title: 'Diploma de Mención de Honor',
-          eventName: 'Feria de Innovación 2025-2',
-          semester: '2025-2',
-          type: 'HONOR_MENTION',
-          isIssued: true,
-          downloadUrl: 'https://example.com/diploma-carlos-2025-2.pdf',
-          issuedDate: '2025-11-29',
-        },
-      ],
+      diplomaAvailable: true,
       projectDetails: {
         id: 'proj-hist-carlos-002',
         eventId: 2,
@@ -906,19 +760,7 @@ export const scenarioHistoricalTrajectory: StudentDashboardData = {
       projectName: 'Microkernel Educativo para Arquitectura RISC-V',
       finalScore: 4.5,
       isCurrent: false,
-      certificates: [
-        {
-          id: 'cert-h-prev-2',
-          eventId: 4,
-          title: 'Certificado de Participación Destacada',
-          eventName: 'Semana de la Ingeniería 2025-1',
-          semester: '2025-1',
-          type: 'PARTICIPATION',
-          isIssued: true,
-          downloadUrl: 'https://example.com/certificado-carlos-2025-1.pdf',
-          issuedDate: '2025-05-18',
-        },
-      ],
+      diplomaAvailable: false,
     },
     {
       id: 'traj-h-4',
@@ -929,49 +771,7 @@ export const scenarioHistoricalTrajectory: StudentDashboardData = {
       projectName: 'Visualizador de Algoritmos de Grafos en Grafeno',
       finalScore: 4.4,
       isCurrent: false,
-      certificates: [
-        {
-          id: 'cert-h-prev-3',
-          eventId: 5,
-          title: 'Certificado de Participación Oficial',
-          eventName: 'Feria de Proyectos de Software 2024-2',
-          semester: '2024-2',
-          type: 'PARTICIPATION',
-          isIssued: true,
-          downloadUrl: 'https://example.com/certificado-carlos-2024-2.pdf',
-          issuedDate: '2024-11-20',
-        },
-      ],
-    },
-  ],
-  certificates: [
-    {
-      id: 'cert-h-curr',
-      title: 'Diploma de Segundo Lugar',
-      eventName: 'Feria de Ingeniería & Ciencias 2026-1',
-      semester: '2026-1',
-      type: 'HONOR_MENTION',
-      isIssued: false, // En proceso de emisión oficial
-    },
-    {
-      id: 'cert-h-prev-1',
-      title: 'Diploma de Mención de Honor',
-      eventName: 'Feria de Innovación 2025-2',
-      semester: '2025-2',
-      type: 'HONOR_MENTION',
-      isIssued: true,
-      downloadUrl: 'https://example.com/diploma-carlos-2025-2.pdf',
-      issuedDate: '2025-11-29',
-    },
-    {
-      id: 'cert-h-prev-2',
-      title: 'Certificado de Participación Destacada',
-      eventName: 'Semana de la Ingeniería 2025-1',
-      semester: '2025-1',
-      type: 'PARTICIPATION',
-      isIssued: true,
-      downloadUrl: 'https://example.com/certificado-carlos-2025-1.pdf',
-      issuedDate: '2025-05-18',
+      diplomaAvailable: false,
     },
   ],
 };
@@ -1019,7 +819,7 @@ const createHistoricalProjectFromTrajectory = (
         id: `doc-${historicalItem.id}-poster`,
         type: 'POSTER' as const,
         title: `Póster Académico Oficial - ${historicalItem.projectName} (PDF)`,
-        url: historicalItem.certificates?.[0]?.downloadUrl || 'https://example.com/poster-historico.pdf',
+        url: 'https://example.com/poster-historico.pdf',
         createdAt: 1732000000000,
       },
       {
