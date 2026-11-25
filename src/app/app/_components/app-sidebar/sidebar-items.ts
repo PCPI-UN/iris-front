@@ -61,6 +61,13 @@ const SIDEBAR_ITEMS: SidebarItem[] = [
     permissions: [],
   },
   {
+    title: "Mi trayectoria",
+    group: "personal",
+    url: paths.app.academicHistory.getHref(),
+    icon: GraduationCap,
+    permissions: [],
+  },
+  {
     title: "Resumen",
     group: "admin",
     url: paths.app.admin.getHref(),

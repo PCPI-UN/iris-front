@@ -4,7 +4,7 @@ import type { Event } from '@/types/api';
 
 export type { ProjectEvaluationStats };
 
-export type MonitoringTab = 'statistics' | 'projects' | 'ranking';
+export type MonitoringTab = 'statistics' | 'projects' | 'ranking' | 'awards';
 export type ProjectFilterState = ProjectWithJurors['state'] | 'ALL';
 
 export type RankingConfigType = {

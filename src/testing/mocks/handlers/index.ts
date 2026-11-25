@@ -18,13 +18,18 @@ import { evaluationsHandlers } from "./evaluations";
 import { dashboardHandlers } from "./dashboard";
 import { studentDashboardHandlers } from "./student-dashboard";
 import { gradingScalesHandlers } from "./grading-scales";
+import { awardsHandlers } from "./awards";
+import { jurorImportsHandlers } from "./juror-imports";
 
 export const handlers = [
   ...studentDashboardHandlers,
+  ...jurorImportsHandlers,
   ...juriesHandlers,
   ...administratorsHandlers,
   ...authHandlers,
   ...coursesHandlers,
+  // Before eventsHandlers: /events/category-awards is not an event id
+  ...awardsHandlers,
   ...eventsHandlers,
   // Before projectsHandlers: /projects/tutor-candidates is not a project id
   ...projectAdminHandlers,

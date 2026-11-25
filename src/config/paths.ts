@@ -58,6 +58,10 @@ export const paths = {
       getHref: () => "/app/invitations",
       roles: ["User"],
     },
+    academicHistory: {
+      getHref: () => "/app/academic-history",
+      roles: ["Admin", "User"],
+    },
     events: {
       getHref: () => "/app/events",
       roles: ["Admin"],
@@ -85,7 +89,13 @@ export const paths = {
       getHref: () => "/app/juries",
     },
     assignments: {
-      getHref: () => "/app/assignments"
+      getHref: () => "/app/assignments",
+    },
+    assignmentsImport: {
+      getHref: (eventId?: string | number | null) =>
+        eventId
+          ? `/app/assignments/import?event=${encodeURIComponent(String(eventId))}`
+          : "/app/assignments/import",
     },
     administrators: {
       getHref: () => "/app/administrators",

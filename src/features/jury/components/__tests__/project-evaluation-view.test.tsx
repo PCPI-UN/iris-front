@@ -30,7 +30,11 @@ const mockEvaluationData = ({
   assigned = [{ id: 7, evaluated: false }],
 }: {
   eventResponse: () => Response;
-  sections?: typeof oneSection;
+  sections?: {
+    category: string;
+    weight: number;
+    criterions: { id: number; name: string; weight?: number }[];
+  }[];
   assigned?: Record<string, unknown>[];
 }) => {
   server.use(
@@ -204,4 +208,79 @@ test("a rejected evaluation explains why inside the card, without a toast", asyn
 
   expect(await screen.findByRole("alert")).toHaveTextContent("El periodo de evaluación terminó");
   expect(useNotifications.getState().notifications).toHaveLength(0);
+});
+
+test("the juror sees the weight of each section and criterion and the grade of the levels chosen", async () => {
+  mockEvaluationData({
+    eventResponse: () =>
+      HttpResponse.json({ event: { id: 5, gradingScale: customScale } }),
+    sections: [
+      {
+        category: "Diseño",
+        weight: 0.3,
+        criterions: [
+          { id: 11, name: "Claridad", weight: 0.1071 },
+          { id: 12, name: "Orden", weight: 0.1929 },
+        ],
+      },
+    ],
+  });
+  renderView();
+  const user = userEvent.setup();
+
+  expect(await screen.findByText("(30%)")).toBeInTheDocument();
+  expect(screen.getByText("(10.7%)")).toBeInTheDocument();
+  expect(screen.getByText("(19.3%)")).toBeInTheDocument();
+
+  const [claridadLevel] = await screen.findAllByRole("radio", {
+    name: "Sobresale (40 puntos)",
+  });
+
+  await user.click(claridadLevel);
+  // 40 × 0.1071
+  expect(screen.getByText("Nota parcial")).toBeInTheDocument();
+  expect(screen.getByText("4.28 / 40")).toBeInTheDocument();
+});
+
+test("without the weight of every criterion the grade of the levels chosen is not shown", async () => {
+  mockEvaluationData({
+    eventResponse: () =>
+      HttpResponse.json({ event: { id: 5, gradingScale: customScale } }),
+  });
+  renderView();
+
+  expect(await screen.findByText("Claridad")).toBeInTheDocument();
+  // Only the section shows its weight
+  expect(
+    screen.getAllByText(/%\)$/).map((element) => element.textContent),
+  ).toEqual(["(100%)"]);
+  expect(screen.queryByText("Nota parcial")).not.toBeInTheDocument();
+});
+
+test("a submitted evaluation shows the weight it was graded with", async () => {
+  mockEvaluationData({
+    eventResponse: () =>
+      HttpResponse.json({ event: { id: 5, gradingScale: customScale } }),
+    sections: [
+      {
+        category: "Diseño",
+        weight: 1,
+        criterions: [{ id: 11, name: "Claridad", weight: 1 }],
+      },
+    ],
+    assigned: [
+      {
+        id: 7,
+        evaluated: true,
+        evaluation: {
+          id: 3,
+          grade: 15,
+          scores: [{ criterionId: 11, score: 3, weight: 0.5 }],
+        },
+      },
+    ],
+  });
+  renderView();
+
+  expect(await screen.findByText("(50%)")).toBeInTheDocument();
 });
