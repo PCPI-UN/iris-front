@@ -108,14 +108,14 @@ export const paths = {
     criteria: {
       getHref: () => "/app/criteria",
     },
-    /** Projects of the session's academic scope (professor, tutor); `?evento=` picks the event */
+    /** Teaching screen of one academic profile (`professor`, `tutor`); `?event=` picks the event */
     teaching: {
-      getHref: (eventId?: number | string) =>
-        `/app/docencia${eventId ? `?evento=${encodeURIComponent(String(eventId))}` : ""}`,
+      getHref: (profileSlug: string, eventId?: number | string) =>
+        `/app/teaching/${profileSlug}${eventId ? `?event=${encodeURIComponent(String(eventId))}` : ""}`,
     },
     teachingProject: {
-      getHref: (projectId: number | string) =>
-        `/app/docencia/proyectos/${encodeURIComponent(String(projectId))}`,
+      getHref: (profileSlug: string, projectId: number | string) =>
+        `/app/teaching/${profileSlug}/projects/${encodeURIComponent(String(projectId))}`,
     },
   },
   public: {

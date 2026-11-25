@@ -5,6 +5,7 @@ import type {
   AcademicCourse,
   RegistrationProject,
 } from "@/features/academic/types";
+import type { TeachingProfile } from "@/features/academic/utils/academic-profiles";
 
 import { useEffect, useMemo, useState } from "react";
 import { keepPreviousData } from "@tanstack/react-query";
@@ -23,6 +24,7 @@ import {
   formatCourse,
   PROJECT_STATE_LABELS,
 } from "@/features/academic/utils/academic-labels";
+import { TEACHING_PROFILES } from "@/features/academic/utils/academic-profiles";
 import { Button } from "@/components/ui/button";
 import {
   Drawer,
@@ -64,16 +66,23 @@ const useDebounced = <T,>(value: T, delay = 300) => {
 };
 
 /** Proyectos tab: registration totals, then the projects with search and filters */
-export const ProjectsTab = ({ eventId }: { eventId: number }) => {
+export const ProjectsTab = ({
+  eventId,
+  profile,
+}: {
+  eventId: number;
+  profile: TeachingProfile;
+}) => {
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState<ProjectFilterValues>({});
   const [page, setPage] = useState(1);
   const [sheetOpen, setSheetOpen] = useState(false);
   const q = useDebounced(search);
 
-  const registrationsQuery = useAcademicRegistrations({ eventId });
+  const registrationsQuery = useAcademicRegistrations({ profile, eventId });
   const projectsQuery = useAcademicProjects({
     filters: {
+      profile,
       eventId,
       ...filters,
       q,
@@ -237,7 +246,10 @@ export const ProjectsTab = ({ eventId }: { eventId: number }) => {
                 <AcademicProjectCard
                   code={project.projectCode}
                   course={project.academicCourse ?? row?.academicCourse}
-                  href={paths.app.teachingProject.getHref(project.id)}
+                  href={paths.app.teachingProject.getHref(
+                    TEACHING_PROFILES[profile].slug,
+                    project.id,
+                  )}
                   name={project.name}
                   state={project.state}
                   studentsLabel={

@@ -90,7 +90,7 @@ const renderTab = () =>
         new QueryClient({ defaultOptions: { queries: { retry: false } } })
       }
     >
-      <ProjectsTab eventId={4} />
+      <ProjectsTab eventId={4} profile="TUTOR" />
     </QueryClientProvider>,
   );
 
@@ -101,7 +101,7 @@ describe("ProjectsTab", () => {
 
     expect(
       await screen.findByRole("link", { name: /Huerta vertical/ }),
-    ).toHaveAttribute("href", "/app/docencia/proyectos/181");
+    ).toHaveAttribute("href", "/app/teaching/tutor/projects/181");
     expect(screen.getByText("2 estudiantes · 1 pendiente")).toBeInTheDocument();
     expect(screen.getByText("Laura Méndez")).toBeInTheDocument();
     expect(screen.getByText("Estudiantes confirmados")).toBeInTheDocument();
@@ -119,6 +119,7 @@ describe("ProjectsTab", () => {
 
     await waitFor(() => expect(requests.at(-1)?.get("state")).toBe("APPROVED"));
     expect(requests.at(-1)?.get("eventId")).toBe("4");
+    expect(requests.at(-1)?.get("profile")).toBe("TUTOR");
     await waitFor(() =>
       expect(
         screen.queryByRole("link", { name: /Huerta vertical/ }),

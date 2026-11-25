@@ -15,14 +15,24 @@ import {
   TutorBlock,
 } from "@/features/academic/components";
 import { formatCourse } from "@/features/academic/utils/academic-labels";
+import {
+  TEACHING_PROFILES,
+  teachingProfileFromSlug,
+} from "@/features/academic/utils/academic-profiles";
 import { Spinner } from "@/components/ui/spinner";
 import { paths } from "@/config/paths";
 import { ApiError } from "@/lib/api-client";
 
-const BackLink = ({ eventId }: { eventId?: number }) => (
+const BackLink = ({
+  profileSlug,
+  eventId,
+}: {
+  profileSlug: string;
+  eventId?: number;
+}) => (
   <Link
     className="inline-flex min-h-[44px] items-center gap-1.5 text-sm text-slate-400 transition-colors hover:text-white"
-    href={paths.app.teaching.getHref(eventId)}
+    href={paths.app.teaching.getHref(profileSlug, eventId)}
   >
     <ArrowLeft aria-hidden="true" className="size-4" />
     Proyectos
@@ -30,14 +40,23 @@ const BackLink = ({ eventId }: { eventId?: number }) => (
 );
 
 /** Detail of a project of the session's scope: data, students, tutor and evaluation progress */
-export const TeachingProjectDetail = ({ projectId }: { projectId: number }) => {
-  const projectQuery = useAcademicProject({ projectId });
+export const TeachingProjectDetail = ({
+  profileSlug,
+  projectId,
+}: {
+  profileSlug: string;
+  projectId: number;
+}) => {
+  // The gate only renders this view for a teaching profile of the session
+  const profile = teachingProfileFromSlug(profileSlug) ?? "PROFESSOR";
+  const slug = TEACHING_PROFILES[profile].slug;
+  const projectQuery = useAcademicProject({ profile, projectId });
   const project = projectQuery.data;
   const eventId = project?.eventId;
   // The students' state comes with the registrations; the evaluation progress with the grades
-  const registrationsQuery = useAcademicRegistrations({ eventId });
-  const gradesQuery = useAcademicGrades({ eventId });
-  const eventsQuery = useAcademicEvents();
+  const registrationsQuery = useAcademicRegistrations({ profile, eventId });
+  const gradesQuery = useAcademicGrades({ profile, eventId });
+  const eventsQuery = useAcademicEvents({ profile });
 
   if (projectQuery.isLoading) {
     return (
@@ -54,11 +73,11 @@ export const TeachingProjectDetail = ({ projectId }: { projectId: number }) => {
 
     return (
       <div className="dashboard-page max-w-6xl space-y-6 pb-12">
-        <BackLink />
+        <BackLink profileSlug={slug} />
         <div className="rounded-3xl border border-white/10 bg-[#0e101a]/70 p-6 text-center backdrop-blur-xl">
           <p className="text-sm text-slate-300">
             {notFound
-              ? "El proyecto no existe o no está entre tus cursos y tutorías."
+              ? `El proyecto no existe o no está entre los ${TEACHING_PROFILES[profile].description.toLowerCase()}.`
               : "No se pudo cargar el proyecto."}
           </p>
         </div>
@@ -88,7 +107,7 @@ export const TeachingProjectDetail = ({ projectId }: { projectId: number }) => {
 
   return (
     <div className="dashboard-page max-w-6xl space-y-5 pb-12">
-      <BackLink eventId={project.eventId} />
+      <BackLink eventId={project.eventId} profileSlug={slug} />
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start xl:grid-cols-[minmax(0,1fr)_24rem]">
         <div className="min-w-0 space-y-5">
