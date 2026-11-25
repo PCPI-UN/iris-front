@@ -44,6 +44,7 @@ import { MonitoringDashboardTabs } from '@/features/monitoring/components/monito
 import { RankingTab } from '@/features/monitoring/components/ranking-tab';
 import { StatisticsTab } from '@/features/monitoring/components/statistics-tab';
 import { ProjectsTab } from '@/features/monitoring/components/projects-tab';
+import { AwardsTab } from '@/features/awards';
 
 export const MonitoringDashboard = ({ initialEventId, onBack, eventData }: MonitoringDashboardProps = {}) => {
   const user = useUser();
@@ -76,6 +77,9 @@ export const MonitoringDashboard = ({ initialEventId, onBack, eventData }: Monit
     eventId: selectedEventId,
     queryConfig: { enabled: projectQueryEnabled },
   });
+  const selectedCategoryName = categoriesDropdownQuery.data?.data?.find(
+    (category) => category.id === selectedCategoryId,
+  )?.code;
   const criteriaStatsQuery = useEventCriteriaStats({
     eventId: selectedEventId ?? 0,
     categoryId: selectedCategoryId,
@@ -402,6 +406,13 @@ export const MonitoringDashboard = ({ initialEventId, onBack, eventData }: Monit
           }}
           categoryEvaluationStats={categoryEvaluationStats}
           
+        />
+      ) : activeTab === 'awards' ? (
+        <AwardsTab
+          selectedEventId={selectedEventId}
+          selectedCategoryId={selectedCategoryId}
+          selectedEventName={selectedEvent?.name}
+          selectedCategoryName={selectedCategoryName}
         />
       ) : activeTab === 'ranking' ? (
         <RankingTab
