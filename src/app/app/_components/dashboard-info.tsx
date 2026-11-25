@@ -5,19 +5,21 @@ import "dayjs/locale/es";
 
 import { AdminSummaryCard } from "./admin-summary-card";
 import { PendingInvitationsBanner } from "./pending-invitations-banner";
+import { TeachingSummaryCard } from "./teaching-summary-card";
 
 import {
   CurrentEventsSection,
   PastEventsSection,
 } from "@/features/events/components/me-events-section";
 import { useUser } from "@/lib/auth";
-import { canViewAdministration } from "@/lib/authorization";
+import { canViewAdministration, canViewTeaching } from "@/lib/authorization";
 
 /**
  * Panel for everyone: it does not label who the person is, it shows what they
  * have. Administration appears with `read:events` (decided by permission, not
  * by role name; the dean sees it read-only), then the events where they hold a
- * role, one link per role, and the history. Administration and the events
+ * role, one link per role, and the history. Docencia appears with
+ * `read:academic_projects` (professor, tutor...). Those entries and the events
  * share one grid of square tiles; pending invitations go first, as a notice.
  */
 export const DashboardInfo = () => {
@@ -35,9 +37,10 @@ export const DashboardInfo = () => {
       </header>
       <PendingInvitationsBanner />
       <CurrentEventsSection
-        leading={
-          canViewAdministration(user.data) ? <AdminSummaryCard /> : undefined
-        }
+        leading={[
+          canViewAdministration(user.data) && <AdminSummaryCard key="admin" />,
+          canViewTeaching(user.data) && <TeachingSummaryCard key="teaching" />,
+        ].filter(Boolean)}
       />
       <PastEventsSection />
     </div>

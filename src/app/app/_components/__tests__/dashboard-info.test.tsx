@@ -77,6 +77,9 @@ const mockApi = ({
         },
       }),
     ),
+    http.get("*/api/academic/events", () =>
+      HttpResponse.json([{ id: 5, name: "Feria de Ingeniería" }]),
+    ),
     http.get("*/api/dashboard/stats", () =>
       HttpResponse.json({
         activeEvents: 3,
@@ -164,6 +167,21 @@ describe("DashboardInfo", () => {
     expect(
       screen.getByRole("link", { name: /Abrir panel/i }),
     ).toBeInTheDocument();
+  });
+
+  it("Andrés: professor with read:academic_projects sees the Docencia entry", async () => {
+    permissions = ["read:academic_projects"];
+    mockApi({ current: [meEvent(5, "Feria de Ingeniería", ["PROFESSOR"])] });
+    renderPanel();
+
+    expect(
+      await screen.findByRole("link", { name: /Docencia/ }),
+    ).toHaveAttribute("href", "/app/docencia");
+    // The newest event of the scope on the tile, and the event card
+    await waitFor(() =>
+      expect(screen.getAllByText("Feria de Ingeniería")).toHaveLength(2),
+    );
+    expect(screen.queryByText("Administración")).not.toBeInTheDocument();
   });
 
   it("Sofía: no events and no administration explains how to join one", async () => {

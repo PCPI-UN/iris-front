@@ -1,5 +1,6 @@
 import {
   ArrowDownAZ,
+  BookOpenCheck,
   Calendar,
   ChartNoAxesCombined,
   Home,
@@ -52,6 +53,13 @@ const SIDEBAR_ITEMS: SidebarItem[] = [
     url: paths.app.invitations.getHref(),
     icon: Mail,
     permissions: [],
+  },
+  {
+    title: "Docencia",
+    group: "personal",
+    url: paths.app.teaching.getHref(),
+    icon: BookOpenCheck,
+    permissions: [PERMISSIONS.readAcademicProjects],
   },
   {
     title: "Resumen",

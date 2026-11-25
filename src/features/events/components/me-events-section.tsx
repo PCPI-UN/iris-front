@@ -2,7 +2,7 @@
 
 import type { LucideIcon } from "lucide-react";
 
-import { useState } from "react";
+import { Children, useState } from "react";
 import Link from "next/link";
 import { keepPreviousData } from "@tanstack/react-query";
 import dayjs from "dayjs";
@@ -203,9 +203,10 @@ const EventsList = ({
   emptyMessage: React.ReactNode;
   /** Past events as plain rows instead of cards */
   compact?: boolean;
-  /** Tile placed before the events in the grid (the administration one) */
+  /** Tiles placed before the events in the grid (administration, Docencia) */
   leading?: React.ReactNode;
 }) => {
+  const leadingTiles = Children.toArray(leading);
   const [page, setPage] = useState(1);
   const eventsQuery = useMeEvents({
     status,
@@ -220,9 +221,13 @@ const EventsList = ({
 
   // With a leading tile, loading and errors take one tile so it stays in place
   const withLeading = (tile: React.ReactNode) =>
-    leading ? (
+    leadingTiles.length > 0 ? (
       <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        <li className="flex">{leading}</li>
+        {leadingTiles.map((leadingTile, index) => (
+          <li key={index} className="flex">
+            {leadingTile}
+          </li>
+        ))}
         <li className="flex">
           <div className="flex w-full flex-col items-center justify-center rounded-3xl border border-white/10 bg-[#0e101a]/70 p-5 text-center backdrop-blur-xl sm:min-h-72">
             {tile}
@@ -278,7 +283,11 @@ const EventsList = ({
         </ul>
       ) : (
         <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {leading && <li className="flex">{leading}</li>}
+          {leadingTiles.map((leadingTile, index) => (
+            <li key={index} className="flex">
+              {leadingTile}
+            </li>
+          ))}
           {events.map((event) => (
             <li key={event.id} className="flex">
               <MeEventCard event={event} />
