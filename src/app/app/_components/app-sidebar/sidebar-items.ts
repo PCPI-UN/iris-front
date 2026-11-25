@@ -2,6 +2,7 @@ import {
   ArrowDownAZ,
   Calendar,
   ChartNoAxesCombined,
+  GraduationCap,
   Home,
   LayoutDashboard,
   type LucideIcon,
@@ -51,6 +52,13 @@ const SIDEBAR_ITEMS: SidebarItem[] = [
     group: "personal",
     url: paths.app.invitations.getHref(),
     icon: Mail,
+    permissions: [],
+  },
+  {
+    title: "Mi trayectoria",
+    group: "personal",
+    url: paths.app.academicHistory.getHref(),
+    icon: GraduationCap,
     permissions: [],
   },
   {

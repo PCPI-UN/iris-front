@@ -39,6 +39,7 @@ import { useJuryAssignedProjects } from "@/features/projects-public/api/get-jury
 
 import { ScoreLevelPicker } from "./score-level-picker"
 import { jurorEvaluationErrorMessage } from "../utils/evaluation-error"
+import { formatWeight, partialGrade } from "../utils/criterion-weight"
 import { maxGradeOf, useJurorEvent } from "../hooks/use-juror-event"
 import { getEventDashboardHref } from "@/features/events/utils/event-roles"
 
@@ -96,6 +97,12 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
   const submittedScores: Record<string, number> = Object.fromEntries(
     (submittedEvaluation?.scores ?? []).map((score) => [String(score.criterionId), score.score]),
   )
+  // A submitted evaluation keeps the weight it was graded with, even if the rubric changed later
+  const submittedWeights: Record<string, number> = Object.fromEntries(
+    (submittedEvaluation?.scores ?? [])
+      .filter((score) => score.weight !== undefined)
+      .map((score) => [String(score.criterionId), score.weight as number]),
+  )
   const shownScores = isReadOnly ? submittedScores : scores
 
   const {
@@ -133,16 +140,21 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
   const backendSections =
     categoryCriteriaData?.map((cat, index) => ({
       id: `section-${index + 1}`,
-      // Se quito el peso de la categoría del nombre de la sección, por fallos es los calculos del peso.
-      // name: `${index + 1}. (${cat.weight}) ${cat.category}`,
       name: `${index + 1}. ${cat.category}`,
+      // Weight of the component in the grade
+      weight: cat.weight,
       isSection: true,
       subcriteria:
-        cat.criterions?.map((c, cIdx) => ({
-          id: c?.id ? String(c.id) : `criterion-${cIdx}`,
-          name: c?.name ?? "",
-          weight: cat.weight,
-        })) ?? [],
+        cat.criterions?.map((c, cIdx) => {
+          const id = c?.id ? String(c.id) : `criterion-${cIdx}`
+
+          return {
+            id,
+            name: c?.name ?? "",
+            // Effective weight of the criterion in the grade
+            weight: (isReadOnly ? submittedWeights[id] : undefined) ?? c?.weight,
+          }
+        }) ?? [],
     })) ?? []
 
   const allSections = backendSections
@@ -153,6 +165,22 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
       .filter((criterion) => scores[criterion.id] === undefined)
       .map((criterion) => ({ ...criterion, sectionIndex })),
   )
+
+  // Grade of the levels chosen so far, shown next to "Enviar evaluación". Hidden when some
+  // criterion has no weight or the scale has no points: the sum would not be the grade.
+  const allCriteria = allSections.flatMap((section) => section.subcriteria)
+  const pointsByLevel = new Map(scoreOptions.map((option) => [option.value, option.points]))
+  const currentGrade =
+    maxGrade !== undefined && allCriteria.every((criterion) => criterion.weight !== undefined)
+      ? partialGrade(
+          allCriteria
+            .filter((criterion) => scores[criterion.id] !== undefined)
+            .map((criterion) => ({
+              weight: criterion.weight,
+              points: pointsByLevel.get(scores[criterion.id]),
+            })),
+        )
+      : undefined
 
   const handleScoreChange = (criterionId: string, value: number) => {
     setScores((prev) => ({
@@ -412,6 +440,11 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
                 <div className="border-b border-border pb-3">
                   <h3 className="text-base md:text-lg font-semibold text-balance">
                     {currentSection?.name}
+                    {currentSection?.weight !== undefined && (
+                      <span className="ml-2 font-normal text-muted-foreground">
+                        ({formatWeight(currentSection.weight)})
+                      </span>
+                    )}
                   </h3>
                 </div>
 
@@ -437,7 +470,12 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
                   {currentSection?.subcriteria?.map((criterion) => (
                     <div key={criterion.id} className="space-y-3 md:space-y-4">
                       <p className="text-sm md:text-base text-foreground leading-relaxed">
-                        {criterion.name}
+                        <span>{criterion.name}</span>
+                        {criterion.weight !== undefined && (
+                          <span className="ml-1.5 text-muted-foreground">
+                            ({formatWeight(criterion.weight)})
+                          </span>
+                        )}
                       </p>
 
                       <ScoreLevelPicker
@@ -516,6 +554,17 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
                       >
                         <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
                         <span>{submitError}</span>
+                      </div>
+                    )}
+
+                    {currentGrade !== undefined && maxGrade !== undefined && (
+                      <div className="flex items-center justify-between rounded-lg border border-border px-3 py-2 text-sm">
+                        <span className="font-medium">
+                          {missingCriteria.length > 0 ? "Nota parcial" : "Nota"}
+                        </span>
+                        <span className="font-semibold">
+                          {`${formatPoints(currentGrade)} / ${formatPoints(maxGrade)}`}
+                        </span>
                       </div>
                     )}
 
