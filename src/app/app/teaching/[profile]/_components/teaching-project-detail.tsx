@@ -54,7 +54,7 @@ export const TeachingProjectDetail = ({
   const projectQuery = useAcademicProject({ profile, projectId });
   const project = projectQuery.data;
   const eventId = project?.eventId;
-  // The students' state comes with the registrations; the evaluation progress with the grades
+  // The students' state comes with the registrations; whether results are published with the grades
   const registrationsQuery = useAcademicRegistrations({ profile, eventId });
   const gradesQuery = useAcademicGrades({ profile, eventId });
   const eventsQuery = useAcademicEvents({ profile });
@@ -87,9 +87,6 @@ export const TeachingProjectDetail = ({
   }
 
   const registration = registrationsQuery.data?.projects.find(
-    (row) => row.projectId === project.id,
-  );
-  const grade = gradesQuery.data?.projects.find(
     (row) => row.projectId === project.id,
   );
   const event = eventsQuery.data?.find((item) => item.id === project.eventId);
@@ -186,15 +183,12 @@ export const TeachingProjectDetail = ({
         {/* Desktop: the evaluation stays in view while the left column scrolls */}
         <aside className="lg:sticky lg:top-24">
           <JuryProgress
-            assignedJurors={
-              grade?.assignedJurors ?? project.assignedJurorCount ?? 0
-            }
-            completedEvaluations={grade?.completedEvaluations ?? 0}
             emptyMessage={
               project.state === "APPROVED"
                 ? "Aún no tiene jurados asignados."
                 : "Los jurados se asignan cuando el proyecto queda aprobado."
             }
+            jurors={project.evaluation?.jurors ?? null}
             note={
               resultsPublished
                 ? "Los resultados del evento ya se publicaron."

@@ -53,9 +53,15 @@ describe("academic blocks", () => {
     expect(screen.getByText("Pendiente")).toBeInTheDocument();
   });
 
-  it("shows how many jurors evaluated, or why there are none", () => {
+  it("lists the jurors with who evaluated, or says why there are none", () => {
     const { unmount } = rtlRender(
-      <JuryProgress assignedJurors={3} completedEvaluations={2} />,
+      <JuryProgress
+        jurors={[
+          { userId: 22, name: "Carla Ruiz", evaluated: false },
+          { userId: 23, name: "Ana Pérez", evaluated: true },
+          { userId: 21, name: null, evaluated: true },
+        ]}
+      />,
     );
 
     expect(screen.getByRole("progressbar")).toHaveAttribute(
@@ -63,19 +69,30 @@ describe("academic blocks", () => {
       "2",
     );
     expect(screen.getByText(/de 3 jurados evaluaron/)).toBeInTheDocument();
+    const rows = screen.getAllByRole("listitem");
+
+    expect(rows[0]).toHaveTextContent("Carla RuizPendiente");
+    expect(rows[1]).toHaveTextContent("Ana PérezEvaluó");
+    expect(rows[2]).toHaveTextContent("Jurado sin nombreEvaluó");
     unmount();
 
-    rtlRender(
+    const { unmount: unmountEmpty } = rtlRender(
       <JuryProgress
-        assignedJurors={0}
-        completedEvaluations={0}
         emptyMessage="Los jurados se asignan cuando el proyecto queda aprobado."
+        jurors={[]}
       />,
     );
+
     expect(
       screen.getByText(
         "Los jurados se asignan cuando el proyecto queda aprobado.",
       ),
+    ).toBeInTheDocument();
+    unmountEmpty();
+
+    rtlRender(<JuryProgress jurors={null} />);
+    expect(
+      screen.getByText("No se pudo cargar el avance de la evaluación."),
     ).toBeInTheDocument();
   });
 

@@ -125,6 +125,32 @@ export type AcademicProject = {
   assignedJurorCount?: number;
 };
 
+/** A juror assigned to the project and whether they have evaluated it */
+export type AcademicProjectJuror = {
+  userId: number;
+  /** null when the user could not be read */
+  name: string | null;
+  evaluated: boolean;
+};
+
+/**
+ * Evaluation of GET /academic/projects/:id. The jurors come with every profile and
+ * before the results are published, the pending ones first; the grade is left to the
+ * Notas tab.
+ */
+export type AcademicProjectEvaluation = {
+  gradeStatus: GradeStatus;
+  assignedJurors: number;
+  completedEvaluations: number;
+  pendingEvaluations: number;
+  jurors: AcademicProjectJuror[];
+};
+
+/** GET /academic/projects/:id: the project and its evaluation (null when it could not be read) */
+export type AcademicProjectDetail = AcademicProject & {
+  evaluation: AcademicProjectEvaluation | null;
+};
+
 export type AcademicProjectsPage = {
   items: AcademicProject[];
   total: number;
