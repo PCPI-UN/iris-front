@@ -276,6 +276,7 @@ describe("DashboardInfo", () => {
       http.get("*/api/me/events", () =>
         HttpResponse.json({ message: "boom" }, { status: 500 }),
       ),
+      http.get("*/api/academic/profiles", () => HttpResponse.json([])),
     );
     renderPanel();
 
