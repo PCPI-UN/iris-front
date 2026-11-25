@@ -46,12 +46,10 @@ const mockApi = ({
   current = [],
   past = [],
   pendingInvitations = 0,
-  profiles = [],
 }: {
   current?: unknown[];
   past?: unknown[];
   pendingInvitations?: number;
-  profiles?: string[];
 }) => {
   const requests: URLSearchParams[] = [];
 
@@ -78,10 +76,6 @@ const mockApi = ({
           totalPages: 1,
         },
       }),
-    ),
-    http.get("*/api/academic/profiles", () => HttpResponse.json(profiles)),
-    http.get("*/api/academic/events", () =>
-      HttpResponse.json([{ id: 5, name: "Feria de Ingeniería" }]),
     ),
     http.get("*/api/dashboard/stats", () =>
       HttpResponse.json({
@@ -172,36 +166,25 @@ describe("DashboardInfo", () => {
     ).toBeInTheDocument();
   });
 
-  it("Ana: professor and tutor sees one entry per profile", async () => {
+  it("Ana: professor and tutor sees the event once, with one entry per role", async () => {
     mockApi({
       current: [meEvent(5, "Feria de Ingeniería", ["PROFESSOR", "TUTOR"])],
-      profiles: ["PROFESSOR", "TUTOR"],
     });
     renderPanel();
 
     expect(
       await screen.findByRole("link", {
-        name: /^Profesor Proyectos de tus cursos/,
+        name: "Abrir Feria de Ingeniería como profesor",
       }),
-    ).toHaveAttribute("href", "/app/teaching/professor");
+    ).toHaveAttribute("href", "/app/events/5/dashboard?rol=profesor");
     expect(
-      screen.getByRole("link", { name: /^Tutor Proyectos que tutoras/ }),
-    ).toHaveAttribute("href", "/app/teaching/tutor");
-    // The newest event of each profile on its tile, and the event card
-    await waitFor(() =>
-      expect(screen.getAllByText("Feria de Ingeniería")).toHaveLength(3),
-    );
-  });
-
-  it("an admin without academic profiles sees no teaching entry", async () => {
-    permissions = ["read:events", "read:academic_projects"];
-    mockApi({});
-    renderPanel();
-
-    expect(await screen.findByText("Administración")).toBeInTheDocument();
-    expect(
-      screen.queryByRole("link", { name: /Proyectos de tus cursos/ }),
-    ).not.toBeInTheDocument();
+      screen.getByRole("link", {
+        name: "Abrir Feria de Ingeniería como tutor",
+      }),
+    ).toHaveAttribute("href", "/app/events/5/dashboard?rol=tutor");
+    expect(screen.getByText("Proyectos de tus cursos")).toBeInTheDocument();
+    // No tile per academic profile repeats the event
+    expect(screen.getAllByText("Feria de Ingeniería")).toHaveLength(1);
   });
 
   it("Sofía: no events and no administration explains how to join one", async () => {
@@ -276,7 +259,6 @@ describe("DashboardInfo", () => {
       http.get("*/api/me/events", () =>
         HttpResponse.json({ message: "boom" }, { status: 500 }),
       ),
-      http.get("*/api/academic/profiles", () => HttpResponse.json([])),
     );
     renderPanel();
 

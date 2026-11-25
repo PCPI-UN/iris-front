@@ -9,17 +9,23 @@ import dayjs from "dayjs";
 import {
   Archive,
   ArrowRight,
+  BookOpenCheck,
+  Building2,
   Calendar,
   CalendarDays,
   ChevronDown,
   Clock,
   CircleDot,
+  ClipboardCheck,
   DoorClosed,
   History,
+  Rocket,
+  UserCheck,
   UserPlus,
 } from "lucide-react";
 
 import {
+  type EventRoleCode,
   type MeEvent,
   type MeEventsStatus,
   useMeEvents,
@@ -149,25 +155,88 @@ const MeEventCard = ({ event }: { event: MeEvent }) => {
           aria-label={`Tus roles en ${event.name}`}
           className="flex flex-col gap-2"
         >
-          {event.roles.map((role) => (
-            <li key={role}>
-              <Link
-                aria-label={`Abrir ${event.name} como ${EVENT_ROLE_LABELS[role].toLowerCase()}`}
-                className={`group flex min-h-[44px] items-center justify-between gap-3 rounded-xl border px-3 text-sm font-semibold transition-all hover:brightness-125 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 ${EVENT_ROLE_STYLES[role]}`}
-                href={getEventDashboardHref(event.id, role)}
-              >
-                {EVENT_ROLE_LABELS[role]}
-                <ArrowRight
-                  aria-hidden="true"
-                  className="size-4 shrink-0 transition-transform group-hover:translate-x-0.5"
-                />
-              </Link>
-            </li>
-          ))}
+          {event.roles.map((role) => {
+            const entry = ROLE_ENTRIES[role];
+            const Icon = entry.icon;
+
+            return (
+              <li key={role}>
+                <Link
+                  aria-label={`Abrir ${event.name} como ${EVENT_ROLE_LABELS[role].toLowerCase()}`}
+                  className={`group relative flex min-h-[56px] items-center gap-3 overflow-hidden rounded-2xl border bg-gradient-to-br to-transparent px-3 py-2.5 transition-all hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 ${entry.tile}`}
+                  href={getEventDashboardHref(event.id, role)}
+                >
+                  <span
+                    aria-hidden="true"
+                    className={`pointer-events-none absolute -right-8 -top-8 size-20 rounded-full blur-2xl ${entry.glow}`}
+                  />
+                  <span
+                    className={`flex size-9 shrink-0 items-center justify-center rounded-xl border ${EVENT_ROLE_STYLES[role]}`}
+                  >
+                    <Icon aria-hidden="true" className="size-[18px]" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-bold leading-tight text-white">
+                      {EVENT_ROLE_LABELS[role]}
+                    </span>
+                    <span className="block truncate text-xs text-slate-400">
+                      {entry.hint}
+                    </span>
+                  </span>
+                  <ArrowRight
+                    aria-hidden="true"
+                    className={`size-4 shrink-0 transition-transform group-hover:translate-x-0.5 ${entry.arrow}`}
+                  />
+                </Link>
+              </li>
+            );
+          })}
         </ul>
       </div>
     </article>
   );
+};
+
+/** Look of each role entry of a current event card: a small tile in the color of the role */
+const ROLE_ENTRIES: Record<
+  EventRoleCode,
+  { icon: LucideIcon; hint: string; tile: string; glow: string; arrow: string }
+> = {
+  JURY: {
+    icon: ClipboardCheck,
+    hint: "Evalúa tus proyectos asignados",
+    tile: "border-amber-500/30 from-amber-500/15 hover:border-amber-400/60 hover:shadow-amber-500/10",
+    glow: "bg-amber-500/20",
+    arrow: "text-amber-300",
+  },
+  PARTICIPANT: {
+    icon: Rocket,
+    hint: "Tu proyecto en el evento",
+    tile: "border-cyan-500/30 from-cyan-500/15 hover:border-cyan-400/60 hover:shadow-cyan-500/10",
+    glow: "bg-cyan-500/20",
+    arrow: "text-cyan-300",
+  },
+  TUTOR: {
+    icon: UserCheck,
+    hint: "Proyectos que tutoras",
+    tile: "border-violet-500/30 from-violet-500/15 hover:border-violet-400/60 hover:shadow-violet-500/10",
+    glow: "bg-violet-500/20",
+    arrow: "text-violet-300",
+  },
+  PROFESSOR: {
+    icon: BookOpenCheck,
+    hint: "Proyectos de tus cursos",
+    tile: "border-emerald-500/30 from-emerald-500/15 hover:border-emerald-400/60 hover:shadow-emerald-500/10",
+    glow: "bg-emerald-500/20",
+    arrow: "text-emerald-300",
+  },
+  DIRECTOR: {
+    icon: Building2,
+    hint: "Proyectos de tu departamento",
+    tile: "border-pink-500/30 from-pink-500/15 hover:border-pink-400/60 hover:shadow-pink-500/10",
+    glow: "bg-pink-500/20",
+    arrow: "text-pink-300",
+  },
 };
 
 /** Past event: name and one small link per role, no card */
