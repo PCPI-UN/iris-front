@@ -172,11 +172,23 @@ export type Project = Entity<{
   pendingParticipants: ProjectParticipant[];
   /** Tutors of the project, linked first and then pending; absent in projects read before tutors existed */
   tutors?: ProjectTutor[];
+  /** Course section (NRC) of the project; absent for an event that requires none or a project from before NRCs */
+  academicCourse?: ProjectAcademicCourse | null;
   reason: string;
   evaluated: boolean;
   createdAt: number;
   updatedAt: number;
 }>;
+
+/** Course section of a project as GET /projects/:id returns it, with the code of its term */
+export type ProjectAcademicCourse = {
+  id?: number;
+  nrc?: string;
+  name?: string;
+  /** Term code such as 202610; null when event-service does not list the term */
+  term?: string | null;
+  departmentName?: string | null;
+};
 
 /**
  * Tutor of a project (Iris#187): linked to a user (userId) or pending, typed in by the student.

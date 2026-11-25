@@ -1,12 +1,13 @@
 "use client";
 
-import { useProjectCourse } from "../api/get-project-course";
 import { projectCourseLabel } from "../utils/course-label";
 
 import { useEvent } from "@/features/events/api/get-event";
+import { ProjectAcademicCourse } from "@/types/api";
 
 type ProjectCourseProps = {
-  projectId: number | string;
+  /** Course section that GET /projects/:id returns with the project; absent when it has none */
+  course: ProjectAcademicCourse | null | undefined;
   eventId: number | string;
 };
 
@@ -14,16 +15,22 @@ type ProjectCourseProps = {
  * NRC of a project for the administration: its course section, "No aplica" for an event that does
  * not require one, or "Sin NRC" for a project from before NRCs existed.
  */
-export function ProjectCourse({ projectId, eventId }: ProjectCourseProps) {
-  const courseQuery = useProjectCourse({ projectId });
+export function ProjectCourse({ course, eventId }: ProjectCourseProps) {
   const eventQuery = useEvent({ eventId: Number(eventId) });
 
-  if (courseQuery.isLoading || eventQuery.isLoading) {
+  if (!course && eventQuery.isLoading) {
     return <p className="text-sm font-light text-default-500">Cargando...</p>;
   }
 
   const label = projectCourseLabel(
-    courseQuery.data,
+    course?.nrc
+      ? {
+          nrc: course.nrc,
+          name: course.name ?? "",
+          term: course.term ?? null,
+          departmentName: course.departmentName ?? null,
+        }
+      : null,
     eventQuery.data?.data?.requiresCourse,
   );
 
