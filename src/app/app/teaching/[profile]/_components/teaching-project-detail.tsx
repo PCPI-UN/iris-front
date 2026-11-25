@@ -9,6 +9,7 @@ import { useAcademicProject } from "@/features/academic/api/get-academic-project
 import { useAcademicRegistrations } from "@/features/academic/api/get-academic-registrations";
 import {
   AcademicPanel,
+  DocumentsBlock,
   JuryProgress,
   ProjectStateBadge,
   StudentList,
@@ -178,6 +179,8 @@ export const TeachingProjectDetail = ({
           ) : null}
 
           <TutorBlock tutors={tutors} />
+
+          <DocumentsBlock documents={project.documents ?? []} />
         </div>
 
         {/* Desktop: the evaluation stays in view while the left column scrolls */}

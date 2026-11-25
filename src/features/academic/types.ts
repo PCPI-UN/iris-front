@@ -101,6 +101,13 @@ export type AcademicTutor = {
   email?: string;
 };
 
+/** An active document of a project; `type` arrives by name (LOGO, POSTER, SUPPORTING_DOCUMENT) or number */
+export type AcademicDocument = {
+  id: number;
+  projectId: number;
+  type: string | number;
+};
+
 /** A project as GET /academic/projects and /academic/projects/:id return it */
 export type AcademicProject = {
   id: number;
@@ -112,6 +119,8 @@ export type AcademicProject = {
   reason?: string | null;
   tutors?: AcademicTutor[];
   academicCourse?: AcademicCourse | null;
+  /** Active documents of the project (withdrawn ones are left out) */
+  documents?: AcademicDocument[];
   /** Jurors assigned to evaluate the project */
   assignedJurorCount?: number;
 };

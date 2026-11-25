@@ -1,4 +1,9 @@
-import { JuryProgress, StudentList, TutorBlock } from "../components";
+import {
+  DocumentsBlock,
+  JuryProgress,
+  StudentList,
+  TutorBlock,
+} from "../components";
 
 import { rtlRender, screen } from "@/testing/test-utils";
 
@@ -78,5 +83,30 @@ describe("academic blocks", () => {
     rtlRender(<TutorBlock tutors={[]} />);
 
     expect(screen.getByText("Sin tutor registrado.")).toBeInTheDocument();
+  });
+
+  it("links each document to its stable open route", () => {
+    rtlRender(
+      <DocumentsBlock
+        documents={[
+          { id: 31, projectId: 5, type: "POSTER" },
+          { id: 32, projectId: 5, type: 3 },
+        ]}
+      />,
+    );
+
+    expect(screen.getByRole("link", { name: /Póster/ })).toHaveAttribute(
+      "href",
+      "/api/projects/5/documents/31/open",
+    );
+    expect(
+      screen.getByRole("link", { name: /Documento de soporte/ }),
+    ).toHaveAttribute("href", "/api/projects/5/documents/32/open");
+  });
+
+  it("says when the project has no documents", () => {
+    rtlRender(<DocumentsBlock documents={[]} />);
+
+    expect(screen.getByText("Sin documentos cargados.")).toBeInTheDocument();
   });
 });
