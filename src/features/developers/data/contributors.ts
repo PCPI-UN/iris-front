@@ -76,4 +76,14 @@ export const contributors: ContributorCard[] = [
   { firstName: 'Wilmer', middleName: 'Junior', lastName1: 'Santiago', lastName2: 'Donado', role: 'FullStack Developer', version: 'v2.0', github: 'https://github.com/WilmerJr01' },
   { firstName: 'Camilo', middleName: 'Andrés', lastName1: 'De la Rosa', lastName2: 'Movilla', role: 'DevOps Engineer', version: 'v2.0', github: 'https://github.com/CamiloDlRM' },
   { firstName: 'Natalia', middleName: 'Patricia', lastName1: 'Carpintero', lastName2: 'Leal', role: 'Scrum Master - Frontend Developer', version: 'v2.0', github: 'https://github.com/Carpinteron' },
+
+  { firstName: 'Daniel', middleName: 'José', lastName1: 'Romero', lastName2: 'Martínez', role: 'Software Architect', version: 'v3.0', github: 'https://github.com/djromerom' },
+  { firstName: 'Joshua', lastName1: 'Lobo', lastName2: '', role: 'Scrum Master', version: 'v3.0', github: 'https://github.com/Jlobo0210' },
+  { firstName: 'Fatima', lastName1: 'Castro', lastName2: '', role: 'Frontend Developer', version: 'v3.0', github: 'https://github.com/FatimaCas' },
+  { firstName: 'Juan', lastName1: 'Borja', lastName2: '', role: 'Backend Leader', version: 'v3.0', github: 'https://github.com/JDBorjaC' },
+  { firstName: 'Samuel', lastName1: 'Camargo', lastName2: '', role: 'FullStack Developer', version: 'v3.0', github: 'https://github.com/kicconsu' },
+  { firstName: 'Juan', lastName1: 'Rojas', lastName2: '', role: 'Backend Developer', version: 'v3.0', github: 'https://github.com/Bokter' },
+  { firstName: 'Sebastian', lastName1: 'Santos', lastName2: '', role: 'Backend Developer', version: 'v3.0', github: 'https://github.com/SDSANTOSYT' },
+  { firstName: 'Alexy', lastName1: 'Salcedo', lastName2: '', role: 'Frontend Leader', version: 'v3.0', github: 'https://github.com/ALEXYSALCED0' },
+  { firstName: 'Humberto', lastName1: 'Llinas', lastName2: '', role: 'DevOps Engineer', version: 'v3.0', github: 'https://github.com/lzayrox' },
 ];

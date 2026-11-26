@@ -56,15 +56,20 @@ describe('IRIS-V3-EVT-01 §3.2.3 - Vista de Contribuidores (S1-08)', () => {
       screen.getByRole('heading', { name: /IRIS.*Equipo de Desarrollo/i }),
     ).toBeInTheDocument();
 
-    // Verifica que las 2 cohortes (v2.0 y v1.0) estén presentes por defecto
+    // Verifica que las 3 cohortes (v3.0, v2.0 y v1.0) estén presentes por defecto
     expect(
-      screen.getByRole('heading', { name: /Generación Actual & Consolidación/i }),
+      screen.getByRole('heading', { name: /Generación Actual/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: /Generación de Consolidación/i }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole('heading', { name: /Generación Fundacional/i }),
     ).toBeInTheDocument();
 
-    // Verifica que integrantes de v2.0 y v1.0 se muestren con sus roles y handles de GitHub
+    // Verifica que integrantes de v3.0, v2.0 y v1.0 se muestren con sus roles y handles de GitHub
+    expect(screen.getByText('Alexy Salcedo')).toBeInTheDocument();
+    expect(screen.getByText('@ALEXYSALCED0')).toBeInTheDocument();
     expect(screen.getByText('Judith Isabel Pérez Conde')).toBeInTheDocument();
     expect(screen.getByText('@Judithpc23')).toBeInTheDocument();
     expect(screen.getByText('Juan Andrés Povea Fernandez')).toBeInTheDocument();
@@ -115,7 +120,7 @@ describe('IRIS-V3-EVT-01 §3.2.3 - Vista de Contribuidores (S1-08)', () => {
 
     const dialog = await screen.findByRole('dialog');
     expect(within(dialog).getByText(/Ficha de Contribuidor/i)).toBeInTheDocument();
-    expect(within(dialog).getByText(/Trayectoria por versión \(2\)/i)).toBeInTheDocument();
+    expect(within(dialog).getByText(/Trayectoria por versión \(3\)/i)).toBeInTheDocument();
     expect(within(dialog).getByText(/github\.com\/djromerom/i)).toBeInTheDocument();
   });
 
