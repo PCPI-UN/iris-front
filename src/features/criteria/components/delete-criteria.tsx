@@ -1,5 +1,8 @@
 "use client";
 
+import type { ComponentProps } from "react";
+import { Can } from "@/components/auth/can";
+import { PERMISSIONS } from "@/lib/authorization";
 import { Trash } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -17,11 +20,14 @@ import { useDisclosure } from "@/hooks/use-disclosure";
 
 type DeleteCriteriaProps = {
   criterionId: number;
+  /** The criterion belongs to a category with evaluations */
+  isDisabled?: boolean;
   onDeleted?: () => void;
 };
 
-export const DeleteCriteria = ({
+const DeleteCriteriaContent = ({
   criterionId,
+  isDisabled = false,
   onDeleted,
 }: DeleteCriteriaProps) => {
   const { addNotification } = useNotifications();
@@ -55,6 +61,7 @@ export const DeleteCriteria = ({
         color="danger"
         isIconOnly
         aria-label="Eliminar criterio"
+        isDisabled={isDisabled}
         onPress={() => onOpen()}
       >
         <Trash size={16} />
@@ -96,3 +103,10 @@ export const DeleteCriteria = ({
     </>
   );
 };
+
+// Only sessions that can call the endpoint see the action
+export const DeleteCriteria = (props: ComponentProps<typeof DeleteCriteriaContent>) => (
+  <Can permission={PERMISSIONS.manageEvents}>
+    <DeleteCriteriaContent {...props} />
+  </Can>
+);

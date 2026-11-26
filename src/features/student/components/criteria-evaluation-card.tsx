@@ -1,13 +1,17 @@
-import { Card } from "@/components/ui/card"
+import { Card } from "@/components/ui/card";
 
 interface CriteriaEvaluationCardProps {
-  title: string
-  score: number
-  maxScore: number
+  title: string;
+  score: number;
+  maxScore: number;
 }
 
-export function CriteriaEvaluationCard({ title, score, maxScore }: CriteriaEvaluationCardProps) {
-  const percentage = Math.round((score / maxScore) * 100)
+export function CriteriaEvaluationCard({
+  title,
+  score,
+  maxScore,
+}: CriteriaEvaluationCardProps) {
+  const percentage = Math.round((score / maxScore) * 100);
 
   return (
     <Card className="bg-content1 border-border p-6 text-card-foreground glass-card">
@@ -17,7 +21,9 @@ export function CriteriaEvaluationCard({ title, score, maxScore }: CriteriaEvalu
           {score}/{maxScore}
         </p>
       </div>
-      <p className="text-sm text-muted-foreground">{percentage}% of maximum score</p>
+      <p className="text-sm text-muted-foreground">
+        {percentage}% del puntaje máximo
+      </p>
     </Card>
-  )
+  );
 }

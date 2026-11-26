@@ -10,7 +10,11 @@ import {
   TableRow,
   TableCell,
 } from "@/components/ui/table";
-import { SearchIcon } from "lucide-react";
+import { FileSpreadsheet, SearchIcon } from "lucide-react";
+import { Can } from "@/components/auth/can";
+import { Button } from "@/components/ui/button";
+import { paths } from "@/config/paths";
+import { PERMISSIONS } from "@/lib/authorization";
 import { Chip } from "@/components/ui/chip";
 import { useJuryInvitations } from "../api/get-juries";
 import { Spinner } from "@/components/ui/spinner";
@@ -22,6 +26,7 @@ import { InviteModal } from "./invite-modal";
 import { AcceptInvitationModal } from "./accept-invitation-modal";
 import { ResendInvitationButton } from "./resend-invitation-button";
 import type { InvitationStatus } from "@/types/api";
+import { getEmailStatusView } from "../utils/email-status";
 import { api } from "@/lib/api-client";
 
 export const JuriesList = () => {
@@ -205,6 +210,20 @@ const filteredInvitations = useMemo(() => {
               ))}
             </Select>
             <InviteModal />
+            <Can permission={PERMISSIONS.manageEvents}>
+              <Button
+                size="sm"
+                variant="bordered"
+                startContent={<FileSpreadsheet className="h-4 w-4" />}
+                onPress={() =>
+                  router.push(
+                    paths.app.assignmentsImport.getHref(selectedEventKey || null),
+                  )
+                }
+              >
+                Importar Excel
+              </Button>
+            </Can>
           </div>
         </div>
 
@@ -254,6 +273,7 @@ const filteredInvitations = useMemo(() => {
     { key: "email", label: "Correo" },
     { key: "event", label: "Evento" },
     { key: "status", label: "Estado" },
+    { key: "emailStatus", label: "Envío del correo" },
     { key: "expiresAt", label: "Expira" },
     { key: "createdAt", label: "Fecha de invitación" },
     { key: "actions", label: "Acciones" },
@@ -310,6 +330,23 @@ const filteredInvitations = useMemo(() => {
                 >
                   {getStatusLabel(item.status)}
                 </Chip>
+              </TableCell>
+              <TableCell align="center">
+                {(() => {
+                  // Delivery of the invitation email (registered, sent or failed)
+                  const email = getEmailStatusView(item.emailStatus);
+                  return (
+                    <Chip
+                      className="w-full"
+                      color={email.color}
+                      size="sm"
+                      variant="flat"
+                      title={email.description}
+                    >
+                      {email.label}
+                    </Chip>
+                  );
+                })()}
               </TableCell>
               <TableCell align="center">
                 {item.expiresAt

@@ -23,7 +23,10 @@ describe('Select', () => {
       </Select>
     );
     
-    expect(screen.getByText('Choose an option')).toBeInTheDocument();
+    // HeroUI also labels its hidden native select, so the visible label is the one in the label slot
+    expect(
+      screen.getByText('Choose an option', { selector: '[data-slot="label"]' }),
+    ).toBeInTheDocument();
   });
 
   it('should render with description', () => {
@@ -65,8 +68,10 @@ describe('Select', () => {
       </Select>
     );
     
-    const select = screen.getByRole('combobox');
-    expect(select).toBeDisabled();
+    // HeroUI renders a button as the trigger and a hidden native select for forms
+    const trigger = screen.getByRole('button', { name: /choose an option/i });
+    expect(trigger).toHaveAttribute('data-disabled', 'true');
+    expect(document.querySelector('select')).toBeDisabled();
   });
 
   it('should be required when isRequired is true', () => {
@@ -77,8 +82,7 @@ describe('Select', () => {
       </Select>
     );
     
-    const select = screen.getByRole('combobox');
-    expect(select).toHaveAttribute('aria-required', 'true');
+    expect(document.querySelector('select')).toBeRequired();
   });
 
   it('should open dropdown when clicked', async () => {
@@ -90,11 +94,10 @@ describe('Select', () => {
       </Select>
     );
     
-    const select = screen.getByRole('combobox');
-    await user.click(select);
-    
-    expect(screen.getByText('Option 1')).toBeInTheDocument();
-    expect(screen.getByText('Option 2')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /select an option/i }));
+
+    const options = await screen.findAllByRole('option');
+    expect(options.map((option) => option.textContent)).toEqual(['Option 1', 'Option 2']);
   });
 
   it('should support multiple selection', async () => {
@@ -111,11 +114,13 @@ describe('Select', () => {
       </Select>
     );
     
-    const select = screen.getByRole('combobox');
-    await user.click(select);
-    
-    expect(screen.getByText('Option 1')).toBeInTheDocument();
-    expect(screen.getByText('Option 2')).toBeInTheDocument();
-    expect(screen.getByText('Option 3')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /choose options/i }));
+
+    expect(await screen.findByRole('listbox')).toHaveAttribute('aria-multiselectable', 'true');
+    expect((await screen.findAllByRole('option')).map((option) => option.textContent)).toEqual([
+      'Option 1',
+      'Option 2',
+      'Option 3',
+    ]);
   });
 });

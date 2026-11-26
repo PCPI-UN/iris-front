@@ -53,7 +53,9 @@ const normalizeRankingConfig = (response: GetRankingConfigResponse | null | unde
       ? (record as Record<string, unknown>).visibleInLanding as boolean
       : typeof (record as Record<string, unknown>).visiblePublic === 'boolean'
         ? (record as Record<string, unknown>).visiblePublic as boolean
-        : undefined;
+        : typeof (record as Record<string, unknown>).isPublic === 'boolean'
+          ? (record as Record<string, unknown>).isPublic as boolean
+          : undefined;
   const visibleScore =
     typeof (record as Record<string, unknown>).visibleScore === 'boolean'
       ? (record as Record<string, unknown>).visibleScore as boolean

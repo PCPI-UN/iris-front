@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import type { MonitoringTab, ProjectFilterState, SortOrder } from '../types';
 import { readCategoryIdFromSearchParams } from '@/lib/compat/category-legacy';
+import { ALL_CATEGORIES_KEY } from '../utils/constants';
 import { isProjectState, parseOptionalId, parsePage } from '../utils/parsers';
 
 type UseMonitoringFiltersParams = {
@@ -37,7 +38,8 @@ export const useMonitoringFilters = ({ initialEventId }: UseMonitoringFiltersPar
   const selectedEventIdFromUrl = initialEventId ?? Number(searchParams?.get('event'));
   const activeTab = useMemo(() => {
     const viewParam = searchParams?.get('view');
-    return (viewParam === 'projects' ? 'projects' : viewParam === 'ranking' ? 'ranking' : 'statistics') as MonitoringTab;
+    const tabs: MonitoringTab[] = ['projects', 'ranking', 'awards'];
+    return tabs.find((tab) => tab === viewParam) ?? 'statistics';
   }, [searchParams]);
   const currentPage = useMemo(() => parsePage(searchParams?.get('page')), [searchParams]);
   const selectedCategoryId = useMemo(
@@ -85,7 +87,10 @@ export const useMonitoringFilters = ({ initialEventId }: UseMonitoringFiltersPar
 
   const handleCategoryChange = (keys: Set<string>) => {
     const selected = Array.from(keys)[0];
-    updateParams({ categoryId: selected ? Number(selected) : null }, { resetPage: true });
+    updateParams(
+      { categoryId: selected && selected !== ALL_CATEGORIES_KEY ? Number(selected) : null },
+      { resetPage: true },
+    );
   };
 
   const handlePageChange = (page: number) => {

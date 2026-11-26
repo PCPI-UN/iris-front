@@ -1,7 +1,11 @@
 "use client";
 
+import type { ComponentProps } from "react";
+import { Can } from "@/components/auth/can";
+import { PERMISSIONS } from "@/lib/authorization";
 import { Pencil, Plus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { ZodError } from "zod";
 
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
@@ -29,15 +33,19 @@ import {
   updateCriteriaInputSchema,
   useUpdateCriteria,
 } from "../api/update-criteria";
+import {
+  DEFAULT_RELATIVE_WEIGHT,
+  parseRelativeWeight,
+} from "../utils/criterion-weights";
 
 const ALL_CATEGORIES_KEY = "__all_categories__";
+const NO_LOCKED_CATEGORIES: number[] = [];
 const CRITERION_NAME_MAX_LENGTH = 100;
 
 type CreateCriteriaContextualProps = {
   defaultEventId?: string;
+  /** Component the new criterion is created in; criteria are only created from their component */
   fixedComponent?: CriterionComponent;
-  availableComponents?: CriterionComponent[];
-  requireComponentSelection?: boolean;
   buttonLabel?: string;
   buttonVariant?:
     | "solid"
@@ -57,39 +65,46 @@ type CreateCriteriaContextualProps = {
   buttonSize?: "sm" | "md" | "lg";
   buttonDisabled?: boolean;
   criterionToEdit?: Criterion;
+  /** Categories of the event with evaluations: they cannot be added to or removed from a criterion */
+  lockedCategoryIds?: number[];
   onCreated?: () => void;
   onUpdated?: () => void;
-  onComponentCreated?: (component: CriterionComponent) => void;
-  availableWeightPercent?: number;
 };
 
 const toKeySet = (values: number[] | undefined) =>
   new Set((values ?? []).map((value) => String(value)));
 
-export const CreateCriteriaContextual = ({
+const initialWeightInput = (criterion?: Criterion) =>
+  String(criterion ? Number(criterion.weight) : DEFAULT_RELATIVE_WEIGHT);
+
+const CreateCriteriaContextualContent = ({
   defaultEventId,
   fixedComponent,
-  availableComponents = [],
-  requireComponentSelection = false,
   buttonLabel = "Agregar criterio",
   buttonVariant = "solid",
   buttonColor = "primary",
   buttonSize = "sm",
   buttonDisabled = false,
   criterionToEdit,
+  lockedCategoryIds = NO_LOCKED_CATEGORIES,
   onCreated,
   onUpdated,
-  onComponentCreated,
-  availableWeightPercent,
 }: CreateCriteriaContextualProps) => {
   const { addNotification } = useNotifications();
   const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
   const isEditing = !!criterionToEdit;
-  const normalizeForUI = (raw?: number) => {
-    const val = Number(raw ?? 0);
-
-    return Number((val * 100).toFixed(3));
-  };
+  const lockedCategoryKeys = useMemo(
+    () => new Set(lockedCategoryIds.map(String)),
+    [lockedCategoryIds],
+  );
+  // A criterion of a category with evaluations only accepts changes of name and description
+  const isCriterionLocked =
+    isEditing &&
+    (criterionToEdit.categoryIds ?? []).some((categoryId) =>
+      lockedCategoryKeys.has(String(categoryId)),
+    );
+  // A criterion keeps its component: loose criteria are assigned from the list
+  const component = isEditing ? criterionToEdit.component : fixedComponent;
 
   const [selectedEventKey, setSelectedEventKey] = useState<string>(
     criterionToEdit?.eventId
@@ -99,21 +114,9 @@ export const CreateCriteriaContextual = ({
   const [selectedCategoryKeys, setSelectedCategoryKeys] = useState<Set<string>>(
     toKeySet(criterionToEdit?.categoryIds),
   );
-  const [selectedComponentKey, setSelectedComponentKey] = useState<string>(
-    criterionToEdit?.component?.id
-      ? String(criterionToEdit.component.id)
-      : fixedComponent
-        ? String(fixedComponent.id)
-        : "",
-  );
- 
-  const [weightPercent, setWeightPercent] = useState<number>(
-    criterionToEdit ? normalizeForUI(criterionToEdit.weight) : 25,
-  );
   const [weightInput, setWeightInput] = useState<string>(
-    String(criterionToEdit ? normalizeForUI(criterionToEdit.weight) : 25),
+    initialWeightInput(criterionToEdit),
   );
-  const [weightError, setWeightError] = useState<string | null>(null);
   const [nameLength, setNameLength] = useState(
     criterionToEdit?.name.length ?? 0,
   );
@@ -134,50 +137,15 @@ export const CreateCriteriaContextual = ({
         ? String(criterionToEdit.eventId)
         : defaultEventId || "",
     );
-    setSelectedComponentKey(
-      criterionToEdit?.component?.id
-        ? String(criterionToEdit.component.id)
-        : fixedComponent
-          ? String(fixedComponent.id)
-          : "",
-    );
     setSelectedCategoryKeys(toKeySet(criterionToEdit?.categoryIds));
-    const initial = criterionToEdit ? normalizeForUI(criterionToEdit.weight) : 25;
-    setWeightPercent(initial);
-    setWeightInput(String(initial));
+    setWeightInput(initialWeightInput(criterionToEdit));
     setNameLength(criterionToEdit?.name.length ?? 0);
     setHasInitializedCategories(false);
-  }, [criterionToEdit, defaultEventId, fixedComponent, isOpen]);
+  }, [criterionToEdit, defaultEventId, isOpen]);
 
-  useEffect(() => {
-    const available = availableWeightPercent;
-    if (typeof available === "number") {
-      if (weightPercent > available) {
-        setWeightError(
-          `El peso excede el disponible. Disponible: ${available.toFixed(0)}%`,
-        );
-      } else {
-        setWeightError(null);
-      }
-    } else {
-      setWeightError(null);
-    }
-  }, [weightPercent, availableWeightPercent]);
-
-  const validateWeightInput = (raw: string) => {
-    if (!/^[0-9.,]*$/.test(raw)) {
-      return "Solo se permiten números, punto o coma";
-    }
-    const dotCount = (raw.match(/\./g) || []).length;
-    const commaCount = (raw.match(/,/g) || []).length;
-    if (dotCount > 1 || commaCount > 1) {
-      return "No puede tener más de un punto o más de una coma";
-    }
-    if (dotCount > 0 && commaCount > 0) {
-      return "No puede mezclar punto y coma";
-    }
-    return null;
-  };
+  const weight = parseRelativeWeight(weightInput);
+  const weightError =
+    weight === null ? "El peso debe ser un número mayor que 0." : null;
 
   const createCriteriaMutation = useCreateCriteria({
     mutationConfig: {
@@ -189,10 +157,6 @@ export const CreateCriteriaContextual = ({
         });
         onCreated?.();
         setSelectedCategoryKeys(new Set());
-        if (!fixedComponent) {
-          setSelectedComponentKey("");
-        }
-        setWeightPercent(25);
         onClose();
       },
       onError: (error: any) => {
@@ -234,14 +198,6 @@ export const CreateCriteriaContextual = ({
   const events = eventsQuery.data?.data ?? [];
   const categories = categoriesQuery.data?.data ?? [];
 
-  const componentOptions = useMemo(
-    () =>
-      [...availableComponents].sort((left, right) =>
-        left.name.localeCompare(right.name),
-      ),
-    [availableComponents],
-  );
-
   useEffect(() => {
     if (!isOpen || hasInitializedCategories || categories.length === 0) return;
 
@@ -252,12 +208,8 @@ export const CreateCriteriaContextual = ({
       }
       setSelectedCategoryKeys(criterionCategoryKeys);
     } else {
-      setSelectedCategoryKeys(
-        new Set([
-          ALL_CATEGORIES_KEY,
-          ...categories.map((category) => String(category.id)),
-        ]),
-      );
+      // A new criterion starts with no category: the admin picks the ones it applies to
+      setSelectedCategoryKeys(new Set());
     }
 
     setHasInitializedCategories(true);
@@ -267,20 +219,8 @@ export const CreateCriteriaContextual = ({
     hasInitializedCategories,
     isEditing,
     isOpen,
+    lockedCategoryKeys,
   ]);
-
-  const resolvedComponentId =
-    !isEditing && fixedComponent?.id
-      ? String(fixedComponent.id)
-      : selectedComponentKey;
-
-  // Show the component selector whenever there are components available
-  // or when explicitly required.
-  const hasComponentOptions = componentOptions.length > 0;
-  const needsComponent =
-    requireComponentSelection ||
-    hasComponentOptions ||
-    (!!fixedComponent && !isEditing);
 
   const isPending =
     createCriteriaMutation.isPending || updateCriteriaMutation.isPending;
@@ -399,39 +339,42 @@ export const CreateCriteriaContextual = ({
                   return;
                 }
 
-                if (
-                  needsComponent &&
-                  requireComponentSelection &&
-                  !resolvedComponentId
-                ) {
+                if (!isEditing && !fixedComponent) {
                   addNotification({
                     type: "error",
                     title: "Componente requerido",
-                    message: "Debes seleccionar un componente para continuar.",
+                    message: "Crea el criterio desde su componente.",
+                  });
+
+                  return;
+                }
+
+                if (weight === null) return;
+
+                const categoryIds = Array.from(selectedCategoryKeys)
+                  .map((categoryId) => Number(categoryId))
+                  .filter((categoryId) => Number.isFinite(categoryId));
+
+                if (categoryIds.length === 0) {
+                  addNotification({
+                    type: "error",
+                    title: "Categoría requerida",
+                    message:
+                      "Selecciona al menos una categoría para el criterio.",
                   });
                   return;
                 }
 
-                // Normalize and clamp weightPercent to 0..100 with up to 3 decimals.
-                let normalizedWeightPercent = Math.max(
-                  0,
-                  Math.min(100, Number(weightPercent) || 0),
-                );
-                normalizedWeightPercent = Number(
-                  normalizedWeightPercent.toFixed(3),
-                );
-
+                // The component of an existing criterion is not sent, so it never changes from here
                 const payload = {
                   eventId: Number(selectedEventKey),
                   name: rawName.trim(),
                   description: String(rawData.description || "").trim(),
-                  weight: normalizedWeightPercent / 100,
-                  categoryIds: Array.from(selectedCategoryKeys)
-                    .map((categoryId) => Number(categoryId))
-                    .filter((categoryId) => Number.isFinite(categoryId)),
-                  componentId: resolvedComponentId
-                    ? Number(resolvedComponentId)
-                    : undefined,
+                  weight,
+                  categoryIds,
+                  ...(!isEditing && fixedComponent
+                    ? { componentId: fixedComponent.id }
+                    : {}),
                 };
 
                 try {
@@ -447,12 +390,17 @@ export const CreateCriteriaContextual = ({
                       await createCriteriaInputSchema.parseAsync(payload);
                     await createCriteriaMutation.mutateAsync({ data: values });
                   }
-                } catch (error: any) {
-                  addNotification({
-                    type: "error",
-                    title: "Error de validación",
-                    message: error?.message || "Revisa los datos ingresados.",
-                  });
+                } catch (error) {
+                  // Backend errors are already notified by onError
+                  if (error instanceof ZodError) {
+                    addNotification({
+                      type: "error",
+                      title: "Error de validación",
+                      message:
+                        error.issues[0]?.message ??
+                        "Revisa los datos ingresados.",
+                    });
+                  }
                 }
               }}
             >
@@ -506,6 +454,8 @@ export const CreateCriteriaContextual = ({
                       setHasInitializedCategories(false);
                     }}
                     isLoading={eventsQuery.isLoading}
+                    // The criterion belongs to the event of its component
+                    isDisabled={!!component}
                     isRequired
                   >
                     {events.map((eventOption) => (
@@ -525,13 +475,26 @@ export const CreateCriteriaContextual = ({
                     selectionMode="multiple"
                     selectedKeys={selectedCategoryKeys}
                     onSelectionChange={handleCategorySelectionChange}
+                    disabledKeys={[...lockedCategoryKeys]}
+                    description={
+                      lockedCategoryKeys.size > 0
+                        ? "Las categorías con evaluaciones no se pueden agregar ni quitar."
+                        : undefined
+                    }
                     isDisabled={!selectedEventKey || categories.length === 0}
                     isLoading={!!selectedEventKey && categoriesQuery.isLoading}
                     renderValue={categoryRenderValue}
                   >
                     {categories.length > 0 ? (
                       [
-                        <SelectItem key={ALL_CATEGORIES_KEY}>Todas</SelectItem>,
+                        // "Todas" would add or remove the categories with evaluations too
+                        ...(lockedCategoryKeys.size === 0
+                          ? [
+                              <SelectItem key={ALL_CATEGORIES_KEY}>
+                                Todas
+                              </SelectItem>,
+                            ]
+                          : []),
                         ...categories.map((category) => (
                           <SelectItem key={String(category.id)}>
                             {category.code}
@@ -545,34 +508,16 @@ export const CreateCriteriaContextual = ({
                     )}
                   </Select>
 
-                  {fixedComponent && !isEditing ? (
-                    <Input
-                      label="Componente"
-                      value={fixedComponent.name}
-                      isReadOnly
-                    />
-                  ) : needsComponent ? (
-                    <Select
-                      label="Componente"
-                      placeholder="Selecciona un componente"
-                      selectedKeys={
-                        selectedComponentKey ? [selectedComponentKey] : []
-                      }
-                      onSelectionChange={(keys) => {
-                        const selected = Array.from(keys)[0];
-                        setSelectedComponentKey(
-                          selected ? String(selected) : "",
-                        );
-                      }}
-                      isRequired={requireComponentSelection}
-                    >
-                      {componentOptions.map((component) => (
-                        <SelectItem key={String(component.id)}>
-                          {component.name}
-                        </SelectItem>
-                      ))}
-                    </Select>
-                  ) : null}
+                  <Input
+                    isReadOnly
+                    description={
+                      component
+                        ? undefined
+                        : "Asígnalo a un componente desde la lista de criterios."
+                    }
+                    label="Componente"
+                    value={component?.name ?? "Sin componente"}
+                  />
 
                   <Textarea
                     name="description"
@@ -583,106 +528,48 @@ export const CreateCriteriaContextual = ({
                     maxRows={3}
                     classNames={{ input: "max-h-24 overflow-y-auto" }}
                   />
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-default-600">
-                        Peso (sobre el total del evento)
-                      </span>
-                      <span className="font-semibold text-default-800">
-                        {weightPercent}%
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-3 min-w-0">
-                      <input
-                        type="range"
-                        min={0}
-                        max={100}
-                        step={1}
-                        value={Math.round(Number(weightPercent) || 0)}
-                        onChange={(event) => {
-                          const intVal = Math.round(Number(event.target.value));
-                          setWeightPercent(intVal);
-                          setWeightInput(String(intVal));
-                        }}
-                        className="w-full accent-primary"
-                        aria-label="Peso del criterio"
-                        aria-valuemin={0}
-                        aria-valuemax={100}
-                        aria-valuenow={Math.round(Number(weightPercent) || 0)}
-                      />
-                      <Input
-                        // use text input so users can type comma or dot
-                        type="text"
-                        inputMode="decimal"
-                        pattern="[0-9.,]*"
-                        value={weightInput}
-                          onChange={(e: any) => {
-                            const raw = String(e.target.value);
-                            const error = validateWeightInput(raw);
-                            setWeightInput(raw);
-                            setWeightError(error);
-                            if (error) return;
-                            const numeric = raw.replace(",", ".");
-                            if (/^\d+(?:\.\d*)?$/.test(numeric)) {
-                              const parts = numeric.split(".");
-                              if (parts[1] && parts[1].length > 3) return;
-                              const parsed = Number(numeric);
-                              if (!Number.isNaN(parsed)) {
-                                setWeightPercent(parsed);
-                              }
-                            }
-                          }}
-                          onBlur={() => {
-                            const error = validateWeightInput(weightInput);
-                            if (error) {
-                              setWeightError(error);
-                              return;
-                            }
-                            const normalized = weightInput.replace(",", ".");
-                            let parsed = Number(normalized);
-                            if (!Number.isFinite(parsed)) parsed = 0;
-                            parsed = Math.max(0, Math.min(100, parsed));
-                            parsed = Number(parsed.toFixed(3));
-                            setWeightPercent(parsed);
-                            setWeightInput(String(parsed));
-                            setWeightError(null);
-                          }}
-                        className="w-28 min-w-0 flex-shrink-0"
-                      />
-                    </div>
-                    <p className="text-xs text-default-500">
-                      Rango permitido: 0% a 100%.
-                    </p>
-                    {typeof availableWeightPercent === "number" && (
-                      <p className="text-xs text-default-500">
-                        Disponible: {availableWeightPercent.toFixed(0)}%
-                      </p>
-                    )}
-                    {weightError && (
-                      <p className="text-xs text-danger">{weightError}</p>
-                    )}
-                  </div>
+                  <Input
+                    isRequired
+                    description={
+                      isCriterionLocked
+                        ? "Una de sus categorías ya tiene evaluaciones: el peso no se puede cambiar."
+                        : `Frente a los otros criterios de ${component?.name ?? "su componente"} en la misma categoría.`
+                    }
+                    errorMessage={weightError ?? undefined}
+                    inputMode="decimal"
+                    isInvalid={!!weightError}
+                    isReadOnly={isCriterionLocked}
+                    label="Peso relativo"
+                    name="weight"
+                    type="text"
+                    value={weightInput}
+                    onValueChange={setWeightInput}
+                  />
                 </div>
               </ModalBody>
 
-             <ModalFooter className="px-4 pt-2 sm:px-6">
-  <Button
-    color="danger"
-    variant="flat"
-    onPress={closeModal}
-    isDisabled={isPending}
-  >
-    Cancelar
-  </Button>
-  <Button
-    type="submit"
-    color="primary"
-    isLoading={isPending}
-    isDisabled={isPending || !!weightError || nameLength > CRITERION_NAME_MAX_LENGTH}
-  >
-    {isEditing ? "Guardar cambios" : "Crear criterio"}
-  </Button>
-</ModalFooter>
+              <ModalFooter className="px-4 pt-2 sm:px-6">
+                <Button
+                  color="danger"
+                  variant="flat"
+                  onPress={closeModal}
+                  isDisabled={isPending}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  color="primary"
+                  isLoading={isPending}
+                  isDisabled={
+                    isPending ||
+                    !!weightError ||
+                    nameLength > CRITERION_NAME_MAX_LENGTH
+                  }
+                >
+                  {isEditing ? "Guardar cambios" : "Crear criterio"}
+                </Button>
+              </ModalFooter>
             </Form>
           )}
         </ModalContent>
@@ -690,3 +577,12 @@ export const CreateCriteriaContextual = ({
     </>
   );
 };
+
+// Only sessions that can call the endpoint see the action
+export const CreateCriteriaContextual = (
+  props: ComponentProps<typeof CreateCriteriaContextualContent>,
+) => (
+  <Can permission={PERMISSIONS.manageEvents}>
+    <CreateCriteriaContextualContent {...props} />
+  </Can>
+);

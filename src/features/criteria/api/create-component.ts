@@ -6,13 +6,13 @@ import { MutationConfig } from "@/lib/react-query";
 import { CriterionComponent } from "@/types/api";
 
 export const createComponentInputSchema = z.object({
-  name: z.string().min(1, "Required"),
-  eventId: z.number().int().positive("Event ID is required"),
+  name: z.string().min(1, "Este campo es obligatorio"),
+  eventId: z.number().int().positive("El ID del evento es obligatorio"),
   description: z.string().optional(),
   weight: z
     .number()
-    .min(0, "Weight must be greater than or equal to 0")
-    .max(1, "Weight must be less than or equal to 1"),
+    .gt(0, "La ponderación debe ser mayor que 0")
+    .max(1, "La ponderación debe ser menor o igual a 1"),
 });
 
 export type CreateComponentInput = z.infer<typeof createComponentInputSchema>;
@@ -22,7 +22,10 @@ export const createComponent = ({
 }: {
   data: CreateComponentInput;
 }): Promise<CriterionComponent> => {
-  return api.post("/criterions/components", data);
+  // The form shows the error itself
+  return api.post("/criterions/components", data, {
+    suppressErrorNotification: true,
+  });
 };
 
 type UseCreateComponentOptions = {
@@ -39,6 +42,10 @@ export const useCreateComponent = ({
     onSuccess: (data, variables, ...args) => {
       queryClient.invalidateQueries({
         queryKey: ["criterions", "components"],
+      });
+      // A new component without criteria leaves every category without a ready rubric
+      queryClient.invalidateQueries({
+        queryKey: ["criterions", "readiness"],
       });
       onSuccess?.(data, variables, ...args);
     },

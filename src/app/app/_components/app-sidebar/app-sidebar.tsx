@@ -2,22 +2,11 @@
 
 import * as React from "react";
 import Image from "next/image";
-import {
-  Home,
-  MessageSquare,
-  Calendar,
-  Users as UsersIcon,
-  type LucideIcon,
-  Presentation,
-  ShieldCheck,
-  ArrowDownAZ,
-  SquareChartGantt,
-  Mail,
-  ChartNoAxesCombined,
-  PinIcon,
-} from "lucide-react";
 
+import { NavMyEvents } from "./nav-my-events";
 import { NavUser } from "./nav-user";
+import { getSidebarItems, type SidebarItem } from "./sidebar-items";
+
 import {
   Sidebar,
   SidebarContent,
@@ -31,74 +20,23 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 import { useUser } from "@/lib/auth";
+import { useAcademicProfiles } from "@/features/academic/api/get-academic-profiles";
 import { paths } from "@/config/paths";
 import { Link } from "@/components/ui/link";
 import "@/features/landing/index.css";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const user = useUser();
-  const primaryRoleName =
-    user.data?.platformRoles?.[0]?.name ??
-    ((user.data as { role?: string } | undefined)?.role === "ADMIN"
-      ? "Admin"
-      : "User");
-
-  const getMenuItems = React.useMemo((): {
-    title: string;
-    url: string;
-    icon: LucideIcon;
-  }[] => {
-    switch (primaryRoleName) {
-      case "Admin":
-        return [
-          { title: "Dashboard", url: paths.app.root.getHref(), icon: Home },
-          { title: "Events", url: paths.app.events.getHref(), icon: Calendar },
-          { title: "Past Events", url: paths.app.pastEvents.getHref(), icon: Calendar },
-          {
-            title: "Categories",
-            url: paths.app.categories.getHref(),
-            icon: ArrowDownAZ,
-          },
-          {
-            title: "Projects",
-            url: paths.app.projects.getHref(),
-            icon: SquareChartGantt,
-          },
-          {
-            title: "Monitoreo",
-            url: paths.app.monitoring.getHref(),
-            icon: ChartNoAxesCombined,
-          },
-          {
-            title: "Criteria",
-            url: paths.app.criteria.getHref(),
-            icon: Presentation,
-          },
-          { title: "Juries", url: paths.app.juries.getHref(), icon: UsersIcon },
-          { title: "Assignments", url: paths.app.assignments.getHref(), icon: PinIcon },
-          {
-            title: "Administrators",
-            url: paths.app.administrators.getHref(),
-            icon: ShieldCheck,
-          },
-        ];
-      case "User":
-        return [
-          { title: "Dashboard", url: paths.app.root.getHref(), icon: Home },
-          {
-            title: "Mis invitaciones",
-            url: paths.app.invitations.getHref(),
-            icon: Mail,
-          },
-        ];
-      default:
-        return [
-          { title: "Dashboard", url: paths.app.root.getHref(), icon: Home },
-        ];
-    }
-  }, [primaryRoleName]);
-
-  const menuItems = getMenuItems;
+  const profilesQuery = useAcademicProfiles({
+    queryConfig: { enabled: Boolean(user.data) },
+  });
+  // Union of what every role of the session allows (not only the first role)
+  const menuItems = React.useMemo(
+    () => getSidebarItems(user.data, profilesQuery.data),
+    [user.data, profilesQuery.data],
+  );
+  const personalItems = menuItems.filter((item) => item.group === "personal");
+  const adminItems = menuItems.filter((item) => item.group === "admin");
 
   const data = React.useMemo(
     () => ({
@@ -112,11 +50,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         url: paths.home.getHref(),
       },
     }),
-    [user.data?.firstName, user.data?.lastName, user.data?.email]
+    [user.data?.firstName, user.data?.lastName, user.data?.email],
   );
 
   return (
-    <Sidebar collapsible="icon" className="app-sidebar" {...props}>
+    <Sidebar className="app-sidebar" collapsible="icon" {...props}>
       <SidebarHeader suppressHydrationWarning>
         <SidebarMenu>
           <SidebarMenuItem>
@@ -126,11 +64,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             >
               <Link href={data.enterprise.url}>
                 <Image
-                  src={data.enterprise.logo}
                   alt="Iris Logo"
-                  width={20}
-                  height={20}
                   className="!size-5"
+                  height={20}
+                  src={data.enterprise.logo}
+                  width={20}
                 />
                 <span className="text-base font-semibold">
                   {data.enterprise.name}
@@ -141,26 +79,36 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent suppressHydrationWarning>
-        <SidebarGroup>
-          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
-          <SidebarMenu>
-            {menuItems.map((item) => (
-              <SidebarMenuItem key={item.title}>
-                <SidebarMenuButton asChild>
-                  <Link href={item.url}>
-                    <item.icon />
-                    <span>{item.title}</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
-          </SidebarMenu>
-        </SidebarGroup>
+        <NavGroup items={personalItems} />
+        <NavMyEvents />
+        {adminItems.length > 0 && (
+          <NavGroup items={adminItems} label="Administración" />
+        )}
       </SidebarContent>
       <SidebarFooter suppressHydrationWarning>
         <NavUser user={data.user} />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
+  );
+}
+
+function NavGroup({ items, label }: { items: SidebarItem[]; label?: string }) {
+  return (
+    <SidebarGroup>
+      {label && <SidebarGroupLabel>{label}</SidebarGroupLabel>}
+      <SidebarMenu>
+        {items.map((item) => (
+          <SidebarMenuItem key={item.title}>
+            <SidebarMenuButton asChild tooltip={item.title}>
+              <Link href={item.url}>
+                <item.icon />
+                <span>{item.title}</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        ))}
+      </SidebarMenu>
+    </SidebarGroup>
   );
 }

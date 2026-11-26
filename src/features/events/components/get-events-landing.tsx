@@ -55,18 +55,18 @@ export const GetEventsLanding = () => {
                 <div className="flex items-center  justify-between">
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-default-400" />
-                    <span className="text-default-400">Start:</span>
+                    <span className="text-default-400">Inicio:</span>
                     <span>{event.startDate}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-default-400" />
-                    <span className="text-default-400">End:</span>
+                    <span className="text-default-400">Fin:</span>
                     <span>{event.endDate}</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-default-400" />
-                  <span className="text-default-400">Deadline:</span>
+                  <span className="text-default-400">Cierre de inscripción:</span>
                   <span>{event.inscriptionDeadline}</span>
                 </div>
               </div>

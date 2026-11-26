@@ -89,8 +89,9 @@ export const StudentDashboardTeamSection = ({
     onSuccess: () => {
       addNotification({
         type: "success",
-        title: "Invitación enviada",
-        message: "La invitación se envió correctamente.",
+        // The email is registered and sent in the background (not "sent" yet)
+        title: "Invitación registrada",
+        message: "El correo de la invitación se enviará en unos minutos.",
       });
     },
     onError: (error: any) => {
@@ -163,7 +164,7 @@ export const StudentDashboardTeamSection = ({
     if (!newMember.email) {
       addNotification({
         type: "error",
-        title: "Email requerido",
+        title: "Correo electrónico requerido",
         message: "Ingresa el correo del miembro.",
       });
       return;

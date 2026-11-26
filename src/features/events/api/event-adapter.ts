@@ -1,5 +1,6 @@
 import { Event } from "@/types/api";
 import { toEventTypeCode, toEvaluationTypeCode } from "../utils/event-enums";
+import { normalizeGradingScale } from "@/features/grading-scales/utils/grading-scale";
 
 const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -145,7 +146,7 @@ export const normalizeEvent = (raw: any): Event => {
   const collaborators = raw?.collaborators ?? [];
   const awards = raw?.awards ?? [];
   const categories = raw?.categories ?? [];
-  const rankingConfig = raw?.rankingConfig ?? raw?.rankingConfiguration ?? raw?.ranking_config;
+  const rankingConfig = raw?.rankingConfig ?? raw?.rankingConfiguration ?? raw?.ranking_config ?? raw?.rankingEvent;
   const rankingConfigId =
     raw?.rankingConfigId ??
     raw?.rankingConfigurationId ??
@@ -171,6 +172,10 @@ export const normalizeEvent = (raw: any): Event => {
         ? raw.isPubliclyJoinable
         : Boolean(raw?.isPublic),
     evaluationsOpened,
+    resultsPublished: raw?.resultsPublished === true,
+    termId: typeof raw?.termId === "number" ? raw.termId : undefined,
+    // The gateway leaves false booleans out of the response
+    requiresCourse: raw?.requiresCourse === true,
     statusName: raw?.statusName ?? (active ? "ACTIVE" : "INACTIVE"),
     location: raw?.location,
     locationDetails,
@@ -181,6 +186,7 @@ export const normalizeEvent = (raw: any): Event => {
     inscriptionRequirements: raw?.inscriptionRequirements,
     aboutOurAllies: raw?.aboutOurAllies,
     evaluationType: toEvaluationTypeCode(raw?.evaluationType),
+    gradingScale: normalizeGradingScale(raw?.gradingScale),
     minimumTeamSize: raw?.minimumTeamSize,
     specificInscriptionDetails: raw?.specificInscriptionDetails,
     categories,
@@ -191,10 +197,22 @@ export const normalizeEvent = (raw: any): Event => {
       ? {
           id: rankingConfig.id ?? rankingConfig.rankingConfigId,
           eventId: rankingConfig.eventId ?? raw?.id,
-          positions: rankingConfig.positions,
+          positions: rankingConfig.positions ?? rankingConfig.visiblePositions,
           visiblePositions: rankingConfig.visiblePositions ?? rankingConfig.positions,
-          visibleInLanding: rankingConfig.visibleInLanding,
-          visibleScore: rankingConfig.visibleScore,
+          visibleInLanding:
+            typeof rankingConfig.visibleInLanding === "boolean"
+              ? rankingConfig.visibleInLanding
+              : typeof rankingConfig.visiblePublic === "boolean"
+                ? rankingConfig.visiblePublic
+                : typeof rankingConfig.isPublic === "boolean"
+                  ? rankingConfig.isPublic
+                  : undefined,
+          visibleScore:
+            typeof rankingConfig.visibleScore === "boolean"
+              ? rankingConfig.visibleScore
+              : typeof rankingConfig.gradeVisible === "boolean"
+                ? rankingConfig.gradeVisible
+                : undefined,
         }
       : undefined,
     rankingConfigId: typeof rankingConfigId === 'number' ? rankingConfigId : undefined,

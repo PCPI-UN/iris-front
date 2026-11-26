@@ -500,7 +500,11 @@ export const eventsHandlers = [
         );
       }
 
-      if (event.status !== 4) {
+      const isPastByDate = Boolean(
+        event.endDate && new Date(String(event.endDate)).getTime() < Date.now(),
+      );
+
+      if (event.status !== 4 && !isPastByDate) {
         return HttpResponse.json(
           { message: "Event is not a past event" },
           { status: 403 }
@@ -586,6 +590,161 @@ export const eventsHandlers = [
           participants: uniqueParticipants,
         },
       });
+    } catch (error: any) {
+      return HttpResponse.json(
+        { message: error?.message || "Server Error" },
+        { status: 500 }
+      );
+    }
+  }),
+
+  http.get(`${env.API_URL}/events/ranking-config/:eventId`, async ({ params }) => {
+    await networkDelay();
+
+    try {
+      const eventId = toInternalPrefixedId(String(params.eventId), "event");
+      const event = db.event.findFirst({
+        where: {
+          id: {
+            equals: eventId,
+          },
+        },
+      }) as any;
+
+      if (!event) {
+        return HttpResponse.json({ data: null });
+      }
+
+      const rawConfig = event.rankingConfig ?? event.rankingConfiguration ?? null;
+      if (!rawConfig) {
+        const isPastClosed =
+          Number(event.status) === 4 ||
+          Boolean(event.endDate && new Date(String(event.endDate)).getTime() < Date.now());
+        return HttpResponse.json({
+          data: isPastClosed
+            ? {
+                id: toPublicNumericId(String(event.id), "event"),
+                eventId: toPublicNumericId(String(event.id), "event"),
+                positions: 3,
+                visiblePositions: 3,
+                visibleInLanding: true,
+                visibleScore: true,
+              }
+            : null,
+        });
+      }
+
+      return HttpResponse.json({
+        data: {
+          id: rawConfig.id ?? toPublicNumericId(String(event.id), "event"),
+          eventId: toPublicNumericId(String(event.id), "event"),
+          positions: rawConfig.positions ?? rawConfig.visiblePositions ?? 3,
+          visiblePositions: rawConfig.visiblePositions ?? rawConfig.positions ?? 3,
+          visibleInLanding: Boolean(
+            rawConfig.visibleInLanding ?? rawConfig.visiblePublic ?? rawConfig.isPublic,
+          ),
+          visibleScore: rawConfig.visibleScore ?? rawConfig.gradeVisible ?? true,
+        },
+      });
+    } catch (error: any) {
+      return HttpResponse.json(
+        { message: error?.message || "Server Error" },
+        { status: 500 }
+      );
+    }
+  }),
+
+  http.get(`${env.API_URL}/events/:eventId/rankings/public`, async ({ params, request }) => {
+    await networkDelay();
+
+    try {
+      const eventId = toInternalPrefixedId(String(params.eventId), "event");
+      const url = new URL(request.url);
+      const rawCategoryId = url.searchParams.get("categoryId") ?? url.searchParams.get("category_id");
+      const filterCategoryId = rawCategoryId ? Number(rawCategoryId) : undefined;
+
+      const event = db.event.findFirst({
+        where: {
+          id: {
+            equals: eventId,
+          },
+        },
+      }) as any;
+
+      if (!event) {
+        return HttpResponse.json({ data: [] });
+      }
+
+      let projects = db.project
+        .findMany({
+          where: {
+            eventId: {
+              equals: event.id,
+            },
+          },
+        })
+        .filter((project: any) => String(project.state ?? "").toUpperCase() === "APPROVED");
+
+      if (filterCategoryId && Number.isFinite(filterCategoryId) && filterCategoryId > 0) {
+        projects = projects.filter((project: any) => {
+          const projCatId = toPublicNumericId(
+            String(project.categoryId ?? project.courseId ?? ""),
+            "course",
+          );
+          return projCatId === filterCategoryId || Number(project.categoryId) === filterCategoryId;
+        });
+      }
+
+      const scoredProjects = projects
+        .map((project: any) => {
+          const evaluations = db.evaluation.findMany({
+            where: {
+              projectId: {
+                equals: String(project.id),
+              },
+            },
+          });
+
+          const avgScore =
+            evaluations.length > 0
+              ? evaluations.reduce((sum: number, ev: any) => sum + Number(ev.grade ?? 0), 0) /
+                evaluations.length
+              : typeof project.score === "number"
+                ? project.score
+                : undefined;
+
+          const categoryId = toPublicNumericId(
+            String(project.categoryId ?? project.courseId ?? ""),
+            "course",
+          );
+
+          return {
+            project,
+            avgScore,
+            evaluationCount: evaluations.length,
+            categoryId: categoryId > 0 ? categoryId : undefined,
+          };
+        })
+        .filter((entry) => entry.avgScore !== undefined)
+        .sort((a, b) => Number(b.avgScore ?? 0) - Number(a.avgScore ?? 0));
+
+      const data = scoredProjects.map((entry, idx) => ({
+        position: idx + 1,
+        projectId: toPublicNumericId(String(entry.project.id), "project") || idx + 1,
+        projectCode: entry.project.projectCode ?? entry.project.eventNumber ?? "",
+        projectName: entry.project.name,
+        description: entry.project.description,
+        state: "APPROVED",
+        categoryId: entry.categoryId,
+        evaluationCount: entry.evaluationCount,
+        averageGrade: Number(Number(entry.avgScore).toFixed(2)),
+        participants: (entry.project.participants ?? []).map((p: any) =>
+          `${p.firstName ?? ""} ${p.lastName ?? ""}`.trim() || p.email || "Participante",
+        ),
+        documents: entry.project.documents ?? [],
+      }));
+
+      return HttpResponse.json({ data });
     } catch (error: any) {
       return HttpResponse.json(
         { message: error?.message || "Server Error" },
@@ -710,6 +869,8 @@ export const eventsHandlers = [
       const url = new URL(request.url);
       const page = Number(url.searchParams.get("page") || 1);
       const validPage = validatePage(page);
+      // Like the gateway: limit 1-50, 10 by default
+      const limit = Math.min(50, Math.max(1, Number(url.searchParams.get("limit")) || PAGE_SIZE));
 
       const memberships = db.eventMembership?.findMany({
         where: {
@@ -739,16 +900,104 @@ export const eventsHandlers = [
         });
 
       const total = myEvents.length;
-      const pagination = calculatePagination(total, validPage);
-      const startIndex = PAGE_SIZE * (pagination.page - 1);
-      const endIndex = startIndex + PAGE_SIZE;
-      const paginatedEvents = myEvents.slice(startIndex, endIndex);
+      const totalPages = Math.max(1, Math.ceil(total / limit));
+      const pagination = { page: Math.min(validPage, totalPages), total, totalPages };
+      const startIndex = limit * (pagination.page - 1);
+      const paginatedEvents = myEvents.slice(startIndex, startIndex + limit);
 
-      return HttpResponse.json(toDualResponse(paginatedEvents, pagination));
+      return HttpResponse.json({ ...toDualResponse(paginatedEvents, pagination), limit });
     } catch (error: any) {
       return HttpResponse.json(
         { message: error?.message || "Server Error" },
         { status: 500 }
+      );
+    }
+  }),
+
+  // GET /me/events: the events where the session holds a role, with all its roles
+  http.get(`${env.API_URL}/me/events`, async ({ cookies, request }) => {
+    await networkDelay();
+
+    try {
+      const { user, error } = requireAuth(cookies);
+      if (error || !user) {
+        return HttpResponse.json({ message: error || "Unauthorized" }, { status: 401 });
+      }
+
+      const url = new URL(request.url);
+      const status = url.searchParams.get("status");
+      if (status !== "current" && status !== "past") {
+        return HttpResponse.json(
+          { message: "status must be current or past" },
+          { status: 400 },
+        );
+      }
+
+      const validPage = validatePage(Number(url.searchParams.get("page") || 1));
+      const limit = Math.min(50, Math.max(1, Number(url.searchParams.get("limit")) || PAGE_SIZE));
+      const email = String(user.email ?? "").toLowerCase();
+      const now = Date.now();
+
+      const rolesByEvent = new Map<string, Set<string>>();
+      const addRole = (eventId: string, role: string) => {
+        if (!rolesByEvent.has(eventId)) rolesByEvent.set(eventId, new Set());
+        rolesByEvent.get(eventId)!.add(role);
+      };
+      const hasEmail = (people: any[] | undefined) =>
+        (people ?? []).some((person) => String(person?.email ?? "").toLowerCase() === email);
+
+      for (const membership of db.eventMembership?.findMany({ where: { userId: { equals: user.id } } }) ?? []) {
+        addRole(membership.eventId, membership.eventRole === "JURY" ? "JURY" : "PARTICIPANT");
+      }
+      for (const project of db.project.findMany({})) {
+        if (hasEmail(project.participants as any[])) addRole(project.eventId, "PARTICIPANT");
+        if (hasEmail(project.tutors as any[])) addRole(project.eventId, "TUTOR");
+      }
+
+      // Same fixed order as the backend
+      const ORDER = ["JURY", "PARTICIPANT", "TUTOR", "PROFESSOR", "DIRECTOR"];
+      const events = db.event
+        .findMany({ where: { id: { in: [...rolesByEvent.keys()] } } })
+        .filter((event) => {
+          const ended = new Date(event.endDate).getTime() < now;
+          return status === "past" ? ended : !ended;
+        })
+        .sort((a, b) => {
+          const byStart = new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
+          const byEnd = new Date(b.endDate).getTime() - new Date(a.endDate).getTime();
+          return status === "current" ? byStart : byEnd;
+        })
+        .map((event) => {
+          const { accessCode: _accessCode, status: _status, ...rest } = mapEventToDTO(event);
+          const start = new Date(event.startDate).getTime();
+          const deadline = new Date(event.inscriptionDeadline).getTime();
+          const statusName =
+            new Date(event.endDate).getTime() < now
+              ? "CLOSED"
+              : start <= now
+                ? "AVAILABLE"
+                : deadline >= now
+                  ? "UPCOMING"
+                  : "REGISTRATION_CLOSED";
+          const roles = [...rolesByEvent.get(event.id)!].sort(
+            (a, b) => ORDER.indexOf(a) - ORDER.indexOf(b),
+          );
+          return { ...rest, statusName, statusDescription: statusName, roles };
+        });
+
+      const total = events.length;
+      const totalPages = Math.max(1, Math.ceil(total / limit));
+      const currentPage = Math.min(validPage, totalPages);
+      const start = limit * (currentPage - 1);
+
+      return HttpResponse.json({
+        events: events.slice(start, start + limit),
+        meta: { total, currentPage, totalPages, itemsPerPage: limit },
+      });
+    } catch (error: any) {
+      return HttpResponse.json(
+        { message: error?.message || "Server Error" },
+        { status: 500 },
       );
     }
   }),
@@ -776,6 +1025,21 @@ export const eventsHandlers = [
         { status: 500 }
       );
     }
+  }),
+
+  // Academic terms an event can be created or edited with, newest first
+  http.get(`${env.API_URL}/terms`, async ({ cookies }) => {
+    await networkDelay();
+
+    const { error } = requireAuth(cookies);
+    if (error) {
+      return HttpResponse.json({ message: error }, { status: 401 });
+    }
+
+    return HttpResponse.json([
+      { id: 2, year: 2026, period: "30" },
+      { id: 1, year: 2026, period: "10" },
+    ]);
   }),
 
   http.get(`${env.API_URL}/events/dropdown`, async ({ cookies }) => {

@@ -145,10 +145,10 @@ export const ParticipantsDetails = ({
             <table className="w-full">
               <thead className="bg-white/5">
                 <tr className="text-left text-xs font-semibold uppercase tracking-[0.18em] text-white/60 border-b border-white/10">
-                  <th className="px-4 py-3 min-w-fit">Full Name</th>
-                  <th className="px-4 py-3 min-w-fit">Semester</th>
-                  <th className="px-4 py-3 min-w-fit">Career</th>
-                  <th className="px-4 py-3 min-w-fit">Email</th>
+                  <th className="px-4 py-3 min-w-fit">Nombre completo</th>
+                  <th className="px-4 py-3 min-w-fit">Semestre</th>
+                  <th className="px-4 py-3 min-w-fit">Programa académico</th>
+                  <th className="px-4 py-3 min-w-fit">Correo electrónico</th>
                 </tr>
               </thead>
               <tbody>
@@ -164,7 +164,7 @@ export const ParticipantsDetails = ({
                             <p className="font-medium text-white whitespace-nowrap">{participant.displayName}</p>
                             {participant.status === "PENDING" && (
                               <span className="inline-flex items-center rounded-full border border-amber-400/20 bg-amber-400/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-300 shrink-0">
-                                PENDING
+                                PENDIENTE
                               </span>
                             )}
                           </div>
@@ -198,7 +198,7 @@ export const ParticipantsDetails = ({
                         </p>
                         {participant.status === "PENDING" && (
                           <span className="inline-flex shrink-0 items-center rounded-full border border-amber-400/20 bg-amber-400/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-300">
-                            PENDING
+                            PENDIENTE
                           </span>
                         )}
                       </div>
@@ -214,11 +214,11 @@ export const ParticipantsDetails = ({
 
                   <div className="grid grid-cols-[repeat(auto-fit,minmax(8rem,1fr))] gap-2 text-sm">
                     <div className="min-w-0 space-y-1 rounded-lg bg-white/[0.03] p-2">
-                      <p className="text-[10px] uppercase tracking-[0.16em] text-white/60">Semester</p>
+                      <p className="text-[10px] uppercase tracking-[0.16em] text-white/60">Semestre</p>
                       <p className="text-xs font-medium text-white break-words">{participant.displaySemester}</p>
                     </div>
                     <div className="min-w-0 space-y-1 rounded-lg bg-white/[0.03] p-2">
-                      <p className="text-[10px] uppercase tracking-[0.16em] text-white/60">Career</p>
+                      <p className="text-[10px] uppercase tracking-[0.16em] text-white/60">Programa académico</p>
                       <p className="text-xs font-medium text-white break-words">{participant.displayCareer}</p>
                     </div>
                   </div>

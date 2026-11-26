@@ -1,32 +1,33 @@
-import { api } from "@/lib/api-client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { MutationConfig } from "@/lib/react-query";
 import { z } from "zod";
 
+import { api } from "@/lib/api-client";
+import { MutationConfig } from "@/lib/react-query";
+
 const evaluationScoreSchema = z.object({
-  criterionId: z.number().min(1),  
-  score: z.number().min(0),         
+  criterionId: z.number().min(1),
+  score: z.number().min(0),
 });
 
-
 export const createEvaluationInputSchema = z.object({
-  projectId: z.number(),          
+  projectId: z.number(),
   comments: z.string().optional(),
   scores: z
     .array(evaluationScoreSchema)
-    .min(1, "At least one score is required"),
+    .min(1, "Debes asignar al menos una calificación"),
 });
 
-export type CreateEvaluationInput = z.infer<
-  typeof createEvaluationInputSchema
->;
+export type CreateEvaluationInput = z.infer<typeof createEvaluationInputSchema>;
 
 export const createEvaluation = ({
   data,
 }: {
   data: CreateEvaluationInput;
 }): Promise<any> => {
-  return api.post(`/evaluations/projects/evaluate`, data);
+  // The jury view shows its own message for the errors
+  return api.post(`/evaluations/projects/evaluate`, data, {
+    suppressErrorNotification: true,
+  });
 };
 
 type UseCreateEvaluationOptions = {

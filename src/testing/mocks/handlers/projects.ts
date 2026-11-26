@@ -2,6 +2,8 @@ import { HttpResponse, http } from "msw";
 import { env } from "@/config/env";
 import { db, persistDb } from "../db";
 import { requireAuth, networkDelay } from "../utils";
+import { projectChangeLog, recordProjectChange } from "./project-change-log-store";
+import { toProjectReadResponse } from "./project-admin";
 
 type ProjectBody = {
   eventId: string;
@@ -107,7 +109,10 @@ const mapProjectToDTO = (project: any): ProjectDTO => {
     projectCode: project.projectCode ?? "",
     eventNumber: project.eventNumber || "",
     createdAt: project.createdAt,
-    documents: project.documents ?? [],
+    // Like the gateway, the reads leave the INACTIVE documents out
+    documents: (project.documents ?? []).filter(
+      (document: { state?: string }) => document.state !== "INACTIVE"
+    ),
     reason: project.reason,
     participants: project.participants ?? [],
   };
@@ -178,7 +183,151 @@ const isUserJuryOfEvent = (userId: string, eventId: string): boolean => {
   return !!membership;
 };
 
+type AdminChangeStateBody = {
+  state?: string;
+  reason?: string;
+  notify?: boolean;
+  force?: boolean;
+};
+
+const ADMIN_PROJECT_STATES = ["UNDER_REVIEW", "APPROVED", "REJECTED", "REQUEST_CHANGES"];
+
 export const projectsHandlers = [
+  // PATCH /projects/:id/admin/state (manage:projects): 409 PROJECT_STATE_CHANGE_BLOCKED
+  // when the project has evaluations, unless force
+  http.patch(
+    `${env.API_URL}/projects/:projectId/admin/state`,
+    async ({ cookies, request, params }) => {
+      await networkDelay();
+      const { error, user } = requireAuth(cookies);
+      if (error) {
+        return HttpResponse.json({ message: error }, { status: 401 });
+      }
+
+      const projectId = params.projectId as string;
+      const { state, reason, force } = (await request.json()) as AdminChangeStateBody;
+      const trimmedReason = reason?.trim() ?? "";
+
+      if (!state || !ADMIN_PROJECT_STATES.includes(state)) {
+        return HttpResponse.json(
+          { message: "El estado debe ser UNDER_REVIEW, APPROVED, REJECTED o REQUEST_CHANGES" },
+          { status: 400 }
+        );
+      }
+      if (!trimmedReason) {
+        return HttpResponse.json(
+          { message: "El motivo del cambio de estado es obligatorio" },
+          { status: 400 }
+        );
+      }
+
+      const project = db.project.findFirst({ where: { id: { equals: projectId } } });
+      if (!project) {
+        return HttpResponse.json({ message: "Project not found" }, { status: 404 });
+      }
+      if (project.state === state) {
+        return HttpResponse.json(
+          { message: "El proyecto ya está en ese estado" },
+          { status: 400 }
+        );
+      }
+
+      const evaluationCount = db.evaluation.count({
+        where: { projectId: { equals: projectId } },
+      });
+      if (evaluationCount > 0 && !force) {
+        return HttpResponse.json(
+          {
+            statusCode: 409,
+            message: `No se cambió el estado porque el proyecto ya tiene ${evaluationCount} evaluaciones de jurados. Confirma el cambio para aplicarlo de todas formas.`,
+            code: "PROJECT_STATE_CHANGE_BLOCKED",
+            details: {
+              hasEvaluations: true,
+              evaluationCount,
+              resultsPublished: false,
+              leavesApproved: project.state === "APPROVED",
+            },
+            timestamp: new Date().toISOString(),
+          },
+          { status: 409 }
+        );
+      }
+
+      const keepsReason = state === "REJECTED" || state === "REQUEST_CHANGES";
+      const updated = db.project.update({
+        where: { id: { equals: projectId } },
+        data: { state, reason: keepsReason ? trimmedReason : "" },
+      });
+      await persistDb("project");
+
+      recordProjectChange(projectId, user, "STATE", { state: project.state }, { state }, trimmedReason);
+
+      return HttpResponse.json({ project: updated, failedEffects: [], warning: null });
+    }
+  ),
+
+  // GET /projects/:id/change-log (manage:projects), most recent first
+  http.get(
+    `${env.API_URL}/projects/:projectId/change-log`,
+    async ({ cookies, params }) => {
+      await networkDelay();
+      const { error } = requireAuth(cookies);
+      if (error) {
+        return HttpResponse.json({ message: error }, { status: 401 });
+      }
+      const projectId = params.projectId as string;
+      return HttpResponse.json({ entries: projectChangeLog.get(projectId) ?? [] });
+    }
+  ),
+
+  // GET /projects/assigned-projects: the juror's projects in an event, with their own
+  // evaluation (`score` as the level 1-4). Before "/projects/:projectId", which also matches it.
+  http.get(`${env.API_URL}/projects/assigned-projects`, async ({ cookies, request }) => {
+    await networkDelay();
+    const { user, error } = requireAuth(cookies);
+    if (error || !user) {
+      return HttpResponse.json({ message: error || "Unauthorized" }, { status: 401 });
+    }
+
+    const url = new URL(request.url);
+    const rawEventId = url.searchParams.get("eventId") ?? "";
+    const page = Math.max(1, Number(url.searchParams.get("page") || 1));
+    const pageSize = Math.max(1, Number(url.searchParams.get("pageSize") || 20));
+    const userId = String((user as any)?.id ?? (user as any)?.userId ?? "");
+    const eventId = rawEventId ? toInternalPrefixedId(rawEventId, "event") : "";
+
+    const assigned = db.project
+      .getAll()
+      .filter((p) => !eventId || String(p.eventId) === eventId)
+      .filter((p) => isUserAssignedToProject(p, userId));
+
+    const items = assigned.slice((page - 1) * pageSize, page * pageSize).map((project) => {
+      const evaluation = db.evaluation.findFirst({
+        where: {
+          projectId: { equals: String(project.id) },
+          memberUserId: { equals: userId },
+        },
+      });
+
+      return {
+        ...mapProjectToDTO(project),
+        projectCode: project.projectCode || undefined,
+        evaluated: Boolean(evaluation),
+        ...(evaluation && {
+          evaluation: {
+            id: evaluation.id,
+            grade: evaluation.grade,
+            comments: evaluation.comments || undefined,
+            date: new Date(evaluation.createdAt).toISOString(),
+            scores: (evaluation.scores ?? []) as unknown[],
+          },
+        }),
+      };
+    });
+
+    return HttpResponse.json({ items, page, pageSize, total: assigned.length });
+  }),
+
   // Contract used by src/features/projects/api/get-projects.ts
   http.get(`${env.API_URL}/projects/by-event/:eventId`, async ({ cookies, request, params }) => {
     await networkDelay();
@@ -254,10 +403,7 @@ export const projectsHandlers = [
     await networkDelay();
 
     try {
-      const { user, error } = requireAuth(cookies);
-      if (error || !user) {
-        return HttpResponse.json({ message: error || 'Unauthorized' }, { status: 401 });
-      }
+      const { user } = requireAuth(cookies);
 
       const rawEventId = String(params.eventId ?? '');
       if (!rawEventId || rawEventId === 'undefined' || rawEventId === 'NaN') {
@@ -319,11 +465,9 @@ export const projectsHandlers = [
         });
       }
 
-      if (user.role !== 'ADMIN') {
+      if (user && user.role !== 'ADMIN') {
         const userId = (user as any)?.id ?? (user as any)?.userId;
-        if (!userId || !isUserJuryOfEvent(userId, eventId)) {
-          allProjects = [];
-        } else {
+        if (userId && isUserJuryOfEvent(userId, eventId)) {
           allProjects = allProjects.filter((p) => isUserAssignedToProject(p, userId));
         }
       }
@@ -444,9 +588,7 @@ export const projectsHandlers = [
         );
       }
 
-      const project = db.project.findFirst({
-        where: { id: { equals: projectId } },
-      });
+      const project = toProjectReadResponse(projectId);
 
       if (!project) {
         return HttpResponse.json(
@@ -582,68 +724,6 @@ export const projectsHandlers = [
         return HttpResponse.json({
           data: projects,
           meta: pagination,
-        });
-      } catch (error: any) {
-        return HttpResponse.json(
-          { message: error?.message || "Server Error" },
-          { status: 500 }
-        );
-      }
-    }
-  ),
-
-  // Contract used by src/features/projects/api/get-project-user-event.ts
-  http.get(
-    `${env.API_URL}/events/:eventId/my-project`,
-    async ({ cookies, params }) => {
-      await networkDelay();
-      try {
-        const { user, error } = requireAuth(cookies);
-        if (error || !user) {
-          return HttpResponse.json({ message: error || "Unauthorized" }, { status: 401 });
-        }
-
-        const eventId = toInternalPrefixedId(String(params.eventId ?? ""), "event");
-        const userId = (user as any)?.id ?? (user as any)?.userId;
-
-        if (!eventId || !userId) {
-          return HttpResponse.json(
-            { message: "Missing eventId or userId" },
-            { status: 400 }
-          );
-        }
-
-        // Find the user's project in this event
-        const project = db.project.findFirst({
-          where: {
-            eventId: { equals: eventId },
-          },
-        });
-
-        if (!project) {
-          return HttpResponse.json(
-            { message: "Project not found in this event" },
-            { status: 404 }
-          );
-        }
-
-        // Find the event
-        const event = db.event.findFirst({
-          where: { id: { equals: eventId } },
-        });
-
-        if (!event) {
-          return HttpResponse.json(
-            { message: "Event not found" },
-            { status: 404 }
-          );
-        }
-
-        return HttpResponse.json({
-          data: {
-            project,
-            event,
-          },
         });
       } catch (error: any) {
         return HttpResponse.json(
@@ -931,34 +1011,4 @@ export const projectsHandlers = [
       }
     }
   ),
-
-  http.delete(`${env.API_URL}/projects/:id`, async ({ cookies, params }) => {
-    await networkDelay();
-    try {
-      const { error } = requireAuth(cookies);
-      if (error) {
-        return HttpResponse.json({ message: error }, { status: 401 });
-      }
-
-      const projectId = params.id as string;
-      const project = db.project.delete({
-        where: { id: { equals: projectId } },
-      });
-
-      if (!project) {
-        return HttpResponse.json(
-          { message: "Project not found" },
-          { status: 404 }
-        );
-      }
-
-      await persistDb("project");
-      return HttpResponse.json({ data: project });
-    } catch (error: any) {
-      return HttpResponse.json(
-        { message: error?.message || "Server Error" },
-        { status: 500 }
-      );
-    }
-  }),
 ];

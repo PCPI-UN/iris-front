@@ -1,7 +1,11 @@
 import { delay } from 'msw';
 import Cookies from 'js-cookie';
 
+import { PERMISSIONS } from '@/lib/authorization';
+
 import { db } from './db';
+
+export const ADMIN_PLATFORM_PERMISSIONS: string[] = Object.values(PERMISSIONS);
 
 export const encode = (obj: any) => {
   const btoa =
@@ -47,8 +51,33 @@ const omit = <T extends object>(obj: T, keys: string[]): T => {
   return result;
 };
 
-export const sanitizeUser = <O extends object>(user: O) =>
-  omit<O>(user, ['password', 'iat']);
+const normalizePlatformPermissions = (user: Record<string, any>): string[] => {
+  const perms: unknown[] = Array.isArray(user.platformPermissions)
+    ? user.platformPermissions
+    : [];
+  const hasWildcard = perms.includes('*');
+  const isAdmin =
+    user.role === 'ADMIN' ||
+    (Array.isArray(user.platformRoles) &&
+      user.platformRoles.some(
+        (r: any) => typeof r?.name === 'string' && r.name.toLowerCase() === 'admin',
+      ));
+
+  if (hasWildcard || (isAdmin && perms.length === 0)) {
+    const rest = perms.filter((p): p is string => typeof p === 'string' && p !== '*');
+    return Array.from(new Set([...ADMIN_PLATFORM_PERMISSIONS, ...rest]));
+  }
+
+  return perms.filter((p): p is string => typeof p === 'string');
+};
+
+export const sanitizeUser = <O extends object>(user: O): O => {
+  const sanitized = omit<O>(user, ['password', 'iat']) as Record<string, any>;
+  if ('platformPermissions' in sanitized || sanitized.role === 'ADMIN') {
+    sanitized.platformPermissions = normalizePlatformPermissions(sanitized);
+  }
+  return sanitized as O;
+};
 
 export function authenticate({
   email,

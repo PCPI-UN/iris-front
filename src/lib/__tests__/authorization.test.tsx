@@ -1,103 +1,94 @@
-import { Comment, User } from '@/types/api';
+import { User } from "@/types/api";
 
 import {
-  canCreateDiscussion,
-  canDeleteDiscussion,
-  canUpdateDiscussion,
+  canCreateEvent,
+  canInviteJury,
+  canManageUserRoles,
+  canUpdateProject,
+  canViewAdministration,
+  canViewCategories,
   canViewUsers,
-  canDeleteComment,
-} from '../authorization';
+  hasAllPermissions,
+  hasAnyPermission,
+  hasPermission,
+} from "../authorization";
 
-describe('Discussion Authorization', () => {
-  const adminUser: User = {
-    id: '1',
-    role: 'ADMIN',
-  } as User;
+const withPermissions = (permissions: string[], roleNames: string[] = []) =>
+  ({
+    id: 1,
+    platformRoles: roleNames.map((name) => ({ name })),
+    platformPermissions: permissions,
+  }) as unknown as User;
 
-  const regularUser: User = {
-    id: '2',
-    role: 'USER',
-  } as User;
+// Same permissions as the backend catalogue (auth-service migration)
+const admin = withPermissions(
+  [
+    "read:events",
+    "manage:events",
+    "read:grades",
+    "read:users",
+    "manage:user_roles",
+    "manage:admins",
+  ],
+  ["Admin"],
+);
+const dean = withPermissions(
+  ["read:events", "read:grades", "read:users", "read:invitations"],
+  ["Dean"],
+);
+const student = withPermissions(
+  ["view:public_events", "manage:own_profile"],
+  ["User"],
+);
 
-  test('should allow admin to create discussions', () => {
-    expect(canCreateDiscussion(adminUser)).toBe(true);
-    expect(canCreateDiscussion(regularUser)).toBe(false);
-    expect(canCreateDiscussion(null)).toBe(false);
-    expect(canCreateDiscussion(undefined)).toBe(false);
+describe("hasPermission", () => {
+  test("decides by the session permissions", () => {
+    expect(hasPermission(dean, "read:events")).toBe(true);
+    expect(hasPermission(dean, "manage:events")).toBe(false);
+    expect(hasPermission(null, "read:events")).toBe(false);
+    expect(hasPermission(undefined, "read:events")).toBe(false);
   });
 
-  test('should allow admin to delete discussions', () => {
-    expect(canDeleteDiscussion(adminUser)).toBe(true);
-    expect(canDeleteDiscussion(regularUser)).toBe(false);
-    expect(canDeleteDiscussion(null)).toBe(false);
-    expect(canDeleteDiscussion(undefined)).toBe(false);
+  test("ignores the role name", () => {
+    // A user called "Admin" without permissions does not get access
+    const nameOnly = withPermissions([], ["Admin"]);
+    expect(canCreateEvent(nameOnly)).toBe(false);
+    expect(canViewAdministration(nameOnly)).toBe(false);
   });
 
-  test('should allow admin to update discussions', () => {
-    expect(canUpdateDiscussion(adminUser)).toBe(true);
-    expect(canUpdateDiscussion(regularUser)).toBe(false);
-    expect(canUpdateDiscussion(null)).toBe(false);
-    expect(canUpdateDiscussion(undefined)).toBe(false);
-  });
-
-  test('should allow admin to view users', () => {
-    expect(canViewUsers(adminUser)).toBe(true);
-    expect(canViewUsers(regularUser)).toBe(false);
-    expect(canDeleteDiscussion(null)).toBe(false);
-    expect(canDeleteDiscussion(undefined)).toBe(false);
+  test("any / all", () => {
+    expect(hasAnyPermission(dean, ["manage:events", "read:grades"])).toBe(true);
+    expect(hasAllPermissions(dean, ["manage:events", "read:grades"])).toBe(
+      false,
+    );
+    expect(hasAllPermissions(dean, [])).toBe(false);
   });
 });
 
-describe('Comment Authorization', () => {
-  const adminUser: User = {
-    id: '1',
-    role: 'ADMIN',
-  } as User;
-
-  const regularUser: User = {
-    id: '2',
-    role: 'USER',
-  } as User;
-
-  const anotherUser: User = {
-    id: '3',
-    role: 'USER',
-  } as User;
-
-  test('should allow admin to delete any comment', () => {
-    const comment: Comment = {
-      id: '1',
-      author: anotherUser,
-    } as Comment;
-
-    expect(canDeleteComment(adminUser, comment)).toBe(true);
+describe("Authorization helpers", () => {
+  test("writing events, juries and projects requires manage:events", () => {
+    for (const can of [canCreateEvent, canInviteJury, canUpdateProject]) {
+      expect(can(admin)).toBe(true);
+      expect(can(dean)).toBe(false);
+      expect(can(student)).toBe(false);
+      expect(can(null)).toBe(false);
+    }
   });
 
-  test('should allow users to delete their own comments', () => {
-    const comment: Comment = {
-      id: '1',
-      author: regularUser,
-    } as Comment;
-
-    expect(canDeleteComment(regularUser, comment)).toBe(true);
+  test("a read-only role sees the administration but cannot write", () => {
+    expect(canViewAdministration(dean)).toBe(true);
+    expect(canViewUsers(dean)).toBe(true);
+    expect(canManageUserRoles(dean)).toBe(false);
   });
 
-  test('should not allow users to delete others comments', () => {
-    const comment: Comment = {
-      id: '1',
-      author: anotherUser,
-    } as Comment;
-
-    expect(canDeleteComment(regularUser, comment)).toBe(false);
+  test("students do not see the administration", () => {
+    expect(canViewAdministration(student)).toBe(false);
+    expect(canViewUsers(student)).toBe(false);
   });
 
-  test('should not allow unauthorized users to delete comments', () => {
-    const comment: Comment = {
-      id: '1',
-      author: regularUser,
-    } as Comment;
-
-    expect(canDeleteComment(null, comment)).toBe(false);
-    expect(canDeleteComment(undefined, comment)).toBe(false);
+  test("any signed-in user can view categories", () => {
+    expect(canViewCategories(admin)).toBe(true);
+    expect(canViewCategories(student)).toBe(true);
+    expect(canViewCategories(null)).toBe(false);
   });
 });

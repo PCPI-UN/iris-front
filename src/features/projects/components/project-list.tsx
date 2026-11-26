@@ -15,12 +15,16 @@ import { RequestProjectModal } from "./request-change-modal";
 import { ViewDetails } from "./view-details";
 import { DataTable } from "@/components/data-table";
 import { columnsProject } from "./columns-project-table";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { readCategoryIdFromSearchParams } from "@/lib/compat/category-legacy";
 import { ParticipantsDetails } from "./participants-details";
 import { toEventTypeLabel } from "@/features/events/utils/event-enums";
 import { ProjectWithJurors, useProjectsWithJurors } from "../api/get-projects-with-jurors";
 import { SearchProjects } from "../../../components/search-project/search_projects";
+import { documentLink } from "@/lib/document-link";
+import { Can } from "@/components/auth/can";
+import { PERMISSIONS } from "@/lib/authorization";
+import { ChangeProjectStateModal } from "./change-state-modal";
 
 
 export const ProjectList = () => {
@@ -51,25 +55,38 @@ export const ProjectList = () => {
 
   {/* ======================== ACTIONS APPROVE, REJECT, REQUEST FOR TABLE ======================== */}
   const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [action, setAction] = useState<"approve" | "reject" | "request" | null>(null);
+  const [action, setAction] = useState<"approve" | "reject" | "request" | "change-state" | null>(null);
 
-  const handleApprove = (id: number) => {
+  const handleChangeState = (id: number) => {
     setSelectedId(id);
-    setAction("approve");
+    setAction("change-state");
   };
-
-  const handleReject = (id: number) => {
-    setSelectedId(id);
-    setAction("reject");
-  };
-
-  const handleRequest = (id: number) => {
-    setSelectedId(id);
-    setAction("request");
-  };
+  const selectedProject = projects.find((project) => project.id === selectedId);
   {/* ======================== ACTIONS APPROVE, REJECT, REQUEST FOR TABLE ======================== */}
-  const columns = columnsProject({onApprove: handleApprove, onReject: handleReject, onRequest: handleRequest,
-  });
+  // Stable columns: DataTable renders each `Cell` as a component, so new functions on every
+  // render would remount the cells (and close the details modal) whenever the list refetches
+  const columns = useMemo(
+    () =>
+      columnsProject({
+        onApprove: (id) => {
+          setSelectedId(id);
+          setAction("approve");
+        },
+        onReject: (id) => {
+          setSelectedId(id);
+          setAction("reject");
+        },
+        onRequest: (id) => {
+          setSelectedId(id);
+          setAction("request");
+        },
+        onChangeState: (id) => {
+          setSelectedId(id);
+          setAction("change-state");
+        },
+      }),
+    [],
+  );
 
   const handlePageChange = (newPage: number) => {
     const params = new URLSearchParams();
@@ -98,28 +115,28 @@ export const ProjectList = () => {
           variant={state === "UNDER_REVIEW" ? "flat" : "bordered"}
           onClick={() => handleStatusFilter("UNDER_REVIEW")}
         >
-          Under Review
+          En revisión
         </Button>
 
         <Button
           variant={state === "APPROVED" ? "flat" : "bordered"}
           onClick={() => handleStatusFilter("APPROVED")}
         >
-          Approved
+          Aprobado
         </Button>
 
         <Button
           variant={state === "REJECTED" ? "flat" : "bordered"}
           onClick={() => handleStatusFilter("REJECTED")}
         >
-          Rejected
+          Rechazado
         </Button>
 
         <Button
           variant={state === "REQUEST_CHANGES" ? "flat" : "bordered"}
           onClick={() => handleStatusFilter("REQUEST_CHANGES")}
         >
-          Changes required
+          Cambios solicitados
         </Button>
       </div>
 
@@ -178,7 +195,7 @@ export const ProjectList = () => {
                       {/* Encabezado documentos */}
                       <div className="flex items-center gap-2 text-sm">
                         <FileText className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">Documents</span>
+                        <span className="font-medium">Documentos</span>
                       </div>
 
                       {/* Lista de documentos */}
@@ -186,16 +203,17 @@ export const ProjectList = () => {
                         {project.documents.map((doc, index) => {
                           const readableType =
                             doc.type === "POSTER"
-                              ? "Poster"
+                              ? "Póster"
                               : doc.type === "ASSOCIATED_DOCUMENT"
                               ? "Documento asociado"
                               : doc.type;
 
                           return (
-                            <div
+                            <button
                               key={index}
-                              className="w-full flex items-center justify-between p-3 rounded-lg border border-muted/20 bg-muted/5 hover:bg-muted/10 transition-colors cursor-pointer"
-                              onClick={() => window.open(doc.url, "_blank")}
+                              type="button"
+                              className="w-full flex items-center justify-between text-left p-3 rounded-lg border border-muted/20 bg-muted/5 hover:bg-muted/10 transition-colors cursor-pointer"
+                              onClick={() => window.open(documentLink(doc), "_blank")}
                             >
                               <div className="flex items-center gap-2 text-sm">
                                 <FileText className="h-4 w-4 text-primary" />
@@ -210,7 +228,7 @@ export const ProjectList = () => {
                               >
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                               </svg>
-                            </div>
+                            </button>
                           );
                         })}
                       </div>
@@ -226,6 +244,15 @@ export const ProjectList = () => {
                         <ApproveProjectModal projectId={project.id} eventType={selectedEventType} />
                       </div>
                     )}
+                    <Can permission={PERMISSIONS.manageProjects}>
+                      <Button
+                        size="sm"
+                        onPress={() => handleChangeState(project.id)}
+                        className="w-full mb-2 bg-transparent border border-[#ffffff30] py-5 text-white hover:bg-[#eeeeee30]"
+                      >
+                        Cambiar estado
+                      </Button>
+                    </Can>
                       <div className="flex justify-center items-center">
                         <ViewDetails project={project}/>
                       </div>
@@ -273,6 +300,17 @@ export const ProjectList = () => {
           </>
         )}
       </div>
+
+      {selectedProject && (
+        <ChangeProjectStateModal
+          key={selectedProject.id}
+          project={selectedProject}
+          isOpen={action === "change-state"}
+          onOpenChange={(open) => {
+            if (!open) setAction(null);
+          }}
+        />
+      )}
 
       {/* ======================== PAGINATION ======================== */}
       {meta && meta.totalPages > 1 && (

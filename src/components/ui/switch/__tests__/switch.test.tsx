@@ -43,11 +43,16 @@ describe('Switch', () => {
     expect(switchElement).toBeDisabled();
   });
 
-  it('should be readonly when isReadOnly is true', () => {
+  it('should be readonly when isReadOnly is true', async () => {
+    const user = userEvent.setup();
     rtlRender(<Switch isReadOnly defaultSelected>Readonly switch</Switch>);
 
+    // HeroUI marks it with aria-readonly, not the readonly attribute
     const switchElement = screen.getByRole('switch');
-    expect(switchElement).toHaveAttribute('readonly');
+    expect(switchElement).toHaveAttribute('aria-readonly', 'true');
+
+    await user.click(switchElement);
+    expect(switchElement).toBeChecked();
   });
 
   it('should handle controlled state', async () => {

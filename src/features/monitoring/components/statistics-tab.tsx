@@ -1,14 +1,15 @@
 'use client';
 
-import { BarChart3, FileCheck } from 'lucide-react';
+import { BarChart3 } from 'lucide-react';
 import { Card, CardHeader, CardBody } from '@/components/ui/card';
-import type { ProjectEvaluationStats } from '@/features/evaluations/api/get-project-evaluation-stats';
+import type { EventCriteriaStats } from '@/features/evaluations/api/get-event-criteria-stats';
 import type { CategoryEvaluationStats } from '../types';
+import { CriteriaPerformanceCard } from './criteria-performance-card';
 
 type StatisticsTabProps = {
-    criterions: Array<{ category: string; name: string }>;
-    statisticsProjects: Array<{ id: number; categoryId: number; evaluated?: boolean }>;
-    allProjectStatsById: Map<string, ProjectEvaluationStats | undefined>;
+    criteriaStats: { data?: EventCriteriaStats; isLoading: boolean; isError: boolean };
+    /** A category is chosen: the card lists the criteria of each component */
+    showCriteria: boolean;
     projectTotals: {
         uniqueJurorsCount: number;
         total: number;
@@ -22,9 +23,8 @@ type StatisticsTabProps = {
 };
 
 export const StatisticsTab = ({
-    criterions,
-    statisticsProjects,
-    allProjectStatsById,
+    criteriaStats,
+    showCriteria,
     projectTotals,
     evaluationMetrics,
     categoryEvaluationStats,
@@ -52,112 +52,12 @@ export const StatisticsTab = ({
                     </div>
 
                     
-            <div className="grid gap-4 lg:grid-cols-1">
-                <Card className="glass-card border border-default-200/70 shadow-sm">
-                    <CardHeader className="pb-2">
-                        <div className="flex items-center gap-2">
-                            <FileCheck className="h-5 w-5 text-primary" />
-                            <div>
-                                <h3 className="text-lg font-semibold">Desempeño por criterios</h3>
-                                <p className="text-sm text-default-400">
-                                    Cómo han calificado los jurados cada criterio del proyecto.
-                                </p>
-                            </div>
-                        </div>
-                    </CardHeader>
-
-
-
-
-                    <CardBody className="space-y-3 pt-0">
-                        {(() => {
-                            const criterionNameByCategory = new Map(criterions.map((criterion) => [criterion.category, criterion.name]));
-                            const categoryStatsMap = new Map<string, { scores: number[]; weights: number[] }>();
-
-                            statisticsProjects.forEach((project) => {
-                                const stats = allProjectStatsById.get(String(project.id));
-
-                                stats?.categoryStats?.forEach((categoryStat) => {
-                                    const existing = categoryStatsMap.get(categoryStat.category) ?? { scores: [], weights: [] };
-                                    existing.scores.push(categoryStat.averageScore);
-                                    existing.weights.push(categoryStat.weight);
-                                    categoryStatsMap.set(categoryStat.category, existing);
-                                });
-                            });
-
-                            const criterionStats = Array.from(categoryStatsMap.entries())
-                                .map(([category, data]) => ({
-                                    category,
-                                    criterionName: criterionNameByCategory.get(category) ?? category,
-                                    averageScore: data.scores.length > 0
-                                        ? data.scores.reduce((sum, score) => sum + score, 0) / data.scores.length
-                                        : 0,
-                                    averageWeight: data.weights.length > 0
-                                        ? data.weights.reduce((sum, weight) => sum + weight, 0) / data.weights.length
-                                        : 0,
-                                }))
-                                .sort((left, right) => right.averageScore - left.averageScore);
-
-                            return criterionStats.length > 0 ? (
-                                <div className="max-h-[420px] space-y-2 overflow-y-auto pr-1 md:max-h-[500px]">
-                                    {criterionStats.map((criterion) => {
-                                        const progress = Math.min(Math.max(criterion.averageScore, 0), 100);
-                                        const tone = progress >= 80
-                                            ? 'bg-emerald-500'
-                                            : progress >= 70
-                                                ? 'bg-sky-500'
-                                                : progress >= 60
-                                                    ? 'bg-amber-500'
-                                                    : 'bg-rose-500';
-
-                                        return (
-                                            <div key={criterion.category} className="space-y-2 rounded-2xl border border-default-200/70 bg-background/80 p-3">
-                                                <div className="flex items-start justify-between gap-2">
-                                                    <div className="min-w-0">
-                                                        <p className="truncate text-sm font-semibold text-foreground md:text-base">
-                                                            {criterion.criterionName}
-                                                        </p>
-                                                        <p className="text-[11px] text-default-400 md:text-xs">Categoría: {criterion.category}</p>
-                                                    </div>
-                                                    <div className="text-right">
-                                                        <p className="text-base font-bold text-primary md:text-lg">
-                                                            {criterion.averageScore.toFixed(2)}
-                                                        </p>
-                                                        <p className="text-[11px] text-default-400 md:text-xs">de 100</p>
-                                                    </div>
-                                                </div>
-
-                                                <div className="flex items-center gap-2">
-                                                    <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-default-100 md:h-3">
-                                                        <div
-                                                            className={`h-full rounded-full transition-all ${tone}`}
-                                                            style={{ width: `${progress}%` }}
-                                                        />
-                                                    </div>
-                                                    <span className="min-w-[40px] text-right text-[11px] font-semibold text-default-600 md:text-xs">
-                                                        {Math.round(progress)}%
-                                                    </span>
-                                                </div>
-
-                                                <div className="flex items-center justify-between gap-3 text-[11px] text-default-400 md:text-xs">
-                                                    <span>Peso promedio: {criterion.averageWeight.toFixed(2)}</span>
-                                                    <span>Promedio calculado</span>
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            ) : (
-                                <div className="flex min-h-[180px] items-center justify-center rounded-2xl border border-dashed border-default-200 text-sm text-default-500">
-                                    Todavía no hay criterios con evaluaciones para mostrar.
-                                </div>
-                            );
-                        })()}
-                    </CardBody>
-                </Card>
-            </div>
-
-
+            <CriteriaPerformanceCard
+                stats={criteriaStats.data}
+                isLoading={criteriaStats.isLoading}
+                isError={criteriaStats.isError}
+                showCriteria={showCriteria}
+            />
 
             <Card className="glass-card border border-default-200/70 shadow-sm">
                 <CardHeader className="pb-2">

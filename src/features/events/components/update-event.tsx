@@ -10,6 +10,8 @@ import {
 import { Minus, Plus, SquarePen } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { TermField } from "./term-field";
+
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Form } from "@/components/ui/form";
@@ -38,7 +40,17 @@ import {
   getDatePart,
   ensureDateTimeValue,
 } from "../utils/event-date-time";
-import { toEventTypeCode, toEvaluationTypeCode } from "../utils/event-enums";
+import { toEventTypeCode } from "../utils/event-enums";
+import { useCreateGradingScale } from "@/features/grading-scales/api/create-grading-scale";
+import { GradingScaleField } from "@/features/grading-scales/components/grading-scale-field";
+import {
+  isEventScaleLocked,
+  validateGradingScaleDraft,
+} from "@/features/grading-scales/utils/grading-scale";
+import {
+  GradingScaleSelection,
+  resolveGradingScaleId,
+} from "@/features/grading-scales/utils/grading-scale-selection";
 
 type UpdateEventProps = {
   eventId: number;
@@ -53,8 +65,10 @@ type Award = {
   categoryId: string;
   categoryName?: string;
 };
-const isWholeNumberInput = (value: string) => value === "" || /^(0|[1-9]\d*)$/.test(value);
-const isDecimalNumberInput = (value: string) => value === "" || /^(0|[1-9]\d*)(\.\d{0,2})?$/.test(value);
+const isWholeNumberInput = (value: string) =>
+  value === "" || /^(0|[1-9]\d*)$/.test(value);
+const isDecimalNumberInput = (value: string) =>
+  value === "" || /^(0|[1-9]\d*)(\.\d{0,2})?$/.test(value);
 const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 const toDateTimePickerValue = (value?: string): DateValue | undefined => {
@@ -118,7 +132,9 @@ type UpdateEventFormState = {
   inscriptionCost: string;
   minimumTeamSize: string;
   aboutOurAllies: string;
-  evaluationType: 1 | 2 | 3;
+  /** "" while the event has no term: created before terms existed (-1) */
+  termId: string;
+  requiresCourse: boolean;
 };
 
 const INITIAL_FORM_STATE: UpdateEventFormState = {
@@ -140,7 +156,8 @@ const INITIAL_FORM_STATE: UpdateEventFormState = {
   inscriptionRequirements: "",
   minimumTeamSize: "",
   aboutOurAllies: "",
-  evaluationType: 1,
+  termId: "",
+  requiresCourse: true,
 };
 
 export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
@@ -148,11 +165,18 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
   const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
 
   const [step, setStep] = useState(1);
-  const [formData, setFormData] = useState<UpdateEventFormState>(INITIAL_FORM_STATE);
+  const [formData, setFormData] =
+    useState<UpdateEventFormState>(INITIAL_FORM_STATE);
   const [specificDetails, setSpecificDetails] = useState<InscriptionDetail[]>([
     { title: "", description: "" },
   ]);
   const [dateFieldErrors, setDateFieldErrors] = useState<DateFieldErrors>({});
+  const [termError, setTermError] = useState<string | undefined>();
+  const [scaleSelection, setScaleSelection] = useState<GradingScaleSelection>({
+    mode: "catalog",
+    scaleId: null,
+  });
+  const [showScaleErrors, setShowScaleErrors] = useState(false);
   const [organizers, setOrganizers] = useState<string[]>([""]);
   const [collaborators, setCollaborators] = useState<string[]>([""]);
   const [awards, setAwards] = useState<Award[]>([
@@ -166,14 +190,17 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
       onSuccess: () => {
         addNotification({
           type: "success",
-          title: "Event Updated",
+          title: "Evento actualizado",
         });
         setDateFieldErrors({});
+        setTermError(undefined);
         setStep(1);
         onClose();
       },
     },
   });
+
+  const createGradingScaleMutation = useCreateGradingScale();
 
   const user = useUser();
 
@@ -183,6 +210,7 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
     }
 
     const event = eventQuery.data?.data;
+
     if (!event) {
       return;
     }
@@ -201,58 +229,73 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
       isPubliclyJoinable: Boolean(event.isPubliclyJoinable),
       active: Boolean(event.active),
       eventType: toEventTypeCode(event.eventType),
-      inscriptionCost: event.inscriptionCost !== undefined && event.inscriptionCost !== null ? String(event.inscriptionCost) : "",
+      inscriptionCost:
+        event.inscriptionCost !== undefined && event.inscriptionCost !== null
+          ? String(event.inscriptionCost)
+          : "",
       inscriptionRequirements: event.inscriptionRequirements ?? "",
       minimumTeamSize:
         event.minimumTeamSize !== undefined && event.minimumTeamSize !== null
           ? String(event.minimumTeamSize)
           : "",
       aboutOurAllies: event.aboutOurAllies ?? "",
-      evaluationType: toEvaluationTypeCode(event.evaluationType) as UpdateEventFormState["evaluationType"],
+      termId: event.termId && event.termId > 0 ? String(event.termId) : "",
+      requiresCourse: event.requiresCourse,
     });
+    setScaleSelection({ mode: "catalog", scaleId: event.gradingScale?.id ?? null });
+    setShowScaleErrors(false);
 
     setSpecificDetails(
-      event.specificInscriptionDetails && event.specificInscriptionDetails.length > 0
+      event.specificInscriptionDetails &&
+        event.specificInscriptionDetails.length > 0
         ? event.specificInscriptionDetails.map((detail) => ({
-          id: (detail as { id?: number }).id,
-          eventId: (detail as { eventId?: number }).eventId,
-          title: detail.title,
-          description: detail.description,
-          value: (detail as { value?: number }).value,
-          isRequired: (detail as { isRequired?: boolean }).isRequired,
-        }))
-        : [{ title: "", description: "" }]
+            id: (detail as { id?: number }).id,
+            eventId: (detail as { eventId?: number }).eventId,
+            title: detail.title,
+            description: detail.description,
+            value: (detail as { value?: number }).value,
+            isRequired: (detail as { isRequired?: boolean }).isRequired,
+          }))
+        : [{ title: "", description: "" }],
     );
 
     setOrganizers(
-      event.organizers && event.organizers.length > 0 ? event.organizers : [""]
+      event.organizers && event.organizers.length > 0 ? event.organizers : [""],
     );
 
     setCollaborators(
       event.collaborators && event.collaborators.length > 0
         ? event.collaborators
-        : [""]
+        : [""],
     );
 
     setAwards(
       event.awards && event.awards.length > 0
         ? event.awards.map((award) => ({
-          id: (award as { id?: number }).id,
-          title: award.title ?? "",
-          description: award.description ?? "",
-          value:
-            (award as { value?: number }).value !== undefined &&
+            id: (award as { id?: number }).id,
+            title: award.title ?? "",
+            description: award.description ?? "",
+            value:
+              (award as { value?: number }).value !== undefined &&
               (award as { value?: number }).value !== null
-              ? String((award as { value?: number }).value)
-              : "",
-          position: Number(award.position) || 1,
-          categoryId:
-            (award as { categoryId?: number }).categoryId !== undefined
-              ? String((award as { categoryId?: number }).categoryId)
-              : "",
-          categoryName: (award as { category?: string }).category,
-        }))
-        : [{ title: "", description: "", value: "", position: 1, categoryId: "" }]
+                ? String((award as { value?: number }).value)
+                : "",
+            position: Number(award.position) || 1,
+            categoryId:
+              (award as { categoryId?: number }).categoryId !== undefined
+                ? String((award as { categoryId?: number }).categoryId)
+                : "",
+            categoryName: (award as { category?: string }).category,
+          }))
+        : [
+            {
+              title: "",
+              description: "",
+              value: "",
+              position: 1,
+              categoryId: "",
+            },
+          ],
     );
     setDateFieldErrors({});
   }, [isOpen, eventQuery.data]);
@@ -262,6 +305,16 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
   }
 
   const event = eventQuery.data?.data;
+  const currentScale = event?.gradingScale ?? null;
+  const isScaleLocked = isEventScaleLocked(currentScale);
+
+  /** La escala nueva debe ser válida antes de seguir: 4 niveles con puntos que crecen */
+  const validateScaleSelection = () => {
+    if (scaleSelection.mode !== "new") return true;
+    const { isValid } = validateGradingScaleDraft(scaleSelection.draft);
+    setShowScaleErrors(!isValid);
+    return isValid;
+  };
 
   const validateDateFields = (targetStep: 1 | 2 | 3) => {
     const nextErrors: DateFieldErrors = {};
@@ -276,23 +329,30 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
       }
 
       if (formData.startDate && formData.endDate) {
-        const endVsStart = compareDateTimes(formData.endDate, formData.startDate);
+        const endVsStart = compareDateTimes(
+          formData.endDate,
+          formData.startDate,
+        );
+
         if (endVsStart !== null && endVsStart < 0) {
-          nextErrors.endDate = "La fecha y hora de finalización no pueden ser anteriores a la fecha y hora de inicio.";
+          nextErrors.endDate =
+            "La fecha y hora de finalización no pueden ser anteriores a la fecha y hora de inicio.";
         }
       }
     }
 
     if (targetStep === 2 || targetStep === 3) {
       if (!formData.inscriptionDeadline) {
-        nextErrors.inscriptionDeadline = "La fecha límite de inscripción es requerida.";
+        nextErrors.inscriptionDeadline =
+          "La fecha límite de inscripción es requerida.";
       }
 
       if (formData.inscriptionDeadline && formData.startDate) {
         const deadlineVsStart = compareDateTimes(
           formData.inscriptionDeadline,
-          formData.startDate
+          formData.startDate,
         );
+
         if (deadlineVsStart !== null && deadlineVsStart > 0) {
           nextErrors.inscriptionDeadline =
             "La fecha límite de inscripción no puede ser posterior a la fecha y hora de inicio.";
@@ -302,8 +362,9 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
       if (formData.inscriptionDeadline && formData.endDate) {
         const deadlineVsEnd = compareDateTimes(
           formData.inscriptionDeadline,
-          formData.endDate
+          formData.endDate,
         );
+
         if (deadlineVsEnd !== null && deadlineVsEnd > 0) {
           nextErrors.inscriptionDeadline =
             "La fecha límite de inscripción no puede ser posterior a la fecha y hora de finalización.";
@@ -312,13 +373,31 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
     }
 
     setDateFieldErrors(nextErrors);
+
     return Object.keys(nextErrors).length === 0;
+  };
+
+  /** An event is never saved without an academic term, also the ones created before terms existed */
+  const validateTerm = () => {
+    const isValid = Number(formData.termId) > 0;
+
+    setTermError(isValid ? undefined : "El periodo académico es requerido.");
+
+    return isValid;
   };
 
   const handleNextStep = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
+    if (step === 1 && !validateTerm()) {
+      return;
+    }
+
     if (step === 1 && !validateDateFields(1)) {
+      return;
+    }
+
+    if (step === 1 && !validateScaleSelection()) {
       return;
     }
 
@@ -331,11 +410,33 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
 
   const submitUpdate = async () => {
     try {
+      if (!validateTerm()) {
+        setStep(1);
+        addNotification({
+          type: "error",
+          title: "Periodo académico requerido",
+          message: "Elija o cree el periodo del evento antes de guardar.",
+        });
+
+        return;
+      }
+
       if (!validateDateFields(3)) {
         addNotification({
           type: "error",
           title: "Fechas del evento inválidas",
           message: "Corrige los campos de fecha y hora resaltados.",
+        });
+
+        return;
+      }
+
+      if (!validateScaleSelection()) {
+        setStep(1);
+        addNotification({
+          type: "error",
+          title: "Escala de calificación inválida",
+          message: "Revisa el nombre, las etiquetas y los puntos de la escala nueva.",
         });
         return;
       }
@@ -345,7 +446,8 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
         name: formData.name,
         description: formData.description,
         accessCode: formData.accessCode || undefined,
-        isPubliclyJoinable: formData.isPubliclyJoinable ?? event?.isPubliclyJoinable,
+        isPubliclyJoinable:
+          formData.isPubliclyJoinable ?? event?.isPubliclyJoinable,
         startDate: ensureDateTimeValue(formData.startDate),
         endDate: ensureDateTimeValue(formData.endDate),
         inscriptionDeadline: formData.inscriptionDeadline,
@@ -356,24 +458,33 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
         locationDetails: formData.locationDetails || undefined,
         latitude: formData.latitude,
         longitude: formData.longitude,
-        inscriptionCost: formData.inscriptionCost === "" ? undefined : Number(formData.inscriptionCost),
+        inscriptionCost:
+          formData.inscriptionCost === ""
+            ? undefined
+            : Number(formData.inscriptionCost),
         inscriptionRequirements: formData.inscriptionRequirements || undefined,
         minimumTeamSize:
-          formData.minimumTeamSize === "" ? undefined : Number(formData.minimumTeamSize),
+          formData.minimumTeamSize === ""
+            ? undefined
+            : Number(formData.minimumTeamSize),
         aboutOurAllies: formData.aboutOurAllies || undefined,
-        evaluationType: formData.evaluationType,
+        termId: Number(formData.termId),
+        requiresCourse: formData.requiresCourse,
         organizers: organizers.filter((value) => value.trim() !== ""),
         collaborators: collaborators.filter((value) => value.trim() !== ""),
-        specificInscriptionDetails: specificDetails.filter(
-          (detail) => detail.title.trim() !== "" && detail.description.trim() !== ""
-        ).map((detail) => ({
-          id: detail.id,
-          eventId: detail.eventId,
-          title: detail.title,
-          description: detail.description,
-          value: detail.value,
-          isRequired: detail.isRequired,
-        })),
+        specificInscriptionDetails: specificDetails
+          .filter(
+            (detail) =>
+              detail.title.trim() !== "" && detail.description.trim() !== "",
+          )
+          .map((detail) => ({
+            id: detail.id,
+            eventId: detail.eventId,
+            title: detail.title,
+            description: detail.description,
+            value: detail.value,
+            isRequired: detail.isRequired,
+          })),
         awards: awards
           .filter((award) => award.title.trim() !== "")
           .map((award) => ({
@@ -387,13 +498,26 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
       };
 
       const values = await updateEventInputSchema.parseAsync(dataToSubmit);
-      await updateEventMutation.mutateAsync({ data: values });
+
+      // La escala solo se envía si cambió: con evaluaciones el backend rechaza cualquier cambio.
+      // Una escala nueva se crea primero en el catálogo y el evento usa su id.
+      const { scaleId, created } = isScaleLocked
+        ? { scaleId: undefined, created: undefined }
+        : await resolveGradingScaleId(scaleSelection, (input) =>
+            createGradingScaleMutation.mutateAsync({ data: input }),
+          );
+      if (created) {
+        setScaleSelection({ mode: "catalog", scaleId: created.id });
+      }
+      const gradingScaleId = scaleId !== undefined && scaleId !== currentScale?.id ? scaleId : undefined;
+
+      await updateEventMutation.mutateAsync({ data: { ...values, gradingScaleId } });
     } catch (error) {
       console.error(error);
       addNotification({
         type: "error",
-        title: "Form Validation Failed",
-        message: "Check required fields.",
+        title: "Error de validación en el formulario",
+        message: "Verifica los campos obligatorios.",
       });
     }
   };
@@ -406,9 +530,9 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
   return (
     <>
       <Button
-        variant="shadow"
         className="w-full"
         size="sm"
+        variant="shadow"
         onPress={async () => {
           setStep(1);
           try {
@@ -419,16 +543,21 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
         }}
       >
         <SquarePen size={16} />
-        Update Event
+        Actualizar evento
       </Button>
 
-      <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="2xl" scrollBehavior="inside">
+      <Modal
+        isOpen={isOpen}
+        scrollBehavior="inside"
+        size="2xl"
+        onOpenChange={onOpenChange}
+      >
         <ModalContent className="max-h-[80vh] flex flex-col">
           {(onCloseModal) => {
             if (eventQuery.isLoading) {
               return (
                 <>
-                  <ModalHeader>Update Event</ModalHeader>
+                  <ModalHeader>Actualizar evento</ModalHeader>
                   <ModalBody className="flex items-center justify-center py-12">
                     <Spinner size="lg" />
                   </ModalBody>
@@ -439,12 +568,12 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
             if (!event) {
               return (
                 <>
-                  <ModalHeader>Update Event</ModalHeader>
+                  <ModalHeader>Actualizar evento</ModalHeader>
                   <ModalBody>
-                    <p>Event not found</p>
+                    <p>Evento no encontrado</p>
                   </ModalBody>
                   <ModalFooter>
-                    <Button onPress={onCloseModal}>Close</Button>
+                    <Button onPress={onCloseModal}>Cerrar</Button>
                   </ModalFooter>
                 </>
               );
@@ -453,58 +582,70 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
             return (
               <Form
                 key={`update-event-${eventId}-${event.updatedAt}`}
-                id="update-event"
                 className="w-full flex flex-col overflow-hidden flex-1 min-h-0"
+                id="update-event"
                 onSubmit={step === 3 ? handleUpdateSubmit : handleNextStep}
               >
                 <ModalHeader className="flex flex-col gap-1 text-2xl font-semibold shrink-0">
-                  Update Event {step > 1 ? `- Step ${step}` : ""}
+                  Actualizar evento {step > 1 ? `- Paso ${step}` : ""}
                 </ModalHeader>
 
                 <ModalBody className="w-full flex-1 min-h-0 overflow-y-auto pl-6">
                   {step === 1 && (
                     <div className="space-y-6 w-full fade-in">
                       <Input
-                        label="Name"
+                        isRequired
+                        label="Nombre del Evento"
                         name="name"
                         placeholder="Nombre del evento. Ej: Hackathon de Logística Empresarial (mínimo 2 caracteres)"
-                        isRequired
                         value={formData.name}
                         onChange={(e) =>
-                          setFormData((prev) => ({ ...prev, name: e.target.value }))
+                          setFormData((prev) => ({
+                            ...prev,
+                            name: e.target.value,
+                          }))
                         }
                       />
 
                       <div className="flex flex-col sm:flex-row gap-4">
                         <Input
-                          label="Location"
+                          isRequired
+                          className="flex-1"
+                          label="Ubicación"
                           name="location"
                           placeholder="Ej: Universidad del Norte, Bloque, Salón."
-                          isRequired
                           value={formData.location}
                           onChange={(e) =>
-                            setFormData((prev) => ({ ...prev, location: e.target.value }))
+                            setFormData((prev) => ({
+                              ...prev,
+                              location: e.target.value,
+                            }))
                           }
-                          className="flex-1"
                         />
                         <Input
-                          label="Location detail (Optional)"
+                          className="flex-1"
+                          label="Detalle de ubicación (Opcional)"
                           name="locationDetails"
                           placeholder="Ej: Km 5 vía Puerto Colombia, Barranquilla "
                           value={formData.locationDetails}
                           onChange={(e) =>
-                            setFormData((prev) => ({ ...prev, locationDetails: e.target.value }))
+                            setFormData((prev) => ({
+                              ...prev,
+                              locationDetails: e.target.value,
+                            }))
                           }
-                          className="flex-1"
                         />
                       </div>
 
                       <div className="flex flex-col sm:flex-row gap-4">
                         <DatePicker
-                          label="Start DateTime"
-                          name="startDate"
                           isRequired
+                          className="flex-1"
+                          errorMessage={dateFieldErrors.startDate}
                           granularity="minute"
+                          isInvalid={Boolean(dateFieldErrors.startDate)}
+                          label="Fecha y Hora de Inicio"
+                          name="startDate"
                           value={toDateTimePickerValue(formData.startDate)}
                           onChange={(date) => {
                             setFormData((prev) => ({
@@ -518,15 +659,15 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                               inscriptionDeadline: undefined,
                             }));
                           }}
-                          isInvalid={Boolean(dateFieldErrors.startDate)}
-                          errorMessage={dateFieldErrors.startDate}
-                          className="flex-1"
                         />
                         <DatePicker
-                          label="End DateTime"
-                          name="endDate"
                           isRequired
+                          className="flex-1"
+                          errorMessage={dateFieldErrors.endDate}
                           granularity="minute"
+                          isInvalid={Boolean(dateFieldErrors.endDate)}
+                          label="Fecha y Hora de Fin"
+                          name="endDate"
                           value={toDateTimePickerValue(formData.endDate)}
                           onChange={(date) => {
                             setFormData((prev) => ({
@@ -538,24 +679,25 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                               endDate: undefined,
                             }));
                           }}
-                          isInvalid={Boolean(dateFieldErrors.endDate)}
-                          errorMessage={dateFieldErrors.endDate}
-                          className="flex-1"
                         />
                       </div>
 
                       <div className="flex flex-col sm:flex-row gap-4 items-end">
                         <Input
-                          label="Access Code"
+                          className="flex-1"
+                          label="Código de Acceso"
                           name="accessCode"
                           value={formData.accessCode}
                           onChange={(e) =>
-                            setFormData((prev) => ({ ...prev, accessCode: e.target.value }))
+                            setFormData((prev) => ({
+                              ...prev,
+                              accessCode: e.target.value,
+                            }))
                           }
-                          className="flex-1"
                         />
                         <Select
-                          label="Event Type"
+                          className="flex-1"
+                          label="Tipo de Evento"
                           selectedKeys={[String(formData.eventType)]}
                           onChange={(e) =>
                             setFormData((prev) => ({
@@ -563,80 +705,122 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                               eventType: toEventTypeCode(e.target.value),
                             }))
                           }
-                          className="flex-1"
                         >
                           <SelectItem key="1">Exposición</SelectItem>
                           <SelectItem key="2">Competencia</SelectItem>
                         </Select>
-                        <Select
-                          label="Evaluation Type"
-                          selectedKeys={new Set([String(formData.evaluationType)])}
-                          onSelectionChange={(keys) => {
-                            const selected = Array.from(keys)[0];
+                      </div>
 
-                            if (selected !== undefined) {
-                              setFormData((prev) => ({
-                                ...prev,
-                                evaluationType: toEvaluationTypeCode(selected) as UpdateEventFormState["evaluationType"],
-                              }));
-                            }
+                      <GradingScaleField
+                        value={scaleSelection}
+                        onChange={setScaleSelection}
+                        currentScale={currentScale}
+                        isDisabled={isScaleLocked}
+                        disabledReason="La escala ya se usó para calificar evaluaciones: la escala del evento no se puede cambiar."
+                        showErrors={showScaleErrors}
+                      />
+
+                      <div className="flex flex-col sm:flex-row gap-4 sm:items-center">
+                        <TermField
+                          isRequired
+                          description={
+                            formData.termId
+                              ? undefined
+                              : "Evento anterior a los periodos académicos. Asígnale uno para poder inscribir proyectos con NRC."
+                          }
+                          errorMessage={termError}
+                          isOpen={isOpen}
+                          placeholder="Sin periodo asignado"
+                          value={formData.termId}
+                          onChange={(termId) => {
+                            setFormData((prev) => ({ ...prev, termId: String(termId) }));
+                            setTermError(undefined);
                           }}
-                          className="flex-1"
-                        >
-                          <SelectItem key="1">0 - 5</SelectItem>
-                          <SelectItem key="2">0 - 100</SelectItem>
-                          <SelectItem key="3">Proyectos Finales</SelectItem>
-                        </Select>
+                        />
+                        <div className="flex-1 flex items-center gap-2">
+                          <Switch
+                            size="sm"
+                            isSelected={formData.requiresCourse}
+                            onValueChange={(isSelected) =>
+                              setFormData((prev) => ({ ...prev, requiresCourse: isSelected }))
+                            }
+                            color="success"
+                          />
+                          <div className="flex flex-col">
+                            <span className="text-sm font-medium">Exige NRC</span>
+                            <span className="text-xs text-default-500">
+                              Los proyectos ya inscritos conservan su curso.
+                            </span>
+                          </div>
+                        </div>
                       </div>
 
                       <div className="pt-2 border-t border-default-200">
-                        <p className="text-sm font-semibold mb-2">Event Details</p>
+                        <p className="text-sm font-semibold mb-2">
+                          Detalles del Evento
+                        </p>
                         <Textarea
-                          label="Description"
+                          isRequired
+                          label="Descripción del Evento"
+                          maxLength={1000}
                           name="description"
                           placeholder="Describe de qué trata el evento. Ej: Un desafío tipo hackathon de 48 horas enfocado en optimización logística..."
-                          isRequired
                           value={formData.description}
                           onChange={(e) =>
-                            setFormData((prev) => ({ ...prev, description: e.target.value }))
+                            setFormData((prev) => ({
+                              ...prev,
+                              description: e.target.value,
+                            }))
                           }
-                          maxLength={1000}
                         />
                       </div>
 
                       <div className="flex flex-wrap items-center gap-6 py-2">
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium">Evaluations Open</span>
+                          <span className="text-sm font-medium">
+                            Evaluaciones abiertas
+                          </span>
                           <Switch
+                            color="success"
                             isSelected={formData.evaluationsOpened}
                             onValueChange={(isSelected) =>
-                              setFormData((prev) => ({ ...prev, evaluationsOpened: isSelected }))
+                              setFormData((prev) => ({
+                                ...prev,
+                                evaluationsOpened: isSelected,
+                              }))
                             }
-                            color="success"
                           />
                         </div>
 
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium">Active Event</span>
+                          <span className="text-sm font-medium">
+                            Evento activo
+                          </span>
                           <Switch
+                            color="success"
                             isSelected={formData.active}
                             onValueChange={(isSelected) =>
-                              setFormData((prev) => ({ ...prev, active: isSelected, }))
+                              setFormData((prev) => ({
+                                ...prev,
+                                active: isSelected,
+                              }))
                             }
-                            color="success"
                           />
                         </div>
 
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium">Public for Join</span>
+                          <span className="text-sm font-medium">
+                            Inscripción pública
+                          </span>
                           <Switch
+                            color="success"
                             isSelected={formData.isPubliclyJoinable}
                             onValueChange={(isSelected) =>
                               setFormData((prev) => ({
-                                ...prev, isPubliclyJoinable: isSelected,
+                                ...prev,
+                                isPubliclyJoinable: isSelected,
                               }))
                             }
-                            color="success"
                           />
                         </div>
                       </div>
@@ -646,14 +830,14 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                   {step === 2 && (
                     <div className="space-y-6 w-full fade-in">
                       <p className="border-b border-default-200 pb-2 font-semibold">
-                        Inscription Details
+                        Detalles de Inscripción
                       </p>
 
                       <Textarea
-                        label="Inscription Requirements"
+                        isRequired
+                        label="Requisitos de Inscripción"
                         name="inscriptionRequirements"
                         placeholder="Describa los requisitos para inscribirse en el evento. Ej: Equipos de 3 a 5 personas, con al menos un estudiante de ingeniería..."
-                        isRequired
                         value={formData.inscriptionRequirements}
                         onChange={(e) =>
                           setFormData((prev) => ({
@@ -664,60 +848,78 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                       />
 
                       <div className="flex flex-col sm:flex-row gap-4">
-                         <DatePicker
-                          label="Inscription Deadline"
-                          name="inscriptionDeadline"
+                        <DatePicker
                           isRequired
+                          className="flex-1"
+                          errorMessage={dateFieldErrors.inscriptionDeadline}
+                          isInvalid={Boolean(
+                            dateFieldErrors.inscriptionDeadline,
+                          )}
+                          label="Fecha Límite de Inscripción"
+                          name="inscriptionDeadline"
                           value={
                             getDatePart(formData.inscriptionDeadline)
-                              ? parseDate(getDatePart(formData.inscriptionDeadline))
+                              ? parseDate(
+                                  getDatePart(formData.inscriptionDeadline),
+                                )
                               : undefined
                           }
-                          onChange={(date) =>
+                          onChange={(date) => {
                             setFormData((prev) => ({
                               ...prev,
                               inscriptionDeadline: date ? date.toString() : "",
-                            }))
-                          }
-                          className="flex-1"
+                            }));
+                            setDateFieldErrors((prev) => ({
+                              ...prev,
+                              inscriptionDeadline: undefined,
+                            }));
+                          }}
                         />
                         <Input
-                          label="Inscription Cost"
+                          className="flex-1"
+                          inputMode="decimal"
+                          label="Costo de Inscripción"
+                          min={0}
                           name="inscriptionCost"
+                          pattern="[0-9]*"
                           placeholder="Ej: 0 o 50000"
+                          step={1}
                           type="text"
                           value={formData.inscriptionCost}
-                          min={0}
-                          step={1}
-                          inputMode="decimal"
-                          pattern="[0-9]*"
                           onChange={(e) =>
                             isDecimalNumberInput(e.target.value) &&
-                            setFormData((prev) => ({ ...prev, inscriptionCost: e.target.value }))
+                            setFormData((prev) => ({
+                              ...prev,
+                              inscriptionCost: e.target.value,
+                            }))
                           }
-                          className="flex-1"
                         />
                         <Input
-                          label="Minimum Team Size"
+                          className="flex-1"
+                          inputMode="numeric"
+                          label="Mínimo de Integrantes"
+                          min={0}
                           name="minimumTeamSize"
+                          pattern="[0-9]*"
                           placeholder="Ej: 3"
+                          step={1}
                           type="number"
                           value={formData.minimumTeamSize}
-                          min={0}
-                          step={1}
-                          inputMode="numeric"
-                          pattern="[0-9]*"
                           onChange={(e) =>
                             isWholeNumberInput(e.target.value) &&
-                            setFormData((prev) => ({ ...prev, minimumTeamSize: e.target.value }))
+                            setFormData((prev) => ({
+                              ...prev,
+                              minimumTeamSize: e.target.value,
+                            }))
                           }
-                          className="flex-1"
                         />
                       </div>
 
                       <div className="pt-4 border-t border-default-200">
                         <div className="flex justify-between items-center mb-4">
-                          <p className="text-sm font-semibold">Specific Inscription Details</p>
+                          <p className="text-sm font-semibold">
+                            Detalles Específicos de Inscripción
+                          </p>
                           <Button
                             isIconOnly
                             size="sm"
@@ -740,40 +942,46 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                               className="flex gap-2 items-start bg-default-50 p-3 rounded-md relative"
                             >
                               <Input
-                                label="Title"
+                                className="flex-1"
+                                label="Título"
                                 placeholder="Ej: Tamaño del equipo"
                                 value={detail.title}
                                 onChange={(e) => {
                                   setSpecificDetails((prev) => {
                                     const next = [...prev];
+
                                     next[index].title = e.target.value;
+
                                     return next;
                                   });
                                 }}
-                                className="flex-1"
                               />
                               <Input
+                                className="flex-1"
                                 label="Descripción de detalle específico"
                                 placeholder="Informacion Precisa. Ej: 3 a 5 estudiantes."
                                 value={detail.description}
                                 onChange={(e) => {
                                   setSpecificDetails((prev) => {
                                     const next = [...prev];
+
                                     next[index].description = e.target.value;
+
                                     return next;
                                   });
                                 }}
-                                className="flex-1"
                               />
                               <Button
                                 isIconOnly
-                                size="sm"
                                 className="mt-2"
                                 color="danger"
+                                size="sm"
                                 variant="light"
                                 onPress={() =>
                                   setSpecificDetails((prev) =>
-                                    prev.filter((_, itemIndex) => itemIndex !== index)
+                                    prev.filter(
+                                      (_, itemIndex) => itemIndex !== index,
+                                    ),
                                   )
                                 }
                               >
@@ -789,28 +997,35 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                   {step === 3 && (
                     <div className="space-y-6 w-full fade-in">
                       <p className="border-b border-default-200 pb-2 font-semibold">
-                        Public Information
+                        Información Pública
                       </p>
 
                       <Textarea
-                        label="About Our Allies"
+                        label="Sobre nuestros aliados"
                         name="aboutOurAllies"
                         placeholder="Información sobre socios y aliados. Ej: Este evento cuenta con el apoyo de GRIP Shipping como aliado estratégico..."
                         value={formData.aboutOurAllies}
                         onChange={(e) =>
-                          setFormData((prev) => ({ ...prev, aboutOurAllies: e.target.value }))
+                          setFormData((prev) => ({
+                            ...prev,
+                            aboutOurAllies: e.target.value,
+                          }))
                         }
                       />
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                           <div className="flex justify-between items-center mb-2">
-                            <p className="text-sm font-semibold">Organizers</p>
+                            <p className="text-sm font-semibold">
+                              Organizaciones
+                            </p>
                             <Button
                               isIconOnly
                               size="sm"
                               variant="faded"
-                              onPress={() => setOrganizers((prev) => [...prev, ""])}
+                              onPress={() =>
+                                setOrganizers((prev) => [...prev, ""])
+                              }
                             >
                               <Plus size={16} />
                             </Button>
@@ -819,23 +1034,27 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                             {organizers.map((organizer, index) => (
                               <div key={index} className="flex gap-2">
                                 <Input
+                                  placeholder={`Organización ${index + 1}`}
                                   value={organizer}
-                                  placeholder={`Organizer ${index + 1}`}
                                   onChange={(e) => {
                                     setOrganizers((prev) => {
                                       const next = [...prev];
+
                                       next[index] = e.target.value;
+
                                       return next;
                                     });
                                   }}
                                 />
                                 <Button
                                   isIconOnly
-                                  variant="light"
                                   color="danger"
+                                  variant="light"
                                   onPress={() =>
                                     setOrganizers((prev) =>
-                                      prev.filter((_, itemIndex) => itemIndex !== index)
+                                      prev.filter(
+                                        (_, itemIndex) => itemIndex !== index,
+                                      ),
                                     )
                                   }
                                 >
@@ -848,12 +1067,16 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
 
                         <div>
                           <div className="flex justify-between items-center mb-2">
-                            <p className="text-sm font-semibold">Collaborators</p>
+                            <p className="text-sm font-semibold">
+                              Colaboradores
+                            </p>
                             <Button
                               isIconOnly
                               size="sm"
                               variant="faded"
-                              onPress={() => setCollaborators((prev) => [...prev, ""])}
+                              onPress={() =>
+                                setCollaborators((prev) => [...prev, ""])
+                              }
                             >
                               <Plus size={16} />
                             </Button>
@@ -862,23 +1085,27 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                             {collaborators.map((collaborator, index) => (
                               <div key={index} className="flex gap-2">
                                 <Input
+                                  placeholder={`Colaborador ${index + 1}`}
                                   value={collaborator}
-                                  placeholder={`Collaborator ${index + 1}`}
                                   onChange={(e) => {
                                     setCollaborators((prev) => {
                                       const next = [...prev];
+
                                       next[index] = e.target.value;
+
                                       return next;
                                     });
                                   }}
                                 />
                                 <Button
                                   isIconOnly
-                                  variant="light"
                                   color="danger"
+                                  variant="light"
                                   onPress={() =>
                                     setCollaborators((prev) =>
-                                      prev.filter((_, itemIndex) => itemIndex !== index)
+                                      prev.filter(
+                                        (_, itemIndex) => itemIndex !== index,
+                                      ),
                                     )
                                   }
                                 >
@@ -892,7 +1119,7 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
 
                       <div className="pt-4 border-t border-default-200">
                         <div className="flex justify-between items-center mb-4">
-                          <p className="text-sm font-semibold">Awards</p>
+                          <p className="text-sm font-semibold">Premios</p>
                           <Button
                             isIconOnly
                             size="sm"
@@ -902,6 +1129,7 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                                 if (prev.length >= 4) {
                                   return prev;
                                 }
+
                                 return [
                                   ...prev,
                                   {
@@ -928,17 +1156,19 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                               <div className="absolute top-2 right-2">
                                 <Button
                                   isIconOnly
-                                  size="sm"
                                   color="danger"
+                                  size="sm"
                                   variant="light"
                                   onPress={() =>
                                     setAwards((prev) =>
                                       prev
-                                        .filter((_, itemIndex) => itemIndex !== index)
+                                        .filter(
+                                          (_, itemIndex) => itemIndex !== index,
+                                        )
                                         .map((item, itemIndex) => ({
                                           ...item,
                                           position: itemIndex + 1,
-                                        }))
+                                        })),
                                     )
                                   }
                                 >
@@ -947,10 +1177,10 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                               </div>
 
                               <div className="flex gap-4 w-full pr-8">
-                                {/* LEFT: Position */}
+                                {/* LEFT: Posición */}
                                 <div className="flex flex-col items-center justify-center bg-default-100 rounded-md px-3 py-2 min-w-[80px]">
                                   <span className="text-sm text-default-500 font-semibold uppercase tracking-wider">
-                                    Position
+                                    Posición
                                   </span>
                                   <span className="text-4xl font-extrabold text-primary">
                                     {award.position}
@@ -959,58 +1189,66 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
 
                                 {/* RIGHT: CONTENEDOR */}
                                 <div className="flex flex-col flex-1 gap-2">
-
                                   {/* TOP ROW */}
                                   <div className="flex gap-3">
                                     <Input
-                                      label="Award Title"
+                                      className="flex-1"
+                                      label="Título del Premio"
                                       placeholder="Ej: TOP 1"
                                       value={award.title}
                                       onChange={(e) => {
                                         setAwards((prev) => {
                                           const next = [...prev];
+
                                           next[index].title = e.target.value;
+
                                           return next;
                                         });
                                       }}
-                                      className="flex-1"
                                     />
 
                                     <Input
-                                      label="$"
-                                      type="text"
-                                      placeholder="Ej:2000000"
-                                      value={award.value}
-                                      min={0}
-                                      step={1}
+                                      className="w-[120px]"
                                       inputMode="decimal"
+                                      label="$"
+                                      min={0}
                                       pattern="[0-9]*"
+                                      placeholder="Ej:2000000"
+                                      step={1}
+                                      type="text"
+                                      value={award.value}
                                       onChange={(e) => {
-                                        if (isDecimalNumberInput(e.target.value)) {
+                                        if (
+                                          isDecimalNumberInput(e.target.value)
+                                        ) {
                                           setAwards((prev) => {
                                             const next = [...prev];
+
                                             next[index].value = e.target.value;
+
                                             return next;
                                           });
                                         }
                                       }}
-                                      className="w-[120px]"
                                     />
                                   </div>
 
                                   {/* BOTTOM ROW */}
                                   <Textarea
-                                    label="Award Description (Optional)"
+                                    className="w-full"
+                                    label="Descripción del Premio (Opcional)"
                                     placeholder="Ej: Premio monetario de $2.000.000 COP"
                                     value={award.description}
                                     onChange={(e) => {
                                       setAwards((prev) => {
                                         const next = [...prev];
-                                        next[index].description = e.target.value;
+
+                                        next[index].description =
+                                          e.target.value;
+
                                         return next;
                                       });
                                     }}
-                                    className="w-full"
                                   />
                                 </div>
                               </div>
@@ -1029,22 +1267,21 @@ export const UpdateEvent = ({ eventId }: UpdateEventProps) => {
                       variant="flat"
                       onPress={() => setStep((prev) => Math.max(prev - 1, 1))}
                     >
-                      Back
+                      Atrás
                     </Button>
                   )}
 
                   {step < 3 ? (
-                    <Button type="submit">Next</Button>
+                    <Button type="submit">Siguiente</Button>
                   ) : (
                     <Button
-                      type="submit"
-                      isLoading={updateEventMutation.isPending}
                       disabled={updateEventMutation.isPending}
+                      isLoading={updateEventMutation.isPending}
+                      type="submit"
                     >
-                      Save Changes
+                      Guardar cambios
                     </Button>
                   )}
-
                 </ModalFooter>
               </Form>
             );

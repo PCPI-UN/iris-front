@@ -1,36 +1,47 @@
-'use client';
+"use client";
 
-import { useUser } from '@/lib/auth';
-import { AdminDashboard } from './admin-dashboard';
-import { GetEventsUser } from '@/features/events/components/get-events-user';
+import dayjs from "dayjs";
+import "dayjs/locale/es";
 
+import { AdminSummaryCard } from "./admin-summary-card";
+import { PendingInvitationsBanner } from "./pending-invitations-banner";
+
+import {
+  CurrentEventsSection,
+  PastEventsSection,
+} from "@/features/events/components/me-events-section";
+import { useUser } from "@/lib/auth";
+import { canViewAdministration } from "@/lib/authorization";
+
+/**
+ * Panel for everyone: it does not label who the person is, it shows what they
+ * have. Administration appears with `read:events` (decided by permission, not
+ * by role name; the dean sees it read-only), then the events where they hold a
+ * role, one entry per role (professor and tutor open their teaching screen on
+ * that event), and the history. Administration and the events share one grid of
+ * square tiles; pending invitations go first, as a notice. The teaching screens of
+ * other events are reached from the menu.
+ */
 export const DashboardInfo = () => {
   const user = useUser();
-  const primaryRoleName =
-    user.data?.platformRoles?.[0]?.name ??
-    ((user.data as { role?: string } | undefined)?.role === 'ADMIN'
-      ? 'Admin'
-      : 'User');
 
-  // If the user is an ADMIN, display the AdminDashboard
-  if (primaryRoleName === 'Admin') {
-    return <AdminDashboard />;
-  }
-
-  // For regular users, display the list of events
   return (
-    <div className="dashboard-page ">
-      <div className="pt-5 flex flex-col gap-4">
-        <h1 className="text-2xl md:text-3xl font-bold">
-          Bienvenido a tus Eventos especiales, {`${user.data?.firstName} ${user.data?.lastName}`}
-        </h1>
-        <p className="text-sm md:text-base text-muted-foreground">
-          Selecciona un evento para ver tus proyectos relacionados.
+    <div className="dashboard-page max-w-6xl space-y-7 pb-12">
+      <header>
+        <p className="text-sm text-slate-400 first-letter:uppercase">
+          {dayjs().locale("es").format("dddd, D [de] MMMM")}
         </p>
-      </div>
-      <div className="w-full mt-12 overflow-x-auto">
-        <GetEventsUser />
-      </div>
+        <h1 className="text-3xl font-bold tracking-tight md:text-4xl">
+          Hola, {user.data?.firstName}
+        </h1>
+      </header>
+      <PendingInvitationsBanner />
+      <CurrentEventsSection
+        leading={[
+          canViewAdministration(user.data) && <AdminSummaryCard key="admin" />,
+        ]}
+      />
+      <PastEventsSection />
     </div>
   );
 };

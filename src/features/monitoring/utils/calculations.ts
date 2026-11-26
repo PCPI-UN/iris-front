@@ -1,5 +1,6 @@
 import type { ProjectJuror, ProjectWithJurors } from '@/features/projects/api/get-projects-with-jurors';
 import type { CategoryEvaluationStats, ProjectEvaluationStats } from '../types';
+import { normalizeCategoryId } from '@/lib/compat/category-legacy';
 import { getCourseLabel } from './formatting';
 
 export const getJurorKey = (juror: ProjectJuror) => {
@@ -28,6 +29,19 @@ export const getUniqueJurors = (jurors: ProjectJuror[] = []) => {
     return true;
   });
 };
+
+/**
+ * Projects counted in the statistics tab, with their category resolved:
+ * GET /projects/by-event/:id/with-jurors sends it as courseId. Projects
+ * without category are left out; with `categoryId`, only that category counts.
+ */
+export const getStatisticsProjects = (
+  projects: ProjectWithJurors[],
+  categoryId?: number,
+): Array<ProjectWithJurors & { categoryId: number }> =>
+  projects
+    .map((project) => ({ ...project, categoryId: Number(normalizeCategoryId(project)) }))
+    .filter((project) => project.categoryId > 0 && (!categoryId || project.categoryId === categoryId));
 
 export const buildCategoryEvaluationStats = (
   projects: ProjectWithJurors[],

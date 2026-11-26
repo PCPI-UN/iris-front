@@ -1,15 +1,16 @@
-import { HttpResponse, http } from 'msw';
+import { HttpResponse, http } from "msw";
 
-import { env } from '@/config/env';
+import { env } from "@/config/env";
 
-import { db, persistDb } from '../db';
+import { db, persistDb } from "../db";
 import {
+  ADMIN_PLATFORM_PERMISSIONS,
   authenticate,
   hash,
   requireAuth,
   networkDelay,
   AUTH_COOKIE,
-} from '../utils';
+} from "../utils";
 
 type RegisterBody = {
   firstName: string;
@@ -24,126 +25,134 @@ type LoginBody = {
 };
 
 export const authHandlers = [
-  http.post(`${env.API_URL}/auth/signup`, async ({ request }) => {
-    await networkDelay();
-    try {
-      const userObject = (await request.json()) as RegisterBody;
+  // The app calls /api/* (proxied by Next); some tests call the API_URL directly
+  ...[`${env.API_URL}/auth/signup`, "/api/auth/signup"].map((url) =>
+    http.post(url, async ({ request }) => {
+      await networkDelay();
+      try {
+        const userObject = (await request.json()) as RegisterBody;
 
-      const existingUser = db.user.findFirst({
-        where: {
-          email: {
-            equals: userObject.email,
+        const existingUser = db.user.findFirst({
+          where: {
+            email: {
+              equals: userObject.email,
+            },
           },
-        },
-      });
+        });
 
-      if (existingUser) {
+        if (existingUser) {
+          return HttpResponse.json(
+            { message: "The user already exists" },
+            { status: 400 },
+          );
+        }
+
+        // Create default team for user
+        const team = db.team.create({
+          name: `${userObject.firstName} Team`,
+        });
+        await persistDb("team");
+
+        const teamId = team.id;
+        const role = "ADMIN";
+
+        db.user.create({
+          ...userObject,
+          role,
+          active: true,
+          status: "ACTIVE",
+          platformRoles: [
+            {
+              id: role === "ADMIN" ? 1 : 2,
+              name: role === "ADMIN" ? "Admin" : "User",
+              scope: "platform",
+            },
+          ],
+          platformPermissions: role === "ADMIN" ? [...ADMIN_PLATFORM_PERMISSIONS] : [],
+          password: hash(userObject.password),
+          teamId,
+        } as any);
+
+        await persistDb("user");
+
+        const result = authenticate({
+          email: userObject.email,
+          password: userObject.password,
+        });
+
+        return HttpResponse.json(result, {
+          headers: {
+            // with a real API servier, the token cookie should also be Secure and HttpOnly
+            "Set-Cookie": `${AUTH_COOKIE}=${result.jwt}; Path=/;`,
+          },
+        });
+      } catch (error: any) {
         return HttpResponse.json(
-          { message: 'The user already exists' },
-          { status: 400 },
+          { message: error?.message || "Server Error" },
+          { status: 500 },
         );
       }
+    }),
+  ),
 
-      // Create default team for user
-      const team = db.team.create({
-        name: `${userObject.firstName} Team`,
-      });
-      await persistDb('team');
-      
-      const teamId = team.id;
-      const role = 'ADMIN';
+  ...[`${env.API_URL}/auth/login`, "/api/auth/login"].map((url) =>
+    http.post(url, async ({ request }) => {
+      await networkDelay();
 
-      db.user.create({
-        ...userObject,
-        role,
-        active: true,
-        status: 'ACTIVE',
-        platformRoles: [
-          {
-            id: role === 'ADMIN' ? 1 : 2,
-            name: role === 'ADMIN' ? 'Admin' : 'User',
-            scope: 'platform',
+      try {
+        const credentials = (await request.json()) as LoginBody;
+        const result = authenticate(credentials);
+
+        return HttpResponse.json(result, {
+          headers: {
+            "Set-Cookie": `${AUTH_COOKIE}=${result.jwt}; Path=/;`,
           },
-        ],
-        platformPermissions: role === 'ADMIN' ? ['*'] : [],
-        password: hash(userObject.password),
-        teamId,
-      } as any);
-
-      await persistDb('user');
-
-      const result = authenticate({
-        email: userObject.email,
-        password: userObject.password,
-      });
-
-      return HttpResponse.json(result, {
-        headers: {
-          // with a real API servier, the token cookie should also be Secure and HttpOnly
-          'Set-Cookie': `${AUTH_COOKIE}=${result.jwt}; Path=/;`,
-        },
-      });
-    } catch (error: any) {
-      return HttpResponse.json(
-        { message: error?.message || 'Server Error' },
-        { status: 500 },
-      );
-    }
-  }),
-
-  http.post(`${env.API_URL}/auth/login`, async ({ request }) => {
-    await networkDelay();
-
-    try {
-      const credentials = (await request.json()) as LoginBody;
-      const result = authenticate(credentials);
-
-      return HttpResponse.json(result, {
-        headers: {
-          // with a real API servier, the token cookie should also be Secure and HttpOnly
-          'Set-Cookie': `${AUTH_COOKIE}=${result.jwt}; Path=/;`,
-        },
-      });
-    } catch (error: any) {
-      return HttpResponse.json(
-        { message: error?.message || 'Server Error' },
-        { status: 500 },
-      );
-    }
-  }),
-
-  http.post(`${env.API_URL}/auth/logout`, async () => {
-    await networkDelay();
-
-    return HttpResponse.json(
-      { message: 'Logged out' },
-      {
-        headers: {
-          'Set-Cookie': `${AUTH_COOKIE}=; Path=/;`,
-        },
-      },
-    );
-  }),
-
-  http.get(`${env.API_URL}/auth/me`, async ({ cookies }) => {
-    await networkDelay();
-
-    try {
-      const { user, error } = requireAuth(cookies);
-
-      if (error || !user) {
+        });
+      } catch (error: any) {
         return HttpResponse.json(
-          { message: error ?? 'Unauthorized' },
-          { status: 401 },
+          { message: error?.message || "Server Error" },
+          { status: 500 },
         );
       }
+    }),
+  ),
 
-      return HttpResponse.json({ data: user });
-    } catch (error: any) {
+  ...[`${env.API_URL}/auth/logout`, "/api/auth/logout"].map((url) =>
+    http.post(url, async () => {
+      await networkDelay();
+
       return HttpResponse.json(
-        { message: error?.message || 'Server Error' },
-        { status: 500 },
+        { message: "Logged out" },
+        {
+          headers: {
+            "Set-Cookie": `${AUTH_COOKIE}=; Path=/;`,
+          },
+        },
       );
-    }
-  }),
+    }),
+  ),
+
+  ...[`${env.API_URL}/auth/me`, "/api/auth/me"].map((url) =>
+    http.get(url, async ({ cookies }) => {
+      await networkDelay();
+
+      try {
+        const { user, error } = requireAuth(cookies);
+
+        if (error || !user) {
+          return HttpResponse.json(
+            { message: error ?? "Unauthorized" },
+            { status: 401 },
+          );
+        }
+
+        return HttpResponse.json({ data: user });
+      } catch (error: any) {
+        return HttpResponse.json(
+          { message: error?.message || "Server Error" },
+          { status: 500 },
+        );
+      }
+    }),
+  ),
 ];

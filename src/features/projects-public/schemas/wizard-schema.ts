@@ -4,7 +4,7 @@ export const participantSchemaCompetition = z.object({
   id: z.string(),
   firstName: z.string().min(1, 'Nombre requerido'),
   lastName: z.string().min(1, 'Apellido requerido'),
-  email: z.string().email('Email inválido'),
+  email: z.string().email('Correo electrónico inválido'),
   studentCode: z.string().min(1, 'Código estudiantil requerido'),
   semester: z.string().min(1, 'Semestre requerido'),
   career: z.string().min(1, 'Carrera requerida'),
@@ -14,7 +14,7 @@ export const participantSchemaExposition = z.object({
   id: z.string(),
   firstName: z.string().min(1, 'Nombre requerido'),
   lastName: z.string().min(1, 'Apellido requerido'),
-  email: z.string().email('Email inválido'),
+  email: z.string().email('Correo electrónico inválido'),
   studentCode: z.string().min(1, 'Código estudiantil requerido'),
   semester: z.string().optional(),
   career: z.string().optional(),
@@ -26,6 +26,13 @@ const assignedNumberSchema = z.union([
   z.string().regex(/^[1-9]\d?$/, 'El número asignado debe tener máximo 2 cifras y no puede iniciar en 0'),
   z.literal(''),
 ]).optional()
+
+/** NRC of the course section, looked up by the backend in the academic term of the event */
+export const nrcSchema = z
+  .string()
+  .trim()
+  .min(1, 'Debe ingresar el NRC del curso')
+  .max(20, 'El NRC no puede exceder 20 caracteres')
 
 export const projectSchema = z.object({
   projectCode: assignedNumberSchema,

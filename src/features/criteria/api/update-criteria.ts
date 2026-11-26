@@ -1,6 +1,8 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 
+import { getCriterionQueryOptions } from "./get-criterion";
+
 import { api } from "@/lib/api-client";
 import {
   normalizeCategoryIds,
@@ -9,23 +11,20 @@ import {
 import { MutationConfig } from "@/lib/react-query";
 import { Criterion } from "@/types/api";
 
-import { getCriterionQueryOptions } from "./get-criterion";
-
 export const updateCriteriaInputSchema = z.object({
   name: z
     .string()
-    .min(1, "Required")
-    .max(100, "Maximum 100 characters")
+    .min(1, "Este campo es obligatorio")
+    .max(100, "Máximo 100 caracteres")
     .optional(),
   description: z.string().optional(),
-  weight: z
-    .number()
-    .min(0, "Weight must be greater than or equal to 0")
-    .max(1, "Weight must be less than or equal to 1")
-    .optional(),
-  eventId: z.number().min(1, "Event is required").optional(),
+  // Relative to the other criteria of the same component and category
+  weight: z.number().positive("El peso debe ser mayor que 0").optional(),
+  eventId: z.number().min(1, "El evento es obligatorio").optional(),
 
-  categoryIds: z.array(z.number().min(1, "Category is required")).optional(),
+  categoryIds: z
+    .array(z.number().min(1, "La categoría es obligatoria"))
+    .optional(),
   category: z.string().optional(),
   componentId: z.number().min(1).nullable().optional(),
 });

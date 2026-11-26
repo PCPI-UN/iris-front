@@ -34,25 +34,62 @@ export const criterionHandlers = [
           );
         }
 
+        // Mock records use "course-001" or a plain id, and link a criterion to its
+        // categories through categoryIds, courseIds or criterionCourse
+        const courseKeys = new Set([
+          String(courseId),
+          String(Number(String(courseId).replace(/^course-/, ""))),
+        ]);
+        const linkedCourseIds = (c: any): string[] =>
+          [
+            ...(c.categoryIds ?? []),
+            ...(c.courseIds ?? []),
+            ...(c.criterionCourse ?? []).map((link: any) => link?.courseId),
+          ].flatMap((id: unknown) => [
+            String(id),
+            String(Number(String(id).replace(/^course-/, ""))),
+          ]);
         const items = db.criterion
           .getAll()
-          .filter(
-            (c: any) =>
-              Array.isArray(c.categoryIds ?? c.courseIds) &&
-              (c.categoryIds ?? c.courseIds).includes(Number(courseId))
+          .filter((c: any) =>
+            linkedCourseIds(c).some((id) => courseKeys.has(id)),
           )
-          .map((c: any) => ({
-            id: c.id,
-            eventId: c.eventId,
-            name: c.name,
-            description: c.description,
-            weight: c.weight,
-            active: c.active ?? true,
-            categoryIds: c.categoryIds || c.courseIds || [],
-            courseIds: c.courseIds || c.categoryIds || [],
-          }));
+          .filter((c: any) => c.active ?? true);
+        // The front sends criterion ids as numbers: "crit-002" goes out as 2
+        const publicId = (c: any, index: number): number => {
+          const match = /^crit-(\d+)$/.exec(String(c.id));
 
-        return HttpResponse.json({ criterions: items });
+          if (match) return Number(match[1]);
+          const numeric = Number(c.id);
+
+          return Number.isNaN(numeric) ? 1000 + index : numeric;
+        };
+
+        // Same shape as the API: criteria grouped by component. The mock database has no
+        // components, so every criterion goes in one group that weighs the whole grade and
+        // its effective weight is its relative weight over the sum of the group.
+        const totalWeight = items.reduce(
+          (sum: number, c: any) => sum + Number(c.weight ?? 0),
+          0,
+        );
+        const categories =
+          items.length === 0
+            ? []
+            : [
+                {
+                  category: "Criterios de evaluación",
+                  weight: 1,
+                  criterions: items.map((c: any, index: number) => ({
+                    id: publicId(c, index),
+                    name: c.name,
+                    ...(totalWeight > 0 && {
+                      weight: Number(c.weight ?? 0) / totalWeight,
+                    }),
+                  })),
+                },
+              ];
+
+        return HttpResponse.json({ categories });
       } catch (error: any) {
         return HttpResponse.json(
           { message: error?.message || "Server Error" },

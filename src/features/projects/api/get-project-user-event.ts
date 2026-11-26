@@ -1,12 +1,12 @@
 import { useQuery, queryOptions } from "@tanstack/react-query";
 import { z } from "zod";
 
-import { api } from "@/lib/api-client";
+import { api, ApiError } from "@/lib/api-client";
 import { QueryConfig } from "@/lib/react-query";
 import { Event, Project } from "@/types/api";
 
 export const getProjectInputSchema = z.object({
-  eventId: z.string().min(1, "Event ID is required"),
+  eventId: z.string().min(1, "El ID del evento es obligatorio"),
 });
 
 export type GetProjectInput = z.infer<typeof getProjectInputSchema>;
@@ -24,21 +24,38 @@ export const getProject = async ({
   eventId,
 }: GetProjectInput): Promise<ProjectByEventPayload | null> => {
   const validatedInput = getProjectInputSchema.parse({ eventId });
+
   try {
-    const response = await api.get<ProjectByEventResponse>(
+    const response = await api.get<any>(
       `/events/${validatedInput.eventId}/my-project`,
       { suppressErrorNotification: true },
     );
-    const payload = "data" in response ? response.data : response;
+    const payload =
+      response && typeof response === "object" && "data" in response
+        ? response.data
+        : response;
 
-    if (!payload?.project || !payload?.event) {
-      throw new Error("Invalid project response");
+    if (payload?.project && payload?.event) {
+      return payload;
     }
 
-    return payload;
+    if (payload?.id && (payload?.enrollmentStatus || payload?.state)) {
+      return {
+        project: {
+          ...payload,
+          state: payload.enrollmentStatus ?? payload.state,
+        } as Project,
+        event: {
+          id: payload.eventId,
+          name: payload.eventName ?? "",
+        } as Event,
+      };
+    }
+
+    throw new Error("Respuesta inválida del proyecto");
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    if (message === "No project found for this user in the specified event") {
+    // The backend answers 404 when the user has no project in the event.
+    if (error instanceof ApiError && error.status === 404) {
       return null;
     }
 

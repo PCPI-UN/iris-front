@@ -73,7 +73,7 @@ describe('Form', () => {
         validationBehavior="native"
         data-testid="form"
       >
-        <input name="email" type="email" required />
+        <input name="email" type="email" aria-label="Email" required />
         <button type="submit">Submit</button>
       </Form>
     );

@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useRef, useState, useEffect } from 'react';
+import { keepPreviousData } from '@tanstack/react-query';
 import {
   Calendar,
   Trophy,
@@ -56,6 +57,7 @@ const truncateText = (value: string, maxLength: number) => {
 import { Footer } from '@/features/landing/components/cta-footer';
 import { EventType } from '@/types/api';
 import { PRISMATIC_GRADIENT } from '@/features/landing/components/events-section.utils';
+import { documentLink } from "@/lib/document-link";
 
 type ThemeKey = 'cyan' | 'pink' | 'yellow';
 
@@ -157,7 +159,7 @@ const getPosterUrl = (project: ProjectWithJurors): string | undefined => {
   const posterDoc = project.documents.find((d) =>
     d.type?.toLowerCase().includes('poster'),
   );
-  return posterDoc?.url;
+  return posterDoc ? documentLink(posterDoc) : undefined;
 };
 
 type WinnerCardProps = {
@@ -205,25 +207,35 @@ const toAwardRanking = (awards: any[], projects: any[] = [], fallbackCategoryId?
       }
     }
 
+    const hasExplicitWinnerData =
+      Boolean(matchedProject) ||
+      Boolean(awardProjectId) ||
+      Boolean(award?.project && typeof award.project === 'object') ||
+      (Array.isArray(award?.participants) && award.participants.length > 0);
+
+    if (!hasExplicitWinnerData) {
+      continue;
+    }
+
     const projectPayload = matchedProject
       ? (() => {
-          const computedName = (matchedProject.name ?? matchedProject.title ?? matchedProject.projectTitle ?? String(award?.title ?? '').trim()) || `Proyecto #${rawPosition}`;
-          const computedDescription = (matchedProject.description ?? matchedProject.summary ?? String(award?.description ?? '').trim()) || undefined;
-          return {
-            name: computedName,
-            description: computedDescription,
-            participants: matchedProject.participants ?? matchedProject.teamMembers ?? matchedProject.members ?? [],
-            pendingParticipants: matchedProject.pendingParticipants ?? [],
-            documents: matchedProject.documents ?? [],
-          };
-        })()
-      : {
-          name: String(award?.title ?? '').trim() || `Proyecto #${rawPosition}`,
-          description: String(award?.description ?? '').trim() || undefined,
-          participants: [],
-          pendingParticipants: [],
-          documents: [],
+        const computedName = (matchedProject.name ?? matchedProject.title ?? matchedProject.projectTitle ?? String(award?.title ?? '').trim()) || `Proyecto #${rawPosition}`;
+        const computedDescription = (matchedProject.description ?? matchedProject.summary ?? String(award?.description ?? '').trim()) || undefined;
+        return {
+          name: computedName,
+          description: computedDescription,
+          participants: matchedProject.participants ?? matchedProject.teamMembers ?? matchedProject.members ?? [],
+          pendingParticipants: matchedProject.pendingParticipants ?? [],
+          documents: matchedProject.documents ?? [],
         };
+      })()
+      : {
+        name: String(award?.title ?? '').trim() || `Proyecto #${rawPosition}`,
+        description: String(award?.description ?? '').trim() || undefined,
+        participants: [],
+        pendingParticipants: [],
+        documents: [],
+      };
 
     current.push({
       position: rawPosition,
@@ -257,8 +269,8 @@ const WinnerCard = ({ ranked, categoryLabel, isExposition }: WinnerCardProps) =>
 
   const positionBadgeClass =
     ranked.position === 1 ? 'award-position-badge first' :
-    ranked.position === 2 ? 'award-position-badge second' :
-    'award-position-badge third';
+      ranked.position === 2 ? 'award-position-badge second' :
+        'award-position-badge third';
   const visibleMembers = membersExpanded ? members : members.slice(0, VISIBLE_MEMBERS_LIMIT);
   const hiddenCount = members.length - VISIBLE_MEMBERS_LIMIT;
 
@@ -433,29 +445,27 @@ const WinnersSection = ({
 
       <div className="w-full overflow-x-auto overscroll-x-contain scroll-smooth pb-2 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0 hide-scrollbar">
         <div className="flex w-max min-w-full items-center gap-3 py-2">
-        {hasMultipleCategories
-          ? categories.map((cat) => (
+          {hasMultipleCategories
+            ? categories.map((cat) => (
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategoryId(cat.id)}
-                className={`category-button whitespace-nowrap snap-start px-4 sm:px-5 py-2 rounded-full text-sm font-semibold border transition-all duration-200 flex-shrink-0 ${
-                  selectedCategoryId === cat.id
+                className={`category-button whitespace-nowrap snap-start px-4 sm:px-5 py-2 rounded-full text-sm font-semibold border transition-all duration-200 flex-shrink-0 ${selectedCategoryId === cat.id
                     ? 'prismatic-border prismatic-text selected-category'
                     : 'prismatic-text border-white/20 text-white/90 hover:border-white/40 hover:bg-white/5'
-                }`}
+                  }`}
               >
                 {cat.name}
               </button>
             ))
-          : ([1, 2, 3] as const).map((pos) => (
+            : ([1, 2, 3] as const).map((pos) => (
               <button
                 key={pos}
                 onClick={() => setSelectedPosition(pos)}
-                className={`category-button whitespace-nowrap snap-start px-4 sm:px-5 py-2 rounded-full text-sm font-semibold border transition-all duration-200 flex-shrink-0 ${
-                  selectedPosition === pos
+                className={`category-button whitespace-nowrap snap-start px-4 sm:px-5 py-2 rounded-full text-sm font-semibold border transition-all duration-200 flex-shrink-0 ${selectedPosition === pos
                     ? 'prismatic-border prismatic-text selected-category'
                     : 'prismatic-text border-white/20 text-white/90 hover:border-white/40 hover:bg-white/5'
-                }`}
+                  }`}
               >
                 Top {pos}
               </button>
@@ -801,6 +811,7 @@ export const PastEventDetail = ({ eventId }: EventDetailProps) => {
   });
 
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | undefined>(undefined);
+  const [hasLoadedWinners, setHasLoadedWinners] = useState(false);
 
   const projects = projectsQuery.data?.data ?? [];
   const isProjectsLoading = projectsQuery.isLoading || projectsQuery.isFetching;
@@ -812,11 +823,40 @@ export const PastEventDetail = ({ eventId }: EventDetailProps) => {
   );
 
   const approvedProjectLookup = useMemo(() => {
+    const byId = new Map<string, ProjectWithJurors>();
+    const byCode = new Map<string, ProjectWithJurors>();
+    const byName = new Map<string, ProjectWithJurors>();
+
+    approvedProjects.forEach((project) => {
+      if (project.id !== undefined && project.id !== null) {
+        byId.set(String(project.id), project);
+      }
+
+      const projectCode = normalizeText(String(project.projectCode ?? project.eventNumber ?? ''));
+      if (projectCode) {
+        byCode.set(projectCode, project);
+      }
+
+      const projectName = normalizeText(String(project.name ?? ''));
+      if (projectName) {
+        byName.set(projectName, project);
+      }
+    });
+
+    return { byId, byCode, byName };
+  }, [approvedProjects]);
+
+  const nonApprovedProjectLookup = useMemo(() => {
     const byId = new Set<string>();
     const byCode = new Set<string>();
     const byName = new Set<string>();
 
-    approvedProjects.forEach((project) => {
+    projects.forEach((project) => {
+      const state = String(project.state ?? '').trim().toUpperCase();
+      if (!state || state === 'APPROVED') {
+        return;
+      }
+
       if (project.id !== undefined && project.id !== null) {
         byId.add(String(project.id));
       }
@@ -833,21 +873,47 @@ export const PastEventDetail = ({ eventId }: EventDetailProps) => {
     });
 
     return { byId, byCode, byName };
-  }, [approvedProjects]);
+  }, [projects]);
 
   const rankingConfigQuery = useRankingConfig({ eventId: event?.id, queryConfig: { enabled: Boolean(event?.id) } });
 
-  const configVisibleFlag = (() => {
-    const cfg = rankingConfigQuery.data?.data;
-    if (!cfg) return undefined;
-    if (typeof cfg.visibleInLanding === 'boolean') return cfg.visibleInLanding;
-    if ('visiblePublic' in cfg && typeof (cfg as any).visiblePublic === 'boolean') return (cfg as any).visiblePublic;
-    return undefined;
-  })();
+  // The public rankings endpoint is self-enforcing (responds 403 when the ranking is not
+  // public) and carries its own visibility configuration inline, so query it for any event
+  // and let the response decide. This avoids the deadlock where the ranking was never
+  // fetched for visitors without a session: for them /events/ranking-config returns 401 and
+  // the public event detail does not include rankingConfig, so the previous gate stayed
+  // false forever and /rankings/public was never requested.
+  const rankingQuery = usePublicEventRankings({
+    eventId: event?.id,
+    categoryId: selectedCategoryId && selectedCategoryId > 0 ? selectedCategoryId : undefined,
+    state: 'APPROVED',
+    // No retry: a 403 here is the backend declaring the ranking non-public, not a transient
+    // failure, so retrying would only repeat a request we expect to be rejected.
+    // keepPreviousData: when the selected category changes the query key changes and data would
+    // momentarily be undefined; since visibility is derived from the response's `configuration`,
+    // that would flicker the ranking off. Keeping the previous data holds it steady.
+    queryConfig: { enabled: Boolean(event?.id), retry: false, placeholderData: keepPreviousData },
+  });
+
+  const publicRankingConfig = useMemo(() => {
+    const cfg = rankingQuery.data?.configuration;
+    if (!cfg) return null;
+    return {
+      positions: cfg.positions,
+      visiblePositions: cfg.positions,
+      visibleInLanding: cfg.visiblePublic,
+      visibleScore: cfg.gradeVisible,
+    };
+  }, [rankingQuery.data]);
+
+  const effectiveRankingConfig = useMemo(() => {
+    return rankingConfigQuery.data?.data ?? event?.rankingConfig ?? publicRankingConfig ?? null;
+  }, [rankingConfigQuery.data, event?.rankingConfig, publicRankingConfig]);
 
   // Reset category selection when the event changes
   useEffect(() => {
     setSelectedCategoryId(undefined);
+    setHasLoadedWinners(false);
   }, [event?.id]);
 
 
@@ -863,118 +929,160 @@ export const PastEventDetail = ({ eventId }: EventDetailProps) => {
 
   const isExposition = event?.eventType === EventType.Exposition;
 
+  const visibleRankingPositions = useMemo(() => {
+    return effectiveRankingConfig?.visiblePositions ?? effectiveRankingConfig?.positions ?? 0;
+  }, [effectiveRankingConfig]);
+
+  // Determine if public ranking should be shown using ranking-config endpoint with fallback to event.rankingConfig
+  const isPublicRankingEnabled = useMemo(() => {
+    if (!effectiveRankingConfig || !(event?.resultsPublished)) return false;
+    if (typeof effectiveRankingConfig.visibleInLanding === 'boolean') {
+      return effectiveRankingConfig.visibleInLanding;
+    }
+    if ('visiblePublic' in effectiveRankingConfig && typeof (effectiveRankingConfig as any).visiblePublic === 'boolean') {
+      return (effectiveRankingConfig as any).visiblePublic;
+    }
+    if ('isPublic' in effectiveRankingConfig && typeof (effectiveRankingConfig as any).isPublic === 'boolean') {
+      return (effectiveRankingConfig as any).isPublic;
+    }
+    return false;
+  }, [effectiveRankingConfig]);
+
+  const visibleRankingScore = useMemo(() => {
+    if (!effectiveRankingConfig) return true;
+    if (typeof effectiveRankingConfig.visibleScore === 'boolean') {
+      return effectiveRankingConfig.visibleScore;
+    }
+    return true;
+  }, [effectiveRankingConfig]);
+
   const categories = useMemo(() => {
     const categoryMap = new Map<number, string>();
 
     // First, add categories from event
     if (event?.categories?.length) {
       event.categories.forEach((c) => {
-        categoryMap.set(c.id, c.name || c.description || `Categoría ${c.id}`);
+        if (Number.isFinite(Number(c.id)) && Number(c.id) > 0) {
+          categoryMap.set(Number(c.id), c.name || c.description || `Categoría ${c.id}`);
+        }
       });
     }
 
     // Then, add categories from awards
     (event?.awards ?? []).forEach((award) => {
       const id = Number(award?.categoryId);
-      if (Number.isFinite(id) && !categoryMap.has(id)) {
+      if (Number.isFinite(id) && id > 0 && !categoryMap.has(id)) {
         categoryMap.set(id, `Categoría ${id}`);
       }
     });
 
-    // Finally, add categories from projects
+    // Add categories from approved projects
     approvedProjects.forEach((project) => {
       const id = Number(project?.categoryId);
-      if (Number.isFinite(id) && !categoryMap.has(id)) {
+      if (Number.isFinite(id) && id > 0 && !categoryMap.has(id)) {
         categoryMap.set(id, `Categoría ${id}`);
+      }
+    });
+
+    // Also register categories present in public ranking rows
+    (rankingQuery.data?.data ?? []).forEach((row) => {
+      const id = Number(row.categoryId);
+      if (Number.isFinite(id) && id > 0 && !categoryMap.has(id)) {
+        categoryMap.set(id, row.category || `Categoría ${id}`);
       }
     });
 
     return Array.from(categoryMap, ([id, name]) => ({ id, name }));
-  }, [event?.categories, event?.awards, approvedProjects]);
+  }, [event?.categories, event?.awards, approvedProjects, rankingQuery.data]);
 
-  // Filter out categories that have no projects to avoid showing empty category pills
+  // Filter out categories that have no projects when approvedProjects are loaded
   const visibleCategories = useMemo(() => {
-    if (!approvedProjects || approvedProjects.length === 0) return [];
+    if (!approvedProjects || approvedProjects.length === 0) return categories;
     const projectCategoryIds = new Set<number>();
     for (const p of approvedProjects) {
       const cid = Number(p?.categoryId);
       if (Number.isFinite(cid) && cid > 0) projectCategoryIds.add(cid);
     }
 
-    return categories.filter((c) => projectCategoryIds.has(c.id));
+    const filtered = categories.filter((c) => projectCategoryIds.has(c.id));
+    return filtered.length > 0 ? filtered : categories;
   }, [categories, approvedProjects]);
 
-
-
-  const visibleRankingPositions = useMemo(() => {
-    const config = rankingConfigQuery.data?.data;
-    return config?.visiblePositions ?? config?.positions ?? 0;
-  }, [rankingConfigQuery.data]);
-
-  // Determine if public ranking should be shown. If there is no ranking configuration
-  // (null), treat it as disabled to avoid calling the public rankings endpoint which
-  // can return a server-side error when public ranking is not enabled.
-  const isPublicRankingEnabled = useMemo(() => {
-    const config = rankingConfigQuery.data?.data;
-    if (config === null || config === undefined) return false;
-    if (typeof config.visibleInLanding === 'boolean') return config.visibleInLanding;
-    if ('visiblePublic' in config && typeof (config as any).visiblePublic === 'boolean') return (config as any).visiblePublic;
-    return false;
-  }, [rankingConfigQuery.data]);
-
-  const visibleRankingScore = useMemo(() => {
-    const config = rankingConfigQuery.data?.data;
-    if (!config) return true;
-    if (typeof config.visibleScore === 'boolean') return config.visibleScore;
-    return true;
-  }, [rankingConfigQuery.data]);
-
-  const rankingQuery = usePublicEventRankings({
-    eventId: event?.id,
-    categoryId: selectedCategoryId,
-    state: 'APPROVED',
-    queryConfig: { enabled: Boolean(event?.id) && Boolean(isPublicRankingEnabled) },
-  });
-
   const rankingByCategory = useMemo(() => {
-    // Prefer server-provided public rankings when available
+    if (!isPublicRankingEnabled) {
+      return new Map<number, RankedProject[]>();
+    }
+
+    // Prefer server-provided public rankings when available, without discarding rows when
+    // the private/admin projects endpoint is unavailable for public visitors.
     const serverRows = (rankingQuery.data?.data ?? []).filter((row) => {
+      if (row.state && String(row.state).trim().toUpperCase() !== 'APPROVED') {
+        return false;
+      }
+
       const projectId = row.projectId !== undefined && row.projectId !== null ? String(row.projectId) : undefined;
-      if (projectId && approvedProjectLookup.byId.has(projectId)) {
-        return true;
+      if (projectId && nonApprovedProjectLookup.byId.has(projectId)) {
+        return false;
       }
 
       const projectCode = normalizeText(String(row.projectCode ?? ''));
-      if (projectCode && approvedProjectLookup.byCode.has(projectCode)) {
-        return true;
+      if (projectCode && nonApprovedProjectLookup.byCode.has(projectCode)) {
+        return false;
       }
 
       const projectName = normalizeText(String(row.projectName ?? ''));
-      if (projectName && approvedProjectLookup.byName.has(projectName)) {
-        return true;
+      if (projectName && nonApprovedProjectLookup.byName.has(projectName)) {
+        return false;
       }
 
-      return false;
+      return true;
     });
+
     if (Array.isArray(serverRows) && serverRows.length > 0) {
       const map = new Map<number, RankedProject[]>();
       for (const row of serverRows) {
-        const normalizedCategoryId = Number.isFinite(Number(row.categoryId))
-          ? Number(row.categoryId)
-          : (() => {
+        const projectIdKey = row.projectId !== undefined && row.projectId !== null ? String(row.projectId) : undefined;
+        const projectCodeKey = normalizeText(String(row.projectCode ?? ''));
+        const projectNameKey = normalizeText(String(row.projectName ?? ''));
+
+        const matchedProject =
+          (projectIdKey ? approvedProjectLookup.byId.get(projectIdKey) : undefined) ??
+          (projectCodeKey ? approvedProjectLookup.byCode.get(projectCodeKey) : undefined) ??
+          (projectNameKey ? approvedProjectLookup.byName.get(projectNameKey) : undefined);
+
+        const rawCategoryId = Number(row.categoryId ?? matchedProject?.categoryId);
+        const normalizedCategoryId =
+          Number.isFinite(rawCategoryId) && rawCategoryId > 0
+            ? rawCategoryId
+            : (() => {
               const categoryLabel = normalizeText(String(row.category ?? ''));
-              const matchedCategory = categories.find((category) => normalizeText(category.name) === categoryLabel);
-              return matchedCategory?.id ?? selectedCategoryId ?? 0;
+              if (categoryLabel) {
+                const matchedCategory = categories.find(
+                  (category) => normalizeText(category.name) === categoryLabel,
+                );
+                if (matchedCategory) return matchedCategory.id;
+              }
+              if (selectedCategoryId && selectedCategoryId > 0) {
+                return selectedCategoryId;
+              }
+              if (categories.length === 1 && categories[0].id > 0) {
+                return categories[0].id;
+              }
+              return 0;
             })();
+
         const list = map.get(normalizedCategoryId) ?? [];
         list.push({
           position: row.position,
           project: {
-            name: row.projectName ?? (row as any).project?.name ?? 'Proyecto',
-            description: undefined,
-            participants: row.participants ?? [],
-            pendingParticipants: [],
-            documents: undefined,
+            name: row.projectName ?? matchedProject?.name ?? (row as any).project?.name ?? 'Proyecto',
+            description: row.description ?? matchedProject?.description ?? undefined,
+            participants:
+              Array.isArray(row.participants) && row.participants.length > 0
+                ? row.participants
+                : (matchedProject?.participants ?? []),
+            pendingParticipants: matchedProject?.pendingParticipants ?? [],
+            documents: row.documents ?? matchedProject?.documents ?? undefined,
           },
           categoryId: normalizedCategoryId,
           score: (row as any).averageGrade ?? (row as any).averageScore ?? (row as any).score ?? undefined,
@@ -990,10 +1098,21 @@ export const PastEventDetail = ({ eventId }: EventDetailProps) => {
       return map;
     }
 
-    // Fallback to awards-based ranking when server data not available
-    if (!event?.awards?.length) return new Map<number, RankedProject[]>();
-    return toAwardRanking(event.awards, projects, categories[0]?.id);
-  }, [approvedProjectLookup, rankingQuery.data, event?.awards, categories, approvedProjects]);
+    // Fallback to awards-based ranking only when awards explicitly reference winning projects
+    if (selectedCategoryId !== undefined || !event?.awards?.length) {
+      return new Map<number, RankedProject[]>();
+    }
+    return toAwardRanking(event.awards, approvedProjects, categories[0]?.id);
+  }, [
+    approvedProjectLookup,
+    approvedProjects,
+    categories,
+    event?.awards,
+    isPublicRankingEnabled,
+    nonApprovedProjectLookup,
+    rankingQuery.data,
+    selectedCategoryId,
+  ]);
 
   const rankingCategories = useMemo(() => {
     const ids = Array.from(rankingByCategory.keys());
@@ -1001,30 +1120,82 @@ export const PastEventDetail = ({ eventId }: EventDetailProps) => {
 
     return ids.map((id) => ({
       id,
-      name: categories.find((category) => category.id === id)?.name ?? `Categoría ${id}`,
+      name:
+        id === 0
+          ? 'General'
+          : (categories.find((category) => category.id === id)?.name ?? `Categoría ${id}`),
     }));
   }, [rankingByCategory, categories]);
 
-  const displayCategories = visibleCategories.length > 0 ? visibleCategories : rankingCategories;
+  const displayCategories = useMemo(() => {
+    if (
+      rankingByCategory.size === 1 &&
+      rankingByCategory.has(0) &&
+      selectedCategoryId === undefined
+    ) {
+      return rankingCategories;
+    }
+    if (visibleCategories.length > 0) {
+      return visibleCategories;
+    }
+    if (categories.length > 0) {
+      return categories;
+    }
+    return rankingCategories;
+  }, [categories, rankingByCategory, rankingCategories, selectedCategoryId, visibleCategories]);
 
-  const isRankingLoading = rankingQuery.isLoading || rankingConfigQuery.isLoading;
+  const hasCurrentWinners = useMemo(() => {
+    for (const entries of rankingByCategory.values()) {
+      if (entries.length > 0) return true;
+    }
+    return false;
+  }, [rankingByCategory]);
+
+  useEffect(() => {
+    if (isPublicRankingEnabled && hasCurrentWinners) {
+      setHasLoadedWinners(true);
+    }
+  }, [isPublicRankingEnabled, hasCurrentWinners]);
+
+  const isRankingLoading =
+    !hasLoadedWinners && (rankingQuery.isLoading || rankingConfigQuery.isLoading);
 
   const shouldRenderWinners = useMemo(() => {
     if (!isPublicRankingEnabled) return false;
-    if (!displayCategories || displayCategories.length === 0) return false;
-    // Only render winners if at least one visible category has ranking entries
-    for (const c of displayCategories) {
-      if ((rankingByCategory.get(c.id)?.length ?? 0) > 0) return true;
-    }
-    return false;
-  }, [isPublicRankingEnabled, displayCategories, rankingByCategory]);
+    if (hasCurrentWinners) return true;
+    return hasLoadedWinners && selectedCategoryId !== undefined;
+  }, [hasCurrentWinners, hasLoadedWinners, isPublicRankingEnabled, selectedCategoryId]);
+
+  const tableProjects = useMemo(() => {
+    if (projects.length > 0) return projects;
+    const rows = rankingQuery.data?.data ?? [];
+    if (rows.length === 0) return [];
+    return rows.map((row, idx) => ({
+      id: row.projectId ?? idx + 1,
+      name: row.projectName,
+      description: row.description,
+      state: row.state ?? 'APPROVED',
+      categoryId: row.categoryId,
+      projectCode: row.projectCode,
+      participants: (row.participants ?? []).map((name, pIdx) => ({
+        userId: pIdx + 1,
+        projectId: row.projectId ?? idx + 1,
+        firstName: name,
+        lastName: '',
+      })),
+      documents: (row.documents ?? []).map((doc) => ({
+        type: doc.type ?? 'POSTER',
+        url: doc.url ?? '',
+      })),
+    })) as unknown as ProjectWithJurors[];
+  }, [projects, rankingQuery.data]);
 
   const eventTypeLabel = useMemo(
     () => normalizeEventType(event?.eventType),
     [event?.eventType],
   );
 
-  
+
 
   const organizers = Array.isArray(event?.organizers)
     ? event.organizers.filter(hasText)
@@ -1038,10 +1209,10 @@ export const PastEventDetail = ({ eventId }: EventDetailProps) => {
 
   const hasGeneralDetails = Boolean(
     hasText(primaryOrganizer) ||
-      hasText(primaryCollaborator) ||
-      eventTypeLabel ||
-      isFreeEvent ||
-      hasText(event?.location),
+    hasText(primaryCollaborator) ||
+    eventTypeLabel ||
+    isFreeEvent ||
+    hasText(event?.location),
   );
 
   const shouldShowAllies = hasText(event?.aboutOurAllies);
@@ -1121,9 +1292,9 @@ export const PastEventDetail = ({ eventId }: EventDetailProps) => {
                 </div>
               )}
 
-              
 
-              
+
+
             </div>
 
             {hasGeneralDetails && (
@@ -1219,11 +1390,11 @@ export const PastEventDetail = ({ eventId }: EventDetailProps) => {
           <Divider className="event-divider" />
         </div>
         <ProjectsTableSection
-          projects={projects}
+          projects={tableProjects}
           isExposition={isExposition}
-          isLoading={isProjectsLoading}
-          isError={isProjectsError}
-            categories={visibleCategories}
+          isLoading={isProjectsLoading && tableProjects.length === 0}
+          isError={isProjectsError && tableProjects.length === 0}
+          categories={visibleCategories}
         />
       </>
 

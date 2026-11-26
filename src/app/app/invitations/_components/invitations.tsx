@@ -1,21 +1,45 @@
 "use client";
 
+import { Button } from "@heroui/button";
+import { Calendar, MapPin, Clock } from "lucide-react";
+import dayjs from "dayjs";
+
 import { useInvitations } from "@/features/invitations/api/get-invitations";
 import { useAcceptInvitation } from "@/features/invitations/api/accept-invitation";
 import { Spinner } from "@/components/ui/spinner";
 import { Card, CardBody } from "@/components/ui/card";
-import { Button } from "@heroui/button";
-import { Calendar, MapPin, Clock } from "lucide-react";
 import { Chip } from "@/components/ui/chip";
 import { useNotifications } from "@/components/ui/notifications";
-import dayjs from "dayjs";
+
+import "dayjs/locale/es";
 
 export const formatDateShort = (date: string | number) => {
   return {
-    day: dayjs(date).format("MMM D, YYYY"),
-    time: dayjs(date).format("h:mm A"),
+    day: dayjs(date).locale("es").format("D [de] MMM, YYYY"),
+    time: dayjs(date).locale("es").format("h:mm A"),
   };
 };
+
+const ROLE_LABELS: Record<string, string> = {
+  Juror: "Jurado",
+  Admin: "Administrador",
+  User: "Estudiante",
+  Participant: "Participante",
+  Tutor: "Tutor",
+};
+
+/**
+ * A PROJECT_TUTOR invitation (Iris#187) has no event: the gateway does not fill event or
+ * project for it, so it is recognised by its type or by the Tutor role.
+ */
+export const isTutorInvitation = (invitation: {
+  targetType?: string | null;
+  event?: unknown;
+  roles?: { name: string }[];
+}) =>
+  invitation.targetType === "PROJECT_TUTOR" ||
+  (!invitation.event &&
+    Boolean(invitation.roles?.some((role) => role.name === "Tutor")));
 
 export const Invitations = () => {
   const { data, isLoading, error } = useInvitations({ status: "PENDING" });
@@ -80,6 +104,47 @@ export const Invitations = () => {
     <div className="space-y-4">
       <div className="grid p-4 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {invitations.map((invitation) => {
+          if (isTutorInvitation(invitation)) {
+            const expiresAt = formatDateShort(invitation.expiresAt);
+
+            return (
+              <Card key={invitation.id} className="glass-card" shadow="sm">
+                <CardBody className="p-6 space-y-4 flex flex-col">
+                  <div className="flex items-start justify-between gap-2">
+                    <h3 className="text-xl font-semibold flex-1">
+                      Tutor de un proyecto
+                    </h3>
+                    <Chip color="secondary" size="sm" variant="flat">
+                      Tutor
+                    </Chip>
+                  </div>
+                  <p className="text-sm text-default-500">
+                    Te indicaron como tutor de un proyecto. Al aceptar quedas
+                    vinculado a él y recibes el rol de tutor.
+                  </p>
+                  <div className="flex items-center gap-2 p-1">
+                    <Clock className="h-4 w-4 text-default-400" />
+                    <div className="flex flex-col leading-tight">
+                      <span className="text-default-400 text-sm">Expira:</span>
+                      <span className="text-sm">{expiresAt.day}</span>
+                    </div>
+                  </div>
+                  <div className="mt-auto pt-2">
+                    <Button
+                      className="w-full transition-transform hover:scale-[1.01] md:text-base text-sm md:py-3 py-2 rounded-xl font-medium"
+                      color="primary"
+                      isDisabled={acceptMutation.isPending}
+                      isLoading={acceptMutation.isPending}
+                      onPress={() => handleAccept(invitation)}
+                    >
+                      Aceptar invitación
+                    </Button>
+                  </div>
+                </CardBody>
+              </Card>
+            );
+          }
+
           if (!invitation.event) return null;
 
           const start = formatDateShort(invitation.event.startDate);
@@ -87,7 +152,7 @@ export const Invitations = () => {
           const expires = formatDateShort(invitation.expiresAt);
 
           return (
-            <Card shadow="sm" key={invitation.id} className="glass-card">
+            <Card key={invitation.id} className="glass-card" shadow="sm">
               <CardBody className="p-6 space-y-4 flex flex-col">
                 <div className="space-y-2">
                   <div className="flex items-start justify-between gap-2">
@@ -102,10 +167,11 @@ export const Invitations = () => {
                             ? "warning"
                             : "primary"
                         }
-                        variant="flat"
                         size="sm"
+                        variant="flat"
                       >
-                        {invitation.roles[0].name}
+                        {ROLE_LABELS[invitation.roles[0].name] ??
+                          invitation.roles[0].name}
                       </Chip>
                     )}
                   </div>
@@ -122,7 +188,7 @@ export const Invitations = () => {
                     <div className="flex items-start gap-2">
                       <Calendar className="h-4 w-4 text-default-400 mt-1" />
                       <div className="flex flex-col leading-tight">
-                        <span className="text-default-400">Start:</span>
+                        <span className="text-default-400">Inicio:</span>
                         <span>{start.day}</span>
                         <span className="text-xs text-default-500">
                           {start.time}
@@ -133,7 +199,7 @@ export const Invitations = () => {
                     <div className="flex items-start gap-2">
                       <Calendar className="h-4 w-4 text-default-400 mt-1" />
                       <div className="flex flex-col leading-tight">
-                        <span className="text-default-400">End:</span>
+                        <span className="text-default-400">Fin:</span>
                         <span>{end.day}</span>
                         <span className="text-xs text-default-500">
                           {end.time}
@@ -162,11 +228,11 @@ export const Invitations = () => {
 
                 <div className="mt-auto pt-2">
                   <Button
-                    onPress={() => handleAccept(invitation)}
-                    color="primary"
                     className="w-full transition-transform hover:scale-[1.01] md:text-base text-sm md:py-3 py-2 rounded-xl font-medium"
-                    isLoading={acceptMutation.isPending}
+                    color="primary"
                     isDisabled={acceptMutation.isPending}
+                    isLoading={acceptMutation.isPending}
+                    onPress={() => handleAccept(invitation)}
                   >
                     Aceptar invitación
                   </Button>

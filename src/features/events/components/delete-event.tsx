@@ -1,6 +1,9 @@
 "use client";
 
 import { Trash } from "lucide-react";
+
+import { useDeleteEvent } from "../api/delete-event";
+
 import { Button } from "@/components/ui/button";
 import {
   Modal,
@@ -12,9 +15,7 @@ import {
 import { useNotifications } from "@/components/ui/notifications";
 import { useUser } from "@/lib/auth";
 import { canDeleteEvent } from "@/lib/authorization";
-
-import { useDeleteEvent } from "../api/delete-event";
-import { useDisclosure } from '@/hooks/use-disclosure';
+import { useDisclosure } from "@/hooks/use-disclosure";
 
 type DeleteEventProps = {
   id: number;
@@ -29,7 +30,7 @@ export const DeleteEvent = ({ id }: DeleteEventProps) => {
       onSuccess: () => {
         addNotification({
           type: "success",
-          title: "Event Deleted",
+          title: "Evento eliminado",
         });
         onClose();
       },
@@ -43,38 +44,39 @@ export const DeleteEvent = ({ id }: DeleteEventProps) => {
   return (
     <>
       <Button
-        variant="shadow"
         className="w-full"
-        size="sm"
         color="danger"
+        size="sm"
+        variant="shadow"
         onPress={() => onOpen()}
       >
         <Trash size={16} />
-        Delete Event
+        Eliminar evento
       </Button>
-      <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="2xl">
+      <Modal isOpen={isOpen} size="2xl" onOpenChange={onOpenChange}>
         <ModalContent>
           {(onClose) => (
             <>
               <ModalHeader className="flex flex-col gap-1">
-                <h2 className="text-lg font-bold">Delete Event</h2>
+                <h2 className="text-lg font-bold">Eliminar evento</h2>
               </ModalHeader>
               <ModalBody>
                 <p className="text-sm text-gray-500">
-                  Are you sure you want to delete this event?
+                  ¿Estás seguro de que deseas eliminar este evento? Esta acción
+                  no se puede deshacer.
                 </p>
               </ModalBody>
               <ModalFooter>
                 <Button color="danger" variant="light" onPress={onClose}>
-                  Cancel
+                  Cancelar
                 </Button>
                 <Button
                   color="primary"
                   isLoading={deleteEventMutation.isPending}
-                  onPress={() => deleteEventMutation.mutate({ eventId: id })}
                   startContent={<Trash className="size-4" />}
+                  onPress={() => deleteEventMutation.mutate({ eventId: id })}
                 >
-                  Delete Event
+                  Eliminar evento
                 </Button>
               </ModalFooter>
             </>

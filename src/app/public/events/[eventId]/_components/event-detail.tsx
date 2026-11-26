@@ -23,12 +23,51 @@ import { usePublicEventDetail } from '@/features/events/api/get-public-event-det
 import { normalizeEventType } from '@/features/events/utils/normalize-event-type';
 import { hasInscriptionDeadlinePassed } from '@/features/events/utils/inscription-deadline';
 import {
+    formatAwardValue,
+    getAwardDescription,
+    getAwardTitle,
+    getVisibleAwards,
+} from '@/features/events/utils/event-awards';
+import {
     getUserProjectStateInEvent,
     isUserRegisteredInEvent,
     resolveJoinTarget,
 } from '@/features/events/utils/resolve-join-target';
 import { useUser } from '@/lib/auth';
 import { Footer } from '@/features/landing/components/cta-footer';
+import { PastEventDetail } from './past-event-detail';
+
+const isPastEventClient = (event?: any) => {
+  if (!event) return false;
+  const statusName = String(event.statusName ?? '').toUpperCase();
+  if (
+    statusName === 'CLOSED' ||
+    statusName === 'FINISHED' ||
+    statusName === 'INACTIVE' ||
+    Number(event.status) === 4 ||
+    event.active === false ||
+    Boolean(event.rankingConfig?.visibleInLanding)
+  ) {
+    return true;
+  }
+
+  if (!event.endDate) return false;
+  if (/T\d{2}:\d{2}/.test(String(event.endDate))) {
+    const exactEnd = new Date(event.endDate);
+    if (!Number.isNaN(exactEnd.getTime())) {
+      return exactEnd.getTime() < Date.now();
+    }
+  }
+
+  const datePart = String(event.endDate).split('T')[0];
+  const [year, month, day] = datePart.split('-').map(Number);
+  if (!year || !month || !day) return false;
+
+  const today = new Date();
+  const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+  const endDateStart = new Date(year, month - 1, day).getTime();
+  return endDateStart < todayStart;
+};
 
 type ThemeKey = 'cyan' | 'pink' | 'yellow';
 
@@ -291,6 +330,10 @@ return (
 );
 }
 
+if (isPastEventClient(event)) {
+return <PastEventDetail eventId={eventId} />;
+}
+
 const organizers = Array.isArray(event.organizers)
 ? event.organizers.filter((item) => hasText(item))
 : [];
@@ -315,9 +358,9 @@ event.minimumTeamSize != null ||
 const hasHeroDescription = hasText(event.description);
 const hasProgramData = program.length > 0;
 const shouldShowInscriptionSection = hasRequirementsData || hasProgramData;
-const awards = Array.isArray(event.awards) ? event.awards : [];
+const awards = getVisibleAwards(event.awards);
 const hasAwardsData = awards.length > 0;
-const shouldRenderTopOneAsBanner = awards.length === 1 && awards[0]?.position === 1;
+const shouldRenderTopOneAsBanner = awards.length === 1;
 const isFreeEvent =
 event.inscriptionCost === 0;
 const hasGeneralDetailsSection = Boolean(
@@ -489,53 +532,75 @@ return (
 
         {shouldRenderTopOneAsBanner ? (
             <div className="event-info-card rounded-2xl p-6 sm:p-8 feature-card">
-            <div className="space-y-2">
-                <div className="space-y-2">
-                <h3 className="text-xl sm:text-2xl font-black uppercase tracking-wide">{awards[0]?.title ?? 'Premio'}</h3>
-                {hasText(awards[0]?.description) && (
-                    <p className="text-xl sm:text-2xl font-black text-green-500 uppercase tracking-wide leading-snug">
-                    {awards[0].description}
+            <div
+                className={`space-y-2${
+                formatAwardValue(awards[0].value) || getAwardDescription(awards[0]) ? '' : ' text-center'
+                }`}
+            >
+                <h3 className="text-xl sm:text-2xl font-black uppercase tracking-wide">{getAwardTitle(awards[0])}</h3>
+                {formatAwardValue(awards[0].value) && (
+                    <p className="text-xl sm:text-2xl font-black text-green-500 tracking-wide">
+                    {formatAwardValue(awards[0].value)}
                     </p>
                 )}
-                </div>
+                {getAwardDescription(awards[0]) && (
+                    <p className="text-base sm:text-lg text-muted-foreground leading-snug">
+                    {getAwardDescription(awards[0])}
+                    </p>
+                )}
             </div>
             </div>
         ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
-            {awards.map((award) => (
+            {awards.map((award) => {
+                const awardValue = formatAwardValue(award.value);
+                const awardDescription = getAwardDescription(award);
+                const hasAwardBody = Boolean(awardValue || awardDescription);
+
+                return (
                 <div
                 key={`${award.position}-${award.title}`}
-                className="event-awards-card rounded-2xl p-6 sm:p-8 relative overflow-hidden feature-card transition-transform duration-300 hover:scale-105"
+                className={`event-awards-card rounded-2xl p-6 sm:p-8 relative overflow-hidden feature-card transition-transform duration-300 hover:scale-105${hasAwardBody ? '' : ' flex items-center justify-center'}`}
                 >
                 <div className="event-awards-blob pointer-events-none absolute top-0 right-0 h-40 w-40 rounded-full blur-3xl opacity-20" />
-                <div className="relative z-10 space-y-4">
-                    <div className="flex items-center justify-between">
-                    <h3 className="text-lg sm:text-xl font-black uppercase tracking-wide">
-                        {award.position === 1
-                        ? 'Primer puesto'
-                        : award.position === 2
-                        ? 'Segundo puesto'
-                        : award.position === 3
-                            ? 'Tercer puesto'
-                            : award.position === 4
-                                ? 'Cuarto puesto'
-                            : `${award.position}° puesto`}
+                {!hasAwardBody ? (
+                // Title only: centered in the card, the position stays in the corner
+                <>
+                    <div className="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-background/50 flex items-center justify-center">
+                    <span className="text-sm font-bold">#{award.position}</span>
+                    </div>
+                    <h3 className="relative z-10 px-10 text-center text-lg sm:text-xl font-black uppercase tracking-wide break-words">
+                    {getAwardTitle(award)}
                     </h3>
-                    <div className="w-10 h-10 rounded-full bg-background/50 flex items-center justify-center">
+                </>
+                ) : (
+                <div className="relative z-10 space-y-4">
+                    <div className="flex items-center justify-between gap-3">
+                    <h3 className="text-lg sm:text-xl font-black uppercase tracking-wide break-words">
+                        {getAwardTitle(award)}
+                    </h3>
+                    <div className="w-10 h-10 shrink-0 rounded-full bg-background/50 flex items-center justify-center">
                         <span className="text-sm font-bold">#{award.position}</span>
                     </div>
                     </div>
                     <Divider className="event-divider" />
-                    <div className="space-y-1">
-                    {hasText(award.description) && (
-                        <p className="text-xl sm:text-2xl font-black text-green-500 uppercase tracking-wide leading-snug">
-                        {award.description}
+                    <div className="space-y-2">
+                    {awardValue && (
+                        <p className="text-xl sm:text-2xl font-black text-green-500 tracking-wide">
+                        {awardValue}
+                        </p>
+                    )}
+                    {awardDescription && (
+                        <p className="text-sm sm:text-base text-muted-foreground leading-snug">
+                        {awardDescription}
                         </p>
                     )}
                     </div>
                 </div>
+                )}
                 </div>
-            ))}
+                );
+            })}
             </div>
         )}
     </section>

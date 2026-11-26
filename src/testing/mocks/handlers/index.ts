@@ -7,32 +7,39 @@ import { networkDelay } from "../utils";
 import { juriesHandlers } from "./juries";
 import { administratorsHandlers } from "./administrators";
 import { authHandlers } from "./auth";
-import { commentsHandlers } from "./comments";
 import { coursesHandlers } from "./courses";
-import { discussionsHandlers } from "./discussions";
 import { eventsHandlers } from "./events";
 import { teamsHandlers } from "./teams";
 import { criterionHandlers } from "./criterion";
 import { projectsHandlers } from "./projects";
+import { projectAdminHandlers } from "./project-admin";
 import { usersHandlers } from "./users";
 import { evaluationsHandlers } from "./evaluations";
 import { dashboardHandlers } from "./dashboard";
+import { studentDashboardHandlers } from "./student-dashboard";
+import { gradingScalesHandlers } from "./grading-scales";
+import { awardsHandlers } from "./awards";
+import { jurorImportsHandlers } from "./juror-imports";
 
 export const handlers = [
+  ...studentDashboardHandlers,
+  ...jurorImportsHandlers,
   ...juriesHandlers,
   ...administratorsHandlers,
   ...authHandlers,
-  ...commentsHandlers,
   ...coursesHandlers,
-  ...discussionsHandlers,
+  // Before eventsHandlers: /events/category-awards is not an event id
+  ...awardsHandlers,
   ...eventsHandlers,
+  // Before projectsHandlers: /projects/tutor-candidates is not a project id
+  ...projectAdminHandlers,
   ...projectsHandlers,
   ...teamsHandlers,
   ...usersHandlers,
-  ...projectsHandlers,
   ...evaluationsHandlers,
   ...criterionHandlers,
   ...dashboardHandlers,
+  ...gradingScalesHandlers,
   http.get(`${env.API_URL}/healthcheck`, async () => {
     await networkDelay();
     return HttpResponse.json({ ok: true });

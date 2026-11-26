@@ -57,7 +57,19 @@
                 }
             ],
             "platformPermissions": [
-                "*"
+                "read:events",
+                "manage:events",
+                "read:grades",
+                "read:event-members",
+                "create:event-members",
+                "delete:event-members",
+                "manage:courses",
+                "read:invitations",
+                "read:users",
+                "create:users",
+                "manage:user_roles",
+                "manage:projects",
+                "manage:admins"
             ],
             "bio": "Administrador del sistema",
             "createdAt": 1700000000000
@@ -125,7 +137,19 @@
                 }
             ],
             "platformPermissions": [
-                "*"
+                "read:events",
+                "manage:events",
+                "read:grades",
+                "read:event-members",
+                "create:event-members",
+                "delete:event-members",
+                "manage:courses",
+                "read:invitations",
+                "read:users",
+                "create:users",
+                "manage:user_roles",
+                "manage:projects",
+                "manage:admins"
             ],
             "bio": "",
             "createdAt": 1773973882210
@@ -149,7 +173,19 @@
                 }
             ],
             "platformPermissions": [
-                "*"
+                "read:events",
+                "manage:events",
+                "read:grades",
+                "read:event-members",
+                "create:event-members",
+                "delete:event-members",
+                "manage:courses",
+                "read:invitations",
+                "read:users",
+                "create:users",
+                "manage:user_roles",
+                "manage:projects",
+                "manage:admins"
             ],
             "bio": "",
             "createdAt": 1776391514691
@@ -173,7 +209,19 @@
                 }
             ],
             "platformPermissions": [
-                "*"
+                "read:events",
+                "manage:events",
+                "read:grades",
+                "read:event-members",
+                "create:event-members",
+                "delete:event-members",
+                "manage:courses",
+                "read:invitations",
+                "read:users",
+                "create:users",
+                "manage:user_roles",
+                "manage:projects",
+                "manage:admins"
             ],
             "bio": "",
             "createdAt": 1776391559607
@@ -197,7 +245,19 @@
                 }
             ],
             "platformPermissions": [
-                "*"
+                "read:events",
+                "manage:events",
+                "read:grades",
+                "read:event-members",
+                "create:event-members",
+                "delete:event-members",
+                "manage:courses",
+                "read:invitations",
+                "read:users",
+                "create:users",
+                "manage:user_roles",
+                "manage:projects",
+                "manage:admins"
             ],
             "bio": "",
             "createdAt": 1776391660169
@@ -221,7 +281,19 @@
                 }
             ],
             "platformPermissions": [
-                "*"
+                "read:events",
+                "manage:events",
+                "read:grades",
+                "read:event-members",
+                "create:event-members",
+                "delete:event-members",
+                "manage:courses",
+                "read:invitations",
+                "read:users",
+                "create:users",
+                "manage:user_roles",
+                "manage:projects",
+                "manage:admins"
             ],
             "bio": "",
             "createdAt": 1776391717622
@@ -748,6 +820,14 @@
                     "firstName": "Carlos",
                     "lastName": "LÃ³pez",
                     "email": "carlos@iris.com"
+                }
+            ],
+            "tutors": [
+                {
+                    "firstName": "María",
+                    "lastName": "García",
+                    "email": "maria@iris.com",
+                    "pending": false
                 }
             ],
             "jurorAssignments": [

@@ -7,11 +7,12 @@ import {
 import { Administrators } from "./_components/Administrators";
 
 import { getAdministratorsQueryOptions } from "@/features/administrators/api/get-administrators";
-import { RoleGuard } from "@/components/auth/role-guard";
+import { PermissionGuard } from '@/components/auth/permission-guard';
+import { PERMISSIONS } from '@/lib/authorization';
 
 export const metadata = {
-  title: "Administrators",
-  description: "Administrators",
+  title: "Administradores",
+  description: "Gestión de administradores",
 };
 
 const AdministratorsPage = async ({
@@ -26,19 +27,18 @@ const AdministratorsPage = async ({
   await queryClient.prefetchQuery(
     getAdministratorsQueryOptions({
       page: resolvedSearchParams.page ? Number(resolvedSearchParams.page) : 1,
-    })
+    }),
   );
 
   const dehydratedState = dehydrate(queryClient);
 
   return (
-    <RoleGuard roles={["Admin"]}>
+    <PermissionGuard permissions={[PERMISSIONS.readUsers]}>
       <HydrationBoundary state={dehydratedState}>
         <Administrators />
       </HydrationBoundary>
-    </RoleGuard>
+    </PermissionGuard>
   );
 };
 
 export default AdministratorsPage;
-

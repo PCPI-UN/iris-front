@@ -50,14 +50,6 @@ export const paths = {
       getHref: () => "/app",
       roles: ["Admin", "User"],
     },
-    discussions: {
-      getHref: () => "/app/discussions",
-      roles: ["Admin"],
-    },
-    discussion: {
-      getHref: (id: string) => `/app/discussions/${id}`,
-      roles: ["Admin"],
-    },
     profile: {
       getHref: () => "/app/profile",
       roles: ["Admin", "User"],
@@ -65,6 +57,10 @@ export const paths = {
     invitations: {
       getHref: () => "/app/invitations",
       roles: ["User"],
+    },
+    academicHistory: {
+      getHref: () => "/app/academic-history",
+      roles: ["Admin", "User"],
     },
     events: {
       getHref: () => "/app/events",
@@ -86,14 +82,26 @@ export const paths = {
       getHref: () => "/app/monitoreo",
       roles: ["Admin"],
     },
+    admin: {
+      getHref: () => "/app/admin",
+    },
     juries: {
       getHref: () => "/app/juries",
     },
     assignments: {
-      getHref: () => "/app/assignments"
+      getHref: () => "/app/assignments",
+    },
+    assignmentsImport: {
+      getHref: (eventId?: string | number | null) =>
+        eventId
+          ? `/app/assignments/import?event=${encodeURIComponent(String(eventId))}`
+          : "/app/assignments/import",
     },
     administrators: {
       getHref: () => "/app/administrators",
+    },
+    users: {
+      getHref: () => "/app/users",
     },
     categories: {
       getHref: () => "/app/categories",
@@ -110,11 +118,17 @@ export const paths = {
     criteria: {
       getHref: () => "/app/criteria",
     },
+    /** Teaching screen of one academic profile (`professor`, `tutor`); `?event=` picks the event */
+    teaching: {
+      getHref: (profileSlug: string, eventId?: number | string) =>
+        `/app/teaching/${profileSlug}${eventId ? `?event=${encodeURIComponent(String(eventId))}` : ""}`,
+    },
+    teachingProject: {
+      getHref: (profileSlug: string, projectId: number | string) =>
+        `/app/teaching/${profileSlug}/projects/${encodeURIComponent(String(projectId))}`,
+    },
   },
   public: {
-    discussion: {
-      getHref: (id: string) => `/public/discussions/${id}`,
-    },
     project: {
       getHref: (
         event:

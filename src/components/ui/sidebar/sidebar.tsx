@@ -203,7 +203,7 @@ function Sidebar({
           variant="ghost"
           onPress={() => onOpen()}
           className="md:hidden fixed top-3 left-4 z-50 bg-black/40 backdrop-blur-md hover:bg-black/60"
-          aria-label="Open menu"
+          aria-label="Abrir menú"
         >
           <PanelLeftIcon className="h-5 w-5" />
         </Button>
@@ -230,13 +230,13 @@ function Sidebar({
                   style={{ background: 'transparent' }}
                 >
                   <div className="flex items-center justify-between w-full">
-                    <span className="text-lg font-semibold">Menu</span>
+                    <span className="text-lg font-semibold">Menú</span>
                     <Button
                       isIconOnly
                       size="sm"
                       variant="light"
                       onPress={onClose}
-                      aria-label="Close menu"
+                      aria-label="Cerrar menú"
                       className="ml-auto"
                     >
                       <svg
@@ -349,7 +349,7 @@ function SidebarTrigger({
       {...props}
     >
       <PanelLeftIcon className="size-4" />
-      <span className="sr-only">Toggle Sidebar</span>
+      <span className="sr-only">Alternar barra lateral</span>
     </Button>
   );
 }
@@ -361,10 +361,10 @@ function SidebarRail({ className, ...props }: React.ComponentProps<"button">) {
     <button
       data-sidebar="rail"
       data-slot="sidebar-rail"
-      aria-label="Toggle Sidebar"
+      aria-label="Alternar barra lateral"
       tabIndex={-1}
       onClick={toggleSidebar}
-      title="Toggle Sidebar"
+      title="Alternar barra lateral"
       className={cn(
         "hover:after:bg-sidebar-border absolute inset-y-0 z-20 hidden w-4 -translate-x-1/2 transition-all ease-linear group-data-[side=left]:-right-4 group-data-[side=right]:left-0 after:absolute after:inset-y-0 after:left-1/2 after:w-[2px] sm:flex",
         "in-data-[side=left]:cursor-w-resize in-data-[side=right]:cursor-e-resize",

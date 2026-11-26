@@ -1,5 +1,8 @@
 'use client';
 
+import { Can } from '@/components/auth/can';
+import { useUser } from '@/lib/auth';
+import { hasPermission, PERMISSIONS } from '@/lib/authorization';
 import { useMemo, useState, useEffect } from 'react';
 import { Calendar, Users, Award, Folder, Search, Trophy, Download, Eye, Settings, RefreshCw } from 'lucide-react';
 import { Card, CardHeader } from '@/components/ui/card';
@@ -17,8 +20,11 @@ import { useCategoriesDropdown } from '@/features/courses/api/get-categories-dro
 import { getUniqueJurors, getJurorKey } from '@/features/monitoring/utils/calculations';
 import { normalizeText } from '@/features/monitoring/utils/filters';
 import { getProjectEvaluationStats } from '@/features/evaluations/api/get-project-evaluation-stats';
+import { useEventCriteriaStats } from '@/features/evaluations/api/get-event-criteria-stats';
+import { CriteriaPerformanceCard } from '@/features/monitoring/components/criteria-performance-card';
 import { ParticipantsDetails } from '@/features/projects/components/participants-details';
 import { ExportEventReportButton } from '@/features/reports/components/export-event-report-button';
+import { PublishResultsToggle } from '@/features/events/components/publish-results-toggle';
 import { RankingConfigModal } from '@/features/monitoring/components/ranking-config-modal';
 import type { RankingConfigType } from '@/features/monitoring/types';
 import { useRankingConfig } from '@/features/monitoring/api/get-ranking-config';
@@ -72,6 +78,13 @@ export const PastEventDashboard = ({ event, onBack }: Props) => {
     const projects = projectsQuery.data?.data ?? [];
 
     const categoriesQuery = useCategoriesDropdown({ eventId: event.id, queryConfig: { enabled: Boolean(event.id) } });
+    const { data: currentUser } = useUser();
+    const canReadGrades = hasPermission(currentUser, PERMISSIONS.readGrades);
+    const criteriaStatsQuery = useEventCriteriaStats({
+        eventId: event.id,
+        categoryId: selectedCategoryId,
+        queryConfig: { enabled: Boolean(event.id) && activeTab === 'statistics' && canReadGrades },
+    });
 
     const totals = useMemo(() => {
         const jurorKeys = new Set<string>();
@@ -461,20 +474,26 @@ export const PastEventDashboard = ({ event, onBack }: Props) => {
                     <h1 className="text-2xl font-semibold max-w-full whitespace-normal md:max-w-md">{event.name}</h1>
                     <div className="mt-1 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
                         <p className="text-sm text-default-500 line-clamp-2">{event.description}</p>
-                        <div className="shrink-0">
-                            <ExportEventReportButton eventId={event.id} label="Descargar reporte" />
+                        <div className="shrink-0 flex flex-col items-start gap-2">
+                            <Can permission={PERMISSIONS.readGrades}>
+                                <ExportEventReportButton eventId={event.id} label="Descargar reporte" />
+                            </Can>
+                            <PublishResultsToggle
+                                eventId={event.id}
+                                resultsPublished={event.resultsPublished}
+                            />
                         </div>
                     </div>
                     <div className="mt-2 flex flex-col gap-2 text-sm text-default-500 sm:flex-row sm:flex-wrap sm:items-center">
                         <div className="inline-flex items-center gap-2">
                             <Calendar className="h-4 w-4 text-default-400" />
                             <span>
-                                {new Date(event.startDate).toLocaleDateString()} - {new Date(event.endDate).toLocaleDateString()}
+                                {new Date(event.startDate).toLocaleDateString('es-CO')} - {new Date(event.endDate).toLocaleDateString('es-CO')}
                             </span>
                         </div>
                         <div className="inline-flex items-center gap-2">
                             <Calendar className="h-4 w-4 text-default-400" />
-                            <span>Inscripción: {new Date(event.inscriptionDeadline).toLocaleDateString()}</span>
+                            <span>Inscripción: {new Date(event.inscriptionDeadline).toLocaleDateString('es-CO')}</span>
                         </div>
                     </div>
                 </div>
@@ -509,7 +528,7 @@ export const PastEventDashboard = ({ event, onBack }: Props) => {
                         <button className={`rounded-md px-3 py-1 text-sm ${activeTab === 'statistics' ? 'bg-foreground text-background' : 'border'}`} onClick={() => setActiveTab('statistics')}>Estadísticas</button>
                         <button className={`rounded-md px-3 py-1 text-sm ${activeTab === 'projects' ? 'bg-foreground text-background' : 'border'}`} onClick={() => setActiveTab('projects')}>Proyectos</button>
                         <button className={`rounded-md px-3 py-1 text-sm ${activeTab === 'jurors' ? 'bg-foreground text-background' : 'border'}`} onClick={() => setActiveTab('jurors')}>Jurados</button>
-                        <button className={`rounded-md px-3 py-1 text-sm ${activeTab === 'ranking' ? 'bg-foreground text-background' : 'border'}`} onClick={() => setActiveTab('ranking')}>Ranking</button>
+                        <button className={`rounded-md px-3 py-1 text-sm ${activeTab === 'ranking' ? 'bg-foreground text-background' : 'border'}`} onClick={() => setActiveTab('ranking')}>Clasificación</button>
                     </div>
                 </div>
             </div>
@@ -635,6 +654,15 @@ export const PastEventDashboard = ({ event, onBack }: Props) => {
                                 </div>
                             </Card>
                         </div>
+
+                        <Can permission={PERMISSIONS.readGrades}>
+                            <CriteriaPerformanceCard
+                                stats={criteriaStatsQuery.data}
+                                isLoading={criteriaStatsQuery.isLoading}
+                                isError={criteriaStatsQuery.isError}
+                                showCriteria={selectedCategoryId !== undefined}
+                            />
+                        </Can>
                     </div>
                 )}
 
@@ -793,16 +821,19 @@ export const PastEventDashboard = ({ event, onBack }: Props) => {
                 {activeTab === 'ranking' && (
                     <Card className="glass-card border border-default-200/70 shadow-sm">
                         <CardHeader className="pb-2 flex items-center justify-between">
-                            <h3 className="text-lg font-semibold">Ranking por Categoría</h3>
+                            <h3 className="text-lg font-semibold">Clasificación por categoría</h3>
                             <div className="flex items-center gap-1 md:gap-2">
-                                <Button
-                                    className="relative gap-2 border-2 border-default-300 hover:border-primary text-default-600 hover:text-primary hover:scale-105 transition-all duration-300 font-semibold px-4 py-2"
-                                    variant="bordered"
-                                    onPress={handleOpenRankingConfig}
-                                >
-                                    <Eye className="h-5 w-5" />
-                                    <Settings className="h-5 w-5" />
-                                </Button>
+                                {/* Ranking visibility is configured with manage:events */}
+                                <Can permission={PERMISSIONS.manageEvents}>
+                                    <Button
+                                        className="relative gap-2 border-2 border-default-300 hover:border-primary text-default-600 hover:text-primary hover:scale-105 transition-all duration-300 font-semibold px-4 py-2"
+                                        variant="bordered"
+                                        onPress={handleOpenRankingConfig}
+                                    >
+                                        <Eye className="h-5 w-5" />
+                                        <Settings className="h-5 w-5" />
+                                    </Button>
+                                </Can>
                                 <Button
                                     className="relative gap-2 border-2 border-default-300 hover:border-primary text-default-600 hover:text-primary hover:scale-105 transition-all duration-300 font-semibold px-4 py-2"
                                     variant="bordered"
@@ -838,7 +869,7 @@ export const PastEventDashboard = ({ event, onBack }: Props) => {
 
                             {!selectedCategoryId ? (
                                 <div className="flex min-h-[180px] items-center justify-center rounded-2xl border border-dashed border-default-200 text-sm text-default-400">
-                                    Selecciona una categoría para ver el ranking.
+                                    Selecciona una categoría para ver la clasificación.
                                 </div>
                             ) : rankingEntries.length > 0 ? (
                                 <>
@@ -851,7 +882,7 @@ export const PastEventDashboard = ({ event, onBack }: Props) => {
                                         </Chip>
                                     </div>
                                     <div className="overflow-hidden rounded-2xl border border-default-200/80">
-                                        <Table key={rankingTableVersion} aria-label="Ranking por categorías" selectionMode="none">
+                                        <Table key={rankingTableVersion} aria-label="Clasificación por categorías" selectionMode="none">
                                             <TableHeader>
                                                 <TableColumn className="w-16 text-center">Pos.</TableColumn>
                                                 <TableColumn className="w-32">Código</TableColumn>
@@ -925,7 +956,7 @@ export const PastEventDashboard = ({ event, onBack }: Props) => {
                                 </>
                             ) : (
                                 <div className="flex min-h-[180px] items-center justify-center rounded-2xl border border-dashed border-default-200 text-sm text-default-400">
-                                    No hay proyectos con evaluaciones para mostrar el ranking.
+                                    No hay proyectos con evaluaciones para mostrar la clasificación.
                                 </div>
                             )}
                         </div>
@@ -993,7 +1024,7 @@ export const PastEventDashboard = ({ event, onBack }: Props) => {
                                                     <thead className="bg-white/5">
                                                         <tr className="text-left text-xs font-semibold uppercase tracking-[0.18em] text-white/60 border-b border-white/10">
                                                             <th className="px-4 py-3">Nombre</th>
-                                                            <th className="px-4 py-3">Email</th>
+                                                            <th className="px-4 py-3">Correo electrónico</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>

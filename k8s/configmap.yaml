@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frontend-config
+  namespace: pcpi
+data:
+  NODE_ENV: "production"
+  PORT: "3000"
+  HOSTNAME: "0.0.0.0"
+  API_URL: "http://gateway:3000"
+  NEXT_PUBLIC_URL: "http://localhost"
+  NEXT_PUBLIC_ENABLE_API_MOCKING: "false"

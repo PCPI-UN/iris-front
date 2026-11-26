@@ -6,9 +6,9 @@ import { MutationConfig } from "@/lib/react-query";
 import { Category } from "@/types/api";
 
 export const createCategoryInputSchema = z.object({
-  code: z.string().min(1, "Required"),
-  description: z.string().min(1, "Required"),
-  eventId: z.number().min(1, "Event is required"),
+  code: z.string().min(1, "Este campo es obligatorio"),
+  description: z.string().min(1, "Este campo es obligatorio"),
+  eventId: z.number().min(1, "El evento es obligatorio"),
   status: z.enum(["active", "inactive"]).optional(),
 });
 

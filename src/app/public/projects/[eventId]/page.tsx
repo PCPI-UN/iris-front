@@ -31,6 +31,7 @@ const PublicProjectPage = ({
   const [eventType, setEventType] = useState<"Competition" | "Exposition">(
     "Exposition",
   );
+  const [requiresCourse, setRequiresCourse] = useState(false);
   const [dehydratedState, setDehydratedState] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isCheckingRegistration, setIsCheckingRegistration] = useState(false);
@@ -60,6 +61,7 @@ const PublicProjectPage = ({
         );
 
         setEventType(toPublicEventType(eventDetailResult.data.eventType));
+        setRequiresCourse(eventDetailResult.data.requiresCourse);
 
         await queryClient.prefetchQuery(
           getCategoriesDropdownQueryOptions(parsedEventId),
@@ -190,7 +192,11 @@ const PublicProjectPage = ({
               {pageContent.description}
             </p>
           </div>
-          <ProjectWizard eventId={eventId} eventType={eventType} />
+          <ProjectWizard
+            eventId={eventId}
+            eventType={eventType}
+            requiresCourse={requiresCourse}
+          />
         </div>
       </HydrationBoundary>
     </PublicLayout>

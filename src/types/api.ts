@@ -1,3 +1,5 @@
+import type { GradingScale } from "@/features/grading-scales/utils/grading-scale";
+
 export type BaseEntity = {
   id: string;
   createdAt: number;
@@ -13,6 +15,8 @@ export type CategoryCriteriaGroup = {
   criterions: {
     id: number;
     name: string;
+    /** Effective weight in the grade, as a fraction of 1; absent when the criterion has no component */
+    weight?: number;
   }[];
 };
 
@@ -48,20 +52,6 @@ export type AuthResponse = {
   message: string;
 };
 
-export type Discussion = Entity<{
-  title: string;
-  body: string;
-  teamId: string;
-  author: User;
-  public: boolean;
-}>;
-
-export type Comment = Entity<{
-  body: string;
-  discussionId: string;
-  author: User;
-}>;
-
 export type EventMembership = Entity<{
   eventId: number;
   userId: number;
@@ -87,6 +77,13 @@ export enum EvaluationType {
   FINAL_PROJECTS = 3,
 }
 
+/** Academic term: 2026 + "10" is the term 202610 */
+export type Term = {
+  id: number;
+  year: number;
+  period: string;
+};
+
 export type Event = Entity<{
   id: number;
   name: string;
@@ -97,6 +94,12 @@ export type Event = Entity<{
   accessCode: string;
   isPubliclyJoinable: boolean;
   evaluationsOpened: boolean;
+  /** When false, students do not see score, feedback, position or awards */
+  resultsPublished: boolean;
+  /** Academic term of the event (GET /terms); -1 for events created before terms existed */
+  termId?: number;
+  /** true: each project must belong to a course section (NRC) of the term */
+  requiresCourse: boolean;
   statusName: string;
   location?: string;
   locationDetails?: string;
@@ -105,7 +108,10 @@ export type Event = Entity<{
   inscriptionCost?: number;
   inscriptionRequirements?: string;
   aboutOurAllies?: string;
+  /** @deprecated El backend usa `gradingScale`; solo se lee de eventos antiguos */
   evaluationType?: EvaluationType | "ZERO_TO_FIVE" | "ZERO_TO_HUNDRED" | "FINAL_PROJECTS";
+  /** Escala de calificación del evento (en `GET /events/:id` y en las respuestas de crear y editar) */
+  gradingScale?: GradingScale | null;
   eventType: EventType;
   minimumTeamSize?: number;
   specificInscriptionDetails?: {
@@ -164,11 +170,37 @@ export type Project = Entity<{
   documents: ProjectDocument[];
   jurorAssignments: ProjectAssignment[];
   pendingParticipants: ProjectParticipant[];
+  /** Tutors of the project, linked first and then pending; absent in projects read before tutors existed */
+  tutors?: ProjectTutor[];
+  /** Course section (NRC) of the project; absent for an event that requires none or a project from before NRCs */
+  academicCourse?: ProjectAcademicCourse | null;
   reason: string;
   evaluated: boolean;
   createdAt: number;
   updatedAt: number;
 }>;
+
+/** Course section of a project as GET /projects/:id returns it, with the code of its term */
+export type ProjectAcademicCourse = {
+  id?: number;
+  nrc?: string;
+  name?: string;
+  /** Term code such as 202610; null when event-service does not list the term */
+  term?: string | null;
+  departmentName?: string | null;
+};
+
+/**
+ * Tutor of a project (Iris#187): linked to a user (userId) or pending, typed in by the student.
+ * Linked tutors expose no email; pending ones do.
+ */
+export type ProjectTutor = {
+  userId?: number;
+  firstName: string;
+  lastName?: string;
+  pending: boolean;
+  email?: string;
+};
 
 export type ProjectDocument = Entity<{
   id: string;
@@ -262,7 +294,15 @@ export type JuryInvitation = {
   roles: InvitationRole[];
   event: Event;
   project: any | null;
+  /**
+   * Email delivery of the invitation (GET /invitations/events/:eventId, Iris#200).
+   * Absent when unknown: invitations older than the delivery log, or tutor invitations.
+   */
+  emailStatus?: InvitationEmailStatus;
 };
+
+/** PENDING: registered or waiting for a retry; SENT: delivered; FAILED: every attempt failed */
+export type InvitationEmailStatus = "PENDING" | "SENT" | "FAILED";
 
 export type InvitationsMeta = {
   total: number;

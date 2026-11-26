@@ -6,6 +6,7 @@ import { Chip } from '@heroui/chip';
 import { Divider } from '@heroui/divider';
 import { Button } from '@/components/ui/button';
 import { PRISMATIC_GRADIENT, PRISMATIC_GRADIENT_DIM } from '@/features/landing/components/events-section.utils';
+import { documentLink } from "@/lib/document-link";
 
 type RankedProject = {
   position: number;
@@ -59,7 +60,7 @@ const getPosterUrl = (project: any): string | undefined => {
   const posterDoc = project.documents.find((d: any) =>
     d.type?.toLowerCase().includes('poster'),
   );
-  return posterDoc?.url;
+  return posterDoc ? documentLink(posterDoc) : undefined;
 };
 
 const hasText = (value?: string | null) =>
@@ -67,8 +68,8 @@ const hasText = (value?: string | null) =>
 
 const VISIBLE_MEMBERS_LIMIT = 8;
 
-const getPositionLabel = (pos: number): string =>
-  pos === 1 ? '1° Lugar' : pos === 2 ? '2° Lugar' : '3° Lugar';
+// Before, every position from 3 on read "3° Lugar"
+const getPositionLabel = (pos: number): string => `${pos}° Lugar`;
 
 const getPositionBadgeClass = (pos: number): string =>
   pos === 1
@@ -82,11 +83,14 @@ const TopWinnerCard = ({
   categoryName,
   isExposition,
   showScore,
+  isCoWinner,
 }: {
   ranked: RankedProject;
   categoryName?: string;
   isExposition?: boolean;
   showScore?: boolean;
+  /** Shares the position with other projects of its category (same rounded average) */
+  isCoWinner?: boolean;
 }) => {
   const [membersExpanded, setMembersExpanded] = useState(false);
   const members = getParticipantLabels(ranked.project);
@@ -102,12 +106,19 @@ const TopWinnerCard = ({
       <div className="relative z-10 flex flex-col lg:flex-row items-start gap-6 w-full">
         <div className="flex-1 space-y-4">
           <div className="flex items-start justify-between gap-3 w-full">
-            <span
-              className={`${getPositionBadgeClass(ranked.position)} text-sm font-bold px-3 py-1 rounded-full uppercase tracking-wide`}
-              aria-label={`Posición ${ranked.position}: ${getPositionLabel(ranked.position)}`}
-            >
-              {getPositionLabel(ranked.position)}
-            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              <span
+                className={`${getPositionBadgeClass(ranked.position)} text-sm font-bold px-3 py-1 rounded-full uppercase tracking-wide`}
+                aria-label={`Posición ${ranked.position}: ${getPositionLabel(ranked.position)}${isCoWinner ? ', coganador' : ''}`}
+              >
+                {getPositionLabel(ranked.position)}
+              </span>
+              {isCoWinner && (
+                <Chip size="sm" variant="flat" color="warning" startContent={<Users className="h-3 w-3" />}>
+                  Coganador
+                </Chip>
+              )}
+            </div>
 
             {posterUrl && (
               <a
@@ -208,26 +219,49 @@ export function PastEventWinnersTop({
 }: PastEventWinnersTopProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  // Init: select first category on mount if none set
+  // Init: select first category on mount if none set (ignoring synthetic id 0)
   useEffect(() => {
-    if (selectedCategoryId === undefined && categories.length > 0) {
-      onCategoryChange?.(categories[0].id);
+    if (selectedCategoryId === undefined && categories.length > 0 && categories[0].id > 0) {
+      const firstCategoryWithWinners = categories.find(
+        (c) => c.id > 0 && (rankingByCategory.get(c.id)?.length ?? 0) > 0,
+      );
+      onCategoryChange?.((firstCategoryWithWinners ?? categories[0]).id);
     }
-  }, [categories, onCategoryChange, selectedCategoryId]);
+  }, [categories, onCategoryChange, rankingByCategory, selectedCategoryId]);
 
   const categoryMap = useMemo(
     () => new Map(categories.map((c) => [c.id, c.name])),
     [categories],
   );
 
-  // Flatten all winners from all categories
+  // Filter winners by selectedCategoryId when applicable, or flatten all when global
   const allWinners = useMemo(() => {
+    if (
+      selectedCategoryId !== undefined &&
+      selectedCategoryId > 0 &&
+      rankingByCategory.has(selectedCategoryId)
+    ) {
+      const items = rankingByCategory.get(selectedCategoryId) ?? [];
+      return items
+        .map((w) => ({ ...w, categoryId: selectedCategoryId }))
+        .sort((a, b) => a.position - b.position);
+    }
+
+    if (
+      selectedCategoryId !== undefined &&
+      selectedCategoryId > 0 &&
+      categories.length > 1 &&
+      !rankingByCategory.has(0)
+    ) {
+      return [];
+    }
+
     const list: (RankedProject & { categoryId: number })[] = [];
     for (const [catId, items] of rankingByCategory.entries()) {
       items.forEach((w) => list.push({ ...w, categoryId: catId }));
     }
     return list.sort((a, b) => a.position - b.position);
-  }, [rankingByCategory]);
+  }, [categories.length, rankingByCategory, selectedCategoryId]);
 
   const appliedLimit = Number(visiblePositions) || 0;
 
@@ -235,6 +269,16 @@ export function PastEventWinnersTop({
     if (appliedLimit === 0) return allWinners;
     return allWinners.filter((w) => w.position >= 1 && w.position <= appliedLimit);
   }, [allWinners, appliedLimit]);
+
+  // Positions come from the backend: in a category, projects sharing a position are co-winners
+  const coWinnerKeys = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const w of allWinners) {
+      const key = `${w.categoryId ?? 0}-${w.position}`;
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+    return new Set([...counts].filter(([, n]) => n > 1).map(([key]) => key));
+  }, [allWinners]);
 
   // Reset carousel index when winners change
   useEffect(() => {
@@ -299,10 +343,14 @@ export function PastEventWinnersTop({
               className="flex transition-transform duration-500 ease-out"
               style={{ transform: `translateX(-${currentIndex * 100}%)` }}
             >
-              {availableWinners.map((winner) => (
-                <div key={`winner-${winner.position}`} className="min-w-full overflow-hidden">
+              {availableWinners.map((winner, idx) => (
+                <div
+                  key={`winner-${winner.categoryId ?? 0}-${winner.position}-${winner.project.name}-${idx}`}
+                  className="min-w-full overflow-hidden"
+                >
                   <TopWinnerCard
                     ranked={winner}
+                    isCoWinner={coWinnerKeys.has(`${winner.categoryId ?? 0}-${winner.position}`)}
                     categoryName={
                       winner.categoryId ? categoryMap.get(winner.categoryId) : undefined
                     }

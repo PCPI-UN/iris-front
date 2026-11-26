@@ -23,12 +23,11 @@ import {
 } from '@/components/ui/table';
 import { Spinner } from '@/components/ui/spinner';
 import { useUser } from '@/lib/auth';
-import { normalizeCategoryId } from '@/lib/compat/category-legacy';
 import { getProjectEvaluationStats, type ProjectEvaluationStats } from '@/features/evaluations/api/get-project-evaluation-stats';
 import { useEvents } from '@/features/events/api/get-events';
 import { useCategoriesDropdown } from '@/features/courses/api/get-categories-dropdown';
 import { ProjectWithJurors, useProjectsWithJurors } from '@/features/projects/api/get-projects-with-jurors';
-import { useCriterions } from '@/features/criterions/api/get-criterions';
+import { useEventCriteriaStats } from '@/features/evaluations/api/get-event-criteria-stats';
 import { useQueries } from '@tanstack/react-query';
 import '@/features/landing/index.css';
 import { useEventsDropdown } from '@/features/events/api/get-events-dropdown';
@@ -36,7 +35,7 @@ import { useEventsDropdown } from '@/features/events/api/get-events-dropdown';
 import { MonitoringDashboardProps, ProjectEvaluationProgress, ProjectEvaluationSummary } from '@/features/monitoring/types';
 import { stateColors, stateLabels } from '@/features/monitoring/utils/constants';
 import { formatDate } from '@/features/monitoring/utils/formatting';
-import { buildCategoryEvaluationStats, getJurorKey, getUniqueJurors } from '@/features/monitoring/utils/calculations';
+import { buildCategoryEvaluationStats, getJurorKey, getStatisticsProjects, getUniqueJurors } from '@/features/monitoring/utils/calculations';
 import { normalizeText } from '@/features/monitoring/utils/filters';
 import { useMonitoringFilters } from '@/features/monitoring/hooks/use-monitoring-filters';
 import { MonitoringDashboardHeader } from '@/features/monitoring/components/monitoring-dashboard-header';
@@ -45,6 +44,7 @@ import { MonitoringDashboardTabs } from '@/features/monitoring/components/monito
 import { RankingTab } from '@/features/monitoring/components/ranking-tab';
 import { StatisticsTab } from '@/features/monitoring/components/statistics-tab';
 import { ProjectsTab } from '@/features/monitoring/components/projects-tab';
+import { AwardsTab } from '@/features/awards';
 
 export const MonitoringDashboard = ({ initialEventId, onBack, eventData }: MonitoringDashboardProps = {}) => {
   const user = useUser();
@@ -77,8 +77,12 @@ export const MonitoringDashboard = ({ initialEventId, onBack, eventData }: Monit
     eventId: selectedEventId,
     queryConfig: { enabled: projectQueryEnabled },
   });
-  const criterionsQuery = useCriterions({
-    eventId: selectedEventId,
+  const selectedCategoryName = categoriesDropdownQuery.data?.data?.find(
+    (category) => category.id === selectedCategoryId,
+  )?.code;
+  const criteriaStatsQuery = useEventCriteriaStats({
+    eventId: selectedEventId ?? 0,
+    categoryId: selectedCategoryId,
     queryConfig: { enabled: projectQueryEnabled && activeTab === 'statistics' },
   });
   const allProjectsQuery = useProjectsWithJurors({
@@ -188,15 +192,7 @@ export const MonitoringDashboard = ({ initialEventId, onBack, eventData }: Monit
   }, [allProjectEvaluationStatsQueries, allProjects]);
 
   const statisticsProjects = useMemo(
-    () =>
-      (selectedCategoryId
-        ? allProjects.filter(
-            (project): project is ProjectWithJurors & { categoryId: number } =>
-              Number(normalizeCategoryId(project)) === selectedCategoryId,
-          )
-        : allProjects.filter(
-            (project): project is ProjectWithJurors & { categoryId: number } => project.categoryId !== undefined,
-          )) as Array<{ id: number; categoryId: number; evaluated?: boolean } & ProjectWithJurors>,
+    () => getStatisticsProjects(allProjects, selectedCategoryId),
     [allProjects, selectedCategoryId],
   );
 
@@ -393,12 +389,12 @@ export const MonitoringDashboard = ({ initialEventId, onBack, eventData }: Monit
 
       {activeTab === 'statistics' ? (
         <StatisticsTab
-          criterions={(criterionsQuery.data?.criterions ?? []).map((criterion) => ({
-            category: criterion.category,
-            name: criterion.name,
-          }))}
-          statisticsProjects={statisticsProjects}
-          allProjectStatsById={allProjectStatsById}
+          criteriaStats={{
+            data: criteriaStatsQuery.data,
+            isLoading: criteriaStatsQuery.isLoading,
+            isError: criteriaStatsQuery.isError,
+          }}
+          showCriteria={selectedCategoryId !== undefined}
           projectTotals={{
             uniqueJurorsCount: projectTotals.uniqueJurorsCount,
             total: projectTotals.total,
@@ -410,6 +406,13 @@ export const MonitoringDashboard = ({ initialEventId, onBack, eventData }: Monit
           }}
           categoryEvaluationStats={categoryEvaluationStats}
           
+        />
+      ) : activeTab === 'awards' ? (
+        <AwardsTab
+          selectedEventId={selectedEventId}
+          selectedCategoryId={selectedCategoryId}
+          selectedEventName={selectedEvent?.name}
+          selectedCategoryName={selectedCategoryName}
         />
       ) : activeTab === 'ranking' ? (
         <RankingTab
@@ -488,7 +491,7 @@ export const MonitoringDashboard = ({ initialEventId, onBack, eventData }: Monit
                 selectionMode="none"
               >
                 <TableHeader>
-                  <TableColumn className="w-28 whitespace-nowrap">Code</TableColumn>
+                  <TableColumn className="w-28 whitespace-nowrap">Código</TableColumn>
                   <TableColumn>Proyecto</TableColumn>
                   <TableColumn>Integrantes</TableColumn>
                   <TableColumn>Jurados asignados</TableColumn>

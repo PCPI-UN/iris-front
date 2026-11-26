@@ -11,19 +11,27 @@ import {
   FileEdit,
   Zap,
 } from "lucide-react";
+import dayjs from "dayjs";
+
+import { useEvents } from "../api/get-events";
+
+import { DeleteEvent } from "./delete-event";
+import { PublishResultsToggle } from "./publish-results-toggle";
+import { UpdateEvent } from "./update-event";
+
+import { EventTermLabel } from "./event-term-label";
+
 import { Snippet } from "@/components/ui/snippet";
 import { Card, CardBody } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { Pagination } from "@/components/ui/pagination";
 import { Button } from "@/components/ui/button";
-import { useEvents } from "../api/get-events";
-import { DeleteEvent } from "./delete-event";
-import { UpdateEvent } from "./update-event";
 import { Event } from "@/types/api";
-import dayjs from "dayjs";
+
+import "dayjs/locale/es";
 
 export const formatDateShort = (date: string | number) => {
-  return dayjs(date).format("MMM D, YYYY");
+  return dayjs(date).locale("es").format("D [de] MMM, YYYY");
 };
 
 type FilterType = "active" | "all" | "past" | "drafts";
@@ -36,11 +44,12 @@ const FILTER_CONFIG: {
   { key: "active", label: "Activos", Icon: Zap },
   { key: "all", label: "Todos", Icon: LayoutList },
   { key: "past", label: "Pasados", Icon: Archive },
-  { key: "drafts", label: "Drafts", Icon: FileEdit },
+  { key: "drafts", label: "Borradores", Icon: FileEdit },
 ];
 
 const isEnded = (event: Event): boolean => {
   const endTs = event.endDate ? Date.parse(event.endDate) : 0;
+
   return endTs > 0 && endTs < Date.now();
 };
 
@@ -81,7 +90,7 @@ export const GetEventsAdmin = () => {
       case "all":
         // Newest startDate first
         return [...events].sort(
-          (a, b) => Date.parse(b.startDate) - Date.parse(a.startDate)
+          (a, b) => Date.parse(b.startDate) - Date.parse(a.startDate),
         );
 
       case "past":
@@ -115,12 +124,10 @@ export const GetEventsAdmin = () => {
       <div className="flex flex-wrap items-center gap-2">
         {FILTER_CONFIG.map(({ key, label, Icon }) => {
           const isActive = filter === key;
+
           return (
             <Button
               key={key}
-              variant={isActive ? "flat" : "bordered"}
-              size="sm"
-              startContent={<Icon className="h-3.5 w-3.5" />}
               endContent={
                 <span
                   className={`inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full text-xs font-semibold transition-colors ${
@@ -132,6 +139,9 @@ export const GetEventsAdmin = () => {
                   {counts[key]}
                 </span>
               }
+              size="sm"
+              startContent={<Icon className="h-3.5 w-3.5" />}
+              variant={isActive ? "flat" : "bordered"}
               onPress={() => setFilter(key)}
             >
               {label}
@@ -149,7 +159,7 @@ export const GetEventsAdmin = () => {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {filteredEvents.map((event) => (
-            <Card shadow="sm" key={event.id} className="glass-card">
+            <Card key={event.id} className="glass-card" shadow="sm">
               <CardBody className="p-6 space-y-4">
                 {/* Name & description */}
                 <div className="space-y-2">
@@ -165,20 +175,23 @@ export const GetEventsAdmin = () => {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-default-400" />
-                      <span className="text-default-400">Start:</span>
+                      <span className="text-default-400">Inicio:</span>
                       <span>{formatDateShort(event.startDate)}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-default-400" />
-                      <span className="text-default-400">End:</span>
+                      <span className="text-default-400">Fin:</span>
                       <span>{formatDateShort(event.endDate)}</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-default-400" />
-                    <span className="text-default-400">Deadline:</span>
+                    <span className="text-default-400">
+                      Cierre de inscripción:
+                    </span>
                     <span>{formatDateShort(event.inscriptionDeadline)}</span>
                   </div>
+                  <EventTermLabel termId={event.termId} />
                 </div>
 
                 {/* Access code + public badge */}
@@ -186,7 +199,7 @@ export const GetEventsAdmin = () => {
                   <div className="flex items-center gap-2">
                     <Users className="h-4 w-4 text-default-400" />
                     <span className="text-sm">
-                      Access code:{" "}
+                      Código de acceso:{" "}
                       <Snippet size="sm" symbol="">
                         {event.accessCode}
                       </Snippet>
@@ -195,14 +208,16 @@ export const GetEventsAdmin = () => {
                   {event.isPubliclyJoinable && (
                     <div className="flex items-center gap-1 text-green-600">
                       <Check className="h-4 w-4" />
-                      <span className="text-sm font-medium">Public</span>
+                      <span className="text-sm font-medium">Público</span>
                     </div>
                   )}
                 </Card>
 
                 {/* Evaluations status */}
                 <div className="flex items-center justify-between p-1">
-                  <span className="text-sm text-default-400">Evaluations:</span>
+                  <span className="text-sm text-default-400">
+                    Evaluaciones:
+                  </span>
                   <span
                     className={`text-sm font-medium ${
                       event.evaluationsOpened
@@ -210,9 +225,15 @@ export const GetEventsAdmin = () => {
                         : "text-gray-400"
                     }`}
                   >
-                    {event.evaluationsOpened ? "Open" : "Closed"}
+                    {event.evaluationsOpened ? "Abiertas" : "Cerradas"}
                   </span>
                 </div>
+
+                {/* Results publication */}
+                <PublishResultsToggle
+                  eventId={event.id}
+                  resultsPublished={event.resultsPublished}
+                />
 
                 {/* Actions */}
                 <div className="flex gap-2 pt-2">
@@ -229,10 +250,10 @@ export const GetEventsAdmin = () => {
       {meta && meta.totalPages > 1 && (
         <div className="flex justify-center mt-6">
           <Pagination
-            total={meta.totalPages}
-            page={page}
-            onChange={handlePageChange}
             showControls
+            page={page}
+            total={meta.totalPages}
+            onChange={handlePageChange}
           />
         </div>
       )}

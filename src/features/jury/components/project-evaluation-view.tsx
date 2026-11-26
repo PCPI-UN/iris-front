@@ -23,23 +23,25 @@ import {
   ChevronRight,
   ChevronDown,
   ExternalLink,
+  CheckCircle2,
 } from "lucide-react"
 import { useProject } from "@/features/projects/api/get-project"
 import { AvatarGroup } from "@/features/projects/components/avatar-icon"
 import { useCategoryCriteria } from "@/features/criteria/api/get-category-criterion"
-import { useMyEvents } from '@/features/events/api/get-my-events'
 import { useCreateEvaluation } from "@/features/evaluations/api/create-evaluation"
 import { useNotifications } from "@/components/ui/notifications"
 import { Spinner } from "@heroui/spinner"
 import { normalizeCategoryId } from "@/lib/compat/category-legacy"
 import { EventType } from '@/types/api'
+import { documentLink, type DocumentRef } from "@/lib/document-link";
+import { formatPoints, toScoreLevelOptions } from "@/features/grading-scales/utils/grading-scale"
+import { useJuryAssignedProjects } from "@/features/projects-public/api/get-jury-project"
 
-const SCORE_SCALE = [
-  { value: 1, label: "Insuficiente" },
-  { value: 2, label: "Aceptable" },
-  { value: 3, label: "Bueno" },
-  { value: 4, label: "Excelente" },
-]
+import { ScoreLevelPicker } from "./score-level-picker"
+import { jurorEvaluationErrorMessage } from "../utils/evaluation-error"
+import { formatWeight, partialGrade } from "../utils/criterion-weight"
+import { maxGradeOf, useJurorEvent } from "../hooks/use-juror-event"
+import { getEventDashboardHref } from "@/features/events/utils/event-roles"
 
 type ProjectEvaluationViewProps = {
   projectId: string
@@ -52,6 +54,9 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
   const [comments, setComments] = useState("")
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [showMissing, setShowMissing] = useState(false)
+  // Shown inside the evaluation card: a floating toast covered the page title
+  const [submitError, setSubmitError] = useState<string | null>(null)
   const { addNotification } = useNotifications()
 
   const { mutate } = useCreateEvaluation({
@@ -62,10 +67,11 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
           title: "Evaluación enviada exitosamente",
         })
         setIsSubmitting(false)
-        router.push(`/app/events/${project?.eventId}`)
+        router.push(getEventDashboardHref(project?.eventId, "JURY"))
       },
-      onError: () => {
+      onError: (error) => {
         setIsSubmitting(false)
+        setSubmitError(jurorEvaluationErrorMessage(error?.message))
       },
     },
   })
@@ -76,9 +82,28 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
   const projectCategoryId = normalizeCategoryId(project ?? {}) ?? ""
   const documents = project?.documents ?? []
 
-  const myEventsQuery = useMyEvents({ page: 1, queryConfig: { enabled: !!project?.eventId } })
-  const currentEvent = myEventsQuery.data?.data?.find((e: any) => String(e.id) === String(project?.eventId))
+  // Searches every page of /me/events, not only the first one
+  const { event: currentEvent, gradingScale } = useJurorEvent(project?.eventId)
   const showProjectCode = currentEvent?.eventType === EventType.Exposition
+  const scoreOptions = toScoreLevelOptions(gradingScale)
+  const maxGrade = maxGradeOf(gradingScale)
+
+  // The juror's own list says whether the project is assigned and already evaluated
+  const assignedQuery = useJuryAssignedProjects({ eventId: Number(project?.eventId) })
+  const assignedProject = assignedQuery.data?.find((item) => String(item.id) === String(projectId))
+  const isNotAssigned = assignedQuery.isSuccess && !assignedProject
+  const submittedEvaluation = assignedProject?.evaluated ? assignedProject.evaluation : undefined
+  const isReadOnly = Boolean(submittedEvaluation)
+  const submittedScores: Record<string, number> = Object.fromEntries(
+    (submittedEvaluation?.scores ?? []).map((score) => [String(score.criterionId), score.score]),
+  )
+  // A submitted evaluation keeps the weight it was graded with, even if the rubric changed later
+  const submittedWeights: Record<string, number> = Object.fromEntries(
+    (submittedEvaluation?.scores ?? [])
+      .filter((score) => score.weight !== undefined)
+      .map((score) => [String(score.criterionId), score.weight as number]),
+  )
+  const shownScores = isReadOnly ? submittedScores : scores
 
   const {
     data: categoryCriteriaData,
@@ -90,7 +115,7 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
     },
   })
 
-  if (isProjectLoading || isCategoryCriteriaLoading) {
+  if (isProjectLoading || isCategoryCriteriaLoading || assignedQuery.isLoading) {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
         <Spinner size="lg" />
@@ -98,23 +123,64 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
     )
   }
 
+  if (isNotAssigned) {
+    return (
+      <div className="flex min-h-[320px] flex-col items-center justify-center gap-3 text-center">
+        <AlertCircle className="h-10 w-10 text-warning" />
+        <p className="text-base md:text-lg font-semibold">
+          Este proyecto no está asignado a tu evaluación
+        </p>
+        <Button variant="light" onClick={() => router.push(project?.eventId ? getEventDashboardHref(project.eventId, "JURY") : "/app")}>
+          Volver
+        </Button>
+      </div>
+    )
+  }
+
   const backendSections =
     categoryCriteriaData?.map((cat, index) => ({
       id: `section-${index + 1}`,
-      // Se quito el peso de la categoría del nombre de la sección, por fallos es los calculos del peso.
-      // name: `${index + 1}. (${cat.weight}) ${cat.category}`,
       name: `${index + 1}. ${cat.category}`,
+      // Weight of the component in the grade
+      weight: cat.weight,
       isSection: true,
       subcriteria:
-        cat.criterions?.map((c, cIdx) => ({
-          id: c?.id ? String(c.id) : `criterion-${cIdx}`,
-          name: c?.name ?? "",
-          weight: cat.weight,
-        })) ?? [],
+        cat.criterions?.map((c, cIdx) => {
+          const id = c?.id ? String(c.id) : `criterion-${cIdx}`
+
+          return {
+            id,
+            name: c?.name ?? "",
+            // Effective weight of the criterion in the grade
+            weight: (isReadOnly ? submittedWeights[id] : undefined) ?? c?.weight,
+          }
+        }) ?? [],
     })) ?? []
 
   const allSections = backendSections
   const currentSection = allSections[currentPage] ?? allSections[0]
+  // The backend rejects an evaluation that leaves any criterion of the rubric without a score
+  const missingCriteria = isReadOnly ? [] : allSections.flatMap((section, sectionIndex) =>
+    section.subcriteria
+      .filter((criterion) => scores[criterion.id] === undefined)
+      .map((criterion) => ({ ...criterion, sectionIndex })),
+  )
+
+  // Grade of the levels chosen so far, shown next to "Enviar evaluación". Hidden when some
+  // criterion has no weight or the scale has no points: the sum would not be the grade.
+  const allCriteria = allSections.flatMap((section) => section.subcriteria)
+  const pointsByLevel = new Map(scoreOptions.map((option) => [option.value, option.points]))
+  const currentGrade =
+    maxGrade !== undefined && allCriteria.every((criterion) => criterion.weight !== undefined)
+      ? partialGrade(
+          allCriteria
+            .filter((criterion) => scores[criterion.id] !== undefined)
+            .map((criterion) => ({
+              weight: criterion.weight,
+              points: pointsByLevel.get(scores[criterion.id]),
+            })),
+        )
+      : undefined
 
   const handleScoreChange = (criterionId: string, value: number) => {
     setScores((prev) => ({
@@ -126,9 +192,9 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
   const handleSubmit = () => {
     if (isSubmitting) return
 
-    const hasAnyScore = Object.keys(scores).length > 0
-    if (!hasAnyScore) {
-      alert("Por favor, proporcione calificaciones antes de enviar")
+    if (missingCriteria.length > 0) {
+      setShowMissing(true)
+      setCurrentPage(missingCriteria[0].sectionIndex)
       return
     }
 
@@ -138,6 +204,7 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
   const handleConfirmSubmit = () => {
     setIsConfirmModalOpen(false)
     setIsSubmitting(true)
+    setSubmitError(null)
 
     const payload: any = {
       projectId: Number(projectId),
@@ -156,15 +223,15 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
 
   const handleGoBack = () => {
     if (project?.eventId) {
-      router.push(`/app/events/${project.eventId}`)
+      router.push(getEventDashboardHref(project.eventId, "JURY"))
     } else {
       router.push("/app")
     }
   }
 
-  const openDocument = (url?: string) => {
-    if (!url) return
-    window.open(url, "_blank", "noopener,noreferrer")
+  const openDocument = (doc?: DocumentRef) => {
+    if (!doc) return
+    window.open(documentLink(doc), "_blank", "noopener,noreferrer")
   }
 
   const getDocumentLabel = (doc: any, index: number) => {
@@ -280,7 +347,7 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
                     <Button
                       variant="flat"
                       className="w-full justify-between gap-3 border border-default-200 bg-default-50/60 text-left"
-                      onPress={() => openDocument(documents[0]?.url)}
+                      onPress={() => openDocument(documents[0])}
                     >
                       <span className="flex min-w-0 items-center gap-2 text-xs md:text-sm">
                         <FileText className="h-4 w-4 text-primary flex-shrink-0" />
@@ -306,7 +373,7 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
                         aria-label="Documentos del proyecto"
                         onAction={(key) => {
                           const selectedDocument = documents[Number(key)]
-                          openDocument(selectedDocument?.url)
+                          openDocument(selectedDocument)
                         }}
                       >
                         {documents.map((doc: any, index: number) => (
@@ -349,11 +416,23 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
               <CardHeader className="p-4 md:p-6">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div>
-                    <p className="text-base md:text-lg font-semibold">Evaluación de Jurado</p>
+                    <p className="text-base md:text-lg font-semibold">
+                      {isReadOnly ? "Evaluación enviada" : "Evaluación de Jurado"}
+                    </p>
                     <p className="text-xs md:text-sm text-muted-foreground mt-1">
                       Sección {currentPage + 1} de {allSections.length}
                     </p>
                   </div>
+                  {submittedEvaluation && (
+                    <div className="flex items-center gap-2 rounded-lg border border-success/30 bg-success/10 px-3 py-2 text-sm">
+                      <CheckCircle2 className="h-4 w-4 text-success" />
+                      <span className="font-medium">Tu nota:</span>
+                      <span className="font-semibold">
+                        {formatPoints(submittedEvaluation.grade)}
+                        {maxGrade !== undefined ? ` / ${formatPoints(maxGrade)}` : ""}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </CardHeader>
 
@@ -361,47 +440,51 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
                 <div className="border-b border-border pb-3">
                   <h3 className="text-base md:text-lg font-semibold text-balance">
                     {currentSection?.name}
+                    {currentSection?.weight !== undefined && (
+                      <span className="ml-2 font-normal text-muted-foreground">
+                        ({formatWeight(currentSection.weight)})
+                      </span>
+                    )}
                   </h3>
                 </div>
+
+                {/* On the last section it explains why "Enviar evaluación" is disabled */}
+                {(showMissing || currentPage === allSections.length - 1) &&
+                  missingCriteria.length > 0 && (
+                  <div
+                    className="flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-sm text-warning"
+                    role="alert"
+                  >
+                    <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                    <span>
+                      Falta calificar {missingCriteria.length} criterio(s):{" "}
+                      {missingCriteria
+                        .map((criterion) => criterion.name)
+                        .join(", ")}
+                      .
+                    </span>
+                  </div>
+                )}
 
                 <div className="space-y-6 md:space-y-8">
                   {currentSection?.subcriteria?.map((criterion) => (
                     <div key={criterion.id} className="space-y-3 md:space-y-4">
                       <p className="text-sm md:text-base text-foreground leading-relaxed">
-                        {criterion.name}
+                        <span>{criterion.name}</span>
+                        {criterion.weight !== undefined && (
+                          <span className="ml-1.5 text-muted-foreground">
+                            ({formatWeight(criterion.weight)})
+                          </span>
+                        )}
                       </p>
 
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-xs md:text-sm text-muted-foreground px-1">
-                          {SCORE_SCALE.map((scale) => (
-                            <span key={scale.value} className="flex-1 w-full text-center">
-                              {scale.label}
-                            </span>
-                          ))}
-                        </div>
-
-                        <div className="flex items-center justify-between gap-2 md:gap-4 bg-muted/5 border-border rounded-lg p-3 md:p-4">
-                          {SCORE_SCALE.map((scale) => (
-                            <button
-                              key={scale.value}
-                              onClick={() => handleScoreChange(criterion.id, scale.value)}
-                              className="flex flex-col items-center gap-2 cursor-pointer group flex-1"
-                            >
-                              <div
-                                className={`h-6 w-6 md:h-7 md:w-7 rounded-full border-2 flex items-center justify-center transition-all ${
-                                  scores[criterion.id] === scale.value
-                                    ? "border-primary bg-primary shadow-md scale-110"
-                                    : "border-muted-foreground/30 group-hover:border-muted-foreground/50"
-                                }`}
-                              >
-                                {scores[criterion.id] === scale.value && (
-                                  <div className="h-3 w-3 md:h-3.5 md:w-3.5 rounded-full bg-primary-foreground" />
-                                )}
-                              </div>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
+                      <ScoreLevelPicker
+                        criterionName={criterion.name}
+                        options={scoreOptions}
+                        value={shownScores[criterion.id]}
+                        onChange={(level) => handleScoreChange(criterion.id, level)}
+                        disabled={isReadOnly}
+                      />
                     </div>
                   ))}
                 </div>
@@ -439,7 +522,16 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
                   )}
                 </div>
 
-                {currentPage === allSections.length - 1 && (
+                {currentPage === allSections.length - 1 && isReadOnly && (
+                  <div className="space-y-2 pt-3 md:pt-4">
+                    <p className="text-xs md:text-sm font-medium">Comentarios y Retroalimentación</p>
+                    <p className="text-sm text-muted-foreground whitespace-pre-line">
+                      {submittedEvaluation?.comments?.trim() || "Sin comentarios"}
+                    </p>
+                  </div>
+                )}
+
+                {currentPage === allSections.length - 1 && !isReadOnly && (
                   <>
                     <div className="space-y-2 pt-3 md:pt-4">
                       <Label htmlFor="comments" className="text-xs md:text-sm font-medium">
@@ -455,12 +547,34 @@ export function ProjectEvaluationView({ projectId }: ProjectEvaluationViewProps)
                       />
                     </div>
 
+                    {submitError && (
+                      <div
+                        className="flex items-start gap-2 rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger"
+                        role="alert"
+                      >
+                        <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                        <span>{submitError}</span>
+                      </div>
+                    )}
+
+                    {currentGrade !== undefined && maxGrade !== undefined && (
+                      <div className="flex items-center justify-between rounded-lg border border-border px-3 py-2 text-sm">
+                        <span className="font-medium">
+                          {missingCriteria.length > 0 ? "Nota parcial" : "Nota"}
+                        </span>
+                        <span className="font-semibold">
+                          {`${formatPoints(currentGrade)} / ${formatPoints(maxGrade)}`}
+                        </span>
+                      </div>
+                    )}
+
                     <Button
                       className="w-full transition-transform hover:scale-[1.01] text-sm md:text-base"
                       color="primary"
                       size="lg"
                       onClick={handleSubmit}
-                      disabled={isSubmitting}
+                      // Every criterion needs a level: the backend rejects an incomplete evaluation
+                      isDisabled={isSubmitting || missingCriteria.length > 0}
                     >
                       {isSubmitting ? (
                         <span className="mr-2">Enviando...</span>
