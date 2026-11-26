@@ -140,14 +140,21 @@ const getPrimaryRoleGroup = (roleGroups: ContributorRoleGroup[]): ContributorRol
 
 const getVersionPillStyle = (version: string, index: number) => {
   const normalizedVersion = normalize(version);
-  if (normalizedVersion === 'v2.0' || index === 0) {
+  if (normalizedVersion === 'v3.0' || index === 0) {
     return {
       pillClass: 'border-cyan-400/30 bg-cyan-400/10 text-cyan-200',
       dotClass: 'bg-cyan-400',
-      cohortSubtitle: 'Generación Actual & Consolidación',
+      cohortSubtitle: 'Generación Actual',
     };
   }
-  if (normalizedVersion === 'v1.0' || index === 1) {
+  if (normalizedVersion === 'v2.0') {
+    return {
+      pillClass: 'border-amber-300/30 bg-amber-300/10 text-amber-200',
+      dotClass: 'bg-amber-300',
+      cohortSubtitle: 'Generación de Consolidación',
+    };
+  }
+  if (normalizedVersion === 'v1.0') {
     return {
       pillClass: 'border-fuchsia-400/30 bg-fuchsia-400/10 text-fuchsia-200',
       dotClass: 'bg-fuchsia-400',
