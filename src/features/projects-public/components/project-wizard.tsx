@@ -40,6 +40,14 @@ import {
   toTutorsPayload,
   TutorsValue,
 } from "@/features/projects/utils/tutors";
+import {
+  AdminInitialProjectState,
+  CreateProjectAdminResponse,
+  getCreateProjectAdminErrorMessage,
+  useCreateProjectAdmin,
+} from "@/features/projects/api/create-project-admin";
+import { AdminCreateResult } from "@/features/projects/components/admin-create/admin-create-result";
+import { AdminInitialStateSelector } from "@/features/projects/components/admin-create/admin-initial-state-selector";
 
 export type Participant = {
   id: string;
@@ -80,6 +88,11 @@ type ProjectWizardProps = {
   eventType: "Competition" | "Exposition";
   /** true: the event requires the NRC of the course section of the project */
   requiresCourse?: boolean;
+  /**
+   * "admin": creation from the admin (POST /projects/admin). Same steps and
+   * schemas; the review step is the preview and asks for the initial state.
+   */
+  mode?: "public" | "admin";
 };
 
 const CONFLICT_MESSAGE_KEYS = [
@@ -113,8 +126,32 @@ const normalizeBackendErrorMessage = (rawMessage: unknown): string => {
   return `Uno o más participantes ya tienen un proyecto registrado en este evento: ${emails.join(", ")}`;
 };
 
-export function ProjectWizard({ eventId, eventType, requiresCourse = false }: ProjectWizardProps) {
+const createEmptyWizardData = (): WizardData => ({
+  participants: [],
+  project: {
+    projectCode: "",
+    name: "",
+    description: "",
+    categoryId: 0,
+    nrc: "",
+  },
+  documents: {
+    poster: null,
+    additionalDocuments: [],
+  },
+  tutors: EMPTY_TUTORS,
+});
+
+export function ProjectWizard({
+  eventId,
+  eventType,
+  requiresCourse = false,
+  mode = "public",
+}: ProjectWizardProps) {
   const router = useRouter();
+  const isAdmin = mode === "admin";
+  const [adminState, setAdminState] = useState<AdminInitialProjectState>("APPROVED");
+  const [adminResult, setAdminResult] = useState<CreateProjectAdminResponse | null>(null);
   const [currentStep, setCurrentStep] = useState(1);
   const isCompetitionEvent = eventType === "Competition";
   const getSteps = () => {
@@ -138,21 +175,7 @@ export function ProjectWizard({ eventId, eventType, requiresCourse = false }: Pr
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   
 
-  const [wizardData, setWizardData] = useState<WizardData>({
-    participants: [],
-    project: {
-      projectCode: "",
-      name: "",
-      description: "",
-      categoryId: 0,
-      nrc: "",
-    },
-    documents: {
-      poster: null,
-      additionalDocuments: [],
-    },
-    tutors: EMPTY_TUTORS,
-  });
+  const [wizardData, setWizardData] = useState<WizardData>(createEmptyWizardData);
 
   const competitionCategoriesQuery = useCategoriesDropdown({
     eventId,
@@ -198,6 +221,47 @@ export function ProjectWizard({ eventId, eventType, requiresCourse = false }: Pr
       },
     },
   });
+
+  const createProjectAdminMutation = useCreateProjectAdmin();
+  const isSubmitting = isAdmin
+    ? createProjectAdminMutation.isPending
+    : createProjectMutation.isPending;
+
+  const submitFormData = (formData: FormData) => {
+    if (!isAdmin) {
+      createProjectMutation.mutate({ data: formData });
+      return;
+    }
+    createProjectAdminMutation.mutate(
+      { data: formData, state: adminState },
+      {
+        onSuccess: (result) => {
+          setIsSubmitError(false);
+          setAdminResult(result);
+        },
+        onError: (error) => {
+          setIsSubmitError(true);
+          setStepErrors([getCreateProjectAdminErrorMessage(error)]);
+        },
+      },
+    );
+  };
+
+  /** Admin: start a new project in the same event (the competition category stays) */
+  const resetWizard = () => {
+    setWizardData((prev) => ({
+      ...createEmptyWizardData(),
+      project: {
+        ...createEmptyWizardData().project,
+        categoryId: isCompetitionEvent ? prev.project.categoryId : 0,
+      },
+    }));
+    setCurrentStep(1);
+    setStepErrors([]);
+    setIsSubmitError(false);
+    setAdminState("APPROVED");
+    setAdminResult(null);
+  };
 
   const updateParticipants = (participants: Participant[]) => {
     setWizardData((prev) => ({ ...prev, participants }));
@@ -336,7 +400,7 @@ const handleSubmit = () => {
       appendNrcToFormData(formData);
       appendTutorsToFormData(formData);
 
-      createProjectMutation.mutate({ data: formData });
+      submitFormData(formData);
       return;
     }
 
@@ -392,7 +456,7 @@ const handleSubmit = () => {
 
     payloadData.files.forEach(file => formData.append("files", file));
 
-    createProjectMutation.mutate({ data: formData });
+    submitFormData(formData);
 
   } catch (e) {
     if (e instanceof z.ZodError) {
@@ -402,6 +466,17 @@ const handleSubmit = () => {
 };
 
 
+
+  if (isAdmin && adminResult) {
+    return (
+      <AdminCreateResult
+        result={adminResult}
+        eventId={eventId}
+        state={adminState}
+        onCreateAnother={resetWizard}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6 sm:space-y-8">
@@ -466,8 +541,10 @@ const handleSubmit = () => {
               {currentStep === 1 && "Agregue los participantes"}
               {currentStep === 2 && eventType === "Exposition" && "Ingrese los detalles del proyecto"}
               {currentStep === 3 && eventType === "Exposition" && "Suba los documentos requeridos"}
-              {currentStep === 2 && eventType === "Competition" && "Revise la información antes de enviar"}
-              {currentStep === 4 && eventType === "Exposition" && "Revise la información antes de enviar"}
+              {currentStep === steps.length &&
+                (isAdmin
+                  ? "Vista previa del proyecto: elija el estado inicial y créelo"
+                  : "Revise la información antes de enviar")}
             </p>
           </div>
         </div>
@@ -521,6 +598,15 @@ const handleSubmit = () => {
               onUpdate={updateDocuments}
             />
           )}
+          {isAdmin && currentStep === steps.length && (
+            <div className="mb-6">
+              <AdminInitialStateSelector
+                value={adminState}
+                onChange={setAdminState}
+                isDisabled={isSubmitting}
+              />
+            </div>
+          )}
           {currentStep === 4 && eventType === "Exposition" && (
             <ReviewStep data={wizardData} eventType={eventType} />
           )}
@@ -533,7 +619,9 @@ const handleSubmit = () => {
             <div className="mt-4 p-3 sm:p-4 glass-card border-2 border-red-500/50 rounded-lg">
               <p className="text-red-400 font-semibold mb-2 text-sm sm:text-base">
                 {isSubmitError
-                  ? "¡Ups! No pudimos completar tu registro"
+                  ? isAdmin
+                    ? "No se pudo crear el proyecto"
+                    : "¡Ups! No pudimos completar tu registro"
                   : "¡Ups! Algo salió mal"}
               </p>
               <ul className="list-disc list-inside space-y-1">
@@ -570,11 +658,15 @@ const handleSubmit = () => {
           <Button
             color="success"
             onPress={handleSubmit}
-            isLoading={createProjectMutation.isPending}
-            isDisabled={createProjectMutation.isPending}
+            isLoading={isSubmitting}
+            isDisabled={isSubmitting}
             className="shadow-lg shadow-success/30 hover:shadow-xl hover:shadow-success/40 transition-all w-full sm:w-auto order-1 sm:order-2"
           >
-            {createProjectMutation.isPending 
+            {isAdmin
+              ? isSubmitting
+                ? "Creando..."
+                : "Crear proyecto"
+              : createProjectMutation.isPending
               ? eventType === "Competition" 
                 ? "Inscribiendo..." 
                 : "Creando..."

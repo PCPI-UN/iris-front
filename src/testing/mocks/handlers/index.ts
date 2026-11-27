@@ -20,6 +20,7 @@ import { studentDashboardHandlers } from "./student-dashboard";
 import { gradingScalesHandlers } from "./grading-scales";
 import { awardsHandlers } from "./awards";
 import { jurorImportsHandlers } from "./juror-imports";
+import { projectImportsHandlers } from "./project-imports";
 
 export const handlers = [
   ...studentDashboardHandlers,
@@ -31,6 +32,8 @@ export const handlers = [
   // Before eventsHandlers: /events/category-awards is not an event id
   ...awardsHandlers,
   ...eventsHandlers,
+  // Before projectsHandlers: POST /projects/admin is not a project id
+  ...projectImportsHandlers,
   // Before projectsHandlers: /projects/tutor-candidates is not a project id
   ...projectAdminHandlers,
   ...projectsHandlers,
