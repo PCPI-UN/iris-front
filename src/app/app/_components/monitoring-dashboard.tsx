@@ -37,6 +37,8 @@ import { stateColors, stateLabels } from '@/features/monitoring/utils/constants'
 import { formatDate } from '@/features/monitoring/utils/formatting';
 import { buildCategoryEvaluationStats, getJurorKey, getStatisticsProjects, getUniqueJurors } from '@/features/monitoring/utils/calculations';
 import { filterByCategory, normalizeText } from '@/features/monitoring/utils/filters';
+import { participantLabels, userIdsWithoutName } from '@/features/monitoring/utils/participant-labels';
+import { useParticipantNames } from '@/features/monitoring/hooks/use-participant-names';
 import { useMonitoringFilters } from '@/features/monitoring/hooks/use-monitoring-filters';
 import { MonitoringDashboardHeader } from '@/features/monitoring/components/monitoring-dashboard-header';
 import { MonitoringDashboardFilters } from '@/features/monitoring/components/monitoring-dashboard-filters';
@@ -140,34 +142,14 @@ export const MonitoringDashboard = ({ initialEventId, onBack, eventData }: Monit
     }
 
     return projectListingSource.filter((project) => {
-      const pendingLabels = (project.pendingParticipants ?? [])
-        .map((participant) => `${participant.firstName ?? ''} ${participant.lastName ?? ''}`.trim())
-        .filter((label) => label.length > 0);
-
-      const participantLabels = pendingLabels.length > 0
-        ? pendingLabels.join(' ')
-        : (project.participants ?? [])
-            .map((participant) => {
-              const fullName = `${participant.firstName ?? ''} ${participant.lastName ?? ''}`.trim();
-
-              if (fullName) {
-                return fullName;
-              }
-
-              if (participant.studentCode) {
-                return `Código ${participant.studentCode}`;
-              }
-
-              return 'Participante';
-            })
-            .join(' ');
+      const participantText = participantLabels(project).join(' ');
 
       const jurorLabels = (project.jurors ?? [])
         .map((juror) => `${juror.firstName} ${juror.lastName} ${juror.email}`)
         .join(' ');
 
       return normalizeText(
-        [project.name, project.projectCode ?? '', project.eventNumber ?? '', participantLabels, jurorLabels].join(' '),
+        [project.name, project.projectCode ?? '', project.eventNumber ?? '', participantText, jurorLabels].join(' '),
       ).includes(term);
     });
   }, [projectSearch, projectListingSource]);
@@ -181,6 +163,11 @@ export const MonitoringDashboard = ({ initialEventId, onBack, eventData }: Monit
     const startIndex = (currentPage - 1) * pageSize;
     return filteredProjects.slice(startIndex, startIndex + pageSize);
   }, [currentPage, filteredProjects, hasSearchTerm]);
+
+  // The listing sends enrolled participants without their name: look them up for the rows on screen
+  const participantNames = useParticipantNames(
+    useMemo(() => userIdsWithoutName(pagedProjects), [pagedProjects]),
+  );
 
   const totalProjectPages = hasSearchTerm
     ? Math.max(1, Math.ceil(filteredProjects.length / 10))
@@ -553,28 +540,10 @@ export const MonitoringDashboard = ({ initialEventId, onBack, eventData }: Monit
                         <TableCell>
                           <div className="space-y-1 text-xs leading-tight">
                             {(() => {
-                              const pendingLabels = (project.pendingParticipants ?? [])
-                                .map((participant) => `${participant.firstName ?? ''} ${participant.lastName ?? ''}`.trim())
-                                .filter((label) => label.length > 0);
-                              console.log(project.pendingParticipants)
-                              const participantLabels = pendingLabels.length > 0
-                                ? pendingLabels
-                                : (project.participants ?? []).map((participant) => {
-                                    const fullName = `${participant.firstName ?? ''} ${participant.lastName ?? ''}`.trim();
+                              const labels = participantLabels(project, participantNames);
 
-                                    if (fullName) {
-                                      return fullName;
-                                    }
-
-                                    if (participant.studentCode) {
-                                      return `Código ${participant.studentCode}`;
-                                    }
-
-                                    return 'Participante';
-                                  });
-
-                              return participantLabels.length > 0 ? (
-                                participantLabels.map((participantLabel, idx) => (
+                              return labels.length > 0 ? (
+                                labels.map((participantLabel, idx) => (
                                   <p key={idx} className="text-default-500">
                                     {participantLabel}
                                   </p>
