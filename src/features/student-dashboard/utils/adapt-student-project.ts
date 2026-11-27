@@ -185,5 +185,9 @@ export const adaptStudentProject = (
     participants: adaptList(project.participants, adaptParticipant),
     semester: toNullableText(project.semester) ?? undefined,
     isCurrent,
+    evaluationsOpened:
+      typeof event?.evaluationsOpened === 'boolean'
+        ? event.evaluationsOpened
+        : undefined,
   };
 };

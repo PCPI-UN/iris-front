@@ -1,10 +1,12 @@
 import {
   ArrowDownAZ,
   BookOpenCheck,
+  Building2,
   Calendar,
   ChartNoAxesCombined,
   GraduationCap,
   Home,
+  Landmark,
   LayoutDashboard,
   type LucideIcon,
   Mail,
@@ -21,6 +23,7 @@ import { paths } from "@/config/paths";
 import { AcademicProfile } from "@/features/academic/types";
 import {
   TEACHING_PROFILES,
+  TeachingProfile,
   teachingProfilesOf,
 } from "@/features/academic/utils/academic-profiles";
 import { hasAnyPermission, Permission, PERMISSIONS } from "@/lib/authorization";
@@ -147,13 +150,20 @@ const SIDEBAR_ITEMS: SidebarItem[] = [
   },
 ];
 
+const TEACHING_ICONS: Record<TeachingProfile, LucideIcon> = {
+  PROFESSOR: BookOpenCheck,
+  TUTOR: UserCheck,
+  DIRECTOR: Building2,
+  DEAN: Landmark,
+};
+
 /** One personal entry per academic profile of the session with a teaching screen */
 const teachingItems = (profiles: AcademicProfile[]): SidebarItem[] =>
   teachingProfilesOf(profiles).map((profile) => ({
     title: TEACHING_PROFILES[profile].label,
     group: "personal",
     url: paths.app.teaching.getHref(TEACHING_PROFILES[profile].slug),
-    icon: profile === "TUTOR" ? UserCheck : BookOpenCheck,
+    icon: TEACHING_ICONS[profile],
     permissions: [],
   }));
 

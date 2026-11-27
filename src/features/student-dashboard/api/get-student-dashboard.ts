@@ -3,8 +3,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ApiError, api } from '@/lib/api-client';
 import { useUser } from '@/lib/auth';
 import { useNotifications } from '@/components/ui/notifications';
+import { saveFile } from '@/features/reports/api/download-evaluation-report';
 import {
-  DiplomaCertificate,
+  AcademicParticipation,
   StudentDashboardData,
   StudentEvaluation,
   StudentGeneralDashboardResponse,
@@ -14,6 +15,11 @@ import {
   UpdateStudentProjectPayload,
 } from '../types';
 import { adaptStudentProject } from '../utils/adapt-student-project';
+import {
+  hasRealDocumentId,
+  validatePosterFile,
+  validateSupportingFiles,
+} from '../utils/document-validation';
 
 type WrappedOrDirect<T> = { data: T } | T;
 
@@ -105,23 +111,167 @@ export const updateStudentProject = async ({
 };
 
 /**
- * Endpoint 5: Descarga de Certificados Oficiales
- * GET /api/v1/certificates/:certificateId/download
+ * Sube un póster nuevo (POST /projects/:projectId/documents) o reemplaza el existente
+ * (PATCH /projects/documents/:documentId), validando previamente extensión, tamaño y firma binaria.
  */
-export const getCertificateDownloadUrl = (
-  certificateId: string | number,
-): string => {
-  return `/api/certificates/${encodeURIComponent(String(certificateId))}/download`;
+export const uploadOrReplaceStudentPoster = async ({
+  projectId,
+  file,
+  existingPosterId,
+  existingPosterType,
+}: {
+  projectId: string | number;
+  file: File;
+  existingPosterId?: string | number | null;
+  existingPosterType?: string | null;
+}): Promise<{ replaced: boolean }> => {
+  const validationError = await validatePosterFile(file);
+  if (validationError) {
+    throw new Error(validationError);
+  }
+
+  if (existingPosterId !== undefined && existingPosterId !== null && hasRealDocumentId(existingPosterId)) {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('type', existingPosterType || 'POSTER');
+
+    await api.patch(
+      `/projects/documents/${encodeURIComponent(String(existingPosterId))}`,
+      formData,
+      { suppressErrorNotification: true },
+    );
+
+    return { replaced: true };
+  }
+
+  const formData = new FormData();
+  formData.append('files', file);
+  formData.append('documents', JSON.stringify([{ type: 'POSTER' }]));
+
+  await api.post(
+    `/projects/${encodeURIComponent(String(projectId))}/documents`,
+    formData,
+    { suppressErrorNotification: true },
+  );
+
+  return { replaced: false };
 };
 
-export const downloadStudentCertificate = async (
-  certificateId: string | number,
-): Promise<{ downloadUrl?: string; blob?: Blob }> => {
-  const response = await api.get<any>(
-    `/certificates/${encodeURIComponent(String(certificateId))}/download`,
+export const uploadStudentSupportingDocuments = async ({
+  projectId,
+  files,
+}: {
+  projectId: string | number;
+  files: File[];
+}): Promise<void> => {
+  const validationError = await validateSupportingFiles(files);
+  if (validationError) {
+    throw new Error(validationError);
+  }
+
+  const formData = new FormData();
+  files.forEach((file) => {
+    formData.append('files', file);
+  });
+  formData.append(
+    'documents',
+    JSON.stringify(files.map(() => ({ type: 'SUPPORTING_DOCUMENT' }))),
   );
-  return unwrapResponse(response);
+
+  await api.post(
+    `/projects/${encodeURIComponent(String(projectId))}/documents`,
+    formData,
+    { suppressErrorNotification: true },
+  );
 };
+
+export const replaceStudentSupportingDocument = async ({
+  documentId,
+  file,
+  documentType,
+}: {
+  documentId: string | number;
+  file: File;
+  documentType?: string | null;
+}): Promise<void> => {
+  if (!hasRealDocumentId(documentId)) {
+    throw new Error('No se pudo identificar el documento a reemplazar.');
+  }
+
+  const validationError = await validateSupportingFiles([file]);
+  if (validationError) {
+    throw new Error(validationError);
+  }
+
+  const formData = new FormData();
+  formData.append('file', file);
+  if (documentType) {
+    formData.append('type', documentType);
+  }
+
+  await api.patch(
+    `/projects/documents/${encodeURIComponent(String(documentId))}`,
+    formData,
+    { suppressErrorNotification: true },
+  );
+};
+
+/**
+ * Endpoint 5: Diploma de premio del proyecto en un evento (PDF)
+ * GET /api/v1/events/:eventId/my-project/diploma
+ * Solo existe cuando la trayectoria trae `diplomaAvailable: true`.
+ */
+export const getMyDiploma = (eventId: number | string) =>
+  api.download(
+    `/events/${encodeURIComponent(String(eventId))}/my-project/diploma`,
+    {
+      headers: { Accept: 'application/pdf' },
+      // El botón muestra su propio mensaje de error
+      suppressErrorNotification: true,
+    },
+  );
+
+/** Nombre del archivo cuando el backend no envía Content-Disposition */
+export const getDiplomaFallbackName = (eventId: number | string) =>
+  `diploma_evento_${eventId}.pdf`;
+
+export const downloadMyDiploma = async (eventId: number | string) => {
+  const { blob, fileName } = await getMyDiploma(eventId);
+  saveFile(blob, fileName ?? getDiplomaFallbackName(eventId));
+};
+
+/**
+ * Mensaje para el estudiante cuando falla la descarga del diploma. En 403 (resultados
+ * sin publicar) y 404 (sin proyecto, sin premio o evento sin diseño) el backend ya
+ * explica el motivo en español.
+ */
+export const getDiplomaErrorMessage = (error: unknown): string => {
+  if (error instanceof ApiError) {
+    switch (error.status) {
+      case 403:
+        return (
+          error.message || 'Los resultados del evento aún no se han publicado.'
+        );
+      case 404:
+        return error.message || 'Este proyecto no tiene diploma en el evento.';
+    }
+  }
+  return 'No se pudo descargar el diploma. Intenta de nuevo.';
+};
+
+/**
+ * Si el evento tiene diploma descargable según la trayectoria del dashboard
+ * (`diplomaAvailable`, que el backend calcula con la misma regla que la descarga).
+ */
+export const isDiplomaAvailableForEvent = (
+  trajectory: AcademicParticipation[] | undefined,
+  eventId: number | string | null | undefined,
+): boolean =>
+  eventId != null &&
+  (trajectory ?? []).some(
+    (item) =>
+      item.diplomaAvailable === true && String(item.eventId) === String(eventId),
+  );
 
 /**
  * Combina el dashboard general con la ficha y los resultados de un evento.
@@ -138,21 +288,8 @@ const normalizeGeneralDashboardToStudentData = (
 
   const normalizedTrajectory = trajectory.map((item) => ({
     ...item,
-    certificates: (item.certificates ?? []).map((cert) => ({
-      ...cert,
-      eventName: cert.eventName || item.eventName,
-      semester: cert.semester || item.semester,
-      downloadUrl: cert.downloadUrl || getCertificateDownloadUrl(cert.id),
-    })),
+    diplomaAvailable: Boolean(item.diplomaAvailable),
   }));
-
-  const flattenedCertificates: DiplomaCertificate[] =
-    Array.isArray(general.certificates) && general.certificates.length > 0
-      ? general.certificates.map((cert) => ({
-          ...cert,
-          downloadUrl: cert.downloadUrl || getCertificateDownloadUrl(cert.id),
-        }))
-      : normalizedTrajectory.flatMap((item) => item.certificates ?? []);
 
   const currentProjectSummary = general.currentProject;
   const sameEvent = (a?: string | number | null, b?: string | number | null) =>
@@ -234,7 +371,6 @@ const normalizeGeneralDashboardToStudentData = (
     currentProject: resolvedProject,
     evaluation: resolvedEvaluation,
     trajectory: normalizedTrajectory,
-    certificates: flattenedCertificates,
   };
 };
 
@@ -359,6 +495,154 @@ export const useUpdateStudentProject = ({
         title: 'Propuesta actualizada',
         message:
           'Los ajustes del proyecto se han guardado y enviado nuevamente a revisión del comité.',
+      });
+    },
+  });
+};
+
+const getDocumentErrorMessage = (error: unknown, fallback: string): string => {
+  if (error instanceof ApiError && error.message?.trim()) {
+    return error.message;
+  }
+  if (error instanceof Error && error.message?.trim()) {
+    return error.message;
+  }
+  return fallback;
+};
+
+const useInvalidateStudentProjectDocuments = ({
+  eventId,
+  projectId,
+}: {
+  eventId?: number | string;
+  projectId?: number | string;
+}) => {
+  const queryClient = useQueryClient();
+
+  return useCallback(async () => {
+    const tasks: Array<Promise<unknown>> = [
+      queryClient.invalidateQueries({ queryKey: studentDashboardKeys.all }),
+    ];
+    if (eventId !== undefined && eventId !== null) {
+      tasks.push(
+        queryClient.invalidateQueries({
+          queryKey: ['my-project', String(eventId)],
+        }),
+      );
+    }
+    if (projectId !== undefined && projectId !== null) {
+      tasks.push(
+        queryClient.invalidateQueries({
+          queryKey: ['projects', String(projectId)],
+        }),
+      );
+    }
+    await Promise.all(tasks);
+  }, [queryClient, eventId, projectId]);
+};
+
+export const useUploadStudentPoster = ({
+  eventId,
+  projectId,
+}: {
+  eventId?: number | string;
+  projectId?: number | string;
+} = {}) => {
+  const invalidate = useInvalidateStudentProjectDocuments({
+    eventId,
+    projectId,
+  });
+
+  return useMutation({
+    mutationFn: uploadOrReplaceStudentPoster,
+    onSuccess: async ({ replaced }) => {
+      await invalidate();
+      useNotifications.getState().addNotification({
+        type: 'success',
+        title: replaced ? 'Póster actualizado' : 'Póster cargado',
+        message: replaced
+          ? 'El póster del proyecto se reemplazó correctamente.'
+          : 'El póster del proyecto se cargó correctamente.',
+      });
+    },
+    onError: (error) => {
+      useNotifications.getState().addNotification({
+        type: 'error',
+        title: 'No se pudo actualizar el póster',
+        message: getDocumentErrorMessage(
+          error,
+          'Ocurrió un error al subir el póster. Intenta nuevamente.',
+        ),
+      });
+    },
+  });
+};
+
+export const useUploadStudentSupportingDocuments = ({
+  eventId,
+  projectId,
+}: {
+  eventId?: number | string;
+  projectId?: number | string;
+} = {}) => {
+  const invalidate = useInvalidateStudentProjectDocuments({
+    eventId,
+    projectId,
+  });
+
+  return useMutation({
+    mutationFn: uploadStudentSupportingDocuments,
+    onSuccess: async () => {
+      await invalidate();
+      useNotifications.getState().addNotification({
+        type: 'success',
+        title: 'Documentos cargados',
+        message: 'Los documentos de soporte se subieron correctamente.',
+      });
+    },
+    onError: (error) => {
+      useNotifications.getState().addNotification({
+        type: 'error',
+        title: 'No se pudieron cargar los documentos',
+        message: getDocumentErrorMessage(
+          error,
+          'Ocurrió un error al subir los documentos. Intenta nuevamente.',
+        ),
+      });
+    },
+  });
+};
+
+export const useReplaceStudentSupportingDocument = ({
+  eventId,
+  projectId,
+}: {
+  eventId?: number | string;
+  projectId?: number | string;
+} = {}) => {
+  const invalidate = useInvalidateStudentProjectDocuments({
+    eventId,
+    projectId,
+  });
+
+  return useMutation({
+    mutationFn: replaceStudentSupportingDocument,
+    onSuccess: async () => {
+      await invalidate();
+      useNotifications.getState().addNotification({
+        type: 'success',
+        title: 'Documento actualizado',
+        message: 'El documento de soporte se reemplazó correctamente.',
+      });
+    },
+    onError: (error) => {
+      useNotifications.getState().addNotification({
+        type: 'error',
+        title: 'No se pudo reemplazar el documento',
+        message: getDocumentErrorMessage(
+          error,
+          'Ocurrió un error al reemplazar el documento. Intenta nuevamente.',
+        ),
       });
     },
   });

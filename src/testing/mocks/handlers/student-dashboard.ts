@@ -3,7 +3,6 @@ import { env } from '@/config/env';
 import { db, persistDb } from '../db';
 import { requireAuth, networkDelay } from '../utils';
 import {
-  DiplomaCertificate,
   EnrollmentStatus,
   StudentDashboardData,
   StudentEvaluation,
@@ -100,7 +99,6 @@ const buildStudentDashboardFromDb = (user: any): StudentDashboardData => {
       currentProject: null,
       evaluation: null,
       trajectory: [],
-      certificates: [],
     };
   }
 
@@ -215,12 +213,11 @@ const buildStudentDashboardFromDb = (user: any): StudentDashboardData => {
         courseName: mapped.categoryName,
         projectName: mapped.name,
         isCurrent: index === 0,
-        certificates: [],
+        diplomaAvailable: false,
         projectDetails: mapped,
         evaluation: { resultsPublished: false },
       };
     }),
-    certificates: [],
   };
 };
 
@@ -376,36 +373,6 @@ const resolveEventProjectAndResults = (
 };
 
 /**
- * Busca un certificado por ID en todos los escenarios activos y del usuario
- */
-const findCertificateById = (
-  certificateId: string,
-  user?: any,
-): DiplomaCertificate | null => {
-  const pools: StudentDashboardData[] = [];
-  if (user) {
-    pools.push(resolveStudentStateForUser(user));
-  }
-  pools.push(...Object.values(scenarioStoreByEmail), scenarioPublishedRegular);
-
-  for (const data of pools) {
-    const fromTop = (data.certificates ?? []).find(
-      (c) => String(c.id) === String(certificateId),
-    );
-    if (fromTop) return fromTop;
-
-    for (const traj of data.trajectory ?? []) {
-      const fromTraj = (traj.certificates ?? []).find(
-        (c) => String(c.id) === String(certificateId),
-      );
-      if (fromTraj) return fromTraj;
-    }
-  }
-
-  return null;
-};
-
-/**
  * Genera los prefijos de ruta soportados tanto por `mock-server.ts` (`${env.API_URL}`),
  * como por MSW en navegador/Vitest (`/api`) y llamadas directas al contrato `/api/v1`.
  */
@@ -493,19 +460,7 @@ const getStudentDashboardHandler = async ({
         finalScore: item.finalScore ?? null,
         award: item.award || null,
         isCurrent: Boolean(item.isCurrent),
-        certificates: (item.certificates ?? []).map((cert) => ({
-          id: cert.id,
-          eventId: cert.eventId ?? item.eventId,
-          title: cert.title,
-          eventName: cert.eventName || item.eventName,
-          semester: cert.semester || item.semester,
-          type: cert.type,
-          isIssued: cert.isIssued,
-          ...(cert.isIssued && {
-            downloadUrl: `/api/certificates/${encodeURIComponent(String(cert.id))}/download`,
-          }),
-          ...(cert.issuedDate && { issuedDate: cert.issuedDate }),
-        })),
+        diplomaAvailable: Boolean(item.diplomaAvailable),
       })),
     });
   } catch (err: any) {
@@ -577,6 +532,7 @@ const toGatewayMyProject = (user: unknown, project: StudentProjectInfo) => {
         isCurrentEvent ? now + 7 * DAY_MS : now - 180 * DAY_MS,
       ).toISOString(),
       evaluationType: 1,
+      evaluationsOpened: !isCurrentEvent,
       resultsPublished: false,
     },
   };
@@ -829,8 +785,10 @@ const patchStudentProjectHandler = async ({
   }
 };
 
-// 5. GET /api/v1/certificates/:certificateId/download (Descarga de certificados oficiales)
-const downloadCertificateHandler = async ({
+// 5. GET /api/v1/events/:eventId/my-project/diploma (diploma de premio en PDF)
+// Mismos códigos que el gateway: 404 sin proyecto, 403 sin resultados publicados,
+// 404 sin premio o sin diseño de diploma
+const downloadDiplomaHandler = async ({
   cookies,
   params,
 }: {
@@ -841,29 +799,43 @@ const downloadCertificateHandler = async ({
 
   try {
     const { user } = requireAuth(cookies);
-    const certificateId = String(params.certificateId ?? '').trim();
+    const eventId = String(params.eventId ?? '').trim();
+    const state = resolveStudentStateForUser(user);
+    const item = (state.trajectory ?? []).find(
+      (t) => String(t.eventId) === eventId,
+    );
 
-    const certificate = findCertificateById(certificateId, user);
-
-    if (!certificate) {
+    if (!item) {
       return HttpResponse.json(
-        { message: 'Certificado no encontrado' },
+        { message: 'No tienes un proyecto en este evento' },
         { status: 404 },
       );
     }
 
-    // Regla de negocio Endpoint 5: Si certificate.isIssued === false -> 409 Conflict
-    if (!certificate.isIssued) {
+    if (!item.diplomaAvailable) {
+      const resultsPublished = item.isCurrent
+        ? Boolean(state.evaluation?.resultsPublished)
+        : true;
+      if (!resultsPublished) {
+        return HttpResponse.json(
+          { message: 'Los resultados del evento aún no se han publicado' },
+          { status: 403 },
+        );
+      }
       return HttpResponse.json(
         {
-          message:
-            'El certificado aún se encuentra en trámite de emisión institucional',
+          message: item.award
+            ? 'Este evento no tiene un diploma configurado'
+            : 'Tu proyecto no tiene premios en este evento, así que no tiene diploma',
         },
-        { status: 409 },
+        { status: 404 },
       );
     }
 
-    const safeFileName = `Diploma_${certificate.id.replace(/[^a-zA-Z0-9_-]/g, '_')}.pdf`;
+    const safeFileName = `diploma_${item.projectName
+      .normalize('NFD')
+      .replace(/\p{M}/gu, '')
+      .replace(/[^a-zA-Z0-9_-]+/g, '_')}.pdf`;
     const minimalPdfContent = `%PDF-1.4
 1 0 obj
 << /Type /Catalog /Pages 2 0 R >>
@@ -917,7 +889,7 @@ export const studentDashboardHandlers = [
   ...buildApiPaths('/projects/:projectId/change-to-under-review').map((url) =>
     http.post(url, resubmitStudentProjectHandler),
   ),
-  ...buildApiPaths('/certificates/:certificateId/download').map((url) =>
-    http.get(url, downloadCertificateHandler),
+  ...buildApiPaths('/events/:eventId/my-project/diploma').map((url) =>
+    http.get(url, downloadDiplomaHandler),
   ),
 ];

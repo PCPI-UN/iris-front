@@ -2,12 +2,13 @@ import { queryOptions, useQuery } from "@tanstack/react-query";
 
 import { AcademicProfile, GradesReport } from "../types";
 
+import { saveFile } from "@/features/reports/api/download-evaluation-report";
 import { api } from "@/lib/api-client";
 import { QueryConfig } from "@/lib/react-query";
 
 /**
- * Evaluation progress of the approved projects of the profile's scope in the
- * event. The grade itself is not read here: it belongs to the Notas tab.
+ * Grade and evaluation progress of the approved projects of the profile's scope
+ * in the event; the grade stays hidden until publication for some profiles.
  */
 export const getAcademicGrades = (
   profile: AcademicProfile,
@@ -42,3 +43,23 @@ export const useAcademicGrades = ({
     enabled: Boolean(eventId),
     ...queryConfig,
   });
+
+/** Fallback when the backend does not send Content-Disposition */
+const gradesFileName = (eventId: number) => `notas_evento_${eventId}.xlsx`;
+
+/**
+ * Excel of the same grades (GET /academic/grades?format=excel), built by the
+ * backend with the scope and the grade rule of the profile.
+ */
+export const downloadAcademicGrades = async (
+  profile: AcademicProfile,
+  eventId: number,
+) => {
+  const { blob, fileName } = await api.download("/academic/grades", {
+    params: { profile, eventId, format: "excel" },
+    // The button shows its own message
+    suppressErrorNotification: true,
+  });
+
+  saveFile(blob, fileName ?? gradesFileName(eventId));
+};

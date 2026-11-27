@@ -66,6 +66,11 @@ export type StudentProjectInfo = {
   semester?: string;
   /** false cuando el evento del proyecto ya terminó (ficha histórica) */
   isCurrent?: boolean;
+  /**
+   * `evaluationsOpened` del evento (GET /events/:eventId/my-project). Con evaluaciones
+   * abiertas el backend ya no acepta documentos nuevos; sin el dato no se sabe.
+   */
+  evaluationsOpened?: boolean;
 };
 
 export type CriterionScore = {
@@ -117,35 +122,16 @@ export type AcademicParticipation = {
   maxScore?: number | null;
   award?: string | null;
   isCurrent?: boolean;
-  /** Certificados y diplomas asociados a esta edición/evento */
-  certificates?: DiplomaCertificate[];
+  /**
+   * true cuando el diploma de premio del proyecto se puede descargar con
+   * GET /events/:eventId/my-project/diploma: resultados publicados, al menos un
+   * premio del evento y el evento tiene diseño de diploma
+   */
+  diplomaAvailable?: boolean;
   /** Ficha técnica detallada del proyecto en este evento */
   projectDetails?: StudentProjectInfo;
   /** Evaluación oficial consolidada de este evento */
   evaluation?: StudentEvaluation;
-};
-
-export type CertificateType =
-  | 'PARTICIPATION'
-  | 'CO_WINNER'
-  | 'WINNER'
-  | 'HONOR_MENTION';
-
-export type DiplomaCertificate = {
-  id: string;
-  eventId?: string | number;
-  title: string;
-  eventName: string;
-  semester: string;
-  type: CertificateType;
-  /**
-   * Estado asíncrono de emisión:
-   * true = Diploma emitido y listo para descarga.
-   * false = "En proceso de emisión oficial"
-   */
-  isIssued: boolean;
-  downloadUrl?: string;
-  issuedDate?: string;
 };
 
 export type StudentDashboardData = {
@@ -154,7 +140,6 @@ export type StudentDashboardData = {
   currentProject: StudentProjectInfo | null;
   evaluation: StudentEvaluation | null;
   trajectory: AcademicParticipation[];
-  certificates: DiplomaCertificate[];
 };
 
 /**
@@ -193,7 +178,6 @@ export type StudentGeneralDashboardResponse = {
     consolidatedFeedback?: string;
   } | null;
   trajectory: AcademicParticipation[];
-  certificates?: DiplomaCertificate[];
 };
 
 /** Endpoint 2: GET /api/v1/events/:eventId/my-project */

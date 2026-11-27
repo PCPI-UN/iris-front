@@ -54,7 +54,7 @@ const dashboard = {
       finalScore: null,
       award: null,
       isCurrent: true,
-      certificates: [],
+      diplomaAvailable: false,
     },
     {
       id: 1,
@@ -66,7 +66,7 @@ const dashboard = {
       finalScore: 81,
       award: "Primer puesto",
       isCurrent: false,
-      certificates: [],
+      diplomaAvailable: false,
     },
   ],
   bySemester: [],

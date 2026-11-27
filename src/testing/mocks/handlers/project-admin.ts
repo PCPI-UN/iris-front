@@ -830,4 +830,54 @@ export const projectAdminHandlers = [
       return HttpResponse.json({ documents: added }, { status: 201 });
     },
   ),
+
+  // PATCH /projects/documents/:documentId: replaces an existing student/project document
+  http.patch(
+    `${env.API_URL}/projects/documents/:documentId`,
+    async ({ cookies, request, params }) => {
+      await networkDelay();
+
+      const { error } = requireAuth(cookies);
+      if (error) return unauthorized(error);
+
+      const rawDocumentId = String(params.documentId ?? "").trim();
+      const form = await request.formData();
+      const file = form.get("file");
+
+      if (!file || typeof file === "string") {
+        return badRequest("El campo file es obligatorio");
+      }
+
+      const explicitType = form.get("type");
+      const allProjects = db.project.getAll();
+
+      for (const project of allProjects) {
+        const docs = ((project as any).documents ?? []) as any[];
+        const idx = docs.findIndex(
+          (doc, index) =>
+            String(doc?.id ?? index + 1) === rawDocumentId,
+        );
+
+        if (idx === -1) continue;
+
+        const current = docs[idx];
+        const nextType =
+          typeof explicitType === "string" && explicitType.trim()
+            ? explicitType.trim()
+            : String(current?.type ?? "POSTER");
+        const updatedDoc = {
+          ...current,
+          type: nextType,
+          url: `https://placehold.co/400x400/png?text=${encodeURIComponent(nextType)}&v=${Date.now()}`,
+        };
+        const nextDocs = docs.map((d, i) => (i === idx ? updatedDoc : d));
+
+        await saveProject(String(project.id), { documents: nextDocs });
+
+        return HttpResponse.json({ document: updatedDoc }, { status: 200 });
+      }
+
+      return notFound("Documento no encontrado");
+    },
+  ),
 ];

@@ -8,6 +8,5 @@ export * from './components/student-header';
 export * from './components/student-project-section';
 export * from './components/student-evaluation-section';
 export * from './components/student-history-section';
-export * from './components/student-certificates-section';
 export * from './components/student-general-dashboard-view';
 export * from './components/student-project-dashboard-view';

@@ -11,6 +11,7 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { Can } from "@/components/auth/can";
 import { Button } from "@/components/ui/button";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Chip } from "@/components/ui/chip";
@@ -40,6 +41,8 @@ import {
 import { useEventsDropdown } from "@/features/events/api/get-events-dropdown";
 import { useCategories } from "@/features/courses/api/get-categories";
 
+import { useUser } from "@/lib/auth";
+import { hasPermission, PERMISSIONS } from "@/lib/authorization";
 import { Criterion, CriterionComponent } from "@/types/api";
 
 import { useComponents } from "../api/get-components";
@@ -188,10 +191,13 @@ export const CriteriaList = () => {
     queryConfig: { enabled: !!selectedEventKey },
   });
 
-  // Once there are evaluations the backend refuses the changes that alter the rubric used to grade
+  // Once there are evaluations the backend refuses the changes that alter the rubric used to grade.
+  // GET /criterions/readiness requires manage:events: read-only roles neither edit nor ask for it
+  const { data: currentUser } = useUser();
+  const canManageCriteria = hasPermission(currentUser, PERMISSIONS.manageEvents);
   const readinessQuery = useRubricReadiness({
     eventId: selectedEventId ?? 0,
-    queryConfig: { enabled: !!selectedEventId },
+    queryConfig: { enabled: !!selectedEventId && canManageCriteria },
   });
   const componentsLocked = !!readinessQuery.data?.componentsLocked;
   const lockedCategoryIds = useMemo(
@@ -954,55 +960,58 @@ export const CriteriaList = () => {
               </div>
             </div>
 
+            {/* Assigning saves the criterion (PUT /criterions/:id requires manage:events) */}
             {showAssignment && (
-              <div className="rounded-lg border border-danger/30 bg-danger/10 p-3">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-                  <div className="sm:flex-1">
-                    <Select
-                      size="sm"
-                      label="Asignar a componente"
-                      placeholder="Selecciona un componente"
-                      selectedKeys={
-                        selectedAssignment ? [selectedAssignment] : []
-                      }
-                      onSelectionChange={(keys) => {
-                        const selected = Array.from(keys)[0];
-                        if (selected === ADD_COMPONENT_KEY) {
-                          setPendingInlineAssignmentCriterionId(criterion.id);
-                          setInlineComponentFormOpen(true);
-                          return;
+              <Can permission={PERMISSIONS.manageEvents}>
+                <div className="rounded-lg border border-danger/30 bg-danger/10 p-3">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+                    <div className="sm:flex-1">
+                      <Select
+                        size="sm"
+                        label="Asignar a componente"
+                        placeholder="Selecciona un componente"
+                        selectedKeys={
+                          selectedAssignment ? [selectedAssignment] : []
                         }
-                        setAssignmentByCriterion((prev) => ({
-                          ...prev,
-                          [criterion.id]: selected ? String(selected) : "",
-                        }));
-                      }}
+                        onSelectionChange={(keys) => {
+                          const selected = Array.from(keys)[0];
+                          if (selected === ADD_COMPONENT_KEY) {
+                            setPendingInlineAssignmentCriterionId(criterion.id);
+                            setInlineComponentFormOpen(true);
+                            return;
+                          }
+                          setAssignmentByCriterion((prev) => ({
+                            ...prev,
+                            [criterion.id]: selected ? String(selected) : "",
+                          }));
+                        }}
+                      >
+                        <>
+                          {availableComponents.map((component) => (
+                            <SelectItem key={String(component.id)}>
+                              {component.name}
+                            </SelectItem>
+                          ))}
+                          {!componentsLocked && (
+                            <SelectItem key={ADD_COMPONENT_KEY}>
+                              Añadir nuevo componente
+                            </SelectItem>
+                          )}
+                        </>
+                      </Select>
+                    </div>
+                    <Button
+                      size="sm"
+                      color="primary"
+                      isDisabled={!selectedAssignment || isLocked}
+                      onPress={() => handleAssignToComponent(criterion)}
+                      isLoading={assignPendingId === criterion.id}
                     >
-                      <>
-                        {availableComponents.map((component) => (
-                          <SelectItem key={String(component.id)}>
-                            {component.name}
-                          </SelectItem>
-                        ))}
-                        {!componentsLocked && (
-                          <SelectItem key={ADD_COMPONENT_KEY}>
-                            Añadir nuevo componente
-                          </SelectItem>
-                        )}
-                      </>
-                    </Select>
+                      Asignar
+                    </Button>
                   </div>
-                  <Button
-                    size="sm"
-                    color="primary"
-                    isDisabled={!selectedAssignment || isLocked}
-                    onPress={() => handleAssignToComponent(criterion)}
-                    isLoading={assignPendingId === criterion.id}
-                  >
-                    Asignar
-                  </Button>
                 </div>
-              </div>
+              </Can>
             )}
           </div>
         </CardBody>
@@ -1165,58 +1174,61 @@ export const CriteriaList = () => {
           />
         </div>
 
-        <div className="flex w-full flex-col gap-2 sm:w-auto sm:items-end">
-          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
-            {hasUnsavedChanges && (
+        {/* Saving and rolling back write criteria and components: manage:events */}
+        <Can permission={PERMISSIONS.manageEvents}>
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:items-end">
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+              {hasUnsavedChanges && (
+                <Button
+                  variant="flat"
+                  color="danger"
+                  onPress={() => setIsCancelChangesOpen(true)}
+                  isDisabled={isRollbackPending}
+                >
+                  <RotateCcw className="size-4" />
+                  Cancelar cambios
+                </Button>
+              )}
               <Button
-                variant="flat"
-                color="danger"
-                onPress={() => setIsCancelChangesOpen(true)}
-                isDisabled={isRollbackPending}
+                color="primary"
+                variant="shadow"
+                isDisabled={!canSave}
+                onPress={() => {
+                  if (!canSave) return;
+                  const snapshot = buildSnapshot();
+                  setSavedSnapshotByEvent((prev) => ({
+                    ...prev,
+                    [selectedEventKey]: snapshot,
+                  }));
+                  setHasUnsavedChangesByEvent((prev) => ({
+                    ...prev,
+                    [selectedEventKey]: false,
+                  }));
+                  // Reset refs for next iteration
+                  mergedComponentIdsRef.current[selectedEventKey] = new Set();
+                  setCreatedComponentsByEvent((prev) => ({
+                    ...prev,
+                    [selectedEventKey]: [],
+                  }));
+                  setEventComponentIds((prev) => ({
+                    ...prev,
+                    [selectedEventKey]: snapshot.components.map((c) => c.id),
+                  }));
+                  // Allow re-capture on next load after a real save
+                  snapshotCapturedRef.current[selectedEventKey] = false;
+                  addNotification({
+                    type: "success",
+                    title: "Configuración guardada",
+                    message: "La configuración quedó marcada como guardada.",
+                  });
+                }}
               >
-                <RotateCcw className="size-4" />
-                Cancelar cambios
+                <Save className="size-4" />
+                Guardar configuración
               </Button>
-            )}
-            <Button
-              color="primary"
-              variant="shadow"
-              isDisabled={!canSave}
-              onPress={() => {
-                if (!canSave) return;
-                const snapshot = buildSnapshot();
-                setSavedSnapshotByEvent((prev) => ({
-                  ...prev,
-                  [selectedEventKey]: snapshot,
-                }));
-                setHasUnsavedChangesByEvent((prev) => ({
-                  ...prev,
-                  [selectedEventKey]: false,
-                }));
-                // Reset refs for next iteration
-                mergedComponentIdsRef.current[selectedEventKey] = new Set();
-                setCreatedComponentsByEvent((prev) => ({
-                  ...prev,
-                  [selectedEventKey]: [],
-                }));
-                setEventComponentIds((prev) => ({
-                  ...prev,
-                  [selectedEventKey]: snapshot.components.map((c) => c.id),
-                }));
-                // Allow re-capture on next load after a real save
-                snapshotCapturedRef.current[selectedEventKey] = false;
-                addNotification({
-                  type: "success",
-                  title: "Configuración guardada",
-                  message: "La configuración quedó marcada como guardada.",
-                });
-              }}
-            >
-              <Save className="size-4" />
-              Guardar configuración
-            </Button>
+            </div>
           </div>
-        </div>
+        </Can>
       </div>
 
       <CreateComponent
@@ -1403,21 +1415,24 @@ export const CriteriaList = () => {
                           }}
                         />
 
-                        <Button
-                          size="sm"
-                          variant="flat"
-                          color="danger"
-                          isIconOnly
-                          aria-label="Eliminar componente"
-                          isDisabled={componentsLocked}
-                          isLoading={deletePendingId === component.id}
-                          onPress={() => {
-                            setDeleteComponentMode("reassign");
-                            setComponentToDelete(component);
-                          }}
-                        >
-                          <Trash className="size-4" />
-                        </Button>
+                        {/* DELETE /criterions/components/:id requires manage:events */}
+                        <Can permission={PERMISSIONS.manageEvents}>
+                          <Button
+                            size="sm"
+                            variant="flat"
+                            color="danger"
+                            isIconOnly
+                            aria-label="Eliminar componente"
+                            isDisabled={componentsLocked}
+                            isLoading={deletePendingId === component.id}
+                            onPress={() => {
+                              setDeleteComponentMode("reassign");
+                              setComponentToDelete(component);
+                            }}
+                          >
+                            <Trash className="size-4" />
+                          </Button>
+                        </Can>
                       </div>
                     </div>
 

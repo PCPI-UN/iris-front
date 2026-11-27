@@ -21,11 +21,13 @@ import { UpdateEvent } from "./update-event";
 
 import { EventTermLabel } from "./event-term-label";
 
+import { Can } from "@/components/auth/can";
 import { Snippet } from "@/components/ui/snippet";
 import { Card, CardBody } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { Pagination } from "@/components/ui/pagination";
 import { Button } from "@/components/ui/button";
+import { PERMISSIONS } from "@/lib/authorization";
 import { Event } from "@/types/api";
 
 import "dayjs/locale/es";
@@ -235,11 +237,13 @@ export const GetEventsAdmin = () => {
                   resultsPublished={event.resultsPublished}
                 />
 
-                {/* Actions */}
-                <div className="flex gap-2 pt-2">
-                  <UpdateEvent eventId={event.id} />
-                  <DeleteEvent id={event.id} />
-                </div>
+                {/* Actions: PATCH and DELETE /events/:id require manage:events */}
+                <Can permission={PERMISSIONS.manageEvents}>
+                  <div className="flex gap-2 pt-2">
+                    <UpdateEvent eventId={event.id} />
+                    <DeleteEvent id={event.id} />
+                  </div>
+                </Can>
               </CardBody>
             </Card>
           ))}
