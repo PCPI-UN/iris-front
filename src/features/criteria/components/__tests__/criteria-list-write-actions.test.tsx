@@ -54,11 +54,20 @@ vi.mock("@/features/criteria/api/get-components", async (importOriginal) => ({
   }),
 }));
 
+// Records whether the page enables GET /criterions/readiness (it requires manage:events)
+const readinessEnabled = vi.hoisted(() => [] as boolean[]);
 vi.mock(
   "@/features/criteria/api/get-rubric-readiness",
   async (importOriginal) => ({
     ...(await importOriginal<object>()),
-    useRubricReadiness: () => ({ isLoading: false, data: undefined }),
+    useRubricReadiness: ({
+      queryConfig,
+    }: {
+      queryConfig?: { enabled?: boolean };
+    }) => {
+      readinessEnabled.push(queryConfig?.enabled !== false);
+      return { isLoading: false, data: undefined };
+    },
   }),
 );
 
@@ -71,6 +80,10 @@ const selectEvent = async () => {
 };
 
 describe("Criterios: acciones de escritura", () => {
+  beforeEach(() => {
+    readinessEnabled.length = 0;
+  });
+
   test("a read-only session (Dean) sees the rubric but cannot assign, delete or save", async () => {
     await renderWithSession(<CriteriaList />, DEAN_PERMISSIONS);
     await selectEvent();
@@ -88,6 +101,8 @@ describe("Criterios: acciones de escritura", () => {
     expect(
       screen.queryByRole("button", { name: /agregar criterio/i }),
     ).not.toBeInTheDocument();
+    // Without manage:events the page never asks for the readiness (the gateway answers 403)
+    expect(readinessEnabled).not.toContain(true);
   });
 
   test("a session with manage:events sees assign, delete component and save", async () => {
@@ -103,5 +118,6 @@ describe("Criterios: acciones de escritura", () => {
     expect(
       screen.getByRole("button", { name: /guardar configuración/i }),
     ).toBeInTheDocument();
+    expect(readinessEnabled).toContain(true);
   });
 });

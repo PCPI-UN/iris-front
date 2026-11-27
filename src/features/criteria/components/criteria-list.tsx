@@ -41,7 +41,8 @@ import {
 import { useEventsDropdown } from "@/features/events/api/get-events-dropdown";
 import { useCategories } from "@/features/courses/api/get-categories";
 
-import { PERMISSIONS } from "@/lib/authorization";
+import { useUser } from "@/lib/auth";
+import { hasPermission, PERMISSIONS } from "@/lib/authorization";
 import { Criterion, CriterionComponent } from "@/types/api";
 
 import { useComponents } from "../api/get-components";
@@ -190,10 +191,13 @@ export const CriteriaList = () => {
     queryConfig: { enabled: !!selectedEventKey },
   });
 
-  // Once there are evaluations the backend refuses the changes that alter the rubric used to grade
+  // Once there are evaluations the backend refuses the changes that alter the rubric used to grade.
+  // GET /criterions/readiness requires manage:events: read-only roles neither edit nor ask for it
+  const { data: currentUser } = useUser();
+  const canManageCriteria = hasPermission(currentUser, PERMISSIONS.manageEvents);
   const readinessQuery = useRubricReadiness({
     eventId: selectedEventId ?? 0,
-    queryConfig: { enabled: !!selectedEventId },
+    queryConfig: { enabled: !!selectedEventId && canManageCriteria },
   });
   const componentsLocked = !!readinessQuery.data?.componentsLocked;
   const lockedCategoryIds = useMemo(
