@@ -66,7 +66,7 @@ export const contributors: ContributorCard[] = [
   { firstName: 'Daniel', middleName: 'José', lastName1: 'Romero', lastName2: 'Martínez', role: 'Software Architect', version: 'v1.0', github: 'https://github.com/djromerom' },
 
   { firstName: 'Daniel', middleName: 'José', lastName1: 'Romero', lastName2: 'Martínez', role: 'Software Architect', version: 'v2.0', github: 'https://github.com/djromerom' },
-  { firstName: 'Kevin', middleName: 'Jesús', lastName1: 'Torregrosa', lastName2: 'Padilla', role: 'Backend Leader', version: 'v2.0', github: 'https://github.com/MrManini' },
+  { firstName: 'Kevin', middleName: 'Jesús', lastName1: 'Torregrosa', lastName2: 'Padilla', role: 'Backend Leader', version: 'v2.0', github: 'https://github.com/kjtorregrosa' },
   { firstName: 'Andrés', middleName: 'Felipe', lastName1: 'Monserrat', lastName2: 'Ardilla', role: 'Frontend Developer', version: 'v2.0', github: 'https://github.com/AndresMonserrat' },
   { firstName: 'Judith', middleName: 'Isabel', lastName1: 'Pérez', lastName2: 'Conde', role: 'Frontend Leader - FullStack Developer', version: 'v2.0', github: 'https://github.com/Judithpc23' },
   { firstName: 'Isabella', lastName1: 'Arrieta', lastName2: 'Juliao', role: 'FullStack Developer', version: 'v2.0', github: 'https://github.com/isaAJ05' },
