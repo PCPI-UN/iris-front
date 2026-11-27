@@ -1,7 +1,7 @@
 import { paths } from "@/config/paths";
 
 export const TOUR_360_BASE_URL =
-  "https://tours-360-coral.vercel.app/tour/v1125/ar";
+  "https://tours-360-coral.vercel.app/tour/coliseo-pro/ar";
 
 type IdInput = number | string | null | undefined;
 
