@@ -66,6 +66,11 @@ export type StudentProjectInfo = {
   semester?: string;
   /** false cuando el evento del proyecto ya terminó (ficha histórica) */
   isCurrent?: boolean;
+  /**
+   * `evaluationsOpened` del evento (GET /events/:eventId/my-project). Con evaluaciones
+   * abiertas el backend ya no acepta documentos nuevos; sin el dato no se sabe.
+   */
+  evaluationsOpened?: boolean;
 };
 
 export type CriterionScore = {

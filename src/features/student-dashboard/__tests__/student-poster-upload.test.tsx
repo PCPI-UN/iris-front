@@ -44,6 +44,7 @@ const makeApprovedProject = (
   enrollmentStatus: 'APPROVED',
   canEdit: false,
   isCurrent: true,
+  evaluationsOpened: false,
   documents: [
     {
       id: '99',
@@ -181,6 +182,58 @@ describe('Hotfix: edición y subida de póster en StudentProjectSection / Studen
     expect(onUploadPoster).not.toHaveBeenCalled();
   });
 
+  it('con las evaluaciones abiertas solo ofrece cambiar y reemplazar (PATCH), no subir documentos nuevos (POST)', () => {
+    render(
+      <StudentProjectSection
+        project={makeApprovedProject({
+          evaluationsOpened: true,
+          documents: [
+            {
+              id: '99',
+              type: 'POSTER',
+              title: 'Póster del proyecto',
+              url: 'https://storage.example/poster-old.pdf',
+            },
+            {
+              id: '100',
+              type: 'SUPPORTING_DOCUMENT',
+              title: 'Documento de soporte',
+              url: 'https://storage.example/soporte.pdf',
+            },
+          ],
+        })}
+        onReplaceSupportingDocument={vi.fn()}
+        onUploadPoster={vi.fn()}
+        onUploadSupportingDocuments={vi.fn()}
+      />,
+    );
+    expect(
+      screen.getByRole('button', { name: /Cambiar póster/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getAllByRole('button', { name: /Reemplazar/i }).length,
+    ).toBeGreaterThan(0);
+    expect(
+      screen.queryByRole('button', { name: /Subir soporte/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it.each([
+    ['con las evaluaciones del evento abiertas', { evaluationsOpened: true }],
+    ['sin saber si las evaluaciones están abiertas', { evaluationsOpened: undefined }],
+  ])('sin póster, no ofrece subirlo %s', (_label, overrides) => {
+    render(
+      <StudentProjectSection
+        project={makeApprovedProject({ ...overrides, documents: [] })}
+        onUploadPoster={vi.fn()}
+        onUploadSupportingDocuments={vi.fn()}
+      />,
+    );
+    expect(
+      screen.queryByRole('button', { name: /Subir póster|Subir soporte/i }),
+    ).not.toBeInTheDocument();
+  });
+
   it('oculta botones de carga en eventos pasados (isCurrent: false) o proyectos REJECTED', () => {
     const onUploadPoster = vi.fn();
 
@@ -276,6 +329,7 @@ describe('Hotfix: edición y subida de póster en StudentProjectSection / Studen
             id: 3,
             name: 'Feria 2026-2',
             endDate: '2099-12-31T23:59:59Z',
+            evaluationsOpened: false,
           },
         }),
       ),

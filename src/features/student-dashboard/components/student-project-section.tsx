@@ -206,15 +206,27 @@ export const StudentProjectSection = ({
   const primaryPoster = project.documents.find((d) => d.type === 'POSTER');
   const otherDocuments = project.documents.filter((d) => d.type !== 'POSTER');
 
-  // Documentos pueden actualizarse en eventos vigentes mientras el proyecto no haya sido rechazado
-  // (incluye APPROVED, REQUEST_CHANGES y UNDER_REVIEW; en historial de eventos cerrados es solo lectura).
+  // Documentos se gestionan en eventos vigentes mientras el proyecto no haya sido rechazado
+  // (incluye APPROVED, REQUEST_CHANGES y UNDER_REVIEW); el historial es solo lectura.
   const canManageDocuments =
     project.isCurrent !== false && project.enrollmentStatus !== 'REJECTED';
-  const canUploadPoster = canManageDocuments && Boolean(onUploadPoster);
+  // Reemplazar (PATCH /projects/documents/:id): el backend lo acepta con evaluaciones abiertas.
+  const canReplaceDocuments = canManageDocuments;
+  // Subir uno nuevo (POST /projects/:id/documents): el backend lo rechaza desde que se abren
+  // las evaluaciones; si no se sabe si están abiertas, no se ofrece.
+  const canAddDocuments =
+    canManageDocuments && project.evaluationsOpened === false;
+  // El póster se reemplaza con PATCH si ya existe con id real; si no, se sube con POST
+  const posterIsReplaced = Boolean(
+    primaryPoster && hasRealDocumentId(primaryPoster.id),
+  );
+  const canUploadPoster =
+    Boolean(onUploadPoster) &&
+    (posterIsReplaced ? canReplaceDocuments : canAddDocuments);
   const canUploadSupporting =
-    canManageDocuments && Boolean(onUploadSupportingDocuments);
+    canAddDocuments && Boolean(onUploadSupportingDocuments);
   const canReplaceSupporting =
-    canManageDocuments && Boolean(onReplaceSupportingDocument);
+    canReplaceDocuments && Boolean(onReplaceSupportingDocument);
 
   const handlePosterFileChange = async (
     event: React.ChangeEvent<HTMLInputElement>,
