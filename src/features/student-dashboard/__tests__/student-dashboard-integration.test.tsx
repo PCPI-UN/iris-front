@@ -3,10 +3,12 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Cookies from 'js-cookie';
-import { describe, expect, it, beforeEach } from 'vitest';
+import { HttpResponse, http } from 'msw';
+import { afterEach, describe, expect, it, beforeEach, vi } from 'vitest';
 
 import { AUTH_COOKIE, encode, sanitizeUser } from '@/testing/mocks/utils';
 import { db } from '@/testing/mocks/db';
+import { server } from '@/testing/mocks/server';
 import {
   getStudentGeneralDashboard,
   getStudentProjectByEvent,
@@ -231,5 +233,83 @@ describe('Student Dashboard Backend Integration (MSW Mock Server)', () => {
     expect(
       screen.getByText('Inscripción en Proceso de Revisión'),
     ).toBeInTheDocument();
+  });
+});
+
+describe('Diploma en Resultados y Calificaciones del proyecto propio', () => {
+  const createObjectURL = vi.fn(() => 'blob:diploma');
+  const revokeObjectURL = vi.fn();
+
+  beforeEach(async () => {
+    Cookies.remove(AUTH_COOKIE);
+    await authenticateTestUser('carlos@iris.com');
+    URL.createObjectURL = createObjectURL;
+    URL.revokeObjectURL = revokeObjectURL;
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    createObjectURL.mockClear();
+    revokeObjectURL.mockClear();
+  });
+
+  const openResultsTab = async (eventId: number) => {
+    render(<StudentProjectDashboardView eventId={eventId} />, {
+      wrapper: createWrapper(),
+    });
+    await userEvent.click(
+      await screen.findByRole('button', {
+        name: /Resultados y Calificaciones/i,
+      }),
+    );
+    await screen.findByRole('button', { name: /Descargar Reporte \(Excel\)/i });
+  };
+
+  it('muestra el botón junto al Excel cuando el evento tiene diplomaAvailable y descarga el PDF', async () => {
+    const click = vi
+      .spyOn(HTMLAnchorElement.prototype, 'click')
+      .mockImplementation(() => {});
+
+    await openResultsTab(2);
+
+    await userEvent.click(
+      screen.getByRole('button', { name: /Descargar Diploma \(PDF\)/i }),
+    );
+
+    await vi.waitFor(() => expect(click).toHaveBeenCalledTimes(1));
+    const anchor = click.mock.contexts[0] as HTMLAnchorElement;
+    expect(anchor.download).toBe(
+      'diploma_Acelerador_de_Renderizado_Fotorrealista_Ray-Tracing.pdf',
+    );
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  it('no muestra el botón cuando el evento no tiene diplomaAvailable', async () => {
+    await openResultsTab(3);
+
+    expect(
+      screen.queryByRole('button', { name: /Descargar Diploma \(PDF\)/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('muestra el mensaje del backend si la descarga falla', async () => {
+    server.use(
+      http.get('*/api/events/:eventId/my-project/diploma', () =>
+        HttpResponse.json(
+          { message: 'Este evento no tiene un diploma configurado' },
+          { status: 404 },
+        ),
+      ),
+    );
+
+    await openResultsTab(2);
+    await userEvent.click(
+      screen.getByRole('button', { name: /Descargar Diploma \(PDF\)/i }),
+    );
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Este evento no tiene un diploma configurado',
+    );
+    expect(createObjectURL).not.toHaveBeenCalled();
   });
 });

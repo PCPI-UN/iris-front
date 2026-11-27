@@ -5,6 +5,7 @@ import { useUser } from '@/lib/auth';
 import { useNotifications } from '@/components/ui/notifications';
 import { saveFile } from '@/features/reports/api/download-evaluation-report';
 import {
+  AcademicParticipation,
   StudentDashboardData,
   StudentEvaluation,
   StudentGeneralDashboardResponse,
@@ -146,6 +147,20 @@ export const getDiplomaErrorMessage = (error: unknown): string => {
   }
   return 'No se pudo descargar el diploma. Intenta de nuevo.';
 };
+
+/**
+ * Si el evento tiene diploma descargable según la trayectoria del dashboard
+ * (`diplomaAvailable`, que el backend calcula con la misma regla que la descarga).
+ */
+export const isDiplomaAvailableForEvent = (
+  trajectory: AcademicParticipation[] | undefined,
+  eventId: number | string | null | undefined,
+): boolean =>
+  eventId != null &&
+  (trajectory ?? []).some(
+    (item) =>
+      item.diplomaAvailable === true && String(item.eventId) === String(eventId),
+  );
 
 /**
  * Combina el dashboard general con la ficha y los resultados de un evento.

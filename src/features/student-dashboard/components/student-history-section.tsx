@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
@@ -17,10 +17,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AcademicParticipation } from '../types';
-import {
-  downloadMyDiploma,
-  getDiplomaErrorMessage,
-} from '../api/get-student-dashboard';
+import { useMyDiplomaDownload } from '../hooks/use-my-diploma-download';
 import { formatScoreWithMax } from '../utils/format-score';
 
 export interface StudentHistorySectionProps {
@@ -34,20 +31,11 @@ const DiplomaDownload = ({
   eventId: string | number;
   projectName: string;
 }) => {
-  const [isDownloading, setIsDownloading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const handleDownload = async () => {
-    setIsDownloading(true);
-    setError(null);
-    try {
-      await downloadMyDiploma(eventId);
-    } catch (err) {
-      setError(getDiplomaErrorMessage(err));
-    } finally {
-      setIsDownloading(false);
-    }
-  };
+  const {
+    isDownloading,
+    error,
+    download: handleDownload,
+  } = useMyDiplomaDownload(eventId);
 
   return (
     <div className="pt-3 border-t border-white/10 space-y-2">

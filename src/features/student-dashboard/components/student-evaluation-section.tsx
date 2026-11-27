@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
 import {
   Trophy,
@@ -12,17 +12,63 @@ import {
   CheckCircle2,
   ChevronDown,
   FileSpreadsheet,
+  Download,
+  AlertCircle,
 } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
 import { StudentEvaluation, StudentProfile, StudentProjectInfo } from '../types';
 import { generateIndividualStudentReport } from '../utils/generate-student-report';
 import { formatScore, scorePercentOf } from '../utils/format-score';
+import { useMyDiplomaDownload } from '../hooks/use-my-diploma-download';
 
 export interface StudentEvaluationSectionProps {
   evaluation: StudentEvaluation | null;
   profile?: StudentProfile;
   project?: StudentProjectInfo | null;
+  /**
+   * Evento cuyo diploma de premio se puede descargar (`diplomaAvailable` en la
+   * trayectoria). Sin él no se muestra el botón del diploma.
+   */
+  diplomaEventId?: number | string | null;
 }
+
+/** Botón del diploma de premio, junto al del reporte en Excel */
+const DiplomaDownloadButton = ({
+  eventId,
+  onError,
+}: {
+  eventId: number | string;
+  onError: (message: string | null) => void;
+}) => {
+  const { isDownloading, error, download } = useMyDiplomaDownload(eventId);
+
+  useEffect(() => {
+    onError(error);
+  }, [error, onError]);
+
+  return (
+    <motion.button
+      type="button"
+      onClick={() => void download()}
+      disabled={isDownloading}
+      whileHover={!isDownloading ? { scale: 1.02 } : undefined}
+      whileTap={!isDownloading ? { scale: 0.98 } : undefined}
+      className={`flex items-center gap-2 rounded-xl border border-pink-500/40 px-4 py-2.5 text-xs font-bold transition-all shadow-md shadow-pink-500/10 shrink-0 ${
+        isDownloading
+          ? 'bg-pink-950/40 text-pink-300 opacity-90 cursor-wait'
+          : 'bg-pink-500/20 text-pink-200 hover:bg-pink-500/30'
+      }`}
+      title="Descarga el diploma de premio de tu proyecto en PDF"
+    >
+      {isDownloading ? (
+        <Spinner size="sm" />
+      ) : (
+        <Download className="size-4 text-pink-400" />
+      )}
+      <span>Descargar Diploma (PDF)</span>
+    </motion.button>
+  );
+};
 
 // Micro-variantes escalonadas (Propuesta B)
 const containerVariants: Variants = {
@@ -51,8 +97,10 @@ export const StudentEvaluationSection = ({
   evaluation,
   profile,
   project,
+  diplomaEventId,
 }: StudentEvaluationSectionProps) => {
   const [isCommentsExpanded, setIsCommentsExpanded] = useState(false);
+  const [diplomaError, setDiplomaError] = useState<string | null>(null);
   // Estado de morphing para descarga (Propuesta D: idle -> loading -> success -> idle)
   const [downloadState, setDownloadState] = useState<'idle' | 'loading' | 'success'>('idle');
 
@@ -163,64 +211,85 @@ export const StudentEvaluationSection = ({
           </p>
         </div>
 
-        {profile && (
-          <motion.button
-            layout
-            type="button"
-            onClick={handleDownloadExcel}
-            disabled={downloadState === 'loading'}
-            whileHover={downloadState === 'idle' ? { scale: 1.02 } : undefined}
-            whileTap={downloadState === 'idle' ? { scale: 0.98 } : undefined}
-            className={`flex items-center gap-2 rounded-xl border px-4 py-2.5 text-xs font-bold transition-all shadow-md shrink-0 self-start sm:self-auto ${
-              downloadState === 'success'
-                ? 'border-emerald-400/80 bg-emerald-500/25 text-emerald-200 shadow-emerald-500/20'
-                : downloadState === 'loading'
-                ? 'border-emerald-500/40 bg-emerald-950/40 text-emerald-300 opacity-90 cursor-wait'
-                : 'border-emerald-500/40 bg-gradient-to-r from-emerald-600/30 to-teal-600/30 text-emerald-300 hover:from-emerald-600/40 hover:to-teal-600/40 shadow-emerald-500/10'
-            }`}
-            title="Descarga el reporte individual oficial de evaluación en Excel"
-          >
-            <AnimatePresence mode="wait">
-              {downloadState === 'loading' && (
-                <motion.span
-                  key="loading"
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  className="flex items-center gap-2"
+        {(profile || diplomaEventId != null) && (
+          <div className="flex flex-col items-start gap-2 shrink-0 self-start sm:items-end sm:self-auto">
+            <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+              {profile && (
+                <motion.button
+                  layout
+                  type="button"
+                  onClick={handleDownloadExcel}
+                  disabled={downloadState === 'loading'}
+                  whileHover={downloadState === 'idle' ? { scale: 1.02 } : undefined}
+                  whileTap={downloadState === 'idle' ? { scale: 0.98 } : undefined}
+                  className={`flex items-center gap-2 rounded-xl border px-4 py-2.5 text-xs font-bold transition-all shadow-md shrink-0 ${
+                    downloadState === 'success'
+                      ? 'border-emerald-400/80 bg-emerald-500/25 text-emerald-200 shadow-emerald-500/20'
+                      : downloadState === 'loading'
+                      ? 'border-emerald-500/40 bg-emerald-950/40 text-emerald-300 opacity-90 cursor-wait'
+                      : 'border-emerald-500/40 bg-gradient-to-r from-emerald-600/30 to-teal-600/30 text-emerald-300 hover:from-emerald-600/40 hover:to-teal-600/40 shadow-emerald-500/10'
+                  }`}
+                  title="Descarga el reporte individual oficial de evaluación en Excel"
                 >
-                  <Spinner size="sm" />
-                  <span>Generando reporte...</span>
-                </motion.span>
-              )}
+                  <AnimatePresence mode="wait">
+                    {downloadState === 'loading' && (
+                      <motion.span
+                        key="loading"
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.8 }}
+                        className="flex items-center gap-2"
+                      >
+                        <Spinner size="sm" />
+                        <span>Generando reporte...</span>
+                      </motion.span>
+                    )}
 
-              {downloadState === 'success' && (
-                <motion.span
-                  key="success"
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  className="flex items-center gap-2 text-emerald-200"
-                >
-                  <CheckCircle2 className="size-4 text-emerald-400" />
-                  <span>¡Descargado con éxito!</span>
-                </motion.span>
-              )}
+                    {downloadState === 'success' && (
+                      <motion.span
+                        key="success"
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.8 }}
+                        className="flex items-center gap-2 text-emerald-200"
+                      >
+                        <CheckCircle2 className="size-4 text-emerald-400" />
+                        <span>¡Descargado con éxito!</span>
+                      </motion.span>
+                    )}
 
-              {downloadState === 'idle' && (
-                <motion.span
-                  key="idle"
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  className="flex items-center gap-2"
-                >
-                  <FileSpreadsheet className="size-4 text-emerald-400" />
-                  <span>Descargar Reporte (Excel)</span>
-                </motion.span>
+                    {downloadState === 'idle' && (
+                      <motion.span
+                        key="idle"
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.8 }}
+                        className="flex items-center gap-2"
+                      >
+                        <FileSpreadsheet className="size-4 text-emerald-400" />
+                        <span>Descargar Reporte (Excel)</span>
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                </motion.button>
               )}
-            </AnimatePresence>
-          </motion.button>
+              {diplomaEventId != null && (
+                <DiplomaDownloadButton
+                  eventId={diplomaEventId}
+                  onError={setDiplomaError}
+                />
+              )}
+            </div>
+            {diplomaEventId != null && diplomaError && (
+              <p
+                role="alert"
+                className="flex items-center gap-1.5 text-xs text-red-300"
+              >
+                <AlertCircle className="size-3.5 shrink-0 text-red-400" />
+                <span>{diplomaError}</span>
+              </p>
+            )}
+          </div>
         )}
       </div>
 

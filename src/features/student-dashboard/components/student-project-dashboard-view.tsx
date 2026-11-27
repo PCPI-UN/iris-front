@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { StudentDashboardData, StudentProjectInfo } from '../types';
 import {
+  isDiplomaAvailableForEvent,
   useStudentDashboard,
   useUpdateStudentProject,
 } from '../api/get-student-dashboard';
@@ -71,7 +72,7 @@ export const StudentProjectDashboardView = ({
     );
   }
 
-  const { profile, currentProject, evaluation } = data;
+  const { profile, currentProject, evaluation, trajectory } = data;
 
   const handleSaveProjectChanges = async (
     updatedProject: Partial<StudentProjectInfo>,
@@ -165,6 +166,13 @@ export const StudentProjectDashboardView = ({
   };
 
   const evalMeta = renderEvaluationTabMeta();
+  // El diploma sigue la misma regla que en Mi trayectoria: `diplomaAvailable` del evento
+  const diplomaEventId = isDiplomaAvailableForEvent(
+    trajectory,
+    currentProject.eventId,
+  )
+    ? currentProject.eventId
+    : null;
 
   return (
     <section
@@ -311,6 +319,7 @@ export const StudentProjectDashboardView = ({
               evaluation={evaluation}
               profile={profile}
               project={currentProject}
+              diplomaEventId={diplomaEventId}
             />
           )}
         </motion.div>
