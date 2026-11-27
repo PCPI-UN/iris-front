@@ -25,14 +25,12 @@ export type ProjectChangeLogEntry = {
   /** Changed fields only, with their values after the change */
   after: Record<string, unknown>;
   reason: string | null;
-  /** CREATED only: where the admin created it (it may also come inside after) */
-  origin?: ProjectCreationOrigin | null;
-  /** ADMIN_BULK only: uploaded file and its row */
-  fileName?: string | null;
-  rowNumber?: number | null;
 };
 
-export type ProjectCreationOrigin = "ADMIN_FORM" | "ADMIN_BULK";
+/** after.origin of a CREATED entry: where the admin created the project */
+export type ProjectCreationOrigin =
+  | { kind: "ADMIN_FORM" }
+  | { kind: "ADMIN_BULK"; fileName: string; rowNumber: number };
 
 export type ProjectChangeLogResponse = {
   /** Most recent first */

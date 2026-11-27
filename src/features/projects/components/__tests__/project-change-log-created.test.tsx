@@ -35,12 +35,17 @@ describe("ProjectChangeLog: CREATED", () => {
           entries: [
             {
               ...created,
+              // Shape written by the project service
               after: {
-                origin: "ADMIN_BULK",
-                fileName: "proyectos_feria.xlsx",
-                rowNumber: 4,
                 name: "Robot clasificador",
                 state: "APPROVED",
+                participants: ["ana@unal.edu.co"],
+                tutors: { userIds: [3, 5], emails: ["tutor@unal.edu.co"] },
+                origin: {
+                  kind: "ADMIN_BULK",
+                  fileName: "proyectos_feria.xlsx",
+                  rowNumber: 4,
+                },
               },
             },
           ],
@@ -61,20 +66,26 @@ describe("ProjectChangeLog: CREATED", () => {
 
     expect(within(data).getByText("Robot clasificador")).toBeInTheDocument();
     expect(within(data).getByText("Aprobado")).toBeInTheDocument();
+    expect(
+      within(data).getByText("2 con cuenta; tutor@unal.edu.co"),
+    ).toBeInTheDocument();
     // The origin is in the sentence, not repeated as a field
-    expect(within(data).queryByText("ADMIN_BULK")).not.toBeInTheDocument();
+    expect(within(data).queryByText(/ADMIN_BULK/)).not.toBeInTheDocument();
     expect(screen.queryByLabelText("pasa a")).not.toBeInTheDocument();
   });
 
-  test("says when it was created from the form (origin at the entry level)", async () => {
+  test("says when it was created from the form", async () => {
     server.use(
       http.get("*/api/projects/7/change-log", () =>
         HttpResponse.json({
           entries: [
             {
               ...created,
-              origin: "ADMIN_FORM",
-              after: { name: "App de tutorías" },
+              after: {
+                name: "App de tutorías",
+                tutors: { userIds: [], emails: [] },
+                origin: { kind: "ADMIN_FORM" },
+              },
             },
           ],
         }),
@@ -88,5 +99,6 @@ describe("ProjectChangeLog: CREATED", () => {
       ),
     ).toBeInTheDocument();
     expect(screen.getByText("App de tutorías")).toBeInTheDocument();
+    expect(screen.queryByText(/userIds/)).not.toBeInTheDocument();
   });
 });

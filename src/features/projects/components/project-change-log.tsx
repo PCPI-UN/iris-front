@@ -9,6 +9,7 @@ import {
 import {
   ProjectChangeAction,
   ProjectChangeLogEntry,
+  ProjectCreationOrigin,
   useProjectChangeLog,
 } from "../api/get-project-change-log";
 
@@ -43,18 +44,13 @@ const FIELD_LABELS: Record<string, string> = {
   tutors: "Tutores",
 };
 
-/** Keys of the CREATED entry that describe its origin, not the project data */
-const ORIGIN_KEYS = new Set(["origin", "source", "fileName", "file", "rowNumber", "row"]);
-
-/** Who created the project and from where, read from the entry or from its after */
+/** Who created the project and from where, read from after.origin */
 const describeCreation = (entry: ProjectChangeLogEntry): string => {
-  const after = (entry.after ?? {}) as Record<string, unknown>;
+  const origin = (entry.after?.origin ?? null) as ProjectCreationOrigin | null;
   const actor = entry.actor?.name ?? `Usuario #${entry.actor?.id ?? "?"}`;
-  const origin = String(entry.origin ?? after.origin ?? after.source ?? "");
 
-  if (origin === "ADMIN_BULK") {
-    const fileName = entry.fileName ?? after.fileName ?? after.file;
-    const rowNumber = entry.rowNumber ?? after.rowNumber ?? after.row;
+  if (origin?.kind === "ADMIN_BULK") {
+    const { fileName, rowNumber } = origin;
     const detail = [
       fileName ? `archivo ${String(fileName)}` : null,
       rowNumber !== null && rowNumber !== undefined ? `fila ${String(rowNumber)}` : null,
@@ -64,7 +60,7 @@ const describeCreation = (entry: ProjectChangeLogEntry): string => {
 
     return `Proyecto creado por ${actor} desde la carga masiva${detail ? ` (${detail})` : ""}`;
   }
-  if (origin === "ADMIN_FORM") {
+  if (origin?.kind === "ADMIN_FORM") {
     return `Proyecto creado por ${actor} desde el formulario`;
   }
 
@@ -72,7 +68,10 @@ const describeCreation = (entry: ProjectChangeLogEntry): string => {
 };
 
 const CreatedEntry = ({ entry }: { entry: ProjectChangeLogEntry }) => {
-  const fields = Object.keys(entry.after ?? {}).filter((field) => !ORIGIN_KEYS.has(field));
+  // The origin is told in the sentence, not repeated as a field
+  const fields = Object.keys(entry.after ?? {}).filter(
+    (field) => field !== "origin",
+  );
 
   return (
     <>
@@ -110,6 +109,17 @@ const describeObject = (field: string, value: Record<string, unknown>): string |
     const state = value.state === "INACTIVE" ? "inactivo" : "activo";
 
     return `${type}, ${state}${value.url ? ` · ${String(value.url)}` : ""}`;
+  }
+  if (field === "tutors") {
+    // CREATED: { userIds, emails } = tutors with an account and pending ones by email
+    const userIds = Array.isArray(value.userIds) ? value.userIds : [];
+    const emails = Array.isArray(value.emails) ? value.emails.map(String) : [];
+    const parts = [
+      userIds.length > 0 ? `${userIds.length} con cuenta` : null,
+      emails.length > 0 ? emails.join(", ") : null,
+    ].filter(Boolean);
+
+    return parts.length > 0 ? parts.join("; ") : "—";
   }
 
   return null;
