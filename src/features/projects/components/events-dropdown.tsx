@@ -5,6 +5,7 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Select, SelectItem } from "@/components/ui/select";
 import { CategoriesDropdown } from "./category-dropdown";
 import { useEventsDropdown } from "@/features/events/api/get-events-dropdown";
+import { isCategoryQueryParamKey } from "@/lib/compat/category-legacy";
 
 export const EventsDropdown = () => {
   const router = useRouter();
@@ -35,7 +36,8 @@ export const EventsDropdown = () => {
 
     const params = new URLSearchParams();
     searchParams?.forEach((v, k) => {
-      if (k === "event") return;
+      // The category belongs to the previous event and its page may not exist
+      if (k === "event" || k === "page" || isCategoryQueryParamKey(k)) return;
       params.set(k, v);
     });
 

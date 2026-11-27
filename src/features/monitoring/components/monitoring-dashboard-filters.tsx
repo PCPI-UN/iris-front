@@ -13,6 +13,7 @@ type MonitoringDashboardFiltersProps = {
   selectedCategoryId?: number;
   categories: Array<{ id: number; code: string }>;
   categoriesLoading: boolean;
+  allowAllCategories?: boolean;
   onEventChange: (value: string) => void;
   onCategoryChange: (keys: Set<string>) => void;
 };
@@ -26,9 +27,22 @@ export const MonitoringDashboardFilters = ({
   selectedCategoryId,
   categories,
   categoriesLoading,
+  allowAllCategories = true,
   onEventChange,
   onCategoryChange,
 }: MonitoringDashboardFiltersProps) => {
+  const categoryPlaceholder = selectedEventId
+    ? allowAllCategories
+      ? 'Todas las categorías'
+      : 'Seleccionar categoría'
+    : 'Selecciona un evento primero';
+
+  const selectedCategoryKeys = selectedCategoryId
+    ? [String(selectedCategoryId)]
+    : allowAllCategories && categories.length
+      ? [ALL_CATEGORIES_KEY]
+      : [];
+
   return (
     <div className="flex flex-col gap-4 lg:flex-row lg:gap-4">
       {!isPastEventMode && (
@@ -57,25 +71,21 @@ export const MonitoringDashboardFilters = ({
       <div className="flex w-full flex-col gap-3 lg:max-w-[420px]">
         <Select
           label="Categoría"
-          placeholder={
-            selectedEventId
-              ? 'Todas las categorías'
-              : 'Selecciona un evento primero'
-          }
-          selectedKeys={
-            selectedCategoryId
-              ? [String(selectedCategoryId)]
-              : categories.length
-                ? [ALL_CATEGORIES_KEY]
-                : []
-          }
+          placeholder={categoryPlaceholder}
+          selectedKeys={selectedCategoryKeys}
           onSelectionChange={(keys) => onCategoryChange(keys as Set<string>)}
           isDisabled={!selectedEventId}
           isLoading={categoriesLoading}
         >
           {categories.length ? (
             [
-              <SelectItem key={ALL_CATEGORIES_KEY}>Todas las categorías</SelectItem>,
+              ...(allowAllCategories
+                ? [
+                    <SelectItem key={ALL_CATEGORIES_KEY}>
+                      Todas las categorías
+                    </SelectItem>,
+                  ]
+                : []),
               ...categories.map((category) => (
                 <SelectItem key={String(category.id)}>
                   {category.code}

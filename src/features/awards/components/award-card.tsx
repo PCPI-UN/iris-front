@@ -3,8 +3,10 @@
 import type { TopProject } from "@/features/monitoring/api/get-top-projects";
 import type { AwardWinner, CategoryAward } from "../types";
 
-import { Pencil, Plus, Trash2, Users, X } from "lucide-react";
+import { Download, Pencil, Plus, Trash2, Users, X } from "lucide-react";
+import { useState } from "react";
 
+import { downloadProjectDiploma } from "../api/award-diploma";
 import { useAwardWinners } from "../api/award-winners";
 import { formatGrade } from "../utils/winners";
 
@@ -18,6 +20,8 @@ import { PERMISSIONS } from "@/lib/authorization";
 
 type AwardCardProps = {
   award: CategoryAward;
+  /** Event of the award; without it the diploma of the winners is not offered */
+  eventId?: number;
   /** Ranking of the category, to show the name of each winner */
   rankingById: Map<number, TopProject>;
   onEdit: (award: CategoryAward) => void;
@@ -30,8 +34,51 @@ type AwardCardProps = {
   ) => void;
 };
 
+/**
+ * Downloads the award diploma of a winner. The backend answers with its own
+ * message (shown as an error notification) when the event has no diploma
+ * design. It does not wait for the results to be published.
+ */
+const WinnerDiplomaButton = ({
+  eventId,
+  projectId,
+  projectName,
+}: {
+  eventId: number;
+  projectId: number;
+  projectName: string;
+}) => {
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const handleDownload = async () => {
+    setIsDownloading(true);
+    try {
+      await downloadProjectDiploma(eventId, projectId);
+    } catch {
+      // The API client already shows the backend message
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  return (
+    <Button
+      isIconOnly
+      aria-label={`Descargar diploma de ${projectName}`}
+      isLoading={isDownloading}
+      size="sm"
+      title="Descargar diploma (PDF)"
+      variant="light"
+      onPress={handleDownload}
+    >
+      <Download className="h-4 w-4" />
+    </Button>
+  );
+};
+
 export const AwardCard = ({
   award,
+  eventId,
   rankingById,
   onEdit,
   onDelete,
@@ -142,18 +189,27 @@ export const AwardCard = ({
                       </p>
                     </div>
                     <Can permission={PERMISSIONS.manageEvents}>
-                      <Button
-                        isIconOnly
-                        aria-label={`Quitar a ${projectName} de ${award.title}`}
-                        color="danger"
-                        size="sm"
-                        variant="light"
-                        onPress={() =>
-                          onRemoveWinner(award, winner, projectName)
-                        }
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
+                      <div className="flex shrink-0 items-center gap-1">
+                        {eventId != null && (
+                          <WinnerDiplomaButton
+                            eventId={eventId}
+                            projectId={winner.projectId}
+                            projectName={projectName}
+                          />
+                        )}
+                        <Button
+                          isIconOnly
+                          aria-label={`Quitar a ${projectName} de ${award.title}`}
+                          color="danger"
+                          size="sm"
+                          variant="light"
+                          onPress={() =>
+                            onRemoveWinner(award, winner, projectName)
+                          }
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </Can>
                   </li>
                 );

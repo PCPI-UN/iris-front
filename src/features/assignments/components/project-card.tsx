@@ -1,69 +1,67 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { useRouter, useSearchParams } from "next/navigation";
-import { GlassCard } from "@/features/landing/components/glass-card";
-import { StatusBadge } from "@/components/ui/status-badge/status-badge";
-import { stylesGradient } from "@/components/ui/status-badge/status-style";
-import { useState } from "react";
-import { AssignJudgesPanel } from "./assign-judges-panel";
-import { ProjectPanel } from "./project-panel";
-import { ProjectWithJurors, useProjectsWithJurors } from "@/features/projects/api/get-projects-with-jurors";
 import { Pagination } from "@heroui/pagination";
-import { SearchProjects } from "@/components/search-project/search_projects";
 import { Spinner } from "@heroui/spinner";
 
-export const ProjectsCard = () => {
+import { AssignmentProjects } from "../hooks/use-assignment-projects";
+import { JUROR_SEARCH_EMPTY_MESSAGE } from "../hooks/use-juror-project-search";
+import { useProjectPanel } from "../hooks/use-project-panel";
 
-  const searchParams = useSearchParams();
-  
-  const page = searchParams?.get("page") ? Number(searchParams.get("page")) : 1;
-  const eventId = searchParams?.get("event") ? Number(searchParams.get("event")) : 0;
-  const state = "APPROVED";
-  const categoryId = searchParams?.get("categoryId") ? Number(searchParams.get("categoryId")) : 0;
+import { AssignJudgesPanel } from "./assign-judges-panel";
+import { JurorSearchInput } from "./juror-search-input";
+import { ProjectPanel } from "./project-panel";
+import { ProjectSearchInput } from "./project-search-input";
 
-  const projectsQuery = useProjectsWithJurors({ currentPage: page, eventId, state, categoryId });
-  const meta = projectsQuery.data?.meta;
+import { Button } from "@/components/ui/button";
+import { StatusBadge } from "@/components/ui/status-badge/status-badge";
+import { stylesGradient } from "@/components/ui/status-badge/status-style";
+import { GlassCard } from "@/features/landing/components/glass-card";
 
-  const [filterValue, setFilterValue] = useState("");
-  const [searchResults, setSearchResults] = useState<any[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  
-  const defaultProjects = projectsQuery.data?.data ?? [];
-  const projects: ProjectWithJurors[] = filterValue
-    ? searchResults
-    : defaultProjects;
+type ParticipantLike = {
+  firstName?: string;
+  lastName?: string;
+  studentCode?: string;
+};
 
-  const [selectedProject, setSelectedProject] = useState<any | null>(null);
-  const [selectedProjectView, setSelectedProjectView] = useState<any | null>(null);
+/**
+ * The with-jurors listing sends enrolled participants without their name (only
+ * userId and studentCode); pending ones do have it.
+ */
+const participantLabel = (participant: ParticipantLike) =>
+  [participant.firstName, participant.lastName].filter(Boolean).join(" ") ||
+  (participant.studentCode ? `Código ${participant.studentCode}` : "Integrante");
 
-  const router = useRouter();
+const participantInitials = (participant: ParticipantLike) =>
+  `${participant.firstName?.[0] ?? ""}${participant.lastName?.[0] ?? ""}` || "·";
 
-  const handlePageChange = (newPage: number) => {
-    const params = new URLSearchParams();
-    params.set("page", String(newPage));
-    if (eventId) params.set("event", String(eventId));
-    if (state) params.set("state", state);
-    if (categoryId) params.set("categoryId", String(categoryId));
-    router.push(`?${params.toString()}`);
-  };
+/** Mobile version of the Asignaciones table */
+export const ProjectsCard = ({
+  assignment,
+}: {
+  assignment: AssignmentProjects;
+}) => {
+  const { jurorSearch, projects, meta, page, isLoading } = assignment;
+  const panel = useProjectPanel(assignment);
 
   return (
     <div className="flex flex-col space-y-5 justify-between my-5">
-        <div className="mb-8">
-            <SearchProjects
-                eventId={eventId}
-                state={state}
-                categoryId={categoryId}
-                setSearchResults={setSearchResults}
-                setIsSearching={setIsSearching}
-                setFilterValue={setFilterValue}
-                filterValue={filterValue}
+        <div className="mb-8 flex flex-col gap-3">
+            <ProjectSearchInput
+                value={assignment.nameTerm}
+                onValueChange={assignment.setNameTerm}
+            />
+            <JurorSearchInput
+                value={jurorSearch.jurorTerm}
+                onValueChange={jurorSearch.setJurorTerm}
             />
         </div>
         {
-            isSearching ? (
+            isLoading ? (
                 <Spinner className="flex justify-center"/>
+            ) : jurorSearch.isActive && projects.length === 0 ? (
+                <p className="text-center text-sm text-muted-foreground">
+                    {JUROR_SEARCH_EMPTY_MESSAGE}
+                </p>
             ) : (
                 projects?.map((project) => (
             <GlassCard
@@ -87,16 +85,15 @@ export const ProjectsCard = () => {
 
                 {/* Mobile: Lista de nombres */}
                 <div className="sm:hidden space-y-2">
-                    {((project.pendingParticipants?.length ?? 0) > 0
+                    {(((project.pendingParticipants?.length ?? 0) > 0
                         ? project.pendingParticipants
-                        : project.participants
+                        : project.participants) ?? []
                     ).map((participant, idx) => (
                     <div key={idx} className="flex items-center gap-2 text-sm">
                         <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
-                            {participant.firstName[0]}
-                            {participant.lastName[0]}
+                            {participantInitials(participant)}
                         </div>
-                        <span>{participant.firstName} {participant.lastName}</span>
+                        <span>{participantLabel(participant)}</span>
                     </div>
                     ))}
                 </div>
@@ -105,7 +102,7 @@ export const ProjectsCard = () => {
                 <div className="mt-5 flex justify-between space-x-2">
                     <Button
                         size="sm"
-                        onPress={() => setSelectedProjectView(project)}
+                        onPress={() => panel.open("view", project)}
                         className="w-full py-5 bg-white/10"
                     >
                         Ver asignaciones
@@ -113,7 +110,7 @@ export const ProjectsCard = () => {
 
                     <Button
                         size="sm"
-                        onPress={() => setSelectedProject(project)}
+                        onPress={() => panel.open("assign", project)}
                         className="w-full py-5 bg-cyan-500/30"
                     >
                         Asignar jurados
@@ -126,29 +123,29 @@ export const ProjectsCard = () => {
           <Pagination
             total={meta.totalPages}
             page={page}
-            onChange={handlePageChange}
+            onChange={assignment.setPage}
             showControls
           />
         </div>
       )}
-        {selectedProject && (
+        {panel.type === "assign" && panel.project && (
             <div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-sm animate-appearance-in transition-all duration-400">
                 <div className="w-full sm:w-[400px] md:w-[450px] h-full">
                     <AssignJudgesPanel
-                        project={selectedProject}
-                        onClose={() => setSelectedProject(null)}
+                        project={panel.project}
+                        onClose={panel.close}
                     />
                 </div>
                 
             </div>
         )}
 
-        {selectedProjectView && (
+        {panel.type === "view" && panel.project && (
             <div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-sm animate-appearance-in transition-all duration-400">
                 <div className="w-full sm:w-[400px] md:w-[450px] h-full">
                     <ProjectPanel
-                        project={selectedProjectView}
-                        onClose={() => setSelectedProjectView(null)}
+                        project={panel.project}
+                        onClose={panel.close}
                     />
                 </div>
             </div>

@@ -33,7 +33,8 @@ export const CategoriesDropdown = () => {
 
     const params = new URLSearchParams();
     searchParams?.forEach((v, k) => {
-      if (isCategoryQueryParamKey(k)) return;
+      // Another category starts on its first page
+      if (isCategoryQueryParamKey(k) || k === "page") return;
       params.set(k, v);
     });
 

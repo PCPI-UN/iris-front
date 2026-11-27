@@ -37,7 +37,10 @@ import {
   type ProjectWithJurors,
 } from '@/features/projects/api/get-projects-with-jurors';
 import { normalizeCategoryId } from '@/lib/compat/category-legacy';
-import { PastEventWinnersTop } from './past-event-winners-top';
+import {
+  PastEventWinnersTop,
+  type PastEventRankedWinner,
+} from './past-event-winners-top';
 import { usePublicEventRankings } from '@/features/monitoring/api/get-event-rankings';
 import { useRankingConfig } from '@/features/monitoring/api/get-ranking-config';
 type RankedProject = any;
@@ -877,21 +880,23 @@ export const PastEventDetail = ({ eventId }: EventDetailProps) => {
 
   const rankingConfigQuery = useRankingConfig({ eventId: event?.id, queryConfig: { enabled: Boolean(event?.id) } });
 
+  const activeCategoryId =
+    selectedCategoryId !== undefined && selectedCategoryId > 0
+      ? selectedCategoryId
+      : undefined;
+
   // The public rankings endpoint is self-enforcing (responds 403 when the ranking is not
   // public) and carries its own visibility configuration inline, so query it for any event
-  // and let the response decide. This avoids the deadlock where the ranking was never
-  // fetched for visitors without a session: for them /events/ranking-config returns 401 and
-  // the public event detail does not include rankingConfig, so the previous gate stayed
-  // false forever and /rankings/public was never requested.
+  // and let the response decide. When `activeCategoryId` is undefined ("Todas las categorías"),
+  // it fetches the global ranking; when a department/category is selected, it fetches that
+  // category's own ranking directly from the backend (?categoryId=...).
   const rankingQuery = usePublicEventRankings({
     eventId: event?.id,
-    categoryId: selectedCategoryId && selectedCategoryId > 0 ? selectedCategoryId : undefined,
-    state: 'APPROVED',
+    categoryId: activeCategoryId,
     // No retry: a 403 here is the backend declaring the ranking non-public, not a transient
     // failure, so retrying would only repeat a request we expect to be rejected.
-    // keepPreviousData: when the selected category changes the query key changes and data would
-    // momentarily be undefined; since visibility is derived from the response's `configuration`,
-    // that would flicker the ranking off. Keeping the previous data holds it steady.
+    // keepPreviousData: holds the previous response's `configuration` steady while switching
+    // categories so the winners section does not unmount/flicker.
     queryConfig: { enabled: Boolean(event?.id), retry: false, placeholderData: keepPreviousData },
   });
 
@@ -946,7 +951,7 @@ export const PastEventDetail = ({ eventId }: EventDetailProps) => {
       return (effectiveRankingConfig as any).isPublic;
     }
     return false;
-  }, [effectiveRankingConfig]);
+  }, [effectiveRankingConfig, event?.resultsPublished]);
 
   const visibleRankingScore = useMemo(() => {
     if (!effectiveRankingConfig) return true;
@@ -978,8 +983,8 @@ export const PastEventDetail = ({ eventId }: EventDetailProps) => {
 
     // Add categories from approved projects
     approvedProjects.forEach((project) => {
-      const id = Number(project?.categoryId);
-      if (Number.isFinite(id) && id > 0 && !categoryMap.has(id)) {
+      const id = normalizeCategoryId(project);
+      if (id !== undefined && id > 0 && !categoryMap.has(id)) {
         categoryMap.set(id, `Categoría ${id}`);
       }
     });
@@ -1000,17 +1005,20 @@ export const PastEventDetail = ({ eventId }: EventDetailProps) => {
     if (!approvedProjects || approvedProjects.length === 0) return categories;
     const projectCategoryIds = new Set<number>();
     for (const p of approvedProjects) {
-      const cid = Number(p?.categoryId);
-      if (Number.isFinite(cid) && cid > 0) projectCategoryIds.add(cid);
+      const cid = normalizeCategoryId(p);
+      if (cid !== undefined && cid > 0) projectCategoryIds.add(cid);
     }
 
     const filtered = categories.filter((c) => projectCategoryIds.has(c.id));
     return filtered.length > 0 ? filtered : categories;
   }, [categories, approvedProjects]);
 
-  const rankingByCategory = useMemo(() => {
-    if (!isPublicRankingEnabled) {
-      return new Map<number, RankedProject[]>();
+  const isSwitchingRankingCategory =
+    rankingQuery.isFetching && rankingQuery.isPlaceholderData;
+
+  const activeWinners = useMemo<PastEventRankedWinner[]>(() => {
+    if (!isPublicRankingEnabled || isSwitchingRankingCategory) {
+      return [];
     }
 
     // Prefer server-provided public rankings when available, without discarding rows when
@@ -1038,118 +1046,112 @@ export const PastEventDetail = ({ eventId }: EventDetailProps) => {
       return true;
     });
 
-    if (Array.isArray(serverRows) && serverRows.length > 0) {
-      const map = new Map<number, RankedProject[]>();
-      for (const row of serverRows) {
-        const projectIdKey = row.projectId !== undefined && row.projectId !== null ? String(row.projectId) : undefined;
-        const projectCodeKey = normalizeText(String(row.projectCode ?? ''));
-        const projectNameKey = normalizeText(String(row.projectName ?? ''));
+    if (serverRows.length > 0) {
+      return serverRows
+        .map((row): PastEventRankedWinner => {
+          const projectIdKey =
+            row.projectId !== undefined && row.projectId !== null
+              ? String(row.projectId)
+              : undefined;
+          const projectCodeKey = normalizeText(String(row.projectCode ?? ''));
+          const projectNameKey = normalizeText(String(row.projectName ?? ''));
 
-        const matchedProject =
-          (projectIdKey ? approvedProjectLookup.byId.get(projectIdKey) : undefined) ??
-          (projectCodeKey ? approvedProjectLookup.byCode.get(projectCodeKey) : undefined) ??
-          (projectNameKey ? approvedProjectLookup.byName.get(projectNameKey) : undefined);
+          const matchedProject =
+            (projectIdKey ? approvedProjectLookup.byId.get(projectIdKey) : undefined) ??
+            (projectCodeKey ? approvedProjectLookup.byCode.get(projectCodeKey) : undefined) ??
+            (projectNameKey ? approvedProjectLookup.byName.get(projectNameKey) : undefined);
 
-        const rawCategoryId = Number(row.categoryId ?? matchedProject?.categoryId);
-        const normalizedCategoryId =
-          Number.isFinite(rawCategoryId) && rawCategoryId > 0
-            ? rawCategoryId
-            : (() => {
-              const categoryLabel = normalizeText(String(row.category ?? ''));
-              if (categoryLabel) {
-                const matchedCategory = categories.find(
-                  (category) => normalizeText(category.name) === categoryLabel,
-                );
-                if (matchedCategory) return matchedCategory.id;
-              }
-              if (selectedCategoryId && selectedCategoryId > 0) {
-                return selectedCategoryId;
-              }
-              if (categories.length === 1 && categories[0].id > 0) {
-                return categories[0].id;
-              }
-              return 0;
-            })();
+          const rawCategoryId =
+            row.categoryId ??
+            (matchedProject ? normalizeCategoryId(matchedProject) : undefined);
 
-        const list = map.get(normalizedCategoryId) ?? [];
+          const resolvedCategoryId =
+            rawCategoryId !== undefined && Number.isFinite(rawCategoryId) && rawCategoryId > 0
+              ? rawCategoryId
+              : (() => {
+                  const categoryLabel = normalizeText(String(row.category ?? ''));
+                  if (categoryLabel) {
+                    const matchedCategory = categories.find(
+                      (category) => normalizeText(category.name) === categoryLabel,
+                    );
+                    if (matchedCategory) return matchedCategory.id;
+                  }
+                  return activeCategoryId;
+                })();
+
+          const resolvedCategoryName =
+            row.category ??
+            (resolvedCategoryId
+              ? categories.find((category) => category.id === resolvedCategoryId)?.name
+              : undefined);
+
+          return {
+            position: row.position,
+            project: {
+              id: row.projectId ?? matchedProject?.id,
+              name:
+                row.projectName ??
+                matchedProject?.name ??
+                (row as any).project?.name ??
+                'Proyecto',
+              description: row.description ?? matchedProject?.description ?? undefined,
+              participants:
+                Array.isArray(row.participants) && row.participants.length > 0
+                  ? row.participants
+                  : (matchedProject?.participants ?? []),
+              pendingParticipants: matchedProject?.pendingParticipants ?? [],
+              documents: row.documents ?? matchedProject?.documents ?? undefined,
+            },
+            categoryId: resolvedCategoryId,
+            categoryName: resolvedCategoryName,
+            score:
+              (row as any).averageGrade ??
+              (row as any).averageScore ??
+              (row as any).score ??
+              undefined,
+          };
+        })
+        .sort((a, b) => a.position - b.position);
+    }
+
+    // Fallback to awards-based ranking only in global mode when awards explicitly reference winning projects
+    if (activeCategoryId !== undefined || !event?.awards?.length) {
+      return [];
+    }
+
+    const awardMap = toAwardRanking(event.awards, approvedProjects, categories[0]?.id);
+    const list: PastEventRankedWinner[] = [];
+    for (const [catId, items] of awardMap.entries()) {
+      const catName = categories.find((category) => category.id === catId)?.name;
+      items.forEach((item) => {
         list.push({
-          position: row.position,
-          project: {
-            name: row.projectName ?? matchedProject?.name ?? (row as any).project?.name ?? 'Proyecto',
-            description: row.description ?? matchedProject?.description ?? undefined,
-            participants:
-              Array.isArray(row.participants) && row.participants.length > 0
-                ? row.participants
-                : (matchedProject?.participants ?? []),
-            pendingParticipants: matchedProject?.pendingParticipants ?? [],
-            documents: row.documents ?? matchedProject?.documents ?? undefined,
-          },
-          categoryId: normalizedCategoryId,
-          score: (row as any).averageGrade ?? (row as any).averageScore ?? (row as any).score ?? undefined,
+          ...item,
+          categoryId: catId,
+          categoryName: catName,
         });
-        map.set(normalizedCategoryId, list);
-      }
-
-      for (const [k, v] of map.entries()) {
-        v.sort((a: any, b: any) => a.position - b.position);
-        map.set(k, v as RankedProject[]);
-      }
-
-      return map;
+      });
     }
-
-    // Fallback to awards-based ranking only when awards explicitly reference winning projects
-    if (selectedCategoryId !== undefined || !event?.awards?.length) {
-      return new Map<number, RankedProject[]>();
-    }
-    return toAwardRanking(event.awards, approvedProjects, categories[0]?.id);
+    return list.sort((a, b) => a.position - b.position);
   }, [
+    activeCategoryId,
     approvedProjectLookup,
     approvedProjects,
     categories,
     event?.awards,
     isPublicRankingEnabled,
+    isSwitchingRankingCategory,
     nonApprovedProjectLookup,
     rankingQuery.data,
-    selectedCategoryId,
   ]);
 
-  const rankingCategories = useMemo(() => {
-    const ids = Array.from(rankingByCategory.keys());
-    if (ids.length === 0) return [];
-
-    return ids.map((id) => ({
-      id,
-      name:
-        id === 0
-          ? 'General'
-          : (categories.find((category) => category.id === id)?.name ?? `Categoría ${id}`),
-    }));
-  }, [rankingByCategory, categories]);
-
   const displayCategories = useMemo(() => {
-    if (
-      rankingByCategory.size === 1 &&
-      rankingByCategory.has(0) &&
-      selectedCategoryId === undefined
-    ) {
-      return rankingCategories;
-    }
     if (visibleCategories.length > 0) {
       return visibleCategories;
     }
-    if (categories.length > 0) {
-      return categories;
-    }
-    return rankingCategories;
-  }, [categories, rankingByCategory, rankingCategories, selectedCategoryId, visibleCategories]);
+    return categories;
+  }, [categories, visibleCategories]);
 
-  const hasCurrentWinners = useMemo(() => {
-    for (const entries of rankingByCategory.values()) {
-      if (entries.length > 0) return true;
-    }
-    return false;
-  }, [rankingByCategory]);
+  const hasCurrentWinners = activeWinners.length > 0;
 
   useEffect(() => {
     if (isPublicRankingEnabled && hasCurrentWinners) {
@@ -1163,8 +1165,8 @@ export const PastEventDetail = ({ eventId }: EventDetailProps) => {
   const shouldRenderWinners = useMemo(() => {
     if (!isPublicRankingEnabled) return false;
     if (hasCurrentWinners) return true;
-    return hasLoadedWinners && selectedCategoryId !== undefined;
-  }, [hasCurrentWinners, hasLoadedWinners, isPublicRankingEnabled, selectedCategoryId]);
+    return hasLoadedWinners;
+  }, [hasCurrentWinners, hasLoadedWinners, isPublicRankingEnabled]);
 
   const tableProjects = useMemo(() => {
     if (projects.length > 0) return projects;
@@ -1363,9 +1365,10 @@ export const PastEventDetail = ({ eventId }: EventDetailProps) => {
       ) : shouldRenderWinners ? (
         <>
           <PastEventWinnersTop
-            rankingByCategory={rankingByCategory}
+            winners={activeWinners}
             categories={displayCategories}
             isExposition={isExposition}
+            isLoading={isSwitchingRankingCategory}
             visiblePositions={visibleRankingPositions}
             visibleScore={visibleRankingScore}
             selectedCategoryId={selectedCategoryId}
