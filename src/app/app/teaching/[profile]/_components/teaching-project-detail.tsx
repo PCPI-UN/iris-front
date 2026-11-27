@@ -1,20 +1,24 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { AlertCircle, ArrowLeft, BookOpen } from "lucide-react";
 
 import { useAcademicEvents } from "@/features/academic/api/get-academic-events";
-import { useAcademicGrades } from "@/features/academic/api/get-academic-grades";
 import { useAcademicProject } from "@/features/academic/api/get-academic-project";
 import { useAcademicRegistrations } from "@/features/academic/api/get-academic-registrations";
 import {
   AcademicPanel,
   DocumentsBlock,
+  HiddenNotice,
+  JurorEvaluations,
   JuryProgress,
+  ProjectResult,
   ProjectStateBadge,
   StudentList,
   TutorBlock,
 } from "@/features/academic/components";
+import { GRADE_STATUS_LABELS } from "@/features/academic/utils/academic-grades";
 import { formatCourse } from "@/features/academic/utils/academic-labels";
 import {
   TEACHING_PROFILES,
@@ -27,20 +31,25 @@ import { ApiError } from "@/lib/api-client";
 const BackLink = ({
   profileSlug,
   eventId,
+  tab,
 }: {
   profileSlug: string;
   eventId?: number;
+  tab?: "grades";
 }) => (
   <Link
     className="inline-flex min-h-[44px] items-center gap-1.5 text-sm text-slate-400 transition-colors hover:text-white"
-    href={paths.app.teaching.getHref(profileSlug, eventId)}
+    href={paths.app.teaching.getHref(profileSlug, eventId, tab)}
   >
     <ArrowLeft aria-hidden="true" className="size-4" />
-    Proyectos
+    {tab === "grades" ? "Notas" : "Proyectos"}
   </Link>
 );
 
-/** Detail of a project of the session's scope: data, students, tutor and evaluation progress */
+/**
+ * Detail of a project of the session's scope: data, students, tutor, evaluation
+ * progress and, once it may be seen, the result and each juror's evaluation.
+ */
 export const TeachingProjectDetail = ({
   profileSlug,
   projectId,
@@ -51,12 +60,14 @@ export const TeachingProjectDetail = ({
   // The gate only renders this view for a teaching profile of the session
   const profile = teachingProfileFromSlug(profileSlug) ?? "PROFESSOR";
   const slug = TEACHING_PROFILES[profile].slug;
+  // Opened from the Notas tab, the back link returns there
+  const backTab =
+    useSearchParams()?.get("from") === "grades" ? "grades" : undefined;
   const projectQuery = useAcademicProject({ profile, projectId });
   const project = projectQuery.data;
   const eventId = project?.eventId;
-  // The students' state comes with the registrations; whether results are published with the grades
+  // The students' state comes with the registrations
   const registrationsQuery = useAcademicRegistrations({ profile, eventId });
-  const gradesQuery = useAcademicGrades({ profile, eventId });
   const eventsQuery = useAcademicEvents({ profile });
 
   if (projectQuery.isLoading) {
@@ -74,7 +85,7 @@ export const TeachingProjectDetail = ({
 
     return (
       <div className="dashboard-page max-w-6xl space-y-6 pb-12">
-        <BackLink profileSlug={slug} />
+        <BackLink profileSlug={slug} tab={backTab} />
         <div className="rounded-3xl border border-white/10 bg-[#0e101a]/70 p-6 text-center backdrop-blur-xl">
           <p className="text-sm text-slate-300">
             {notFound
@@ -100,12 +111,12 @@ export const TeachingProjectDetail = ({
   const showReason =
     Boolean(reason) &&
     (project.state === "REJECTED" || project.state === "REQUEST_CHANGES");
-  const resultsPublished =
-    gradesQuery.data?.resultsPublished ?? event?.resultsPublished;
+  const evaluation = project.evaluation;
+  const result = evaluation?.result;
 
   return (
     <div className="dashboard-page max-w-6xl space-y-5 pb-12">
-      <BackLink eventId={project.eventId} profileSlug={slug} />
+      <BackLink eventId={project.eventId} profileSlug={slug} tab={backTab} />
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start xl:grid-cols-[minmax(0,1fr)_24rem]">
         <div className="min-w-0 space-y-5">
@@ -180,21 +191,30 @@ export const TeachingProjectDetail = ({
           <DocumentsBlock documents={project.documents ?? []} />
         </div>
 
-        {/* Desktop: the evaluation stays in view while the left column scrolls */}
-        <aside className="lg:sticky lg:top-24">
+        {/* Desktop: the evaluation stays in view while the left column scrolls; it scrolls on its own when taller than the screen */}
+        <aside className="space-y-5 lg:sticky lg:top-24 lg:max-h-[calc(100dvh-7rem)] lg:overflow-y-auto lg:pb-1">
           <JuryProgress
             emptyMessage={
               project.state === "APPROVED"
                 ? "Aún no tiene jurados asignados."
                 : "Los jurados se asignan cuando el proyecto queda aprobado."
             }
-            jurors={project.evaluation?.jurors ?? null}
-            note={
-              resultsPublished
-                ? "Los resultados del evento ya se publicaron."
-                : "La nota se muestra cuando se publiquen los resultados del evento."
-            }
+            jurors={evaluation?.jurors ?? null}
           />
+          {evaluation?.resultHidden && <HiddenNotice />}
+          {result && (
+            <>
+              <ProjectResult
+                ranking={evaluation.ranking}
+                result={result}
+                statusLabel={GRADE_STATUS_LABELS[evaluation.gradeStatus]}
+              />
+              <JurorEvaluations
+                evaluations={result.evaluations}
+                maxScore={result.maxScore}
+              />
+            </>
+          )}
         </aside>
       </div>
     </div>

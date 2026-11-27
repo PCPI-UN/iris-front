@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, BookOpenCheck, FolderKanban } from "lucide-react";
+import { ArrowLeft, FolderKanban } from "lucide-react";
 
+import { GradesTab } from "./grades-tab";
 import { ProjectsTab } from "./projects-tab";
 
 import { useAcademicEvents } from "@/features/academic/api/get-academic-events";
@@ -162,19 +163,7 @@ export const TeachingView = ({ profileSlug }: { profileSlug: string }) => {
                 profile={profile}
               />
             ) : (
-              <div className="flex flex-col items-center gap-3 rounded-3xl border border-dashed border-white/15 p-8 text-center">
-                <BookOpenCheck
-                  aria-hidden="true"
-                  className="size-8 text-slate-500"
-                />
-                <p className="text-sm font-semibold text-slate-200">
-                  Próximamente
-                </p>
-                <p className="max-w-sm text-xs text-slate-400">
-                  Aquí se verán las notas de los proyectos cuando se publiquen
-                  los resultados del evento.
-                </p>
-              </div>
+              <GradesTab key={event.id} eventId={event.id} profile={profile} />
             )}
           </div>
         </>

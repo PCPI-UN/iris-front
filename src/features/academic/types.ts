@@ -133,10 +133,59 @@ export type AcademicProjectJuror = {
   evaluated: boolean;
 };
 
+/** A criterion of a result, with the effective weight it had (fraction, 0-1) and its score */
+export type ResultCriterion = {
+  criterionId: number;
+  criterion: string;
+  weight: number;
+  /** Average of the jurors' scores in the project result; the juror's own score in an evaluation */
+  score: number;
+};
+
+/** Criteria of a result grouped by rubric component; `weight` adds up its criteria's */
+export type ResultComponent = {
+  component: string;
+  weight: number;
+  criteria: ResultCriterion[];
+};
+
+/** One juror's evaluation, without saying who the juror is (the front calls them Jurado A, B...) */
+export type AcademicJurorEvaluation = {
+  /** The juror's grade, rounded as the ranking does */
+  grade: number;
+  components: ResultComponent[];
+  /** null when the juror left no comment */
+  comment: string | null;
+};
+
+/** Result of a project as evaluation-service consolidates it */
+export type AcademicProjectResult = {
+  /** Average of the jurors' grades, rounded as the ranking does */
+  finalScore: number;
+  /** Highest grade possible with the event's grading scale */
+  maxScore: number;
+  components: ResultComponent[];
+  /** Each juror's comment; the same texts come in `evaluations` */
+  comments: string[];
+  /** Each juror's evaluation, oldest first */
+  evaluations: AcademicJurorEvaluation[];
+};
+
+/** Position of the project in the ranking of its category */
+export type AcademicProjectRanking = {
+  /** Dense position: tied projects share it */
+  position: number;
+  tied: boolean;
+  categoryId: number;
+  categoryName: string;
+  /** Titles of the published awards the project won, comma separated; null if none */
+  awardTitle: string | null;
+};
+
 /**
  * Evaluation of GET /academic/projects/:id. The jurors come with every profile and
- * before the results are published, the pending ones first; the grade is left to the
- * Notas tab.
+ * before the results are published, the pending ones first; the result and the
+ * position follow the grade rule of /academic/grades.
  */
 export type AcademicProjectEvaluation = {
   gradeStatus: GradeStatus;
@@ -144,6 +193,12 @@ export type AcademicProjectEvaluation = {
   completedEvaluations: number;
   pendingEvaluations: number;
   jurors: AcademicProjectJuror[];
+  /** true when a result exists but stays hidden until the results are published */
+  resultHidden: boolean;
+  /** null while PENDING or hidden */
+  result: AcademicProjectResult | null;
+  /** null while PENDING or hidden, for a project that is not approved or an event without ranking */
+  ranking: AcademicProjectRanking | null;
 };
 
 /** GET /academic/projects/:id: the project and its evaluation (null when it could not be read) */
@@ -161,17 +216,78 @@ export type AcademicProjectsPage = {
 /** PENDING: no evaluation yet; PRELIMINARY: evaluated, results not published; OFFICIAL: published */
 export type GradeStatus = "PENDING" | "PRELIMINARY" | "OFFICIAL";
 
-/** One row of GET /academic/grades (approved projects only); the grade is left to the Notas tab */
+/** One row of GET /academic/grades (approved projects only) */
 export type GradeRow = {
   projectId: number;
+  projectCode: string | null;
+  projectName: string;
+  participantNames: string[];
+  academicCourse: AcademicCourse | null;
   gradeStatus: GradeStatus;
   assignedJurors: number;
   completedEvaluations: number;
   pendingEvaluations: number;
+  /** Average of the jurors' grades; null when there is none or it stays hidden */
+  finalScore: number | null;
+  /** true when a grade exists but stays hidden until the results are published */
+  gradeHidden: boolean;
 };
 
 export type GradesReport = {
   eventId: number;
+  eventName: string;
   resultsPublished: boolean;
+  /** ALL: the session sees grades before publication; PUBLISHED_ONLY: only after it */
+  gradeVisibility: "ALL" | "PUBLISHED_ONLY";
   projects: GradeRow[];
+};
+
+export type CriterionStats = {
+  id: number;
+  name: string;
+  /** Effective weight in the grade (fraction, 0-1) */
+  weight: number;
+  average: number;
+};
+
+/** Average of a rubric component over the evaluated projects, on the scale of the grade */
+export type ComponentStats = {
+  /** Absent for the criteria without component */
+  id?: number;
+  /** Empty for the criteria without component */
+  name: string;
+  weight: number;
+  average: number;
+  /** Projects with at least one evaluation of this component */
+  projectCount: number;
+  criteria: CriterionStats[];
+};
+
+/** Evaluated projects whose final grade falls in [from, to); the last range also includes `to` */
+export type ScoreBucket = {
+  from: number;
+  to: number;
+  count: number;
+};
+
+export type StatsBlock = {
+  /** Approved projects of the scope in the event */
+  projectCount: number;
+  /** Of them, the ones with at least one evaluation; only these enter the averages */
+  evaluatedCount: number;
+  components: ComponentStats[];
+  /** 5 equal ranges from 0 to maxScore; null when the event has no grading scale */
+  distribution: ScoreBucket[] | null;
+};
+
+/** GET /academic/stats?eventId&profile */
+export type AcademicStats = {
+  eventId: number;
+  eventName: string;
+  resultsPublished: boolean;
+  /** true when the numbers stay hidden until the results are published; then overall is null */
+  statsHidden: boolean;
+  /** Top of the event's grading scale; null without a scale or while hidden */
+  maxScore: number | null;
+  overall: StatsBlock | null;
 };

@@ -6,8 +6,8 @@ import { api } from "@/lib/api-client";
 import { QueryConfig } from "@/lib/react-query";
 
 /**
- * Evaluation progress of the approved projects of the profile's scope in the
- * event. The grade itself is not read here: it belongs to the Notas tab.
+ * Grade and evaluation progress of the approved projects of the profile's scope
+ * in the event; the grade stays hidden until publication for some profiles.
  */
 export const getAcademicGrades = (
   profile: AcademicProfile,

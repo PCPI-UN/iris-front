@@ -4,11 +4,11 @@
 
 const slugify = (value: string) =>
   value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 
 export const paths = {
   home: {
@@ -21,7 +21,7 @@ export const paths = {
         `/auth/signup${redirectTo ? `?redirectTo=${encodeURIComponent(redirectTo)}` : ""}`,
     },
     signup_sent: {
-      getHref: () => '/auth/signup/sent',
+      getHref: () => "/auth/signup/sent",
     },
     login: {
       getHref: (redirectTo?: string | null | undefined) =>
@@ -120,12 +120,28 @@ export const paths = {
     },
     /** Teaching screen of one academic profile (`professor`, `tutor`); `?event=` picks the event */
     teaching: {
-      getHref: (profileSlug: string, eventId?: number | string) =>
-        `/app/teaching/${profileSlug}${eventId ? `?event=${encodeURIComponent(String(eventId))}` : ""}`,
+      getHref: (
+        profileSlug: string,
+        eventId?: number | string,
+        tab?: "grades",
+      ) => {
+        const params = new URLSearchParams();
+
+        if (eventId) params.set("event", String(eventId));
+        if (tab) params.set("tab", tab);
+        const query = params.toString();
+
+        return `/app/teaching/${profileSlug}${query ? `?${query}` : ""}`;
+      },
     },
     teachingProject: {
-      getHref: (profileSlug: string, projectId: number | string) =>
-        `/app/teaching/${profileSlug}/projects/${encodeURIComponent(String(projectId))}`,
+      /** `from` = the tab the detail goes back to */
+      getHref: (
+        profileSlug: string,
+        projectId: number | string,
+        from?: "grades",
+      ) =>
+        `/app/teaching/${profileSlug}/projects/${encodeURIComponent(String(projectId))}${from ? `?from=${from}` : ""}`,
     },
   },
   public: {
@@ -136,8 +152,9 @@ export const paths = {
           | number
           | { id: string | number; name?: string | null | undefined },
       ) => {
-        if (typeof event === 'object') {
-          const projectSlug = event.name ? slugify(event.name) : '';
+        if (typeof event === "object") {
+          const projectSlug = event.name ? slugify(event.name) : "";
+
           return projectSlug
             ? `/public/projects/${projectSlug}-${String(event.id)}`
             : `/public/projects/${String(event.id)}`;
@@ -154,11 +171,12 @@ export const paths = {
           | { id: string | number; name?: string | null | undefined },
       ) => {
         if (!eventId) {
-          return '/public/events';
+          return "/public/events";
         }
 
-        if (typeof eventId === 'object') {
-          const eventSlug = eventId.name ? slugify(eventId.name) : '';
+        if (typeof eventId === "object") {
+          const eventSlug = eventId.name ? slugify(eventId.name) : "";
+
           return eventSlug
             ? `/public/events/${eventSlug}-${String(eventId.id)}`
             : `/public/events/${String(eventId.id)}`;
@@ -174,8 +192,9 @@ export const paths = {
           | number
           | { id: string | number; name?: string | null | undefined },
       ) => {
-        if (typeof eventId === 'object') {
-          const eventSlug = eventId.name ? slugify(eventId.name) : '';
+        if (typeof eventId === "object") {
+          const eventSlug = eventId.name ? slugify(eventId.name) : "";
+
           return eventSlug
             ? `/public/events/past/${eventSlug}-${String(eventId.id)}`
             : `/public/events/past/${String(eventId.id)}`;
@@ -185,7 +204,7 @@ export const paths = {
       },
     },
     developers: {
-      getHref: () => '/public/contributors',
+      getHref: () => "/public/contributors",
     },
   },
 } as const;
