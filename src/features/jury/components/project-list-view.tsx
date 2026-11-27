@@ -70,11 +70,7 @@ export function ProjectListView({
     )
     .map((project) => project.id);
 
-  const {
-    gradingScale,
-    termCode,
-    academicCourseByProjectId = {},
-  } = useJurorEvent(
+  const { gradingScale, academicCourseByProjectId = {} } = useJurorEvent(
     hasValidEventId ? parsedEventId : undefined,
     visibleProjectIdsNeedingDepartment,
   );
@@ -115,7 +111,6 @@ export function ProjectListView({
         onPageChange={setPendingPage}
         pageProjects={pendingView.slice}
         showProjectCode={showProjectCode}
-        termCode={termCode}
         title={
           showProjectCode ? "Proyectos por Evaluar" : "Equipos por Evaluar"
         }
@@ -129,7 +124,6 @@ export function ProjectListView({
         onPageChange={setEvaluatedPage}
         pageProjects={evaluatedView.slice}
         showProjectCode={showProjectCode}
-        termCode={termCode}
         title={showProjectCode ? "Proyectos Evaluados" : "Equipos Evaluados"}
         totalItems={evaluatedProjects.length}
         totalPages={evaluatedView.totalPages}
@@ -147,7 +141,6 @@ type ProjectSectionProps = {
   onPageChange: (page: number) => void;
   showProjectCode: boolean;
   maxGrade?: number;
-  termCode?: string;
   academicCourseByProjectId: Record<
     string,
     ProjectAcademicCourse | null | undefined
@@ -164,7 +157,6 @@ function ProjectSection({
   onPageChange,
   showProjectCode,
   maxGrade,
-  termCode,
   academicCourseByProjectId,
 }: ProjectSectionProps) {
   if (totalItems === 0) return null;
@@ -185,7 +177,6 @@ function ProjectSection({
               maxGrade={maxGrade}
               project={project}
               showProjectCode={showProjectCode}
-              termCode={academicCourse?.term ?? termCode}
             />
           );
         })}

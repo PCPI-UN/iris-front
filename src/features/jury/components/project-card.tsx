@@ -16,7 +16,6 @@ type ProjectCardProps = {
     /** Highest grade of the event's scale, to show the juror's grade as "4.2 / 5" */
     maxGrade?: number;
     departmentName?: string | null;
-    termCode?: string | null;
 };
 
 export function ProjectCard({
@@ -24,7 +23,6 @@ export function ProjectCard({
     showProjectCode = false,
     maxGrade,
     departmentName,
-    termCode,
 }: ProjectCardProps) {
     const router = useRouter();
     const documents = project?.documents ?? [];
@@ -46,10 +44,8 @@ export function ProjectCard({
 
     const resolvedDepartmentName =
         departmentName ?? project?.academicCourse?.departmentName ?? null;
-    const resolvedTermCode = termCode ?? project?.academicCourse?.term ?? null;
     const hasTourInfo = Boolean(
         buildTourUrl({
-            termCode: resolvedTermCode,
             departmentName: resolvedDepartmentName,
             projectCode: project?.projectCode,
             projectId: project?.id,
@@ -60,7 +56,6 @@ export function ProjectCard({
     const openTour = () => {
         if (typeof window === "undefined") return;
         const tourUrl = buildTourUrl({
-            termCode: resolvedTermCode,
             departmentName: resolvedDepartmentName,
             projectCode: project?.projectCode,
             projectId: project?.id,

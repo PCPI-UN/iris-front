@@ -25,7 +25,6 @@ describe("ProjectCard", () => {
           evaluated: true,
           evaluation: { id: 1, grade: 4.25, scores: [] },
         }}
-        termCode="202630"
       />,
     );
 
@@ -36,7 +35,7 @@ describe("ProjectCard", () => {
     expect(screen.getByRole("button", { name: "Tour" })).toBeEnabled();
   });
 
-  test("redirects to Tour in the same tab with backend departmentName and projectCode", async () => {
+  test("redirects to Tour in the same tab with <departmentName>-<projectCode>", async () => {
     const navigateSpy = vi
       .spyOn(tourUrlModule, "navigateToTour")
       .mockImplementation(() => {});
@@ -47,7 +46,6 @@ describe("ProjectCard", () => {
         departmentName="Ingeniería de Sistemas"
         maxGrade={5}
         project={{ ...baseProject, evaluated: false }}
-        termCode="202630"
       />,
     );
 
@@ -70,7 +68,7 @@ describe("ProjectCard", () => {
       `${window.location.origin}/app/evaluations/7`,
     );
     expect(navigatedUrl.searchParams.get("equipo")).toBe(
-      "202630-Ingeniería de Sistemas-10",
+      "Ingeniería de Sistemas-10",
     );
 
     navigateSpy.mockRestore();
@@ -82,7 +80,6 @@ describe("ProjectCard", () => {
         showProjectCode
         maxGrade={5}
         project={{ ...baseProject, evaluated: false }}
-        termCode="202630"
       />,
     );
 
@@ -97,7 +94,6 @@ describe("ProjectCard", () => {
         departmentName="Ingeniería de Sistemas"
         maxGrade={5}
         project={{ ...baseProject, projectCode: "", evaluated: false }}
-        termCode="202630"
       />,
     );
 

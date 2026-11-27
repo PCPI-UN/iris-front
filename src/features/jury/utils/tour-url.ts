@@ -1,27 +1,9 @@
 import { paths } from "@/config/paths";
-import { formatTermCode } from "@/features/events/api/get-terms";
-import type { Term } from "@/types/api";
 
 export const TOUR_360_BASE_URL =
   "https://tours-360-coral.vercel.app/tour/v1125/ar";
 
 type IdInput = number | string | null | undefined;
-type TermCodeInput = string | Pick<Term, "year" | "period"> | null | undefined;
-
-const normalizeTermCode = (term: TermCodeInput): string | null => {
-  if (!term) {
-    return null;
-  }
-
-  const raw =
-    typeof term === "string" ? term.trim() : formatTermCode(term).trim();
-
-  if (!raw || !/^[A-Za-z0-9]+$/.test(raw)) {
-    return null;
-  }
-
-  return raw;
-};
 
 const normalizeTextSegment = (value: IdInput): string | null => {
   if (value === null || value === undefined) {
@@ -34,16 +16,13 @@ const normalizeTextSegment = (value: IdInput): string | null => {
 };
 
 /**
- * Formats the Tour 360 `equipo` code using backend department name and assigned project number:
- * `<term.year><term.period>-<departmentName>-<projectCode>` (or `<departmentName>-<projectCode>`
- * when no academic term is available). Returns `null` if either departmentName or projectCode is missing.
+ * Formats the Tour 360 `equipo` code using the backend department name and assigned project number:
+ * `<departmentName>-<projectCode>`. Returns `null` if either value is missing.
  */
 export const formatTourTeamCode = ({
-  termCode,
   departmentName,
   projectCode,
 }: {
-  termCode?: TermCodeInput;
   departmentName: string | null | undefined;
   projectCode: IdInput;
 }): string | null => {
@@ -54,27 +33,21 @@ export const formatTourTeamCode = ({
     return null;
   }
 
-  const baseCode = `${cleanDepartment}-${cleanProjectCode}`;
-  const cleanTerm = normalizeTermCode(termCode);
-
-  return cleanTerm ? `${cleanTerm}-${baseCode}` : baseCode;
+  return `${cleanDepartment}-${cleanProjectCode}`;
 };
 
 export const buildTourUrl = ({
-  termCode,
   departmentName,
   projectCode,
   projectId,
   origin,
 }: {
-  termCode?: TermCodeInput;
   departmentName: string | null | undefined;
   projectCode: IdInput;
   projectId: IdInput;
   origin: string;
 }): string | null => {
   const teamCode = formatTourTeamCode({
-    termCode,
     departmentName,
     projectCode,
   });
