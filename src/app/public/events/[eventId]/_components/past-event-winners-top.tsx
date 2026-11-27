@@ -1,12 +1,10 @@
 'use client';
 
-import { useState, useMemo, useEffect, RefObject } from 'react';
-import { Trophy, Users, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useState, useMemo, RefObject } from 'react';
+import { Trophy, Users, ExternalLink } from 'lucide-react';
 import { Chip } from '@heroui/chip';
 import { Divider } from '@heroui/divider';
-import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
-import { PRISMATIC_GRADIENT, PRISMATIC_GRADIENT_DIM } from '@/features/landing/components/events-section.utils';
 import { documentLink } from "@/lib/document-link";
 
 export type PastEventRankedWinner = {
@@ -229,8 +227,6 @@ export function PastEventWinnersTop({
   selectedCategoryId,
   onCategoryChange,
 }: PastEventWinnersTopProps) {
-  const [currentIndex, setCurrentIndex] = useState(0);
-
   const categoryMap = useMemo(
     () => new Map(categories.map((c) => [c.id, c.name])),
     [categories],
@@ -260,21 +256,13 @@ export function PastEventWinnersTop({
     return new Set([...counts].filter(([, n]) => n > 1).map(([pos]) => pos));
   }, [availableWinners]);
 
-  // Reset carousel index when winners or selected category change
-  useEffect(() => {
-    setCurrentIndex(0);
-  }, [availableWinners.length, selectedCategoryId]);
-
   const handleCategoryChange = (catId?: number) => {
     onCategoryChange?.(catId);
-    setCurrentIndex(0);
   };
 
   const isAllCategoriesSelected = selectedCategoryId === undefined;
   const hasWinners = availableWinners.length > 0;
-  const totalPages = hasWinners ? availableWinners.length : 0;
   const hasMultipleCategories = categories.length > 1;
-  const hasMultiplePages = !isLoading && totalPages > 1;
 
   return (
     <section
@@ -327,115 +315,43 @@ export function PastEventWinnersTop({
         </div>
       )}
 
-      {/* Winner card carousel */}
-      <div className="space-y-4 sm:space-y-6">
-        <div className="overflow-x-hidden overflow-y-visible pb-1">
-          {isLoading ? (
-            <div
-              className="flex items-center justify-center min-h-[200px] rounded-2xl border border-dashed border-border/40"
-              aria-busy="true"
-            >
-              <Spinner size="md" />
-            </div>
-          ) : hasWinners ? (
-            <div
-              className="flex transition-transform duration-500 ease-out"
-              style={{ transform: `translateX(-${currentIndex * 100}%)` }}
-            >
-              {availableWinners.map((winner, idx) => (
-                <div
-                  key={`winner-${winner.categoryId ?? 0}-${winner.position}-${winner.project.id ?? winner.project.name}-${idx}`}
-                  className="min-w-full overflow-hidden"
-                >
-                  <TopWinnerCard
-                    ranked={winner}
-                    isCoWinner={coWinnerPositions.has(winner.position)}
-                    showCategoryBadge={isAllCategoriesSelected && hasMultipleCategories}
-                    categoryName={
-                      winner.categoryName ??
-                      (winner.categoryId ? categoryMap.get(winner.categoryId) : undefined)
-                    }
-                    isExposition={isExposition}
-                    showScore={visibleScore}
-                  />
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="flex items-center justify-center h-32 rounded-2xl border border-dashed border-border/40 text-sm text-muted-foreground">
-              {isAllCategoriesSelected
-                ? 'Aún no hay ganadores disponibles para mostrar.'
-                : 'Aún no hay ganadores disponibles para la categoría seleccionada.'}
-            </div>
-          )}
-        </div>
-
-        {/* Prev / next navigation */}
-        {hasMultiplePages && (
-          <div className="flex items-center justify-center gap-3 sm:gap-4 mt-6">
-            <Button
-              variant="bordered"
-              type="button"
-              className="events-nav-button h-9 w-9 sm:h-10 sm:w-10 p-0 border-white/25 backdrop-blur-sm transition-all enabled:hover:shadow-[0_0_18px_rgba(244,114,182,0.28)] disabled:opacity-40 disabled:shadow-none disabled:cursor-default"
-              onClick={() => setCurrentIndex((prev) => Math.max(prev - 1, 0))}
-              isDisabled={currentIndex === 0}
-              aria-label="Anterior ganador"
-              style={
-                currentIndex === 0
-                  ? {
-                      backgroundImage: PRISMATIC_GRADIENT_DIM,
-                      backgroundSize: '100% 100%',
-                      animation: 'none',
-                    }
-                  : {
-                      backgroundImage: PRISMATIC_GRADIENT,
-                      backgroundSize: '200% auto',
-                      animation: 'prismatic-shift 8s ease-in-out infinite',
-                    }
-              }
-            >
-              <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5 text-black" />
-            </Button>
-
-            <div className="flex items-center gap-2">
-              {availableWinners.map((_, idx) => (
-                <button
-                  key={`dot-${idx}`}
-                  type="button"
-                  onClick={() => setCurrentIndex(idx)}
-                  className={`h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full border border-white/20 transition-all ${
-                    currentIndex === idx
-                      ? 'scale-110 shadow-[0_0_10px_rgba(244,114,182,0.35)]'
-                      : 'opacity-60 hover:opacity-90'
-                  }`}
-                  aria-label={`Ir al ${getPositionLabel(availableWinners[idx]?.position ?? idx + 1)}`}
+      {/* All visible winners rendered directly in ranked order (1° Lugar, 2° Lugar, ...) */}
+      <div>
+        {isLoading ? (
+          <div
+            className="flex items-center justify-center min-h-[200px] rounded-2xl border border-dashed border-border/40"
+            aria-busy="true"
+          >
+            <Spinner size="md" />
+          </div>
+        ) : hasWinners ? (
+          <ol
+            aria-label="Lista de proyectos ganadores"
+            className="space-y-5 sm:space-y-6"
+          >
+            {availableWinners.map((winner, idx) => (
+              <li
+                key={`winner-${winner.categoryId ?? 0}-${winner.position}-${winner.project.id ?? winner.project.name}-${idx}`}
+              >
+                <TopWinnerCard
+                  ranked={winner}
+                  isCoWinner={coWinnerPositions.has(winner.position)}
+                  showCategoryBadge={isAllCategoriesSelected && hasMultipleCategories}
+                  categoryName={
+                    winner.categoryName ??
+                    (winner.categoryId ? categoryMap.get(winner.categoryId) : undefined)
+                  }
+                  isExposition={isExposition}
+                  showScore={visibleScore}
                 />
-              ))}
-            </div>
-
-            <Button
-              variant="bordered"
-              type="button"
-              className="events-nav-button h-9 w-9 sm:h-10 sm:w-10 p-0 border-white/25 backdrop-blur-sm transition-all enabled:hover:shadow-[0_0_18px_rgba(244,114,182,0.28)] disabled:opacity-40 disabled:shadow-none disabled:cursor-default"
-              onClick={() => setCurrentIndex((prev) => Math.min(prev + 1, totalPages - 1))}
-              isDisabled={currentIndex === totalPages - 1}
-              aria-label="Siguiente ganador"
-              style={
-                currentIndex === totalPages - 1
-                  ? {
-                      backgroundImage: PRISMATIC_GRADIENT_DIM,
-                      backgroundSize: '100% 100%',
-                      animation: 'none',
-                    }
-                  : {
-                      backgroundImage: PRISMATIC_GRADIENT,
-                      backgroundSize: '200% auto',
-                      animation: 'prismatic-shift 8s ease-in-out infinite',
-                    }
-              }
-            >
-              <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 text-black" />
-            </Button>
+              </li>
+            ))}
+          </ol>
+        ) : (
+          <div className="flex items-center justify-center h-32 rounded-2xl border border-dashed border-border/40 text-sm text-muted-foreground">
+            {isAllCategoriesSelected
+              ? 'Aún no hay ganadores disponibles para mostrar.'
+              : 'Aún no hay ganadores disponibles para la categoría seleccionada.'}
           </div>
         )}
       </div>

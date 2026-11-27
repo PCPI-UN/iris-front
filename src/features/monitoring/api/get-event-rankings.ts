@@ -123,7 +123,15 @@ const firstNonEmptyList = (...lists: string[][]) => {
 // can decide whether to render the ranking instead of relying on an auth-gated call.
 const extractConfiguration = (response: unknown): PublicRankingConfiguration | undefined => {
   const record = asRecord(response);
-  const cfg = asRecord(record.configuration ?? record.config ?? record.rankingConfig);
+  const nestedData = asRecord(record.data);
+  const cfg = asRecord(
+    record.configuration ??
+      record.config ??
+      record.rankingConfig ??
+      nestedData.configuration ??
+      nestedData.config ??
+      nestedData.rankingConfig,
+  );
   if (Object.keys(cfg).length === 0) return undefined;
 
   const visiblePublic =
@@ -141,6 +149,14 @@ const extractConfiguration = (response: unknown): PublicRankingConfiguration | u
         ? (cfg.visibleScore as boolean)
         : undefined;
   const positions = asNumber(cfg.positions ?? cfg.visiblePositions);
+
+  if (
+    visiblePublic === undefined &&
+    positions === undefined &&
+    gradeVisible === undefined
+  ) {
+    return undefined;
+  }
 
   return { visiblePublic, positions, gradeVisible };
 };

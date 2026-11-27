@@ -171,6 +171,7 @@ type PublicEventDTO = {
   statusName: string;
   isPubliclyJoinable: boolean;
   evaluationsOpened: boolean;
+  resultsPublished?: boolean;
   role: string;
   active: boolean;
   location?: string;
@@ -314,6 +315,10 @@ const mapEventToPublicDTO = (event: any): PublicEventDTO => {
     statusName,
     isPubliclyJoinable: Boolean(event.isPubliclyJoinable ?? event.isPublic),
     evaluationsOpened: Boolean(event.evaluationsOpened ?? statusName === "OPEN"),
+    resultsPublished:
+      typeof event.resultsPublished === "boolean"
+        ? event.resultsPublished
+        : Number(event.status) === 4 || statusName === "CLOSED",
     role: String(event.role ?? "USER"),
     active,
     location,
@@ -588,6 +593,60 @@ export const eventsHandlers = [
         data: {
           ...mapEventToPublicDTO(event),
           participants: uniqueParticipants,
+        },
+      });
+    } catch (error: any) {
+      return HttpResponse.json(
+        { message: error?.message || "Server Error" },
+        { status: 500 }
+      );
+    }
+  }),
+
+  http.get(`${env.API_URL}/events/ranking-config/by-event/:eventId`, async ({ params }) => {
+    await networkDelay();
+
+    try {
+      const eventId = toInternalPrefixedId(String(params.eventId), "event");
+      const event = db.event.findFirst({
+        where: {
+          id: {
+            equals: eventId,
+          },
+        },
+      }) as any;
+
+      if (!event) {
+        return HttpResponse.json({ rankingEvent: null });
+      }
+
+      const rawConfig = event.rankingConfig ?? event.rankingConfiguration ?? null;
+      if (!rawConfig) {
+        const isPastClosed =
+          Number(event.status) === 4 ||
+          Boolean(event.endDate && new Date(String(event.endDate)).getTime() < Date.now());
+        return HttpResponse.json({
+          rankingEvent: isPastClosed
+            ? {
+                id: toPublicNumericId(String(event.id), "event"),
+                eventId: toPublicNumericId(String(event.id), "event"),
+                positions: 3,
+                visiblePublic: true,
+                gradeVisible: true,
+              }
+            : null,
+        });
+      }
+
+      return HttpResponse.json({
+        rankingEvent: {
+          id: rawConfig.id ?? toPublicNumericId(String(event.id), "event"),
+          eventId: toPublicNumericId(String(event.id), "event"),
+          positions: rawConfig.positions ?? rawConfig.visiblePositions ?? 3,
+          visiblePublic: Boolean(
+            rawConfig.visiblePublic ?? rawConfig.visibleInLanding ?? rawConfig.isPublic,
+          ),
+          gradeVisible: rawConfig.gradeVisible ?? rawConfig.visibleScore ?? true,
         },
       });
     } catch (error: any) {

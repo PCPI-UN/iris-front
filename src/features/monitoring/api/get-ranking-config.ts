@@ -29,11 +29,15 @@ export type GetRankingConfigResponse = {
 };
 
 const normalizeRankingConfig = (response: GetRankingConfigResponse | null | undefined): RankingConfigRecord | null => {
+  if (!response || typeof response !== 'object') {
+    return null;
+  }
+
   const candidate =
-    response?.data ??
-    response?.rankingEvent ??
-    response?.rankingConfig ??
-    response?.rankingConfiguration ??
+    response.data ??
+    response.rankingEvent ??
+    response.rankingConfig ??
+    response.rankingConfiguration ??
     response;
 
   if (!candidate || typeof candidate !== 'object') {
@@ -63,6 +67,15 @@ const normalizeRankingConfig = (response: GetRankingConfigResponse | null | unde
         ? (record as Record<string, unknown>).gradeVisible as boolean
         : undefined;
 
+  if (
+    id === undefined &&
+    positions === undefined &&
+    visibleInLanding === undefined &&
+    visibleScore === undefined
+  ) {
+    return null;
+  }
+
   return {
     id,
     rankingConfigId: id,
@@ -79,12 +92,31 @@ export const getRankingConfig = async (eventId?: number): Promise<{ data: Rankin
     return { data: null };
   }
 
+  // Primary backend contract: @Public() GET /events/ranking-config/by-event/:eventId
   try {
-    const response = await api.get<GetRankingConfigResponse>(`/events/ranking-config/${eventId}`, {
-      suppressErrorNotification: true,
-    });
+    const response = await api.get<GetRankingConfigResponse>(
+      `/events/ranking-config/by-event/${eventId}`,
+      { suppressErrorNotification: true },
+    );
+    const normalized = normalizeRankingConfig(response);
+    if (normalized) {
+      return { data: normalized };
+    }
+  } catch {
+    // Fall back to legacy/mock route only when by-event is unavailable
+  }
 
-    return { data: normalizeRankingConfig(response) };
+  try {
+    const response = await api.get<GetRankingConfigResponse>(
+      `/events/ranking-config/${eventId}`,
+      { suppressErrorNotification: true },
+    );
+    const normalized = normalizeRankingConfig(response);
+    // Guard against legacy /ranking-config/:id returning another event's config
+    if (normalized && normalized.eventId !== undefined && normalized.eventId !== eventId) {
+      return { data: null };
+    }
+    return { data: normalized };
   } catch {
     return { data: null };
   }
