@@ -7,38 +7,47 @@ import { QueryConfig } from "@/lib/react-query";
 
 /**
  * Average of each rubric component and criterion and spread of the final grades
- * over the evaluated projects of the profile's scope in the event.
+ * over the evaluated projects of the profile's scope in the event; with
+ * `byDepartment`, also the same numbers for each department.
  */
 export const getAcademicStats = (
   profile: AcademicProfile,
   eventId: number,
+  byDepartment = false,
 ): Promise<AcademicStats> =>
   api.get<AcademicStats>("/academic/stats", {
-    params: { profile, eventId },
+    params: {
+      profile,
+      eventId,
+      ...(byDepartment ? { groupBy: "department" } : {}),
+    },
   });
 
 export const getAcademicStatsQueryOptions = (
   profile: AcademicProfile,
   eventId: number,
+  byDepartment = false,
 ) =>
   queryOptions({
-    queryKey: ["academic", profile, "stats", eventId],
-    queryFn: () => getAcademicStats(profile, eventId),
+    queryKey: ["academic", profile, "stats", eventId, byDepartment],
+    queryFn: () => getAcademicStats(profile, eventId, byDepartment),
   });
 
 type UseAcademicStatsOptions = {
   profile: AcademicProfile;
   eventId?: number;
+  byDepartment?: boolean;
   queryConfig?: QueryConfig<typeof getAcademicStatsQueryOptions>;
 };
 
 export const useAcademicStats = ({
   profile,
   eventId,
+  byDepartment = false,
   queryConfig,
 }: UseAcademicStatsOptions) =>
   useQuery({
-    ...getAcademicStatsQueryOptions(profile, eventId ?? 0),
+    ...getAcademicStatsQueryOptions(profile, eventId ?? 0, byDepartment),
     enabled: Boolean(eventId),
     ...queryConfig,
   });

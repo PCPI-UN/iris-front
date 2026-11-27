@@ -4,7 +4,13 @@ import { http, HttpResponse } from "msw";
 import { GradesTab } from "../grades-tab";
 
 import { server } from "@/testing/mocks/server";
-import { rtlRender, screen, userEvent, waitFor } from "@/testing/test-utils";
+import {
+  rtlRender,
+  screen,
+  userEvent,
+  waitFor,
+  within,
+} from "@/testing/test-utils";
 
 const row = (
   projectId: number,
@@ -89,15 +95,79 @@ const mockApi = ({ hidden }: { hidden: boolean }) =>
     ),
   );
 
-const renderTab = () =>
+const renderTab = (profile: "PROFESSOR" | "DEAN" = "PROFESSOR") =>
   rtlRender(
     <QueryClientProvider
       client={
         new QueryClient({ defaultOptions: { queries: { retry: false } } })
       }
     >
-      <GradesTab eventId={4} profile="PROFESSOR" />
+      <GradesTab eventId={4} profile={profile} />
     </QueryClientProvider>,
+  );
+
+const course = (departmentName: string) => ({
+  id: 1,
+  nrc: "12345",
+  termId: 1,
+  term: "202620",
+  name: "Proyecto final",
+  departmentName,
+});
+
+const block = (projectCount: number, evaluatedCount: number) => ({
+  projectCount,
+  evaluatedCount,
+  components: [
+    {
+      id: 1,
+      name: "Técnico",
+      weight: 1,
+      average: 4,
+      projectCount: evaluatedCount,
+      criteria: [{ id: 11, name: "Solución", weight: 1, average: 4 }],
+    },
+  ],
+  distribution: null,
+});
+
+/** Dean: numbers per department, and grades of two departments */
+const mockDeanApi = (onStats: (url: URL) => void) =>
+  server.use(
+    http.get("*/api/academic/stats", ({ request }) => {
+      onStats(new URL(request.url));
+
+      return HttpResponse.json({
+        eventId: 4,
+        eventName: "Feria 2026-2",
+        resultsPublished: false,
+        statsHidden: false,
+        maxScore: 5,
+        overall: block(2, 2),
+        departments: [
+          { departmentId: 1, departmentName: "Sistemas", ...block(1, 1) },
+          { departmentId: 2, departmentName: "Química", ...block(1, 1) },
+        ],
+      });
+    }),
+    http.get("*/api/academic/grades", () =>
+      HttpResponse.json({
+        eventId: 4,
+        eventName: "Feria 2026-2",
+        resultsPublished: false,
+        gradeVisibility: "ALL",
+        projects: [
+          {
+            ...row(181, "Huerta vertical", ["Mariana Peña"], 4.3),
+            academicCourse: course("Química"),
+          },
+          {
+            ...row(190, "Simulador de tráfico", ["Andrés Gil"], 3.5),
+            academicCourse: course("Sistemas"),
+          },
+        ],
+      }),
+    ),
   );
 
 describe("GradesTab", () => {
@@ -140,6 +210,50 @@ describe("GradesTab", () => {
       screen.getByRole("link", { name: /Huerta vertical/ }),
     ).toBeInTheDocument();
     expect(screen.getByText("1 de 3 proyectos")).toBeInTheDocument();
+  });
+
+  it("gives the dean the numbers of each department and a department filter", async () => {
+    const statsUrls: URL[] = [];
+
+    mockDeanApi((url) => statsUrls.push(url));
+    renderTab("DEAN");
+
+    const panel = (await screen.findByText("Por departamento")).closest(
+      "section",
+    ) as HTMLElement;
+
+    expect(statsUrls[0].searchParams.get("groupBy")).toBe("department");
+    expect(within(panel).getByText("Sistemas")).toBeInTheDocument();
+    expect(within(panel).getByText("Química")).toBeInTheDocument();
+
+    await screen.findByRole("link", { name: /Huerta vertical/ });
+    await userEvent.click(screen.getByRole("button", { name: /Departamento/ }));
+    await userEvent.click(
+      await screen.findByRole("option", { name: "Sistemas" }),
+    );
+
+    await waitFor(() =>
+      expect(
+        screen.queryByRole("link", { name: /Huerta vertical/ }),
+      ).not.toBeInTheDocument(),
+    );
+    expect(
+      screen.getByRole("link", { name: /Simulador de tráfico/ }),
+    ).toHaveAttribute("href", "/app/teaching/dean/projects/190?from=grades");
+  });
+
+  it("keeps a professor's tab without departments", async () => {
+    const statsUrls: URL[] = [];
+
+    mockDeanApi((url) => statsUrls.push(url));
+    renderTab();
+
+    await screen.findByRole("link", { name: /Huerta vertical/ });
+    expect(statsUrls[0].searchParams.get("groupBy")).toBeNull();
+    expect(screen.queryByText("Por departamento")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Departamento/ }),
+    ).not.toBeInTheDocument();
   });
 
   it("says the numbers come with the publication while they are hidden", async () => {
