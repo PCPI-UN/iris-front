@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, Variants } from 'framer-motion';
 import {
   FileText,
@@ -13,14 +13,36 @@ import {
   ExternalLink,
   Edit2,
   Save,
+  Upload,
   X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { EnrollmentStatus, StudentProjectInfo } from '../types';
+import {
+  EnrollmentStatus,
+  StudentProjectDocument,
+  StudentProjectInfo,
+} from '../types';
+import {
+  hasRealDocumentId,
+  POSTER_ACCEPT,
+  resolveStudentDocumentHref,
+  SECONDARY_DOCUMENT_ACCEPT,
+  validatePosterFile,
+  validateSupportingFiles,
+} from '../utils/document-validation';
 
 export interface StudentProjectSectionProps {
   project: StudentProjectInfo | null;
   onSaveChanges?: (updatedProject: Partial<StudentProjectInfo>) => Promise<void> | void;
+  onUploadPoster?: (
+    file: File,
+    existingPoster?: StudentProjectDocument,
+  ) => Promise<void> | void;
+  onUploadSupportingDocuments?: (files: File[]) => Promise<void> | void;
+  onReplaceSupportingDocument?: (
+    document: StudentProjectDocument,
+    file: File,
+  ) => Promise<void> | void;
 }
 
 // Variantes escalonadas sutiles (Propuesta B)
@@ -49,6 +71,9 @@ const itemVariants: Variants = {
 export const StudentProjectSection = ({
   project,
   onSaveChanges,
+  onUploadPoster,
+  onUploadSupportingDocuments,
+  onReplaceSupportingDocument,
 }: StudentProjectSectionProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedName, setEditedName] = useState(project?.name || '');
@@ -56,6 +81,19 @@ export const StudentProjectSection = ({
     project?.description || ''
   );
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingPoster, setIsUploadingPoster] = useState(false);
+  const [isUploadingSecondary, setIsUploadingSecondary] = useState(false);
+  const [replacingDocumentId, setReplacingDocumentId] = useState<string | null>(
+    null,
+  );
+  const [documentError, setDocumentError] = useState<string | null>(null);
+
+  const posterInputRef = useRef<HTMLInputElement>(null);
+  const secondaryInputRef = useRef<HTMLInputElement>(null);
+  const replaceSecondaryInputRef = useRef<HTMLInputElement>(null);
+  const replacingDocumentRef = useRef<StudentProjectDocument | null>(null);
+  const posterLockRef = useRef(false);
+  const secondaryLockRef = useRef(false);
 
   useEffect(() => {
     if (!isEditing && project) {
@@ -167,6 +205,122 @@ export const StudentProjectSection = ({
 
   const primaryPoster = project.documents.find((d) => d.type === 'POSTER');
   const otherDocuments = project.documents.filter((d) => d.type !== 'POSTER');
+
+  // Documentos pueden actualizarse en eventos vigentes mientras el proyecto no haya sido rechazado
+  // (incluye APPROVED, REQUEST_CHANGES y UNDER_REVIEW; en historial de eventos cerrados es solo lectura).
+  const canManageDocuments =
+    project.isCurrent !== false && project.enrollmentStatus !== 'REJECTED';
+  const canUploadPoster = canManageDocuments && Boolean(onUploadPoster);
+  const canUploadSupporting =
+    canManageDocuments && Boolean(onUploadSupportingDocuments);
+  const canReplaceSupporting =
+    canManageDocuments && Boolean(onReplaceSupportingDocument);
+
+  const handlePosterFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file || !onUploadPoster || posterLockRef.current) return;
+
+    setDocumentError(null);
+    const validationError = await validatePosterFile(file);
+    if (validationError) {
+      setDocumentError(validationError);
+      return;
+    }
+
+    posterLockRef.current = true;
+    setIsUploadingPoster(true);
+    try {
+      await onUploadPoster(file, primaryPoster);
+    } catch (error) {
+      setDocumentError(
+        error instanceof Error && error.message
+          ? error.message
+          : 'No se pudo cargar el póster. Intenta nuevamente.',
+      );
+    } finally {
+      posterLockRef.current = false;
+      setIsUploadingPoster(false);
+    }
+  };
+
+  const handleSupportingFilesChange = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const files = Array.from(event.target.files ?? []);
+    event.target.value = '';
+    if (files.length === 0 || !onUploadSupportingDocuments || secondaryLockRef.current) {
+      return;
+    }
+
+    setDocumentError(null);
+    const validationError = await validateSupportingFiles(files);
+    if (validationError) {
+      setDocumentError(validationError);
+      return;
+    }
+
+    secondaryLockRef.current = true;
+    setIsUploadingSecondary(true);
+    try {
+      await onUploadSupportingDocuments(files);
+    } catch (error) {
+      setDocumentError(
+        error instanceof Error && error.message
+          ? error.message
+          : 'No se pudieron cargar los documentos de soporte. Intenta nuevamente.',
+      );
+    } finally {
+      secondaryLockRef.current = false;
+      setIsUploadingSecondary(false);
+    }
+  };
+
+  const handleStartReplaceSecondary = (doc: StudentProjectDocument) => {
+    if (secondaryLockRef.current) return;
+    setDocumentError(null);
+    replacingDocumentRef.current = doc;
+    replaceSecondaryInputRef.current?.click();
+  };
+
+  const handleReplaceSecondaryFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+    const targetDoc = replacingDocumentRef.current;
+    event.target.value = '';
+    replacingDocumentRef.current = null;
+
+    if (!file || !targetDoc || !onReplaceSupportingDocument || secondaryLockRef.current) {
+      return;
+    }
+
+    setDocumentError(null);
+    const validationError = await validateSupportingFiles([file]);
+    if (validationError) {
+      setDocumentError(validationError);
+      return;
+    }
+
+    secondaryLockRef.current = true;
+    setReplacingDocumentId(targetDoc.id);
+    setIsUploadingSecondary(true);
+    try {
+      await onReplaceSupportingDocument(targetDoc, file);
+    } catch (error) {
+      setDocumentError(
+        error instanceof Error && error.message
+          ? error.message
+          : 'No se pudo reemplazar el documento. Intenta nuevamente.',
+      );
+    } finally {
+      secondaryLockRef.current = false;
+      setIsUploadingSecondary(false);
+      setReplacingDocumentId(null);
+    }
+  };
 
   return (
     <motion.div
@@ -318,10 +472,96 @@ export const StudentProjectSection = ({
           </motion.div>
 
           {/* Bloque de Documentación y Entregables */}
-          <motion.div variants={itemVariants} className="space-y-2.5 border-t border-white/10 pt-4">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-              Documentación y Entregables del Proyecto
-            </h3>
+          <motion.div variants={itemVariants} className="space-y-3 border-t border-white/10 pt-4">
+            <div className="flex flex-wrap items-center justify-between gap-2.5">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                Documentación y Entregables del Proyecto
+              </h3>
+
+              {(canUploadPoster || canUploadSupporting) && (
+                <div className="flex flex-wrap items-center gap-2">
+                  {canUploadPoster && (
+                    <>
+                      <input
+                        ref={posterInputRef}
+                        type="file"
+                        accept={POSTER_ACCEPT}
+                        onChange={handlePosterFileChange}
+                        className="hidden"
+                        aria-label="Seleccionar archivo de póster"
+                      />
+                      <Button
+                        size="sm"
+                        variant="flat"
+                        onPress={() => posterInputRef.current?.click()}
+                        isLoading={isUploadingPoster}
+                        isDisabled={isUploadingPoster}
+                        className="flex items-center gap-1.5 rounded-xl border border-cyan-500/40 bg-cyan-500/15 px-3 py-1.5 text-xs font-semibold text-cyan-300 hover:bg-cyan-500/25 transition-all"
+                      >
+                        <Upload className="size-3.5" />
+                        <span>
+                          {isUploadingPoster
+                            ? 'Subiendo póster...'
+                            : primaryPoster
+                              ? 'Cambiar póster'
+                              : 'Subir póster'}
+                        </span>
+                      </Button>
+                    </>
+                  )}
+
+                  {canUploadSupporting && (
+                    <>
+                      <input
+                        ref={secondaryInputRef}
+                        type="file"
+                        multiple
+                        accept={SECONDARY_DOCUMENT_ACCEPT}
+                        onChange={handleSupportingFilesChange}
+                        className="hidden"
+                        aria-label="Seleccionar documentos de soporte"
+                      />
+                      <Button
+                        size="sm"
+                        variant="flat"
+                        onPress={() => secondaryInputRef.current?.click()}
+                        isLoading={isUploadingSecondary && !replacingDocumentId}
+                        isDisabled={isUploadingSecondary}
+                        className="flex items-center gap-1.5 rounded-xl border border-pink-500/35 bg-pink-500/15 px-3 py-1.5 text-xs font-semibold text-pink-300 hover:bg-pink-500/25 transition-all"
+                      >
+                        <Upload className="size-3.5" />
+                        <span>
+                          {isUploadingSecondary && !replacingDocumentId
+                            ? 'Subiendo...'
+                            : 'Subir soporte'}
+                        </span>
+                      </Button>
+                    </>
+                  )}
+
+                  {canReplaceSupporting && (
+                    <input
+                      ref={replaceSecondaryInputRef}
+                      type="file"
+                      accept={SECONDARY_DOCUMENT_ACCEPT}
+                      onChange={handleReplaceSecondaryFileChange}
+                      className="hidden"
+                      aria-label="Seleccionar archivo de reemplazo para documento de soporte"
+                    />
+                  )}
+                </div>
+              )}
+            </div>
+
+            {documentError && (
+              <div
+                role="alert"
+                className="flex items-start gap-2 rounded-xl border border-rose-500/35 bg-rose-500/10 px-3.5 py-2.5 text-xs text-rose-200"
+              >
+                <AlertCircle className="size-4 shrink-0 text-rose-400 mt-0.5" />
+                <span>{documentError}</span>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {/* Póster Oficial */}
@@ -330,9 +570,9 @@ export const StudentProjectSection = ({
                   whileHover={{ y: -1.5 }}
                   whileTap={{ scale: 0.98 }}
                   transition={{ duration: 0.15 }}
-                  href={primaryPoster.url}
+                  href={resolveStudentDocumentHref(primaryPoster, project.id)}
                   target="_blank"
-                  rel="noreferrer"
+                  rel="noopener noreferrer"
                   className="group flex items-center justify-between rounded-xl border border-white/10 bg-white/5 p-3.5 transition-colors hover:border-cyan-500/35 hover:bg-cyan-500/5"
                   aria-label={`Ver póster oficial: ${primaryPoster.title}`}
                 >
@@ -345,50 +585,74 @@ export const StudentProjectSection = ({
                         {primaryPoster.title || 'Póster Oficial'}
                       </p>
                       <p className="text-[12px] text-slate-400">
-                        Póster Oficial en PDF
+                        Póster Oficial (PDF / Imagen)
                       </p>
                     </div>
                   </div>
                   <ExternalLink className="size-4 text-slate-500 group-hover:text-cyan-400 transition-colors shrink-0 ml-2" />
                 </motion.a>
               ) : (
-                <div className="rounded-xl border border-dashed border-white/10 p-3 text-center text-xs text-slate-400">
+                <div className="flex items-center justify-center rounded-xl border border-dashed border-white/10 p-3 text-center text-xs text-slate-400">
                   Póster pendiente de carga
                 </div>
               )}
 
               {/* Otros Documentos / Memoria Técnica */}
               {otherDocuments.length > 0 ? (
-                otherDocuments.map((doc) => (
-                  <motion.a
-                    key={doc.id}
-                    whileHover={{ y: -1.5 }}
-                    whileTap={{ scale: 0.98 }}
-                    transition={{ duration: 0.15 }}
-                    href={doc.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="group flex items-center justify-between rounded-xl border border-white/10 bg-white/5 p-3.5 transition-colors hover:border-pink-500/35 hover:bg-pink-500/5"
-                    aria-label={`Ver documento: ${doc.title}`}
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-pink-500/15 text-pink-400 group-hover:scale-105 transition-transform">
-                        <FileCode className="size-4.5" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-xs font-semibold text-white group-hover:text-pink-300 truncate">
-                          {doc.title || 'Memoria Técnica'}
-                        </p>
-                        <p className="text-[12px] text-slate-400">
-                          {doc.type === 'LOGO'
-                            ? 'Imagen del proyecto'
-                            : 'Memoria Técnica de Soporte'}
-                        </p>
-                      </div>
+                otherDocuments.map((doc) => {
+                  const canReplaceThisDoc =
+                    canReplaceSupporting && hasRealDocumentId(doc.id);
+
+                  return (
+                    <div
+                      key={doc.id}
+                      className="group flex items-center justify-between gap-2 rounded-xl border border-white/10 bg-white/5 p-3.5 transition-colors hover:border-pink-500/35 hover:bg-pink-500/5"
+                    >
+                      <a
+                        href={resolveStudentDocumentHref(doc, project.id)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex min-w-0 flex-1 items-center justify-between gap-2"
+                        aria-label={`Ver documento: ${doc.title}`}
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-pink-500/15 text-pink-400 group-hover:scale-105 transition-transform">
+                            <FileCode className="size-4.5" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-xs font-semibold text-white group-hover:text-pink-300 truncate">
+                              {doc.title || 'Memoria Técnica'}
+                            </p>
+                            <p className="text-[12px] text-slate-400">
+                              {doc.type === 'LOGO'
+                                ? 'Imagen del proyecto'
+                                : 'Memoria Técnica de Soporte'}
+                            </p>
+                          </div>
+                        </div>
+                        <ExternalLink className="size-4 text-slate-500 group-hover:text-pink-400 transition-colors shrink-0" />
+                      </a>
+
+                      {canReplaceThisDoc && (
+                        <Button
+                          isIconOnly
+                          size="sm"
+                          variant="flat"
+                          aria-label={`Reemplazar documento: ${doc.title}`}
+                          isLoading={
+                            replacingDocumentId === doc.id &&
+                            isUploadingSecondary
+                          }
+                          isDisabled={isUploadingSecondary}
+                          onPress={() => handleStartReplaceSecondary(doc)}
+                          className="shrink-0 rounded-lg border border-white/10 bg-white/5 text-slate-300 hover:border-pink-500/40 hover:bg-pink-500/15 hover:text-pink-200"
+                        >
+                          <Upload className="size-3.5" />
+                        </Button>
+                      )}
                     </div>
-                    <ExternalLink className="size-4 text-slate-500 group-hover:text-pink-400 transition-colors shrink-0 ml-2" />
-                  </motion.a>
-                ))
+                  );
+                })
               ) : (
                 <div className="flex items-center justify-center rounded-xl border border-dashed border-white/10 p-3 text-xs text-slate-400">
                   Sin memorias o documentos adicionales registrados
