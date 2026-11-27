@@ -1,6 +1,7 @@
 import {
   ArrowDownAZ,
   BookOpenCheck,
+  Building2,
   Calendar,
   ChartNoAxesCombined,
   GraduationCap,
@@ -152,6 +153,7 @@ const SIDEBAR_ITEMS: SidebarItem[] = [
 const TEACHING_ICONS: Record<TeachingProfile, LucideIcon> = {
   PROFESSOR: BookOpenCheck,
   TUTOR: UserCheck,
+  DIRECTOR: Building2,
   DEAN: Landmark,
 };
 

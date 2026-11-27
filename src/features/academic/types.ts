@@ -204,6 +204,8 @@ export type AcademicProjectEvaluation = {
 /** GET /academic/projects/:id: the project and its evaluation (null when it could not be read) */
 export type AcademicProjectDetail = AcademicProject & {
   evaluation: AcademicProjectEvaluation | null;
+  /** GET /academic/projects/:id/diploma gives its diploma to this profile (only DIRECTOR and DEAN) */
+  diplomaAvailable?: boolean;
 };
 
 export type AcademicProjectsPage = {

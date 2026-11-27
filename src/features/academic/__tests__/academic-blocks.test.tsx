@@ -3,6 +3,7 @@ import {
   JurorEvaluations,
   JuryProgress,
   ProjectResult,
+  SemesterHistory,
   StudentList,
   TutorBlock,
 } from "../components";
@@ -210,5 +211,50 @@ describe("academic blocks", () => {
     expect(screen.getByText("Técnico")).not.toBeVisible();
     await userEvent.click(screen.getByText("Ver desglose"));
     expect(screen.getByText("Técnico")).toBeVisible();
+  });
+
+  it("groups the events by semester and links each one to its projects", () => {
+    const base = {
+      inscriptionDeadline: "2026-01-01T12:00:00",
+      active: false,
+      evaluationsOpened: false,
+      requiresCourse: true,
+    };
+
+    rtlRender(
+      <SemesterHistory
+        events={[
+          {
+            ...base,
+            id: 3,
+            name: "Feria 2025-2",
+            startDate: "2025-11-20T12:00:00",
+            endDate: "2025-11-21T12:00:00",
+            resultsPublished: true,
+          },
+          {
+            ...base,
+            id: 4,
+            name: "Feria 2026-1",
+            startDate: "2026-05-20T12:00:00",
+            endDate: "2026-05-21T12:00:00",
+            resultsPublished: false,
+          },
+        ]}
+        getHref={(eventId) => `/app/teaching/director?event=${eventId}`}
+      />,
+    );
+
+    const headings = screen.getAllByRole("heading", { level: 2 });
+
+    expect(headings.map((heading) => heading.textContent)).toEqual([
+      "Semestre 2026-1",
+      "Semestre 2025-2",
+    ]);
+    expect(screen.getByRole("link", { name: /Feria 2025-2/ })).toHaveAttribute(
+      "href",
+      "/app/teaching/director?event=3",
+    );
+    expect(screen.getByText("Resultados publicados")).toBeInTheDocument();
   });
 });
