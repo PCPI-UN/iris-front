@@ -4,6 +4,8 @@ import { vi } from "vitest";
 
 import { AwardsTab } from "../awards-tab";
 
+import { useNotifications } from "@/components/ui/notifications";
+
 import {
   resetAwardsMockState,
   seedAwardsMockState,
@@ -471,4 +473,117 @@ test("shows an error when the awards cannot be loaded", async () => {
   expect(
     await screen.findByText(/no se pudieron cargar los premios/i),
   ).toBeInTheDocument();
+});
+
+describe("diploma of the winners", () => {
+  const downloadedNames: string[] = [];
+
+  beforeEach(() => {
+    downloadedNames.length = 0;
+    vi.stubGlobal(
+      "URL",
+      Object.assign(URL, {
+        createObjectURL: vi.fn(() => "blob:diploma"),
+        revokeObjectURL: vi.fn(),
+      }),
+    );
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (
+      this: HTMLAnchorElement,
+    ) {
+      downloadedNames.push(this.download);
+    });
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  test("downloads the diploma of a winner of the event", async () => {
+    const requested: string[] = [];
+
+    server.events.on("request:start", ({ request }) => {
+      if (request.url.endsWith("/diploma")) requested.push(request.url);
+    });
+    seedAwardsMockState({
+      awards: [award(1, "Primer puesto", 1)],
+      winners: [{ id: 5, awardId: 1, projectId: 12, grade: 4.1 }],
+    });
+    renderTab();
+
+    const card = await cardOf("Primer puesto");
+
+    await userEvent.click(
+      await within(card).findByRole("button", {
+        name: /descargar diploma de gamma/i,
+      }),
+    );
+
+    await waitFor(() =>
+      expect(downloadedNames).toEqual(["diploma_proyecto_12.pdf"]),
+    );
+    expect(requested).toHaveLength(1);
+    expect(requested[0]).toMatch(
+      new RegExp(`/events/${EVENT_ID}/projects/12/diploma$`),
+    );
+  });
+
+  test("shows the backend message when the diploma is not available", async () => {
+    server.use(
+      http.get("*/events/:eventId/projects/:projectId/diploma", () =>
+        HttpResponse.json(
+          { message: "Los resultados del evento aún no se han publicado" },
+          { status: 403 },
+        ),
+      ),
+    );
+    seedAwardsMockState({
+      awards: [award(1, "Primer puesto", 1)],
+      winners: [{ id: 5, awardId: 1, projectId: 12, grade: 4.1 }],
+    });
+    renderTab();
+
+    const card = await cardOf("Primer puesto");
+
+    await userEvent.click(
+      await within(card).findByRole("button", {
+        name: /descargar diploma de gamma/i,
+      }),
+    );
+
+    await waitFor(() =>
+      expect(
+        useNotifications
+          .getState()
+          .notifications.map((notification) => notification.message),
+      ).toContain("Los resultados del evento aún no se han publicado"),
+    );
+    expect(downloadedNames).toEqual([]);
+  });
+
+  test("downloads the diplomas of every winner of the event in one PDF", async () => {
+    seedAwardsMockState({
+      awards: [award(1, "Primer puesto", 1)],
+      winners: [{ id: 5, awardId: 1, projectId: 12, grade: 4.1 }],
+    });
+    renderTab();
+
+    await cardOf("Primer puesto");
+    await userEvent.click(
+      screen.getByRole("button", { name: /descargar todos los diplomas/i }),
+    );
+
+    await waitFor(() =>
+      expect(downloadedNames).toEqual([`diplomas_evento_${EVENT_ID}.pdf`]),
+    );
+  });
+
+  test("read-only roles do not get the button for every diploma", async () => {
+    mockSession(["read:events", "read:grades"]);
+    renderTab();
+
+    await screen.findByText("Esta categoría aún no tiene premios.");
+    expect(
+      screen.queryByRole("button", { name: /descargar todos los diplomas/i }),
+    ).not.toBeInTheDocument();
+  });
 });

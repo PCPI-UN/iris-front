@@ -3,9 +3,10 @@
 import type { AwardWinner, CategoryAward } from "../types";
 
 import { useQuery } from "@tanstack/react-query";
-import { Plus, Trophy } from "lucide-react";
+import { Download, Plus, Trophy } from "lucide-react";
 import { useMemo, useState } from "react";
 
+import { downloadEventDiplomas } from "../api/award-diploma";
 import { useRemoveAwardWinner } from "../api/award-winners";
 import {
   useCategoryAwards,
@@ -65,6 +66,19 @@ export const AwardsTab = ({
 }: AwardsTabProps) => {
   const { addNotification } = useNotifications();
   const canFetch = Boolean(selectedEventId && selectedCategoryId);
+  const [isDownloadingDiplomas, setIsDownloadingDiplomas] = useState(false);
+
+  const handleDownloadDiplomas = async () => {
+    if (!selectedEventId) return;
+    setIsDownloadingDiplomas(true);
+    try {
+      await downloadEventDiplomas(selectedEventId);
+    } catch {
+      // The API client already shows the backend message
+    } finally {
+      setIsDownloadingDiplomas(false);
+    }
+  };
 
   const awardsQuery = useCategoryAwards({
     categoryId: selectedCategoryId,
@@ -159,14 +173,25 @@ export const AwardsTab = ({
 
           {canFetch && (
             <Can permission={PERMISSIONS.manageEvents}>
-              <Button
-                color="primary"
-                isDisabled={awardsQuery.isLoading || awardsQuery.isError}
-                onPress={() => setFormState({ isOpen: true })}
-              >
-                <Plus className="h-4 w-4" />
-                Nuevo premio
-              </Button>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  isLoading={isDownloadingDiplomas}
+                  title="Un PDF con el diploma de cada proyecto ganador del evento"
+                  variant="bordered"
+                  onPress={handleDownloadDiplomas}
+                >
+                  {!isDownloadingDiplomas && <Download className="h-4 w-4" />}
+                  Descargar todos los diplomas
+                </Button>
+                <Button
+                  color="primary"
+                  isDisabled={awardsQuery.isLoading || awardsQuery.isError}
+                  onPress={() => setFormState({ isOpen: true })}
+                >
+                  <Plus className="h-4 w-4" />
+                  Nuevo premio
+                </Button>
+              </div>
             </Can>
           )}
         </CardHeader>
@@ -209,6 +234,7 @@ export const AwardsTab = ({
                     <AwardCard
                       key={award.id}
                       award={award}
+                      eventId={selectedEventId}
                       rankingById={rankingById}
                       onAssign={(item) => setAssignState({ award: item })}
                       onDelete={(item, winners) =>
