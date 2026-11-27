@@ -15,7 +15,7 @@ type ProjectCardProps = {
     showProjectCode?: boolean;
     /** Highest grade of the event's scale, to show the juror's grade as "4.2 / 5" */
     maxGrade?: number;
-    eventId?: number | string;
+    departmentName?: string | null;
     termCode?: string | null;
 };
 
@@ -23,7 +23,7 @@ export function ProjectCard({
     project,
     showProjectCode = false,
     maxGrade,
-    eventId,
+    departmentName,
     termCode,
 }: ProjectCardProps) {
     const router = useRouter();
@@ -44,12 +44,14 @@ export function ProjectCard({
     return `Documento ${index + 1}`
   }
 
-    const resolvedEventId = eventId ?? project?.eventId;
+    const resolvedDepartmentName =
+        departmentName ?? project?.academicCourse?.departmentName ?? null;
     const resolvedTermCode = termCode ?? project?.academicCourse?.term ?? null;
-    const canOpenTour = Boolean(
+    const hasTourInfo = Boolean(
         buildTourUrl({
             termCode: resolvedTermCode,
-            eventId: resolvedEventId,
+            departmentName: resolvedDepartmentName,
+            projectCode: project?.projectCode,
             projectId: project?.id,
             origin: "https://iris.local",
         }),
@@ -59,7 +61,8 @@ export function ProjectCard({
         if (typeof window === "undefined") return;
         const tourUrl = buildTourUrl({
             termCode: resolvedTermCode,
-            eventId: resolvedEventId,
+            departmentName: resolvedDepartmentName,
+            projectCode: project?.projectCode,
             projectId: project?.id,
             origin: window.location.origin,
         });
@@ -227,8 +230,14 @@ export function ProjectCard({
                         </div>
                     )}
 
-                    {/* An evaluated project opens its evaluation read-only; Tour shares the row 50/50 */}
-                    <div className="mt-6 grid grid-cols-2 gap-3">
+                    {/* An evaluated project opens its evaluation read-only; Tour renders 50/50 only when department and projectCode exist */}
+                    <div
+                        className={
+                            hasTourInfo
+                                ? "mt-6 grid grid-cols-2 gap-3"
+                                : "mt-6"
+                        }
+                    >
                         <Button
                             className="w-full min-w-0 transition-transform"
                             color="primary"
@@ -240,16 +249,17 @@ export function ProjectCard({
                                 : (showProjectCode ? "Evaluar Proyecto" : "Evaluar Equipo")}
                         </Button>
 
-                        <Button
-                            className="w-full min-w-0 border border-secondary/30 transition-transform"
-                            color="secondary"
-                            isDisabled={!canOpenTour}
-                            startContent={<MapPin className="h-4 w-4 shrink-0" />}
-                            variant="flat"
-                            onPress={openTour}
-                        >
-                            Tour
-                        </Button>
+                        {hasTourInfo && (
+                            <Button
+                                className="w-full min-w-0 border border-secondary/30 transition-transform"
+                                color="secondary"
+                                startContent={<MapPin className="h-4 w-4 shrink-0" />}
+                                variant="flat"
+                                onPress={openTour}
+                            >
+                                Tour
+                            </Button>
+                        )}
                     </div>
                 </div>
             </CardBody>

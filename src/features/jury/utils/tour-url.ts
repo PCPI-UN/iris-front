@@ -8,33 +8,6 @@ export const TOUR_360_BASE_URL =
 type IdInput = number | string | null | undefined;
 type TermCodeInput = string | Pick<Term, "year" | "period"> | null | undefined;
 
-const normalizeIdentifier = (value: IdInput): string | null => {
-  if (typeof value === "number") {
-    return Number.isInteger(value) && value > 0 ? String(value) : null;
-  }
-
-  if (typeof value !== "string") {
-    return null;
-  }
-
-  const trimmed = value.trim();
-  if (!trimmed) {
-    return null;
-  }
-
-  const prefixedMatch = /^(?:event|project)-0*(\d+)$/i.exec(trimmed);
-  if (prefixedMatch) {
-    return prefixedMatch[1];
-  }
-
-  if (/^\d+$/.test(trimmed)) {
-    const parsed = Number(trimmed);
-    return Number.isSafeInteger(parsed) && parsed > 0 ? String(parsed) : null;
-  }
-
-  return /^[A-Za-z0-9_-]+$/.test(trimmed) ? trimmed : null;
-};
-
 const normalizeTermCode = (term: TermCodeInput): string | null => {
   if (!term) {
     return null;
@@ -50,23 +23,38 @@ const normalizeTermCode = (term: TermCodeInput): string | null => {
   return raw;
 };
 
-export const formatTourTeamCode = ({
-  termCode,
-  eventId,
-  projectId,
-}: {
-  termCode?: TermCodeInput;
-  eventId: IdInput;
-  projectId: IdInput;
-}): string | null => {
-  const cleanEventId = normalizeIdentifier(eventId);
-  const cleanProjectId = normalizeIdentifier(projectId);
-
-  if (!cleanEventId || !cleanProjectId) {
+const normalizeTextSegment = (value: IdInput): string | null => {
+  if (value === null || value === undefined) {
     return null;
   }
 
-  const baseCode = `E${cleanEventId}-P${cleanProjectId}`;
+  const trimmed = String(value).trim();
+
+  return trimmed.length > 0 ? trimmed : null;
+};
+
+/**
+ * Formats the Tour 360 `equipo` code using backend department name and assigned project number:
+ * `<term.year><term.period>-<departmentName>-<projectCode>` (or `<departmentName>-<projectCode>`
+ * when no academic term is available). Returns `null` if either departmentName or projectCode is missing.
+ */
+export const formatTourTeamCode = ({
+  termCode,
+  departmentName,
+  projectCode,
+}: {
+  termCode?: TermCodeInput;
+  departmentName: string | null | undefined;
+  projectCode: IdInput;
+}): string | null => {
+  const cleanDepartment = normalizeTextSegment(departmentName);
+  const cleanProjectCode = normalizeTextSegment(projectCode);
+
+  if (!cleanDepartment || !cleanProjectCode) {
+    return null;
+  }
+
+  const baseCode = `${cleanDepartment}-${cleanProjectCode}`;
   const cleanTerm = normalizeTermCode(termCode);
 
   return cleanTerm ? `${cleanTerm}-${baseCode}` : baseCode;
@@ -74,18 +62,23 @@ export const formatTourTeamCode = ({
 
 export const buildTourUrl = ({
   termCode,
-  eventId,
+  departmentName,
+  projectCode,
   projectId,
   origin,
 }: {
   termCode?: TermCodeInput;
-  eventId: IdInput;
+  departmentName: string | null | undefined;
+  projectCode: IdInput;
   projectId: IdInput;
   origin: string;
 }): string | null => {
-  const teamCode = formatTourTeamCode({ termCode, eventId, projectId });
-  const rawProjectId =
-    projectId === null || projectId === undefined ? "" : String(projectId).trim();
+  const teamCode = formatTourTeamCode({
+    termCode,
+    departmentName,
+    projectCode,
+  });
+  const rawProjectId = normalizeTextSegment(projectId);
 
   if (!teamCode || !rawProjectId || !origin) {
     return null;
@@ -115,4 +108,3 @@ export const buildTourUrl = ({
 export const navigateToTour = (url: string) => {
   window.location.assign(url);
 };
-

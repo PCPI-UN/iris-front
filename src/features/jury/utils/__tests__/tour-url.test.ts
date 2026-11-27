@@ -7,46 +7,57 @@ import {
 } from "../tour-url";
 
 describe("tour-url", () => {
-  test("formats team code as <term.year><term.period>-E<event.id>-P<project.id>", () => {
+  test("formats team code with backend departmentName and assigned projectCode", () => {
     expect(
       formatTourTeamCode({
         termCode: { year: 2026, period: "30" },
-        eventId: 11,
-        projectId: 513,
+        departmentName: "Ingeniería de Sistemas",
+        projectCode: "10",
       }),
-    ).toBe("202630-E11-P513");
+    ).toBe("202630-Ingeniería de Sistemas-10");
 
     expect(
       formatTourTeamCode({
         termCode: "202610",
-        eventId: 4,
-        projectId: 7,
+        departmentName: "Ingeniería Industrial",
+        projectCode: "5",
       }),
-    ).toBe("202610-E4-P7");
+    ).toBe("202610-Ingeniería Industrial-5");
   });
 
-  test("normalizes mock prefixed identifiers and falls back without term when absent", () => {
-    expect(
-      formatTourTeamCode({
-        termCode: "202630",
-        eventId: "event-011",
-        projectId: "project-012",
-      }),
-    ).toBe("202630-E11-P12");
-
+  test("omits term prefix when no academic term is present", () => {
     expect(
       formatTourTeamCode({
         termCode: null,
-        eventId: 11,
-        projectId: 513,
+        departmentName: "Ingeniería de Sistemas",
+        projectCode: "10",
       }),
-    ).toBe("E11-P513");
+    ).toBe("Ingeniería de Sistemas-10");
+  });
+
+  test("returns null when departmentName or projectCode is missing", () => {
+    expect(
+      formatTourTeamCode({
+        termCode: "202630",
+        departmentName: null,
+        projectCode: "10",
+      }),
+    ).toBeNull();
+
+    expect(
+      formatTourTeamCode({
+        termCode: "202630",
+        departmentName: "Ingeniería de Sistemas",
+        projectCode: "",
+      }),
+    ).toBeNull();
   });
 
   test("builds tour URL with encoded url-dinamica pointing to IRIS evaluation page and equipo code", () => {
     const url = buildTourUrl({
       termCode: "202630",
-      eventId: 11,
+      departmentName: "Ingeniería de Sistemas",
+      projectCode: "10",
       projectId: 513,
       origin: "https://iris.uninorte.edu.co",
     });
@@ -57,14 +68,17 @@ describe("tour-url", () => {
     expect(parsed.searchParams.get("url-dinamica")).toBe(
       "https://iris.uninorte.edu.co/app/evaluations/513",
     );
-    expect(parsed.searchParams.get("equipo")).toBe("202630-E11-P513");
+    expect(parsed.searchParams.get("equipo")).toBe(
+      "202630-Ingeniería de Sistemas-10",
+    );
   });
 
-  test("returns null for missing ids or non-http(s) origins", () => {
+  test("returns null for missing required fields or non-http(s) origins", () => {
     expect(
       buildTourUrl({
         termCode: "202630",
-        eventId: null,
+        departmentName: "",
+        projectCode: "10",
         projectId: 513,
         origin: "https://iris.uninorte.edu.co",
       }),
@@ -73,11 +87,11 @@ describe("tour-url", () => {
     expect(
       buildTourUrl({
         termCode: "202630",
-        eventId: 11,
+        departmentName: "Ingeniería de Sistemas",
+        projectCode: "10",
         projectId: 513,
         origin: "javascript:alert(1)",
       }),
     ).toBeNull();
   });
 });
-
