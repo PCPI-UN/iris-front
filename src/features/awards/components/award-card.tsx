@@ -36,8 +36,8 @@ type AwardCardProps = {
 
 /**
  * Downloads the award diploma of a winner. The backend answers with its own
- * message (shown as an error notification) when the results are not published
- * yet or the event has no diploma design.
+ * message (shown as an error notification) when the event has no diploma
+ * design. It does not wait for the results to be published.
  */
 const WinnerDiplomaButton = ({
   eventId,
