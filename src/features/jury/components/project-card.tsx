@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardBody } from "@/components/ui/card";
-import { CheckCircle2, FileText, Users } from "lucide-react";
+import { CheckCircle2, FileText, MapPin, Users } from "lucide-react";
 import { AvatarGroup } from "@/features/projects/components/avatar-icon";
 import { useRouter } from "next/navigation";
 import { paths } from "@/config/paths";
@@ -8,15 +8,24 @@ import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@/compone
 import { ChevronDown, ExternalLink } from "lucide-react";
 import { documentLink, type DocumentRef } from "@/lib/document-link";
 import { formatPoints } from "@/features/grading-scales/utils/grading-scale";
+import { buildTourUrl, navigateToTour } from "../utils/tour-url";
 
 type ProjectCardProps = {
     project: any;
     showProjectCode?: boolean;
     /** Highest grade of the event's scale, to show the juror's grade as "4.2 / 5" */
     maxGrade?: number;
+    eventId?: number | string;
+    termCode?: string | null;
 };
 
-export function ProjectCard({ project, showProjectCode = false, maxGrade }: ProjectCardProps) {
+export function ProjectCard({
+    project,
+    showProjectCode = false,
+    maxGrade,
+    eventId,
+    termCode,
+}: ProjectCardProps) {
     const router = useRouter();
     const documents = project?.documents ?? [];
 
@@ -34,6 +43,29 @@ export function ProjectCard({ project, showProjectCode = false, maxGrade }: Proj
 
     return `Documento ${index + 1}`
   }
+
+    const resolvedEventId = eventId ?? project?.eventId;
+    const resolvedTermCode = termCode ?? project?.academicCourse?.term ?? null;
+    const canOpenTour = Boolean(
+        buildTourUrl({
+            termCode: resolvedTermCode,
+            eventId: resolvedEventId,
+            projectId: project?.id,
+            origin: "https://iris.local",
+        }),
+    );
+
+    const openTour = () => {
+        if (typeof window === "undefined") return;
+        const tourUrl = buildTourUrl({
+            termCode: resolvedTermCode,
+            eventId: resolvedEventId,
+            projectId: project?.id,
+            origin: window.location.origin,
+        });
+        if (!tourUrl) return;
+        navigateToTour(tourUrl);
+    };
 
     const projectLabel = showProjectCode ? project.projectCode || null : null;
     return (
@@ -195,17 +227,30 @@ export function ProjectCard({ project, showProjectCode = false, maxGrade }: Proj
                         </div>
                     )}
 
-                    {/* An evaluated project opens its evaluation read-only */}
-                    <Button
-                        className="mt-6 w-full transition-transform"
-                        color="primary"
-                        variant={project.evaluated ? "bordered" : "solid"}
-                        onPress={() => router.push(paths.app.evaluations.getHref(project.id))}
-                    >
-                        {project.evaluated
-                            ? "Ver evaluación"
-                            : (showProjectCode ? "Evaluar Proyecto" : "Evaluar Equipo")}
-                    </Button>
+                    {/* An evaluated project opens its evaluation read-only; Tour shares the row 50/50 */}
+                    <div className="mt-6 grid grid-cols-2 gap-3">
+                        <Button
+                            className="w-full min-w-0 transition-transform"
+                            color="primary"
+                            variant={project.evaluated ? "bordered" : "solid"}
+                            onPress={() => router.push(paths.app.evaluations.getHref(project.id))}
+                        >
+                            {project.evaluated
+                                ? "Ver evaluación"
+                                : (showProjectCode ? "Evaluar Proyecto" : "Evaluar Equipo")}
+                        </Button>
+
+                        <Button
+                            className="w-full min-w-0 border border-secondary/30 transition-transform"
+                            color="secondary"
+                            isDisabled={!canOpenTour}
+                            startContent={<MapPin className="h-4 w-4 shrink-0" />}
+                            variant="flat"
+                            onPress={openTour}
+                        >
+                            Tour
+                        </Button>
+                    </div>
                 </div>
             </CardBody>
         </Card>

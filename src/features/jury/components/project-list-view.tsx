@@ -31,7 +31,7 @@ export function ProjectListView({
 
   // Each project already brings its code (`projectCode`) and the juror's evaluation
   const projects = eventsQuery.data ?? [];
-  const { gradingScale } = useJurorEvent(
+  const { gradingScale, termCode } = useJurorEvent(
     hasValidEventId ? parsedEventId : undefined,
   );
   const maxGrade = maxGradeOf(gradingScale);
@@ -68,17 +68,21 @@ export function ProjectListView({
   return (
     <div className="space-y-8">
       <ProjectSection
+        eventId={parsedEventId}
         maxGrade={maxGrade}
         projects={notEvaluatedProjects}
         showProjectCode={showProjectCode}
+        termCode={termCode}
         title={
           showProjectCode ? "Proyectos por Evaluar" : "Equipos por Evaluar"
         }
       />
       <ProjectSection
+        eventId={parsedEventId}
         maxGrade={maxGrade}
         projects={evaluatedProjects}
         showProjectCode={showProjectCode}
+        termCode={termCode}
         title={showProjectCode ? "Proyectos Evaluados" : "Equipos Evaluados"}
       />
     </div>
@@ -92,6 +96,8 @@ type ProjectSectionProps = {
   projects: JuryAssignedProject[];
   showProjectCode: boolean;
   maxGrade?: number;
+  eventId: number;
+  termCode?: string;
 };
 
 /** One list of the panel (to evaluate or evaluated), paged on the client: 10 projects per page */
@@ -100,6 +106,8 @@ function ProjectSection({
   projects,
   showProjectCode,
   maxGrade,
+  eventId,
+  termCode,
 }: ProjectSectionProps) {
   const [page, setPage] = useState(1);
 
@@ -120,9 +128,11 @@ function ProjectSection({
         {pageProjects.map((project) => (
           <ProjectCard
             key={project.id}
+            eventId={eventId}
             maxGrade={maxGrade}
             project={project}
             showProjectCode={showProjectCode}
+            termCode={termCode}
           />
         ))}
       </div>
