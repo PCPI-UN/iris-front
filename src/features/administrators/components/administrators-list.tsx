@@ -10,6 +10,9 @@ import { useAdministrators } from "../api/get-administrators";
 
 import { InviteModal } from "./invite-modal";
 
+import { Can } from "@/components/auth/can";
+import { PERMISSIONS } from "@/lib/authorization";
+
 import {
   Table,
   TableHeader,
@@ -177,9 +180,12 @@ export const AdministratorsList = () => {
                 ))}
               </DropdownMenu>
             </Dropdown>
-            <div>
-              <InviteModal />
-            </div>
+            {/* Administrators are created with create:users (POST /users) */}
+            <Can permission={PERMISSIONS.createUsers}>
+              <div>
+                <InviteModal />
+              </div>
+            </Can>
           </div>
         </div>
 

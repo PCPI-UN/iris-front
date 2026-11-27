@@ -14,7 +14,8 @@ import { FileSpreadsheet, SearchIcon } from "lucide-react";
 import { Can } from "@/components/auth/can";
 import { Button } from "@/components/ui/button";
 import { paths } from "@/config/paths";
-import { PERMISSIONS } from "@/lib/authorization";
+import { useUser } from "@/lib/auth";
+import { hasPermission, PERMISSIONS } from "@/lib/authorization";
 import { Chip } from "@/components/ui/chip";
 import { useJuryInvitations } from "../api/get-juries";
 import { Spinner } from "@/components/ui/spinner";
@@ -38,6 +39,10 @@ export const JuriesList = () => {
 
   const searchParams = useSearchParams();
   const router = useRouter();
+  // Accepting and resending invitations are writes (POST /invitations/:id/resend requires
+  // manage:events): read-only roles do not get the "Acciones" column
+  const { data: user } = useUser();
+  const canManageInvitations = hasPermission(user, PERMISSIONS.manageEvents);
 
   const page = useMemo(() => {
     const raw = searchParams?.get("page") || "1";
@@ -209,8 +214,8 @@ const filteredInvitations = useMemo(() => {
                 <SelectItem key={String(event.id)}>{event.name}</SelectItem>
               ))}
             </Select>
-            <InviteModal />
             <Can permission={PERMISSIONS.manageEvents}>
+              <InviteModal />
               <Button
                 size="sm"
                 variant="bordered"
@@ -276,8 +281,72 @@ const filteredInvitations = useMemo(() => {
     { key: "emailStatus", label: "Envío del correo" },
     { key: "expiresAt", label: "Expira" },
     { key: "createdAt", label: "Fecha de invitación" },
-    { key: "actions", label: "Acciones" },
+    ...(canManageInvitations ? [{ key: "actions", label: "Acciones" }] : []),
   ];
+
+  const formatDateTime = (value?: string | null) =>
+    value
+      ? new Date(value).toLocaleDateString("es-CO", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : "—";
+
+  // One cell per column: hiding the "actions" column also drops its cell
+  const renderCell = (item: (typeof filteredInvitations)[number], columnKey: string) => {
+    switch (columnKey) {
+      case "email":
+        return item.email;
+      case "event":
+        return item.event?.name || "—";
+      case "status":
+        return (
+          <Chip
+            className="w-full capitalize"
+            color={getStatusColor(item.status)}
+            size="sm"
+          >
+            {getStatusLabel(item.status)}
+          </Chip>
+        );
+      case "emailStatus": {
+        // Delivery of the invitation email (registered, sent or failed)
+        const email = getEmailStatusView(item.emailStatus);
+        return (
+          <Chip
+            className="w-full"
+            color={email.color}
+            size="sm"
+            variant="flat"
+            title={email.description}
+          >
+            {email.label}
+          </Chip>
+        );
+      }
+      case "expiresAt":
+        return formatDateTime(item.expiresAt);
+      case "createdAt":
+        return formatDateTime(item.createdAt);
+      case "actions":
+        return (
+          <div className="flex items-center justify-center gap-2">
+            {item.status === 0 && (
+              <>
+                <AcceptInvitationModal invitation={item} />
+                <ResendInvitationButton invitation={item} />
+              </>
+            )}
+            {item.status === 3 && <ResendInvitationButton invitation={item} />}
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
 
   return (
     <Table
@@ -320,69 +389,11 @@ const filteredInvitations = useMemo(() => {
         ) : (
           (item) => (
             <TableRow key={item.id}>
-              <TableCell align="center">{item.email}</TableCell>
-              <TableCell align="center">{item.event?.name || "—"}</TableCell>
-              <TableCell align="center">
-                <Chip
-                  className="w-full capitalize"
-                  color={getStatusColor(item.status)}
-                  size="sm"
-                >
-                  {getStatusLabel(item.status)}
-                </Chip>
-              </TableCell>
-              <TableCell align="center">
-                {(() => {
-                  // Delivery of the invitation email (registered, sent or failed)
-                  const email = getEmailStatusView(item.emailStatus);
-                  return (
-                    <Chip
-                      className="w-full"
-                      color={email.color}
-                      size="sm"
-                      variant="flat"
-                      title={email.description}
-                    >
-                      {email.label}
-                    </Chip>
-                  );
-                })()}
-              </TableCell>
-              <TableCell align="center">
-                {item.expiresAt
-                  ? new Date(item.expiresAt).toLocaleDateString("es-CO", {
-                      year: "numeric",
-                      month: "short",
-                      day: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })
-                  : "—"}
-              </TableCell>
-              <TableCell align="center">
-                {item.createdAt
-                  ? new Date(item.createdAt).toLocaleDateString("es-CO", {
-                      year: "numeric",
-                      month: "short",
-                      day: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })
-                  : "—"}
-              </TableCell>
-              <TableCell align="center">
-                <div className="flex items-center justify-center gap-2">
-                  {item.status === 0 && (
-                    <>
-                      <AcceptInvitationModal invitation={item} />
-                      <ResendInvitationButton invitation={item} />
-                    </>
-                  )}
-                  {item.status === 3 && (
-                    <ResendInvitationButton invitation={item} />
-                  )}
-                </div>
-              </TableCell>
+              {(columnKey) => (
+                <TableCell align="center">
+                  {renderCell(item, String(columnKey))}
+                </TableCell>
+              )}
             </TableRow>
           )
         )}

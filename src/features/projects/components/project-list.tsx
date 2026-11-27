@@ -237,12 +237,15 @@ export const ProjectList = () => {
 
                   {/* ---------- Actions by state ---------- */}
                   <div className="pt-2">
+                    {/* PATCH /projects/:id/approve, /reject and /request-changes require manage:events */}
                     {project.state === "UNDER_REVIEW" && (
-                      <div className="grid md:grid-cols-3 gap-2 mb-2">
-                        <RejectProjectModal projectId={project.id} eventType={selectedEventType} />
-                        <RequestProjectModal projectId={project.id}/>
-                        <ApproveProjectModal projectId={project.id} eventType={selectedEventType} />
-                      </div>
+                      <Can permission={PERMISSIONS.manageEvents}>
+                        <div className="grid md:grid-cols-3 gap-2 mb-2">
+                          <RejectProjectModal projectId={project.id} eventType={selectedEventType} />
+                          <RequestProjectModal projectId={project.id}/>
+                          <ApproveProjectModal projectId={project.id} eventType={selectedEventType} />
+                        </div>
+                      </Can>
                     )}
                     <Can permission={PERMISSIONS.manageProjects}>
                       <Button
