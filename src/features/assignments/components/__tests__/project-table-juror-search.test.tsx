@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { http, HttpResponse } from "msw";
 import { vi } from "vitest";
 
+import { useAssignmentProjects } from "../../hooks/use-assignment-projects";
 import { ProjectsTable } from "../project-table";
 
 import { server } from "@/testing/mocks/server";
@@ -10,6 +11,7 @@ import { rtlRender, screen, userEvent, waitFor } from "@/testing/test-utils";
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
   useSearchParams: () => new URLSearchParams("event=5"),
+  usePathname: () => "/app/assignments",
 }));
 
 const juror = (id: string, firstName: string, lastName: string) => ({
@@ -65,6 +67,15 @@ beforeEach(() => {
   );
 });
 
+/** The page owns the list (useAssignmentProjects) and passes it to the table */
+const TableWithList = () => (
+  <ProjectsTable
+    assignment={useAssignmentProjects()}
+    onSelectProject={vi.fn()}
+    onViewProject={vi.fn()}
+  />
+);
+
 const renderTable = () => {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
@@ -72,7 +83,7 @@ const renderTable = () => {
 
   return rtlRender(
     <QueryClientProvider client={queryClient}>
-      <ProjectsTable onSelectProject={vi.fn()} onViewProject={vi.fn()} />
+      <TableWithList />
     </QueryClientProvider>,
   );
 };

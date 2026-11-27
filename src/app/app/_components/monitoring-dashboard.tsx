@@ -36,7 +36,7 @@ import { MonitoringDashboardProps, ProjectEvaluationProgress, ProjectEvaluationS
 import { stateColors, stateLabels } from '@/features/monitoring/utils/constants';
 import { formatDate } from '@/features/monitoring/utils/formatting';
 import { buildCategoryEvaluationStats, getJurorKey, getStatisticsProjects, getUniqueJurors } from '@/features/monitoring/utils/calculations';
-import { normalizeText } from '@/features/monitoring/utils/filters';
+import { filterByCategory, normalizeText } from '@/features/monitoring/utils/filters';
 import { useMonitoringFilters } from '@/features/monitoring/hooks/use-monitoring-filters';
 import { MonitoringDashboardHeader } from '@/features/monitoring/components/monitoring-dashboard-header';
 import { MonitoringDashboardFilters } from '@/features/monitoring/components/monitoring-dashboard-filters';
@@ -45,6 +45,9 @@ import { RankingTab } from '@/features/monitoring/components/ranking-tab';
 import { StatisticsTab } from '@/features/monitoring/components/statistics-tab';
 import { ProjectsTab } from '@/features/monitoring/components/projects-tab';
 import { AwardsTab } from '@/features/awards';
+
+/** Reload of the Monitoreo data while it is open */
+const MONITORING_REFRESH_MS = 30_000;
 
 export const MonitoringDashboard = ({ initialEventId, onBack, eventData }: MonitoringDashboardProps = {}) => {
   const user = useUser();
@@ -73,6 +76,11 @@ export const MonitoringDashboard = ({ initialEventId, onBack, eventData }: Monit
   const selectedEventId = selectedEvent?.id;
 
   const projectQueryEnabled = Boolean(selectedEventId);
+  // Monitoreo follows evaluations as they come: reload every 30 s and on return
+  const liveQueryConfig = {
+    refetchInterval: MONITORING_REFRESH_MS,
+    refetchOnWindowFocus: true,
+  };
   const categoriesDropdownQuery = useCategoriesDropdown({
     eventId: selectedEventId,
     queryConfig: { enabled: projectQueryEnabled },
@@ -83,13 +91,16 @@ export const MonitoringDashboard = ({ initialEventId, onBack, eventData }: Monit
   const criteriaStatsQuery = useEventCriteriaStats({
     eventId: selectedEventId ?? 0,
     categoryId: selectedCategoryId,
-    queryConfig: { enabled: projectQueryEnabled && activeTab === 'statistics' },
+    queryConfig: {
+      enabled: projectQueryEnabled && activeTab === 'statistics',
+      ...liveQueryConfig,
+    },
   });
   const allProjectsQuery = useProjectsWithJurors({
     currentPage: 1,
     itemsPerPage: 10000,
     eventId: selectedEventId,
-    queryConfig: { enabled: projectQueryEnabled },
+    queryConfig: { enabled: projectQueryEnabled, ...liveQueryConfig },
   });
   const visibleProjectsQuery = useProjectsWithJurors({
     currentPage,
@@ -98,7 +109,10 @@ export const MonitoringDashboard = ({ initialEventId, onBack, eventData }: Monit
     categoryId: selectedCategoryId,
     state: 'APPROVED',
     q: projectSearch.trim() || undefined,
-    queryConfig: { enabled: projectQueryEnabled && activeTab === 'projects' },
+    queryConfig: {
+      enabled: projectQueryEnabled && activeTab === 'projects',
+      ...liveQueryConfig,
+    },
   });
   const visibleProjects = visibleProjectsQuery.data?.data ?? [];
   const allProjects = allProjectsQuery.data?.data ?? [];
@@ -111,7 +125,13 @@ export const MonitoringDashboard = ({ initialEventId, onBack, eventData }: Monit
     [visibleProjects],
   );
   const hasSearchTerm = projectSearch.trim().length > 0;
-  const projectListingSource = hasSearchTerm ? approvedProjects : approvedVisibleProjects;
+  // The search reads every project of the event (it also matches participants), so the
+  // category has to be applied here; the paginated listing already gets it from the backend
+  const approvedProjectsOfCategory = useMemo(
+    () => filterByCategory(approvedProjects, selectedCategoryId),
+    [approvedProjects, selectedCategoryId],
+  );
+  const projectListingSource = hasSearchTerm ? approvedProjectsOfCategory : approvedVisibleProjects;
   const filteredProjects = useMemo(() => {
     const term = normalizeText(projectSearch);
 
@@ -171,6 +191,7 @@ export const MonitoringDashboard = ({ initialEventId, onBack, eventData }: Monit
       queryKey: ['project-evaluation-stats', project.id],
       queryFn: () => getProjectEvaluationStats(String(project.id)),
       enabled: projectQueryEnabled && activeTab === 'projects' && Boolean(project.id),
+      ...liveQueryConfig,
     })),
   });
 
@@ -179,6 +200,8 @@ export const MonitoringDashboard = ({ initialEventId, onBack, eventData }: Monit
       queryKey: ['project-evaluation-stats-all', project.id],
       queryFn: () => getProjectEvaluationStats(String(project.id)),
       enabled: projectQueryEnabled && activeTab === 'statistics' && Boolean(project.id),
+      // One request per project of the event: only on return, not every 30 s
+      refetchOnWindowFocus: true,
     })),
   });
 

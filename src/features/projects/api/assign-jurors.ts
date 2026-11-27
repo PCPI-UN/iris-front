@@ -19,14 +19,25 @@ export const assignJurors = async (
   return api.post("/projects/assign-jurors", data);
 };
 
+/**
+ * Lists that show the jurors of a project: the admin project list, the
+ * assignments table (also its juror search) and Monitoreo, and the projects
+ * of each juror of the event.
+ */
+const invalidateJurorAssignments = (
+  queryClient: ReturnType<typeof useQueryClient>,
+) => {
+  queryClient.invalidateQueries({ queryKey: ["projects"] });
+  queryClient.invalidateQueries({ queryKey: ["projects-with-jurors"] });
+  queryClient.invalidateQueries({ queryKey: ["event-juries"] });
+};
+
 export const useAssignJurors = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: assignJurors,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["projects"] });
-    },
+    onSuccess: () => invalidateJurorAssignments(queryClient),
   });
 };
 
@@ -56,9 +67,6 @@ export const useDeleteJuror = () => {
 
   return useMutation({
     mutationFn: deleteJuror,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["projects"] });
-      queryClient.invalidateQueries({ queryKey: ["event-juries"] });
-    },
+    onSuccess: () => invalidateJurorAssignments(queryClient),
   });
 };

@@ -59,6 +59,9 @@ type RankingDisplayRow = {
   evaluationCount: number;
 };
 
+/** Follows new evaluations while Monitoreo is open */
+const LIVE_RANKING = { refetchInterval: 30_000, refetchOnWindowFocus: true };
+
 const TOP_N_OPTIONS = [2, 3, 5] as const;
 type TopN = (typeof TOP_N_OPTIONS)[number];
 
@@ -94,12 +97,13 @@ export const RankingTab = ({
     // `limit` is the number of positions; the backend keeps every co-winner
     queryFn: () => getTopProjects(selectedCategoryId!, selectedEventId!, topN),
     enabled: isCategoryRanking,
+    ...LIVE_RANKING,
   });
 
   // Global ranking across all categories uses GET /events/:eventId/rankings?format=json
   const globalRankingQuery = useEventRankings({
     eventId: selectedEventId,
-    queryConfig: { enabled: isGlobalRanking },
+    queryConfig: { enabled: isGlobalRanking, ...LIVE_RANKING },
   });
 
   const isLoading = isGlobalRanking
