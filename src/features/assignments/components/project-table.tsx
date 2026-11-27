@@ -8,6 +8,11 @@ import { ProjectWithJurors, useProjectsWithJurors } from "@/features/projects/ap
 import { useState } from "react";
 import { SearchProjects } from "@/components/search-project/search_projects";
 import { Spinner } from "@heroui/spinner";
+import { JurorSearchInput } from "./juror-search-input";
+import {
+  JUROR_SEARCH_EMPTY_MESSAGE,
+  useJurorProjectSearch,
+} from "../hooks/use-juror-project-search";
 
 export const ProjectsTable = ({
   onSelectProject,
@@ -34,9 +39,18 @@ export const ProjectsTable = ({
 
   const defaultProjects = projectsQuery.data?.data ?? [];
   
-  const projects: ProjectWithJurors[] = filterValue
-    ? searchResults
-    : defaultProjects;
+  const jurorSearch = useJurorProjectSearch({
+    eventId,
+    state,
+    categoryId,
+    projectNameFilter: filterValue,
+  });
+
+  const projects: ProjectWithJurors[] = jurorSearch.isActive
+    ? jurorSearch.projects
+    : filterValue
+      ? searchResults
+      : defaultProjects;
   
   const handlePageChange = (newPage: number) => {
     const params = new URLSearchParams();
@@ -51,7 +65,7 @@ export const ProjectsTable = ({
 
   return (
     <div className="justify-between mr-5">
-      <div className="mb-8">
+      <div className="mb-8 flex flex-col gap-3 sm:flex-row">
         <SearchProjects
           eventId={eventId}
           state={state}
@@ -61,14 +75,25 @@ export const ProjectsTable = ({
           setFilterValue={setFilterValue}
           filterValue={filterValue}
         />
+        <JurorSearchInput
+          value={jurorSearch.jurorTerm}
+          onValueChange={jurorSearch.setJurorTerm}
+        />
       </div>
-      {isSearching ? (
+      {isSearching || jurorSearch.isLoading ? (
         <Spinner className="flex justify-center"/>
       ) : (
-        <DataTable data={projects ? projects : []} columns={columns} styles={"max-h-[70vh]"}/>
+        <DataTable
+          data={projects ? projects : []}
+          columns={columns}
+          styles={"max-h-[70vh]"}
+          emptyContent={
+            jurorSearch.isActive ? JUROR_SEARCH_EMPTY_MESSAGE : undefined
+          }
+        />
       )}
       
-      {meta && meta.totalPages > 1 && (
+      {!jurorSearch.isActive && meta && meta.totalPages > 1 && (
         <div className="flex justify-center mt-6">
           <Pagination
             total={meta.totalPages}
