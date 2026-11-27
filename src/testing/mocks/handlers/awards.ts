@@ -191,4 +191,54 @@ export const awardsHandlers = [
 
     return HttpResponse.json({ ok: true });
   }),
+
+  // Diploma of a winner (admin): only projects with an award; the mock has no
+  // published-results flag, so every winner gets its PDF
+  http.get(
+    `*/events/:eventId/projects/:projectId/diploma`,
+    async ({ params, cookies }) => {
+      await networkDelay();
+      if (requireAuth(cookies).error) return unauthorized();
+      const projectId = Number(params.projectId);
+
+      if (!winners.some((winner) => winner.projectId === projectId)) {
+        return HttpResponse.json(
+          {
+            message:
+              "El proyecto no tiene premios en este evento, así que no tiene diploma",
+          },
+          { status: 404 },
+        );
+      }
+
+      return new HttpResponse(new Blob(["%PDF-1.3"]), {
+        headers: {
+          "Content-Type": "application/pdf",
+          "Content-Disposition": `attachment; filename="diploma_proyecto_${projectId}.pdf"`,
+        },
+      });
+    },
+  ),
+
+  // Diplomas of every winner of the event in one PDF (admin)
+  http.get(`*/events/:eventId/diplomas`, async ({ params, cookies }) => {
+    await networkDelay();
+    if (requireAuth(cookies).error) return unauthorized();
+    if (winners.length === 0) {
+      return HttpResponse.json(
+        {
+          message:
+            "El evento no tiene proyectos ganadores, así que no tiene diplomas",
+        },
+        { status: 404 },
+      );
+    }
+
+    return new HttpResponse(new Blob(["%PDF-1.3"]), {
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="diplomas_evento_${params.eventId}.pdf"`,
+      },
+    });
+  }),
 ];
