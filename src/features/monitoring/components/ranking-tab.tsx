@@ -19,7 +19,12 @@ import {
 
 import { useEventRankings } from "../api/get-event-rankings";
 import { getTopProjects, type TopProject } from "../api/get-top-projects";
+import { useParticipantNames } from "../hooks/use-participant-names";
 import { filterByTopPositions, getCoWinnerPositions } from "../utils/co-winners";
+import {
+  ParticipantName,
+  userIdsWithoutName,
+} from "../utils/participant-labels";
 
 function participantLabel(p: {
   firstName?: string;
@@ -38,7 +43,10 @@ function participantLabel(p: {
   return "Participante";
 }
 
-function topProjectParticipantNames(item: TopProject): string[] {
+function topProjectParticipantNames(
+  item: TopProject,
+  namesByUserId: Map<number, ParticipantName>,
+): string[] {
   if ((item.pendingParticipants?.length ?? 0) > 0) {
     return item.pendingParticipants!.map((p) => {
       const fullName = [p.firstName, p.lastName].filter(Boolean).join(" ");
@@ -46,8 +54,18 @@ function topProjectParticipantNames(item: TopProject): string[] {
     });
   }
 
-  return (item.participants ?? []).map(participantLabel);
+  // The ranking sends enrolled participants without their name: use the looked-up one
+  return (item.participants ?? []).map((p) =>
+    participantLabel({ ...namesByUserId.get(Number(p.userId)), ...withoutEmptyName(p) }),
+  );
 }
+
+/** Keeps the listing's own name only when it has one, so the looked-up one is not erased */
+const withoutEmptyName = <T extends { firstName?: string; lastName?: string }>(p: T) => {
+  const { firstName, lastName, ...rest } = p;
+
+  return firstName || lastName ? p : rest;
+};
 
 type RankingDisplayRow = {
   key: string;
@@ -58,6 +76,9 @@ type RankingDisplayRow = {
   averageGrade?: number;
   evaluationCount: number;
 };
+
+/** Follows new evaluations while Monitoreo is open */
+const LIVE_RANKING = { refetchInterval: 30_000, refetchOnWindowFocus: true };
 
 const TOP_N_OPTIONS = [2, 3, 5] as const;
 type TopN = (typeof TOP_N_OPTIONS)[number];
@@ -94,12 +115,13 @@ export const RankingTab = ({
     // `limit` is the number of positions; the backend keeps every co-winner
     queryFn: () => getTopProjects(selectedCategoryId!, selectedEventId!, topN),
     enabled: isCategoryRanking,
+    ...LIVE_RANKING,
   });
 
   // Global ranking across all categories uses GET /events/:eventId/rankings?format=json
   const globalRankingQuery = useEventRankings({
     eventId: selectedEventId,
-    queryConfig: { enabled: isGlobalRanking },
+    queryConfig: { enabled: isGlobalRanking, ...LIVE_RANKING },
   });
 
   const isLoading = isGlobalRanking
@@ -111,6 +133,13 @@ export const RankingTab = ({
   const hasData = isGlobalRanking
     ? Boolean(globalRankingQuery.data)
     : Boolean(categoryRankingQuery.data);
+
+  const participantNames = useParticipantNames(
+    useMemo(
+      () => userIdsWithoutName(categoryRankingQuery.data?.items ?? []),
+      [categoryRankingQuery.data?.items],
+    ),
+  );
 
   const items = useMemo<RankingDisplayRow[]>(() => {
     if (isGlobalRanking) {
@@ -134,12 +163,13 @@ export const RankingTab = ({
       key: String(item.id),
       position: item.position,
       name: item.name,
-      participants: topProjectParticipantNames(item),
+      participants: topProjectParticipantNames(item, participantNames),
       averageGrade: item.averageGrade,
       evaluationCount: item.evaluationCount,
     }));
   }, [
     categoryRankingQuery.data?.items,
+    participantNames,
     globalRankingQuery.data?.data,
     isGlobalRanking,
     topN,

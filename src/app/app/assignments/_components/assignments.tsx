@@ -2,7 +2,6 @@
 
 import { FileSpreadsheet } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
 
 import { Can } from "@/components/auth/can";
 import { ContentLayout } from "@/components/layouts/content-layout";
@@ -12,6 +11,8 @@ import { AssignJudgesPanel } from "@/features/assignments/components/assign-judg
 import { ProjectsCard } from "@/features/assignments/components/project-card";
 import { ProjectPanel } from "@/features/assignments/components/project-panel";
 import { ProjectsTable } from "@/features/assignments/components/project-table";
+import { useAssignmentProjects } from "@/features/assignments/hooks/use-assignment-projects";
+import { useProjectPanel } from "@/features/assignments/hooks/use-project-panel";
 import "@/features/landing/index.css";
 import { EventsDropdown } from "@/features/projects/components/events-dropdown";
 import { PERMISSIONS } from "@/lib/authorization";
@@ -21,10 +22,10 @@ export const Assignments = () => {
   const searchParams = useSearchParams();
   const selectedEventId = searchParams?.get("event");
 
-  const [activePanel, setActivePanel] = useState<{
-    type: "assign" | "view" | null;
-    project: any | null;
-  } | null>(null);
+  // One list for the table, the mobile cards and the side panels
+  const assignment = useAssignmentProjects();
+  const panel = useProjectPanel(assignment);
+  const activePanel = panel.project ? panel : null;
 
   return (
     <ContentLayout title="Asignaciones">
@@ -50,12 +51,9 @@ export const Assignments = () => {
           className={`transition-all ${activePanel ? "w-[65%]" : "w-full"} duration-400`}
         >
           <ProjectsTable
-            onSelectProject={(project) =>
-              setActivePanel({ type: "assign", project })
-            }
-            onViewProject={(project) =>
-              setActivePanel({ type: "view", project })
-            }
+            assignment={assignment}
+            onSelectProject={(project) => panel.open("assign", project)}
+            onViewProject={(project) => panel.open("view", project)}
           />
         </div>
 
@@ -63,21 +61,18 @@ export const Assignments = () => {
           <div className="h-[70vh] w-[35%] border-white/10">
             <AssignJudgesPanel
               project={activePanel.project}
-              onClose={() => setActivePanel(null)}
+              onClose={panel.close}
             />
           </div>
         )}
         {activePanel?.type === "view" && (
           <div className="h-[70vh] w-[35%] border-white/10">
-            <ProjectPanel
-              project={activePanel.project}
-              onClose={() => setActivePanel(null)}
-            />
+            <ProjectPanel project={activePanel.project} onClose={panel.close} />
           </div>
         )}
       </div>
       <div className="flex flex-col xl:hidden">
-        <ProjectsCard />
+        <ProjectsCard assignment={assignment} />
       </div>
     </ContentLayout>
   );
