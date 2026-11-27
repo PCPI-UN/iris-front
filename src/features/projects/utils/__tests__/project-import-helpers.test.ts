@@ -74,7 +74,7 @@ describe("project import normalization", () => {
       new ApiError("Bad Request", 400, {
         data: {
           message: "No se puede confirmar",
-          preview: { rows: [], canConfirm: false },
+          details: { preview: { rows: [], canConfirm: false } },
         },
       }),
     );

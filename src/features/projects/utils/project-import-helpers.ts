@@ -145,7 +145,7 @@ export function getProjectImportErrorMessage(error: unknown): string {
   return "No se pudo procesar el archivo. Intenta de nuevo.";
 }
 
-/** execute answers 400 with the preview when the file can no longer be confirmed */
+/** execute answers 400 with the preview in details.preview when the file can no longer be confirmed */
 export function parseProjectImportExecuteError(
   error: unknown,
 ): ProjectImportExecuteParsedError {
@@ -157,12 +157,16 @@ export function parseProjectImportExecuteError(
   ) {
     const body = error.data as Record<string, unknown>;
     const message = toText(body.message) ?? error.message;
+    const details =
+      body.details && typeof body.details === "object"
+        ? (body.details as Record<string, unknown>)
+        : undefined;
 
-    if (body.preview && typeof body.preview === "object") {
+    if (details?.preview && typeof details.preview === "object") {
       return {
         kind: "preview",
         message,
-        preview: normalizeProjectImportPreview(body.preview),
+        preview: normalizeProjectImportPreview(details.preview),
       };
     }
 

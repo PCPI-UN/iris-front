@@ -277,10 +277,12 @@ describe("ProjectImportView", () => {
         HttpResponse.json(
           {
             message: "El evento ya publicó sus resultados.",
-            preview: {
-              ...okPreview,
-              canConfirm: false,
-              warnings: ["Resultados publicados"],
+            details: {
+              preview: {
+                ...okPreview,
+                canConfirm: false,
+                warnings: ["Resultados publicados"],
+              },
             },
           },
           { status: 400 },
