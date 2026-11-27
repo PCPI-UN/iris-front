@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
+import { triggerBlobDownload } from "@/features/imports/utils/excel-file";
 import { api } from "@/lib/api-client";
 
 import type {
@@ -15,16 +16,8 @@ import {
   XLSX_MIME_TYPE,
 } from "../utils/juror-import-helpers";
 
-export const triggerBlobDownload = (blob: Blob, fileName: string) => {
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = fileName;
-  document.body.appendChild(anchor);
-  anchor.click();
-  anchor.remove();
-  URL.revokeObjectURL(url);
-};
+// Shared with the project import; re-exported for the juror import view
+export { triggerBlobDownload };
 
 export const downloadJurorImportTemplate = async ({
   eventId,

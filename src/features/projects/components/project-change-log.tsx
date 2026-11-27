@@ -9,12 +9,14 @@ import {
 import {
   ProjectChangeAction,
   ProjectChangeLogEntry,
+  ProjectCreationOrigin,
   useProjectChangeLog,
 } from "../api/get-project-change-log";
 
 import { Spinner } from "@/components/ui/spinner";
 
 const ACTION_LABELS: Record<ProjectChangeAction, string> = {
+  CREATED: "Creación del proyecto",
   STATE: "Cambio de estado",
   INFO: "Datos del proyecto",
   CATEGORY: "Categoría",
@@ -36,6 +38,56 @@ const FIELD_LABELS: Record<string, string> = {
   participant: "Integrante",
   document: "Documento",
   documents: "Documentos",
+  eventId: "Evento",
+  categoryId: "Categoría",
+  nrc: "NRC",
+  tutors: "Tutores",
+};
+
+/** Who created the project and from where, read from after.origin */
+const describeCreation = (entry: ProjectChangeLogEntry): string => {
+  const origin = (entry.after?.origin ?? null) as ProjectCreationOrigin | null;
+  const actor = entry.actor?.name ?? `Usuario #${entry.actor?.id ?? "?"}`;
+
+  if (origin?.kind === "ADMIN_BULK") {
+    const { fileName, rowNumber } = origin;
+    const detail = [
+      fileName ? `archivo ${String(fileName)}` : null,
+      rowNumber !== null && rowNumber !== undefined ? `fila ${String(rowNumber)}` : null,
+    ]
+      .filter(Boolean)
+      .join(", ");
+
+    return `Proyecto creado por ${actor} desde la carga masiva${detail ? ` (${detail})` : ""}`;
+  }
+  if (origin?.kind === "ADMIN_FORM") {
+    return `Proyecto creado por ${actor} desde el formulario`;
+  }
+
+  return `Proyecto creado por ${actor}`;
+};
+
+const CreatedEntry = ({ entry }: { entry: ProjectChangeLogEntry }) => {
+  // The origin is told in the sentence, not repeated as a field
+  const fields = Object.keys(entry.after ?? {}).filter(
+    (field) => field !== "origin",
+  );
+
+  return (
+    <>
+      <p className="text-xs text-default-500">{describeCreation(entry)}</p>
+      {fields.length > 0 && (
+        <dl aria-label="Datos iniciales" className="space-y-1">
+          {fields.map((field) => (
+            <div key={field} className="flex flex-wrap gap-2">
+              <dt className="text-default-500">{FIELD_LABELS[field] ?? field}:</dt>
+              <dd className="font-medium">{formatValue(field, entry.after?.[field])}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
+    </>
+  );
 };
 
 const DOCUMENT_LABELS: Record<string, string> = {
@@ -57,6 +109,17 @@ const describeObject = (field: string, value: Record<string, unknown>): string |
     const state = value.state === "INACTIVE" ? "inactivo" : "activo";
 
     return `${type}, ${state}${value.url ? ` · ${String(value.url)}` : ""}`;
+  }
+  if (field === "tutors") {
+    // CREATED: { userIds, emails } = tutors with an account and pending ones by email
+    const userIds = Array.isArray(value.userIds) ? value.userIds : [];
+    const emails = Array.isArray(value.emails) ? value.emails.map(String) : [];
+    const parts = [
+      userIds.length > 0 ? `${userIds.length} con cuenta` : null,
+      emails.length > 0 ? emails.join(", ") : null,
+    ].filter(Boolean);
+
+    return parts.length > 0 ? parts.join("; ") : "—";
   }
 
   return null;
@@ -124,10 +187,14 @@ const ChangeLogEntry = ({ entry }: { entry: ProjectChangeLogEntry }) => {
           {formatDate(entry.createdAt)}
         </time>
       </div>
-      <p className="text-xs text-default-500">
-        Por {entry.actor?.name ?? `Usuario #${entry.actor?.id ?? "?"}`}
-      </p>
-      {fields.map((field) => (
+      {entry.action === "CREATED" ? (
+        <CreatedEntry entry={entry} />
+      ) : (
+        <p className="text-xs text-default-500">
+          Por {entry.actor?.name ?? `Usuario #${entry.actor?.id ?? "?"}`}
+        </p>
+      )}
+      {entry.action !== "CREATED" && fields.map((field) => (
         <div key={field} className="flex flex-wrap items-center gap-2">
           {fields.length > 1 || field !== "state" ? (
             <span className="text-default-500">
