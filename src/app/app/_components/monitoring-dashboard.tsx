@@ -379,6 +379,7 @@ export const MonitoringDashboard = ({ initialEventId, onBack, eventData }: Monit
             selectedCategoryId={selectedCategoryId}
             categories={categoriesDropdownQuery.data?.data ?? []}
             categoriesLoading={categoriesDropdownQuery.isLoading}
+            allowAllCategories={activeTab !== 'awards'}
             onEventChange={handleEventChange}
             onCategoryChange={handleCategoryChange}
           />

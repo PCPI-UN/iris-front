@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { Trophy, Users } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Chip } from "@/components/ui/chip";
@@ -17,8 +17,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-import { getTopProjects } from "../api/get-top-projects";
-import { getCoWinnerPositions } from "../utils/co-winners";
+import { useEventRankings } from "../api/get-event-rankings";
+import { getTopProjects, type TopProject } from "../api/get-top-projects";
+import { filterByTopPositions, getCoWinnerPositions } from "../utils/co-winners";
 
 function participantLabel(p: {
   firstName?: string;
@@ -37,6 +38,27 @@ function participantLabel(p: {
   return "Participante";
 }
 
+function topProjectParticipantNames(item: TopProject): string[] {
+  if ((item.pendingParticipants?.length ?? 0) > 0) {
+    return item.pendingParticipants!.map((p) => {
+      const fullName = [p.firstName, p.lastName].filter(Boolean).join(" ");
+      return fullName || p.studentCode || p.email || "Participante";
+    });
+  }
+
+  return (item.participants ?? []).map(participantLabel);
+}
+
+type RankingDisplayRow = {
+  key: string;
+  position: number;
+  name: string;
+  category?: string;
+  participants: string[];
+  averageGrade?: number;
+  evaluationCount: number;
+};
+
 const TOP_N_OPTIONS = [2, 3, 5] as const;
 type TopN = (typeof TOP_N_OPTIONS)[number];
 
@@ -50,8 +72,9 @@ type RankingTabProps = {
 };
 
 /**
- * Ranking of a category. Positions come from the backend: projects with the
- * same average (rounded to 2 decimals) are co-winners and share the position.
+ * Ranking of a category or global ranking of an event (when "Todas las categorías"
+ * is selected). Positions come from the backend: projects with the same average
+ * (rounded to 2 decimals) are co-winners and share the position.
  * There is no tie-break (decision of the 27 Oct meeting).
  */
 export const RankingTab = ({
@@ -61,17 +84,83 @@ export const RankingTab = ({
 }: RankingTabProps) => {
   const [topN, setTopN] = useState<TopN>(5);
 
-  const canFetch = Boolean(selectedEventId && selectedCategoryId);
+  const hasEvent = Boolean(selectedEventId);
+  const isCategoryRanking = Boolean(selectedEventId && selectedCategoryId);
+  const isGlobalRanking = Boolean(selectedEventId && !selectedCategoryId);
+  const canFetch = hasEvent;
 
-  const { data, isLoading, isError } = useQuery({
+  const categoryRankingQuery = useQuery({
     queryKey: ["top-projects", selectedEventId, selectedCategoryId, topN],
     // `limit` is the number of positions; the backend keeps every co-winner
     queryFn: () => getTopProjects(selectedCategoryId!, selectedEventId!, topN),
-    enabled: canFetch,
+    enabled: isCategoryRanking,
   });
 
-  const items = data?.items ?? [];
-  const coWinnerPositions = getCoWinnerPositions(items);
+  // Global ranking across all categories uses GET /events/:eventId/rankings?format=json
+  const globalRankingQuery = useEventRankings({
+    eventId: selectedEventId,
+    queryConfig: { enabled: isGlobalRanking },
+  });
+
+  const isLoading = isGlobalRanking
+    ? globalRankingQuery.isLoading
+    : categoryRankingQuery.isLoading;
+  const isError = isGlobalRanking
+    ? globalRankingQuery.isError
+    : categoryRankingQuery.isError;
+  const hasData = isGlobalRanking
+    ? Boolean(globalRankingQuery.data)
+    : Boolean(categoryRankingQuery.data);
+
+  const items = useMemo<RankingDisplayRow[]>(() => {
+    if (isGlobalRanking) {
+      const globalRows = filterByTopPositions(
+        globalRankingQuery.data?.data ?? [],
+        topN,
+      );
+
+      return globalRows.map((row, index) => ({
+        key: String(row.projectId ?? `${row.position}-${index}`),
+        position: row.position,
+        name: row.projectName,
+        category: row.category,
+        participants: row.participants ?? [],
+        averageGrade: row.averageGrade,
+        evaluationCount: row.evaluationCount,
+      }));
+    }
+
+    return (categoryRankingQuery.data?.items ?? []).map((item) => ({
+      key: String(item.id),
+      position: item.position,
+      name: item.name,
+      participants: topProjectParticipantNames(item),
+      averageGrade: item.averageGrade,
+      evaluationCount: item.evaluationCount,
+    }));
+  }, [
+    categoryRankingQuery.data?.items,
+    globalRankingQuery.data?.data,
+    isGlobalRanking,
+    topN,
+  ]);
+
+  const coWinnerPositions = useMemo(
+    () => getCoWinnerPositions(items),
+    [items],
+  );
+
+  const headerSubtitle = useMemo(() => {
+    if (isGlobalRanking) {
+      return (
+        [selectedEventName, "Clasificación global"]
+          .filter(Boolean)
+          .join(" · ") || "Clasificación global"
+      );
+    }
+
+    return selectedEventName ?? "—";
+  }, [isGlobalRanking, selectedEventName]);
 
   return (
     <div className="space-y-4">
@@ -81,9 +170,7 @@ export const RankingTab = ({
             <Trophy className="h-8 w-8 text-amber-500 shrink-0" />
             <div>
               <h3 className="text-lg font-semibold">CLASIFICACIÓN</h3>
-              <p className="text-sm text-default-400">
-                {selectedEventName ?? "—"}
-              </p>
+              <p className="text-sm text-default-400">{headerSubtitle}</p>
             </div>
           </div>
 
@@ -108,10 +195,10 @@ export const RankingTab = ({
         </CardHeader>
 
         <CardBody className="space-y-4 p-5 md:p-6">
-          {/* IDLE — no event/category selected */}
+          {/* IDLE — no event selected */}
           {!canFetch && (
             <div className="flex min-h-[120px] items-center justify-center rounded-2xl border border-dashed border-default-200 text-sm text-default-500">
-              Selecciona un evento y una categoría para ver la clasificación.
+              Selecciona un evento para ver la clasificación.
             </div>
           )}
 
@@ -130,7 +217,7 @@ export const RankingTab = ({
           )}
 
           {/* NO DATA */}
-          {canFetch && !isLoading && !isError && data && items.length === 0 && (
+          {canFetch && !isLoading && !isError && hasData && items.length === 0 && (
             <div className="flex min-h-[180px] items-center justify-center rounded-2xl border border-dashed border-default-200 text-sm text-default-500">
               No hay proyectos evaluados para mostrar la clasificación.
             </div>
@@ -155,44 +242,32 @@ export const RankingTab = ({
                       Estado
                     </TableColumn>
                   </TableHeader>
-                  <TableBody
-                    items={items.map((p) => ({
-                      ...p,
-                      participants: p.participants ?? [],
-                    }))}
-                  >
+                  <TableBody items={items}>
                     {(item) => (
-                      <TableRow key={item.id}>
+                      <TableRow key={item.key}>
                         <TableCell className="w-16">
                           <span className="font-bold text-default-500">
                             {item.position}
                           </span>
                         </TableCell>
                         <TableCell>
-                          <span className="font-semibold text-foreground">
-                            {item.name}
-                          </span>
+                          <div className="space-y-0.5">
+                            <span className="font-semibold text-foreground">
+                              {item.name}
+                            </span>
+                            {isGlobalRanking && item.category && (
+                              <p className="text-xs text-default-400">
+                                {item.category}
+                              </p>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell>
                           <div className="space-y-1 text-sm">
-                            {(item.pendingParticipants?.length ?? 0) > 0 ? (
-                              item.pendingParticipants!.map((p, idx) => {
-                                const fullName = [p.firstName, p.lastName]
-                                  .filter(Boolean)
-                                  .join(" ");
-                                return (
-                                  <p key={idx} className="text-default-500">
-                                    {fullName ||
-                                      p.studentCode ||
-                                      p.email ||
-                                      "Participante"}
-                                  </p>
-                                );
-                              })
-                            ) : (item.participants?.length ?? 0) > 0 ? (
-                              item.participants.map((p, idx) => (
+                            {item.participants.length > 0 ? (
+                              item.participants.map((name, idx) => (
                                 <p key={idx} className="text-default-500">
-                                  {participantLabel(p)}
+                                  {name}
                                 </p>
                               ))
                             ) : (
@@ -204,7 +279,9 @@ export const RankingTab = ({
                         </TableCell>
                         <TableCell className="w-28 text-center">
                           <span className="text-lg font-semibold text-teal-500">
-                            {item.averageGrade.toFixed(2)}
+                            {typeof item.averageGrade === "number"
+                              ? item.averageGrade.toFixed(2)
+                              : "—"}
                           </span>
                         </TableCell>
                         <TableCell className="w-28 text-center">

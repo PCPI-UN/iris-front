@@ -22,3 +22,16 @@ export const getPositionLabel = (position: number) => {
   if (position === 3) return "3.er puesto";
   return `${position}.º puesto`;
 };
+
+/**
+ * Keeps every row whose backend-assigned position is within `limit`.
+ * Co-winners tied at the last visible position are all preserved (mirrors
+ * the backend `filterVisiblePositions` rule). Non-positive limits keep all rows.
+ */
+export const filterByTopPositions = <T extends { position: number }>(
+  items: T[],
+  limit: number,
+): T[] => {
+  if (limit <= 0) return items;
+  return items.filter((item) => item.position <= limit);
+};

@@ -190,7 +190,7 @@ const normalizeRankingRow = (item: unknown, index: number): EventRankingRow => {
       ) ?? undefined,
     evaluationCount:
       asNumber(record.evaluationCount ?? record.evaluationsCount ?? record.count ?? record.totalEvaluations) ??
-      0,
+      (Array.isArray(record.individualGrades) ? record.individualGrades.length : 0),
     averageGrade:
       asNumber(record.averageGrade ?? record.averageScore ?? record.score ?? record.average ?? record.totalScore),
     participants,

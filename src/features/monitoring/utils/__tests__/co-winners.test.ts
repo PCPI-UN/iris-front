@@ -1,4 +1,8 @@
-import { getCoWinnerPositions, getPositionLabel } from "../co-winners";
+import {
+  filterByTopPositions,
+  getCoWinnerPositions,
+  getPositionLabel,
+} from "../co-winners";
 
 describe("getCoWinnerPositions", () => {
   test("marks the positions shared by more than one project", () => {
@@ -23,5 +27,30 @@ describe("getPositionLabel", () => {
     [4, "4.º puesto"],
   ])("labels position %i", (position, label) => {
     expect(getPositionLabel(position)).toBe(label);
+  });
+});
+
+describe("filterByTopPositions", () => {
+  test("keeps every co-winner tied at the last visible position", () => {
+    const rows = [
+      { id: 1, position: 1 },
+      { id: 2, position: 1 },
+      { id: 3, position: 2 },
+      { id: 4, position: 2 },
+      { id: 5, position: 3 },
+    ];
+
+    expect(filterByTopPositions(rows, 2).map((row) => row.id)).toEqual([
+      1, 2, 3, 4,
+    ]);
+  });
+
+  test("returns all rows when limit is non-positive", () => {
+    const rows = [
+      { id: 1, position: 1 },
+      { id: 2, position: 2 },
+    ];
+
+    expect(filterByTopPositions(rows, 0)).toEqual(rows);
   });
 });
