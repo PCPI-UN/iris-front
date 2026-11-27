@@ -78,6 +78,18 @@ export const paths = {
       getHref: () => "/app/projects",
       roles: ["Admin"],
     },
+    projectNew: {
+      getHref: (eventId?: string | number | null) =>
+        eventId
+          ? `/app/projects/new?event=${encodeURIComponent(String(eventId))}`
+          : "/app/projects/new",
+    },
+    projectImport: {
+      getHref: (eventId?: string | number | null) =>
+        eventId
+          ? `/app/projects/import?event=${encodeURIComponent(String(eventId))}`
+          : "/app/projects/import",
+    },
     monitoring: {
       getHref: () => "/app/monitoreo",
       roles: ["Admin"],

@@ -52,6 +52,9 @@ import {
   parseValidEventId,
   validateExcelFile,
 } from "../../utils/juror-import-helpers";
+import { ExcelDropzone } from "@/features/imports/components/excel-dropzone";
+import { ImportStepper } from "@/features/imports/components/import-stepper";
+
 import { JurorImportMetrics } from "./juror-import-metrics";
 import { JurorImportRowsTable } from "./juror-import-rows-table";
 
@@ -75,7 +78,6 @@ export const JurorImportView = () => {
     initialEventId ? String(initialEventId) : "",
   );
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
 
   const [isDownloadingTemplate, setIsDownloadingTemplate] = useState(false);
   const [templateError, setTemplateError] = useState<string | null>(null);
@@ -346,41 +348,7 @@ export const JurorImportView = () => {
       </div>
 
       {/* Stepper */}
-      <Card className="glass-card border border-white/10" shadow="none">
-        <CardBody className="p-4">
-          <ol className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            {steps.map((step) => {
-              const isCurrent = activeStep === step.number;
-              const isCompleted = activeStep > step.number;
-              return (
-                <li
-                  key={step.number}
-                  className={`flex items-center gap-3 rounded-xl border px-3.5 py-2.5 transition-colors ${
-                    isCurrent
-                      ? "border-primary/50 bg-primary/10 text-foreground"
-                      : isCompleted
-                        ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
-                        : "border-white/10 bg-white/5 text-default-400"
-                  }`}
-                >
-                  <span
-                    className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
-                      isCurrent
-                        ? "bg-primary text-primary-foreground"
-                        : isCompleted
-                          ? "bg-emerald-500 text-black"
-                          : "bg-white/10 text-default-300"
-                    }`}
-                  >
-                    {isCompleted ? "✓" : step.number}
-                  </span>
-                  <span className="text-sm font-medium">{step.title}</span>
-                </li>
-              );
-            })}
-          </ol>
-        </CardBody>
-      </Card>
+      <ImportStepper steps={steps} activeStep={activeStep} />
 
       {/* PASO 1: Evento, plantilla y carga (si no estamos en resumen final) */}
       {!executeResult && (
@@ -476,82 +444,15 @@ export const JurorImportView = () => {
               </p>
             </CardHeader>
             <CardBody className="space-y-4">
-              <div
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  if (!isExecuting && !isPreviewLoading) setIsDragging(true);
-                }}
-                onDragLeave={() => setIsDragging(false)}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  setIsDragging(false);
-                  if (isExecuting || isPreviewLoading) return;
-                  const dropped = e.dataTransfer.files?.[0];
-                  void handleFileSelection(dropped);
-                }}
-                className={`flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-6 text-center transition-colors ${
-                  isDragging
-                    ? "border-primary bg-primary/10"
-                    : "border-white/15 bg-white/[0.02] hover:border-white/30"
-                }`}
-              >
-                <Upload className="mb-3 h-8 w-8 text-primary" />
-                <p className="text-sm font-medium text-foreground">
-                  Arrastra aquí tu archivo Excel o selecciónalo desde tu equipo
-                </p>
-                <p className="mt-1 text-xs text-default-400">
-                  Extensión permitida: .xlsx (máximo 10 MB)
-                </p>
-
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                  aria-label="Seleccionar archivo Excel de jurados"
-                  disabled={isExecuting || isPreviewLoading}
-                  className="sr-only"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    void handleFileSelection(file);
-                  }}
-                />
-
-                <Button
-                  size="sm"
-                  variant="bordered"
-                  className="mt-4"
-                  isDisabled={isExecuting || isPreviewLoading}
-                  onPress={() => fileInputRef.current?.click()}
-                >
-                  Seleccionar archivo .xlsx
-                </Button>
-              </div>
-
-              {selectedFile && (
-                <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3">
-                  <div className="flex min-w-0 items-center gap-3">
-                    <FileSpreadsheet className="h-5 w-5 shrink-0 text-emerald-400" />
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-foreground">
-                        {selectedFile.name}
-                      </p>
-                      <p className="text-xs text-default-400">
-                        {formatBytes(selectedFile.size)}
-                      </p>
-                    </div>
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="light"
-                    color="danger"
-                    isDisabled={isExecuting || isPreviewLoading}
-                    startContent={<Trash2 className="h-4 w-4" />}
-                    onPress={handleClearFile}
-                  >
-                    Quitar archivo
-                  </Button>
-                </div>
-              )}
+              <ExcelDropzone
+                inputRef={fileInputRef}
+                selectedFile={selectedFile}
+                isDisabled={isExecuting || isPreviewLoading}
+                hint="Extensión permitida: .xlsx (máximo 10 MB)"
+                inputLabel="Seleccionar archivo Excel de jurados"
+                onSelect={(file) => void handleFileSelection(file)}
+                onClear={handleClearFile}
+              />
 
               {fileValidationError && (
                 <div

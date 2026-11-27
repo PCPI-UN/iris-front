@@ -4,6 +4,8 @@ import { api } from "@/lib/api-client";
 import { QueryConfig } from "@/lib/react-query";
 
 export type ProjectChangeAction =
+  /** Creation from the admin: after holds the initial data, before is empty */
+  | "CREATED"
   | "STATE"
   | "INFO"
   | "CATEGORY"
@@ -23,7 +25,14 @@ export type ProjectChangeLogEntry = {
   /** Changed fields only, with their values after the change */
   after: Record<string, unknown>;
   reason: string | null;
+  /** CREATED only: where the admin created it (it may also come inside after) */
+  origin?: ProjectCreationOrigin | null;
+  /** ADMIN_BULK only: uploaded file and its row */
+  fileName?: string | null;
+  rowNumber?: number | null;
 };
+
+export type ProjectCreationOrigin = "ADMIN_FORM" | "ADMIN_BULK";
 
 export type ProjectChangeLogResponse = {
   /** Most recent first */
