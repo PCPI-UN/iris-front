@@ -885,6 +885,95 @@ export const projectsHandlers = [
   ),
 
   http.patch(
+    `${env.API_URL}/projects/reassign-juror`,
+    async ({ cookies, request }) => {
+      await networkDelay();
+      try {
+        const { error } = requireAuth(cookies);
+        if (error) {
+          return HttpResponse.json({ message: error }, { status: 401 });
+        }
+
+        const body = (await request.json()) as {
+          projectId?: number;
+          fromUserId?: number;
+          toUserId?: number;
+        };
+
+        const projectId = Number(body?.projectId);
+        const fromUserId = Number(body?.fromUserId);
+        const toUserId = Number(body?.toUserId);
+
+        if (
+          !Number.isInteger(projectId) ||
+          projectId < 1 ||
+          !Number.isInteger(fromUserId) ||
+          fromUserId < 1 ||
+          !Number.isInteger(toUserId) ||
+          toUserId < 1
+        ) {
+          return HttpResponse.json(
+            { message: "projectId, fromUserId and toUserId must be positive integers" },
+            { status: 400 }
+          );
+        }
+
+        const prefixedProjectId = toInternalPrefixedId(String(projectId), "project");
+        const project =
+          db.project.findFirst({ where: { id: { equals: String(projectId) } } }) ??
+          db.project.findFirst({ where: { id: { equals: prefixedProjectId } } });
+
+        if (!project) {
+          return HttpResponse.json(
+            { message: "No se encontró el proyecto" },
+            { status: 404 }
+          );
+        }
+
+        if (fromUserId === toUserId) {
+          return HttpResponse.json({ ok: true, changed: false });
+        }
+
+        const currentAssignments = Array.isArray(project.jurorAssignments)
+          ? project.jurorAssignments
+          : [];
+        const fromKeys = new Set([
+          String(fromUserId),
+          toInternalPrefixedId(String(fromUserId), "user"),
+        ]);
+        const toKeys = new Set([
+          String(toUserId),
+          toInternalPrefixedId(String(toUserId), "user"),
+        ]);
+
+        const remaining = currentAssignments.filter(
+          (assignment: any) => !fromKeys.has(String(assignment?.memberUserId ?? ""))
+        );
+        const changed = remaining.length !== currentAssignments.length;
+        const alreadyAssigned = remaining.some((assignment: any) =>
+          toKeys.has(String(assignment?.memberUserId ?? ""))
+        );
+        const nextAssignments = alreadyAssigned
+          ? remaining
+          : [...remaining, { memberUserId: String(toUserId) }];
+
+        db.project.update({
+          where: { id: { equals: String(project.id) } },
+          data: { jurorAssignments: nextAssignments },
+        });
+
+        await persistDb("project");
+        return HttpResponse.json({ ok: true, changed });
+      } catch (error: any) {
+        return HttpResponse.json(
+          { message: error?.message || "Server Error" },
+          { status: 500 }
+        );
+      }
+    }
+  ),
+
+  http.patch(
     `${env.API_URL}/projects/:projectId`,
     async ({ cookies, request, params }) => {
       await networkDelay();

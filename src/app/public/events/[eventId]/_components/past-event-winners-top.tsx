@@ -5,12 +5,14 @@ import { Trophy, Users, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-r
 import { Chip } from '@heroui/chip';
 import { Divider } from '@heroui/divider';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 import { PRISMATIC_GRADIENT, PRISMATIC_GRADIENT_DIM } from '@/features/landing/components/events-section.utils';
 import { documentLink } from "@/lib/document-link";
 
-type RankedProject = {
+export type PastEventRankedWinner = {
   position: number;
   project: {
+    id?: number;
     name: string;
     description?: string;
     participants?: any[];
@@ -18,14 +20,16 @@ type RankedProject = {
     documents?: any[];
   };
   categoryId?: number;
+  categoryName?: string;
   score?: number | null;
 };
 
 type PastEventWinnersTopProps = {
-  rankingByCategory: Map<number, RankedProject[]>;
+  winners: PastEventRankedWinner[];
   categories: { id: number; name: string }[];
   winnersRef?: RefObject<HTMLElement>;
   isExposition?: boolean;
+  isLoading?: boolean;
   visiblePositions?: number;
   visibleScore?: boolean;
   selectedCategoryId?: number | undefined;
@@ -81,15 +85,17 @@ const getPositionBadgeClass = (pos: number): string =>
 const TopWinnerCard = ({
   ranked,
   categoryName,
+  showCategoryBadge,
   isExposition,
   showScore,
   isCoWinner,
 }: {
-  ranked: RankedProject;
+  ranked: PastEventRankedWinner;
   categoryName?: string;
+  showCategoryBadge?: boolean;
   isExposition?: boolean;
   showScore?: boolean;
-  /** Shares the position with other projects of its category (same rounded average) */
+  /** Shares the position with other projects in the active ranking (same rounded average) */
   isCoWinner?: boolean;
 }) => {
   const [membersExpanded, setMembersExpanded] = useState(false);
@@ -116,6 +122,11 @@ const TopWinnerCard = ({
               {isCoWinner && (
                 <Chip size="sm" variant="flat" color="warning" startContent={<Users className="h-3 w-3" />}>
                   Coganador
+                </Chip>
+              )}
+              {showCategoryBadge && categoryName && (
+                <Chip size="sm" variant="flat" classNames={{ base: 'bg-white/10 border border-white/15' }}>
+                  {categoryName}
                 </Chip>
               )}
             </div>
@@ -208,10 +219,11 @@ const TopWinnerCard = ({
 };
 
 export function PastEventWinnersTop({
-  rankingByCategory,
+  winners,
   categories,
   winnersRef,
   isExposition = false,
+  isLoading = false,
   visiblePositions = 0,
   visibleScore = true,
   selectedCategoryId,
@@ -219,82 +231,50 @@ export function PastEventWinnersTop({
 }: PastEventWinnersTopProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  // Init: select first category on mount if none set (ignoring synthetic id 0)
-  useEffect(() => {
-    if (selectedCategoryId === undefined && categories.length > 0 && categories[0].id > 0) {
-      const firstCategoryWithWinners = categories.find(
-        (c) => c.id > 0 && (rankingByCategory.get(c.id)?.length ?? 0) > 0,
-      );
-      onCategoryChange?.((firstCategoryWithWinners ?? categories[0]).id);
-    }
-  }, [categories, onCategoryChange, rankingByCategory, selectedCategoryId]);
-
   const categoryMap = useMemo(
     () => new Map(categories.map((c) => [c.id, c.name])),
     [categories],
   );
 
-  // Filter winners by selectedCategoryId when applicable, or flatten all when global
-  const allWinners = useMemo(() => {
-    if (
-      selectedCategoryId !== undefined &&
-      selectedCategoryId > 0 &&
-      rankingByCategory.has(selectedCategoryId)
-    ) {
-      const items = rankingByCategory.get(selectedCategoryId) ?? [];
-      return items
-        .map((w) => ({ ...w, categoryId: selectedCategoryId }))
-        .sort((a, b) => a.position - b.position);
-    }
-
-    if (
-      selectedCategoryId !== undefined &&
-      selectedCategoryId > 0 &&
-      categories.length > 1 &&
-      !rankingByCategory.has(0)
-    ) {
-      return [];
-    }
-
-    const list: (RankedProject & { categoryId: number })[] = [];
-    for (const [catId, items] of rankingByCategory.entries()) {
-      items.forEach((w) => list.push({ ...w, categoryId: catId }));
-    }
-    return list.sort((a, b) => a.position - b.position);
-  }, [categories.length, rankingByCategory, selectedCategoryId]);
+  // Winners already come scoped from the backend for either the global ranking
+  // ("Todas las categorías") or the chosen department/category (?categoryId=...).
+  const sortedWinners = useMemo(
+    () => [...winners].sort((a, b) => a.position - b.position),
+    [winners],
+  );
 
   const appliedLimit = Number(visiblePositions) || 0;
 
   const availableWinners = useMemo(() => {
-    if (appliedLimit === 0) return allWinners;
-    return allWinners.filter((w) => w.position >= 1 && w.position <= appliedLimit);
-  }, [allWinners, appliedLimit]);
+    if (appliedLimit === 0) return sortedWinners;
+    return sortedWinners.filter((w) => w.position >= 1 && w.position <= appliedLimit);
+  }, [sortedWinners, appliedLimit]);
 
-  // Positions come from the backend: in a category, projects sharing a position are co-winners
-  const coWinnerKeys = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const w of allWinners) {
-      const key = `${w.categoryId ?? 0}-${w.position}`;
-      counts.set(key, (counts.get(key) ?? 0) + 1);
+  // Positions come from the backend: in the active ranking (global or category),
+  // projects sharing a position are co-winners.
+  const coWinnerPositions = useMemo(() => {
+    const counts = new Map<number, number>();
+    for (const w of availableWinners) {
+      counts.set(w.position, (counts.get(w.position) ?? 0) + 1);
     }
-    return new Set([...counts].filter(([, n]) => n > 1).map(([key]) => key));
-  }, [allWinners]);
+    return new Set([...counts].filter(([, n]) => n > 1).map(([pos]) => pos));
+  }, [availableWinners]);
 
-  // Reset carousel index when winners change
+  // Reset carousel index when winners or selected category change
   useEffect(() => {
     setCurrentIndex(0);
   }, [availableWinners.length, selectedCategoryId]);
 
-  const handleCategoryChange = (catId: number) => {
+  const handleCategoryChange = (catId?: number) => {
     onCategoryChange?.(catId);
     setCurrentIndex(0);
   };
 
+  const isAllCategoriesSelected = selectedCategoryId === undefined;
   const hasWinners = availableWinners.length > 0;
   const totalPages = hasWinners ? availableWinners.length : 0;
-  const activeWinner = hasWinners ? (availableWinners[currentIndex] ?? availableWinners[0]) : undefined;
   const hasMultipleCategories = categories.length > 1;
-  const hasMultiplePages = totalPages > 1;
+  const hasMultiplePages = !isLoading && totalPages > 1;
 
   return (
     <section
@@ -312,10 +292,22 @@ export function PastEventWinnersTop({
         <Divider className="event-divider flex-1" />
       </div>
 
-      {/* Category pill selector — only shown when there are multiple categories */}
+      {/* Category pill selector — includes "Todas las categorías" for global ranking */}
       {hasMultipleCategories && (
         <div className="w-full overflow-x-auto overscroll-x-contain scroll-smooth pb-2 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0 hide-scrollbar mb-8">
           <div className="flex w-max min-w-full items-center gap-3 py-2">
+            <button
+              type="button"
+              onClick={() => handleCategoryChange(undefined)}
+              className={`category-button whitespace-nowrap snap-start px-4 sm:px-5 py-2 rounded-full text-sm font-semibold border transition-all duration-200 flex-shrink-0 ${
+                isAllCategoriesSelected
+                  ? 'prismatic-border prismatic-text selected-category'
+                  : 'prismatic-text border-white/20 text-white/90 hover:border-white/40 hover:bg-white/5'
+              }`}
+              aria-pressed={isAllCategoriesSelected}
+            >
+              Todas las categorías
+            </button>
             {categories.map((cat) => (
               <button
                 key={cat.id}
@@ -338,21 +330,30 @@ export function PastEventWinnersTop({
       {/* Winner card carousel */}
       <div className="space-y-4 sm:space-y-6">
         <div className="overflow-x-hidden overflow-y-visible pb-1">
-          {hasWinners ? (
+          {isLoading ? (
+            <div
+              className="flex items-center justify-center min-h-[200px] rounded-2xl border border-dashed border-border/40"
+              aria-busy="true"
+            >
+              <Spinner size="md" />
+            </div>
+          ) : hasWinners ? (
             <div
               className="flex transition-transform duration-500 ease-out"
               style={{ transform: `translateX(-${currentIndex * 100}%)` }}
             >
               {availableWinners.map((winner, idx) => (
                 <div
-                  key={`winner-${winner.categoryId ?? 0}-${winner.position}-${winner.project.name}-${idx}`}
+                  key={`winner-${winner.categoryId ?? 0}-${winner.position}-${winner.project.id ?? winner.project.name}-${idx}`}
                   className="min-w-full overflow-hidden"
                 >
                   <TopWinnerCard
                     ranked={winner}
-                    isCoWinner={coWinnerKeys.has(`${winner.categoryId ?? 0}-${winner.position}`)}
+                    isCoWinner={coWinnerPositions.has(winner.position)}
+                    showCategoryBadge={isAllCategoriesSelected && hasMultipleCategories}
                     categoryName={
-                      winner.categoryId ? categoryMap.get(winner.categoryId) : undefined
+                      winner.categoryName ??
+                      (winner.categoryId ? categoryMap.get(winner.categoryId) : undefined)
                     }
                     isExposition={isExposition}
                     showScore={visibleScore}
@@ -362,7 +363,9 @@ export function PastEventWinnersTop({
             </div>
           ) : (
             <div className="flex items-center justify-center h-32 rounded-2xl border border-dashed border-border/40 text-sm text-muted-foreground">
-              Aún no hay ganadores disponibles para la categoría seleccionada.
+              {isAllCategoriesSelected
+                ? 'Aún no hay ganadores disponibles para mostrar.'
+                : 'Aún no hay ganadores disponibles para la categoría seleccionada.'}
             </div>
           )}
         </div>

@@ -70,3 +70,55 @@ export const useDeleteJuror = () => {
     onSuccess: () => invalidateJurorAssignments(queryClient),
   });
 };
+
+export const reassignJurorInputSchema = z
+  .object({
+    projectId: z.coerce
+      .number()
+      .int()
+      .min(1, "El ID del proyecto es obligatorio"),
+    fromUserId: z.coerce
+      .number()
+      .int()
+      .min(1, "El ID del jurado actual es obligatorio"),
+    toUserId: z.coerce
+      .number()
+      .int()
+      .min(1, "El ID del nuevo jurado es obligatorio"),
+  })
+  .refine((data) => data.fromUserId !== data.toUserId, {
+    message: "Debes seleccionar un jurado diferente al actual",
+    path: ["toUserId"],
+  });
+
+export type ReassignJurorInput = {
+  projectId: number | string;
+  fromUserId: number | string;
+  toUserId: number | string;
+};
+
+export type ReassignJurorResponse = {
+  ok?: boolean;
+  changed?: boolean;
+  message?: string;
+};
+
+/**
+ * Replaces an assigned juror with another available juror on a project
+ * (PATCH /projects/reassign-juror).
+ */
+export const reassignJuror = (
+  input: ReassignJurorInput,
+): Promise<ReassignJurorResponse> => {
+  const validatedInput = reassignJurorInputSchema.parse(input);
+  return api.patch("/projects/reassign-juror", validatedInput);
+};
+
+export const useReassignJuror = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: reassignJuror,
+    onSuccess: () => invalidateJurorAssignments(queryClient),
+  });
+};
