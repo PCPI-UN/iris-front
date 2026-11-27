@@ -7,43 +7,67 @@ import {
 import { ApiError } from "@/lib/api-client";
 
 describe("project import normalization", () => {
-  test("reads the rows with alternative field names and computes the missing totals", () => {
+  test("reads the preview as the gateway answers it", () => {
     const preview = normalizeProjectImportPreview({
       rows: [
         {
           rowNumber: 2,
-          action: "create",
-          name: "Robot",
-          category: { name: "Ingeniería" },
-          participants: [{}, {}],
-          tutors: ["a@x.co"],
+          outcome: "CREATE",
+          message: "",
+          projectName: "Robot",
+          categoryName: "Ingeniería",
+          state: "UNDER_REVIEW",
+          participants: [
+            { email: "ana@unal.edu.co", status: "HAS_ACCOUNT" },
+            { email: "luis@unal.edu.co", status: "NO_ACCOUNT" },
+          ],
         },
         {
+          rowNumber: 3,
           outcome: "SKIP",
-          project: { id: 9, name: "Riego" },
           message: "Ya existe",
+          projectName: "Riego",
+          state: "APPROVED",
+          participants: [],
+          projectId: 9,
         },
-        { outcome: "WHATEVER", errors: [{ message: "Correo repetido" }] },
+        {
+          rowNumber: 4,
+          outcome: "ERROR",
+          message: "Correo repetido",
+          projectName: "Otro",
+          state: "APPROVED",
+          participants: [],
+        },
       ],
+      totals: {
+        rows: 3,
+        toCreate: 1,
+        skipped: 1,
+        errors: 1,
+        participants: 2,
+        withoutAccount: 1,
+      },
       eventWarnings: ["Evento inactivo"],
+      canConfirm: false,
     });
 
     expect(preview.rows[0]).toMatchObject({
       rowNumber: 2,
       outcome: "CREATE",
+      messages: [],
       projectName: "Robot",
       categoryName: "Ingeniería",
+      state: "UNDER_REVIEW",
       participantsCount: 2,
-      tutorsCount: 1,
+      projectId: null,
     });
     expect(preview.rows[1]).toMatchObject({
       outcome: "SKIP",
       projectId: 9,
-      projectName: "Riego",
       messages: ["Ya existe"],
     });
     expect(preview.rows[2]).toMatchObject({
-      rowNumber: 3,
       outcome: "ERROR",
       messages: ["Correo repetido"],
     });
@@ -54,19 +78,39 @@ describe("project import normalization", () => {
       errors: 1,
     });
     expect(preview.warnings).toEqual(["Evento inactivo"]);
-    // No explicit canConfirm: blocked by the error row
     expect(preview.canConfirm).toBe(false);
   });
 
   test("execute keeps the failed effects of each created row", () => {
     const result = normalizeProjectImportExecute({
       rows: [
-        { outcome: "CREATED", projectId: 5, failedEffects: ["DOCUMENTS"] },
+        {
+          rowNumber: 2,
+          outcome: "CREATED",
+          message: "",
+          projectName: "Robot",
+          state: "APPROVED",
+          participants: [],
+          projectId: 5,
+          failedEffects: ["DOCUMENTS"],
+        },
       ],
+      totals: {
+        created: 1,
+        skipped: 0,
+        errors: 0,
+        emailsSent: 0,
+        failedEffects: 1,
+      },
     });
 
     expect(result.rows[0].failedEffects).toEqual(["DOCUMENTS"]);
-    expect(result.totals.created).toBe(1);
+    expect(result.totals).toEqual({
+      rows: 1,
+      created: 1,
+      skipped: 0,
+      errors: 0,
+    });
   });
 
   test("a 400 with preview is parsed so the view can show it", () => {

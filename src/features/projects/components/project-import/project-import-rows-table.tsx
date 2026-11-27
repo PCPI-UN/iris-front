@@ -69,7 +69,6 @@ export const ProjectImportRowsTable = ({
         String(row.rowNumber),
         row.projectName,
         row.categoryName ?? "",
-        row.nrc ?? "",
         ...row.messages,
       ]
         .join(" ")
@@ -172,22 +171,12 @@ export const ProjectImportRowsTable = ({
                   </TableCell>
                   <TableCell className="text-sm text-default-300">
                     {row.categoryName ?? "—"}
-                    {row.nrc && (
-                      <span className="block text-xs text-default-400">
-                        NRC {row.nrc}
-                      </span>
-                    )}
                   </TableCell>
                   <TableCell className="text-sm text-default-300">
                     {stateLabel(row.state)}
                   </TableCell>
                   <TableCell className="text-sm text-default-300">
                     {row.participantsCount}
-                    {row.tutorsCount > 0 && (
-                      <span className="block text-xs text-default-400">
-                        {row.tutorsCount} tutor(es)
-                      </span>
-                    )}
                   </TableCell>
                   <TableCell>
                     <Chip color={meta.color} size="sm" variant="flat">

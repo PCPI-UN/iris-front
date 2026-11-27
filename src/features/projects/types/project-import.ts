@@ -9,15 +9,13 @@ export type ProjectImportOutcome = "CREATE" | "CREATED" | "SKIP" | "ERROR";
 export interface ProjectImportRow {
   rowNumber: number;
   outcome: ProjectImportOutcome;
-  /** Every reason of the row (errors, why it is skipped, warnings) */
+  /** Why the row is skipped or fails, in Spanish; empty when there is nothing to say */
   messages: string[];
   projectName: string;
   categoryName: string | null;
-  nrc: string | null;
   /** Initial state asked in the row: APPROVED or UNDER_REVIEW */
   state: string | null;
   participantsCount: number;
-  tutorsCount: number;
   /** Id of the created project (execute) or of the existing one (SKIP) */
   projectId: number | null;
   /** Effects that failed after creating the row's project */

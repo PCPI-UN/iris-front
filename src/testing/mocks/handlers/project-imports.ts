@@ -7,8 +7,8 @@ import { env } from "@/config/env";
 /**
  * Admin creation of projects while the backend reaches dev:
  * POST /projects/admin and /events/:eventId/project-imports/{template,preview,execute}.
- * Shapes follow the contract of the card; the row/totals field names mirror
- * the juror import and are normalized defensively by the front.
+ * Shapes follow the gateway answers (Swagger of POST /projects/admin and of the
+ * project-imports controller).
  */
 
 const XLSX_MIME =
@@ -43,45 +43,54 @@ const authorize = (cookies: Record<string, string>) => {
 
 let nextProjectId = 9000;
 
+const participants = (count: number) =>
+  Array.from({ length: count }, (_, index) => ({
+    email: `estudiante${index + 1}@unal.edu.co`,
+    status: index === 0 ? "HAS_ACCOUNT" : "NO_ACCOUNT",
+  }));
+
 const buildPreview = () => ({
   rows: [
     {
       rowNumber: 2,
       outcome: "CREATE",
+      message: "",
       projectName: "Robot clasificador de residuos",
       categoryName: "Ingeniería",
-      nrc: "1234",
       state: "APPROVED",
-      participantsCount: 3,
-      tutorsCount: 1,
-      messages: [],
+      participants: participants(3),
     },
     {
       rowNumber: 3,
       outcome: "CREATE",
+      message: "",
       projectName: "App de tutorías",
       categoryName: "Software",
-      nrc: "1234",
       state: "UNDER_REVIEW",
-      participantsCount: 2,
-      tutorsCount: 0,
-      messages: [],
+      participants: participants(2),
     },
     {
       rowNumber: 4,
       outcome: "SKIP",
+      message: "Ya existe un proyecto con ese nombre en el evento.",
       projectName: "Sistema de riego",
       categoryName: "Ingeniería",
-      nrc: "1234",
       state: "APPROVED",
-      participantsCount: 2,
-      tutorsCount: 0,
+      participants: participants(2),
       projectId: 101,
-      messages: ["Ya existe un proyecto con ese nombre en el evento."],
     },
   ],
-  totals: { rows: 3, created: 2, skipped: 1, errors: 0 },
-  warnings: ["La fecha límite de inscripción ya pasó; no bloquea la carga."],
+  totals: {
+    rows: 3,
+    toCreate: 2,
+    skipped: 1,
+    errors: 0,
+    participants: 5,
+    withoutAccount: 3,
+  },
+  eventWarnings: [
+    "La fecha límite de inscripción ya pasó; no bloquea la carga.",
+  ],
   canConfirm: true,
 });
 
@@ -175,7 +184,13 @@ export const projectImportsHandlers = [
             ? { ...row, outcome: "CREATED", projectId: nextProjectId++ }
             : row,
         ),
-        totals: preview.totals,
+        totals: {
+          created: preview.totals.toCreate,
+          skipped: preview.totals.skipped,
+          errors: preview.totals.errors,
+          emailsSent: 0,
+          failedEffects: 0,
+        },
       });
     },
   ),

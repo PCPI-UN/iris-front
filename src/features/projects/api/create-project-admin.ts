@@ -97,9 +97,8 @@ export const getCreateProjectAdminErrorMessage = (error: unknown): string => {
 
 const FAILED_EFFECT_LABELS: Record<string, string> = {
   DOCUMENTS: "No se pudieron subir los documentos.",
-  DOCUMENT_UPLOAD: "No se pudieron subir los documentos.",
+  INVITATION: "No se pudo invitar al proyecto a los integrantes sin cuenta.",
   TUTOR_ACTIVATION: "No se pudieron activar los tutores.",
-  TUTORS: "No se pudieron registrar los tutores.",
   NOTIFICATION: "No se pudieron registrar los correos de aprobación.",
 };
 
@@ -109,4 +108,4 @@ export const getFailedEffectLabel = (effect: string) =>
 
 /** true when the documents have to be uploaded again from the project editor */
 export const hasFailedDocuments = (failedEffects: string[]) =>
-  failedEffects.some((effect) => effect.includes("DOCUMENT"));
+  failedEffects.includes("DOCUMENTS");

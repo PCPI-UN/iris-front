@@ -23,16 +23,11 @@ const toId = (value: unknown): number | null =>
 
 const toStrings = (value: unknown): string[] =>
   Array.isArray(value)
-    ? value
-        .map((item) =>
-          typeof item === "string" ? item : (item?.message ?? String(item)),
-        )
-        .map((item: string) => item.trim())
-        .filter(Boolean)
+    ? value.map((item) => String(item).trim()).filter(Boolean)
     : [];
 
 const normalizeOutcome = (value: unknown): ProjectImportOutcome => {
-  const outcome = String(value ?? "").toUpperCase();
+  const outcome = String(value ?? "");
 
   if (outcome === "CREATE" || outcome === "CREATED" || outcome === "SKIP") {
     return outcome;
@@ -41,46 +36,26 @@ const normalizeOutcome = (value: unknown): ProjectImportOutcome => {
   return "ERROR";
 };
 
-const countOf = (value: unknown): number => {
-  if (Array.isArray(value)) return value.length;
-  const num = Number(value);
-
-  return Number.isFinite(num) && num >= 0 ? num : 0;
-};
-
-const normalizeRow = (raw: any, index: number): ProjectImportRow => {
-  const project = raw?.project ?? {};
-  const messages = [
-    ...(toText(raw?.message) ? [toText(raw?.message) as string] : []),
-    ...toStrings(raw?.messages),
-    ...toStrings(raw?.errors),
-    ...toStrings(raw?.warnings),
-  ];
+/** One row of the preview or the execute as the gateway answers it */
+const normalizeRow = (raw: any): ProjectImportRow => {
+  const message = toText(raw?.message);
 
   return {
-    rowNumber: Number.isFinite(Number(raw?.rowNumber))
-      ? Number(raw.rowNumber)
-      : index + 1,
-    outcome: normalizeOutcome(raw?.outcome ?? raw?.action ?? raw?.status),
-    messages: Array.from(new Set(messages)),
-    projectName:
-      toText(raw?.projectName) ??
-      toText(raw?.name) ??
-      toText(project?.name) ??
-      "",
-    categoryName:
-      toText(raw?.categoryName) ??
-      toText(raw?.category?.name) ??
-      toText(raw?.category),
-    nrc: toText(raw?.nrc) ?? (raw?.nrc != null ? String(raw.nrc) : null),
-    state: toText(raw?.state) ?? toText(project?.state),
-    participantsCount: countOf(raw?.participantsCount ?? raw?.participants),
-    tutorsCount: countOf(raw?.tutorsCount ?? raw?.tutors),
-    projectId: toId(raw?.projectId ?? project?.id),
+    rowNumber: Number(raw?.rowNumber),
+    outcome: normalizeOutcome(raw?.outcome),
+    messages: message ? [message] : [],
+    projectName: toText(raw?.projectName) ?? "",
+    categoryName: toText(raw?.categoryName),
+    state: toText(raw?.state),
+    participantsCount: Array.isArray(raw?.participants)
+      ? raw.participants.length
+      : 0,
+    projectId: toId(raw?.projectId),
     failedEffects: toStrings(raw?.failedEffects),
   };
 };
 
+/** The preview counts the rows to create in toCreate; the execute, the created ones in created */
 const normalizeTotals = (
   rawTotals: any,
   rows: ProjectImportRow[],
@@ -93,13 +68,13 @@ const normalizeTotals = (
     rows.filter((row) => outcomes.includes(row.outcome)).length;
 
   return {
-    rows: safeNum(rawTotals?.rows ?? rawTotals?.total, rows.length),
+    rows: safeNum(rawTotals?.rows, rows.length),
     created: safeNum(
-      rawTotals?.created ?? rawTotals?.create ?? rawTotals?.toCreate,
+      rawTotals?.created ?? rawTotals?.toCreate,
       count("CREATE", "CREATED"),
     ),
-    skipped: safeNum(rawTotals?.skipped ?? rawTotals?.skip, count("SKIP")),
-    errors: safeNum(rawTotals?.errors ?? rawTotals?.error, count("ERROR")),
+    skipped: safeNum(rawTotals?.skipped, count("SKIP")),
+    errors: safeNum(rawTotals?.errors, count("ERROR")),
   };
 };
 
@@ -107,16 +82,12 @@ export function normalizeProjectImportPreview(
   raw: any,
 ): ProjectImportPreviewResponse {
   const rows = (Array.isArray(raw?.rows) ? raw.rows : []).map(normalizeRow);
-  const totals = normalizeTotals(raw?.totals, rows);
 
   return {
     rows,
-    totals,
-    canConfirm:
-      typeof raw?.canConfirm === "boolean"
-        ? raw.canConfirm
-        : totals.errors === 0 && totals.created > 0,
-    warnings: toStrings(raw?.warnings ?? raw?.eventWarnings),
+    totals: normalizeTotals(raw?.totals, rows),
+    canConfirm: raw?.canConfirm === true,
+    warnings: toStrings(raw?.eventWarnings),
   };
 }
 

@@ -39,11 +39,12 @@ const row = (
   outcome,
   projectName,
   categoryName: "Ingeniería",
-  nrc: "1234",
   state: "APPROVED",
-  participantsCount: 2,
-  tutorsCount: 0,
-  messages: [],
+  participants: [
+    { email: "ana@unal.edu.co", status: "HAS_ACCOUNT" },
+    { email: "luis@unal.edu.co", status: "NO_ACCOUNT" },
+  ],
+  message: "",
   ...extra,
 });
 
@@ -51,11 +52,19 @@ const okPreview = {
   rows: [
     row(2, "CREATE", "Robot clasificador"),
     row(3, "SKIP", "Sistema de riego", {
-      messages: ["Ya existe un proyecto con ese nombre en el evento."],
+      message: "Ya existe un proyecto con ese nombre en el evento.",
+      projectId: 101,
     }),
   ],
-  totals: { rows: 2, created: 1, skipped: 1, errors: 0 },
-  warnings: ["La fecha límite de inscripción ya pasó."],
+  totals: {
+    rows: 2,
+    toCreate: 1,
+    skipped: 1,
+    errors: 0,
+    participants: 2,
+    withoutAccount: 1,
+  },
+  eventWarnings: ["La fecha límite de inscripción ya pasó."],
   canConfirm: true,
 };
 
@@ -174,11 +183,18 @@ describe("ProjectImportView", () => {
           rows: [
             row(2, "CREATE", "Robot clasificador"),
             row(3, "ERROR", "Robot clasificador", {
-              messages: ["El nombre está repetido en el archivo."],
+              message: "El nombre está repetido en el archivo.",
             }),
           ],
-          totals: { rows: 2, created: 1, skipped: 0, errors: 1 },
-          warnings: [],
+          totals: {
+            rows: 2,
+            toCreate: 1,
+            skipped: 0,
+            errors: 1,
+            participants: 2,
+            withoutAccount: 1,
+          },
+          eventWarnings: [],
           canConfirm: false,
         }),
       ),
@@ -230,7 +246,14 @@ describe("ProjectImportView", () => {
               }),
               okPreview.rows[1],
             ],
-            totals: { rows: 2, created: 1, skipped: 1, errors: 0 },
+            // The execute totals do not carry rows
+            totals: {
+              created: 1,
+              skipped: 1,
+              errors: 0,
+              emailsSent: 1,
+              failedEffects: 1,
+            },
           });
         },
       ),
@@ -281,7 +304,7 @@ describe("ProjectImportView", () => {
               preview: {
                 ...okPreview,
                 canConfirm: false,
-                warnings: ["Resultados publicados"],
+                eventWarnings: ["Resultados publicados"],
               },
             },
           },
