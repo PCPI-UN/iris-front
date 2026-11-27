@@ -192,8 +192,8 @@ export const awardsHandlers = [
     return HttpResponse.json({ ok: true });
   }),
 
-  // Diploma of a winner (admin): only projects with an award; the mock has no
-  // published-results flag, so every winner gets its PDF
+  // Diploma of a winner (admin): only projects with an award, published
+  // results or not
   http.get(
     `*/events/:eventId/projects/:projectId/diploma`,
     async ({ params, cookies }) => {
