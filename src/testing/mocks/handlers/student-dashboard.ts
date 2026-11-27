@@ -532,6 +532,7 @@ const toGatewayMyProject = (user: unknown, project: StudentProjectInfo) => {
         isCurrentEvent ? now + 7 * DAY_MS : now - 180 * DAY_MS,
       ).toISOString(),
       evaluationType: 1,
+      evaluationsOpened: !isCurrentEvent,
       resultsPublished: false,
     },
   };

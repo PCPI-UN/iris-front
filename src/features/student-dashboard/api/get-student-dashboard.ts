@@ -15,6 +15,11 @@ import {
   UpdateStudentProjectPayload,
 } from '../types';
 import { adaptStudentProject } from '../utils/adapt-student-project';
+import {
+  hasRealDocumentId,
+  validatePosterFile,
+  validateSupportingFiles,
+} from '../utils/document-validation';
 
 type WrappedOrDirect<T> = { data: T } | T;
 
@@ -103,6 +108,112 @@ export const updateStudentProject = async ({
   const id = encodeURIComponent(String(projectId));
   await api.patch(`/projects/${id}/info`, data);
   await api.post(`/projects/${id}/change-to-under-review`);
+};
+
+/**
+ * Sube un póster nuevo (POST /projects/:projectId/documents) o reemplaza el existente
+ * (PATCH /projects/documents/:documentId), validando previamente extensión, tamaño y firma binaria.
+ */
+export const uploadOrReplaceStudentPoster = async ({
+  projectId,
+  file,
+  existingPosterId,
+  existingPosterType,
+}: {
+  projectId: string | number;
+  file: File;
+  existingPosterId?: string | number | null;
+  existingPosterType?: string | null;
+}): Promise<{ replaced: boolean }> => {
+  const validationError = await validatePosterFile(file);
+  if (validationError) {
+    throw new Error(validationError);
+  }
+
+  if (existingPosterId !== undefined && existingPosterId !== null && hasRealDocumentId(existingPosterId)) {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('type', existingPosterType || 'POSTER');
+
+    await api.patch(
+      `/projects/documents/${encodeURIComponent(String(existingPosterId))}`,
+      formData,
+      { suppressErrorNotification: true },
+    );
+
+    return { replaced: true };
+  }
+
+  const formData = new FormData();
+  formData.append('files', file);
+  formData.append('documents', JSON.stringify([{ type: 'POSTER' }]));
+
+  await api.post(
+    `/projects/${encodeURIComponent(String(projectId))}/documents`,
+    formData,
+    { suppressErrorNotification: true },
+  );
+
+  return { replaced: false };
+};
+
+export const uploadStudentSupportingDocuments = async ({
+  projectId,
+  files,
+}: {
+  projectId: string | number;
+  files: File[];
+}): Promise<void> => {
+  const validationError = await validateSupportingFiles(files);
+  if (validationError) {
+    throw new Error(validationError);
+  }
+
+  const formData = new FormData();
+  files.forEach((file) => {
+    formData.append('files', file);
+  });
+  formData.append(
+    'documents',
+    JSON.stringify(files.map(() => ({ type: 'SUPPORTING_DOCUMENT' }))),
+  );
+
+  await api.post(
+    `/projects/${encodeURIComponent(String(projectId))}/documents`,
+    formData,
+    { suppressErrorNotification: true },
+  );
+};
+
+export const replaceStudentSupportingDocument = async ({
+  documentId,
+  file,
+  documentType,
+}: {
+  documentId: string | number;
+  file: File;
+  documentType?: string | null;
+}): Promise<void> => {
+  if (!hasRealDocumentId(documentId)) {
+    throw new Error('No se pudo identificar el documento a reemplazar.');
+  }
+
+  const validationError = await validateSupportingFiles([file]);
+  if (validationError) {
+    throw new Error(validationError);
+  }
+
+  const formData = new FormData();
+  formData.append('file', file);
+  if (documentType) {
+    formData.append('type', documentType);
+  }
+
+  await api.patch(
+    `/projects/documents/${encodeURIComponent(String(documentId))}`,
+    formData,
+    { suppressErrorNotification: true },
+  );
 };
 
 /**
@@ -384,6 +495,154 @@ export const useUpdateStudentProject = ({
         title: 'Propuesta actualizada',
         message:
           'Los ajustes del proyecto se han guardado y enviado nuevamente a revisión del comité.',
+      });
+    },
+  });
+};
+
+const getDocumentErrorMessage = (error: unknown, fallback: string): string => {
+  if (error instanceof ApiError && error.message?.trim()) {
+    return error.message;
+  }
+  if (error instanceof Error && error.message?.trim()) {
+    return error.message;
+  }
+  return fallback;
+};
+
+const useInvalidateStudentProjectDocuments = ({
+  eventId,
+  projectId,
+}: {
+  eventId?: number | string;
+  projectId?: number | string;
+}) => {
+  const queryClient = useQueryClient();
+
+  return useCallback(async () => {
+    const tasks: Array<Promise<unknown>> = [
+      queryClient.invalidateQueries({ queryKey: studentDashboardKeys.all }),
+    ];
+    if (eventId !== undefined && eventId !== null) {
+      tasks.push(
+        queryClient.invalidateQueries({
+          queryKey: ['my-project', String(eventId)],
+        }),
+      );
+    }
+    if (projectId !== undefined && projectId !== null) {
+      tasks.push(
+        queryClient.invalidateQueries({
+          queryKey: ['projects', String(projectId)],
+        }),
+      );
+    }
+    await Promise.all(tasks);
+  }, [queryClient, eventId, projectId]);
+};
+
+export const useUploadStudentPoster = ({
+  eventId,
+  projectId,
+}: {
+  eventId?: number | string;
+  projectId?: number | string;
+} = {}) => {
+  const invalidate = useInvalidateStudentProjectDocuments({
+    eventId,
+    projectId,
+  });
+
+  return useMutation({
+    mutationFn: uploadOrReplaceStudentPoster,
+    onSuccess: async ({ replaced }) => {
+      await invalidate();
+      useNotifications.getState().addNotification({
+        type: 'success',
+        title: replaced ? 'Póster actualizado' : 'Póster cargado',
+        message: replaced
+          ? 'El póster del proyecto se reemplazó correctamente.'
+          : 'El póster del proyecto se cargó correctamente.',
+      });
+    },
+    onError: (error) => {
+      useNotifications.getState().addNotification({
+        type: 'error',
+        title: 'No se pudo actualizar el póster',
+        message: getDocumentErrorMessage(
+          error,
+          'Ocurrió un error al subir el póster. Intenta nuevamente.',
+        ),
+      });
+    },
+  });
+};
+
+export const useUploadStudentSupportingDocuments = ({
+  eventId,
+  projectId,
+}: {
+  eventId?: number | string;
+  projectId?: number | string;
+} = {}) => {
+  const invalidate = useInvalidateStudentProjectDocuments({
+    eventId,
+    projectId,
+  });
+
+  return useMutation({
+    mutationFn: uploadStudentSupportingDocuments,
+    onSuccess: async () => {
+      await invalidate();
+      useNotifications.getState().addNotification({
+        type: 'success',
+        title: 'Documentos cargados',
+        message: 'Los documentos de soporte se subieron correctamente.',
+      });
+    },
+    onError: (error) => {
+      useNotifications.getState().addNotification({
+        type: 'error',
+        title: 'No se pudieron cargar los documentos',
+        message: getDocumentErrorMessage(
+          error,
+          'Ocurrió un error al subir los documentos. Intenta nuevamente.',
+        ),
+      });
+    },
+  });
+};
+
+export const useReplaceStudentSupportingDocument = ({
+  eventId,
+  projectId,
+}: {
+  eventId?: number | string;
+  projectId?: number | string;
+} = {}) => {
+  const invalidate = useInvalidateStudentProjectDocuments({
+    eventId,
+    projectId,
+  });
+
+  return useMutation({
+    mutationFn: replaceStudentSupportingDocument,
+    onSuccess: async () => {
+      await invalidate();
+      useNotifications.getState().addNotification({
+        type: 'success',
+        title: 'Documento actualizado',
+        message: 'El documento de soporte se reemplazó correctamente.',
+      });
+    },
+    onError: (error) => {
+      useNotifications.getState().addNotification({
+        type: 'error',
+        title: 'No se pudo reemplazar el documento',
+        message: getDocumentErrorMessage(
+          error,
+          'Ocurrió un error al reemplazar el documento. Intenta nuevamente.',
+        ),
       });
     },
   });

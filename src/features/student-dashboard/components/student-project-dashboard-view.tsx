@@ -14,11 +14,18 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
-import { StudentDashboardData, StudentProjectInfo } from '../types';
+import {
+  StudentDashboardData,
+  StudentProjectDocument,
+  StudentProjectInfo,
+} from '../types';
 import {
   isDiplomaAvailableForEvent,
+  useReplaceStudentSupportingDocument,
   useStudentDashboard,
   useUpdateStudentProject,
+  useUploadStudentPoster,
+  useUploadStudentSupportingDocuments,
 } from '../api/get-student-dashboard';
 import { StudentProjectSection } from './student-project-section';
 import { StudentEvaluationSection } from './student-evaluation-section';
@@ -51,8 +58,22 @@ export const StudentProjectDashboardView = ({
     refetch,
   } = useStudentDashboard(eventId ?? 'current');
   const data = initialData || remoteData;
+  const resolvedEventId = data?.currentProject?.eventId ?? eventId;
+  const resolvedProjectId = data?.currentProject?.id;
   const updateProjectMutation = useUpdateStudentProject({
-    eventId: data?.currentProject?.eventId ?? eventId,
+    eventId: resolvedEventId,
+  });
+  const uploadPosterMutation = useUploadStudentPoster({
+    eventId: resolvedEventId,
+    projectId: resolvedProjectId,
+  });
+  const uploadSupportingMutation = useUploadStudentSupportingDocuments({
+    eventId: resolvedEventId,
+    projectId: resolvedProjectId,
+  });
+  const replaceSupportingMutation = useReplaceStudentSupportingDocument({
+    eventId: resolvedEventId,
+    projectId: resolvedProjectId,
   });
 
   if (isError && !data) {
@@ -85,6 +106,38 @@ export const StudentProjectDashboardView = ({
         description:
           updatedProject.description ?? currentProject.description ?? '',
       },
+    });
+  };
+
+  const handleUploadPoster = async (
+    file: File,
+    existingPoster?: StudentProjectDocument,
+  ) => {
+    if (!currentProject?.id) return;
+    await uploadPosterMutation.mutateAsync({
+      projectId: currentProject.id,
+      file,
+      existingPosterId: existingPoster?.id,
+      existingPosterType: existingPoster?.type,
+    });
+  };
+
+  const handleUploadSupportingDocuments = async (files: File[]) => {
+    if (!currentProject?.id) return;
+    await uploadSupportingMutation.mutateAsync({
+      projectId: currentProject.id,
+      files,
+    });
+  };
+
+  const handleReplaceSupportingDocument = async (
+    document: StudentProjectDocument,
+    file: File,
+  ) => {
+    await replaceSupportingMutation.mutateAsync({
+      documentId: document.id,
+      file,
+      documentType: document.type,
     });
   };
 
@@ -311,6 +364,9 @@ export const StudentProjectDashboardView = ({
             <StudentProjectSection
               project={currentProject}
               onSaveChanges={handleSaveProjectChanges}
+              onUploadPoster={handleUploadPoster}
+              onUploadSupportingDocuments={handleUploadSupportingDocuments}
+              onReplaceSupportingDocument={handleReplaceSupportingDocument}
             />
           )}
 
