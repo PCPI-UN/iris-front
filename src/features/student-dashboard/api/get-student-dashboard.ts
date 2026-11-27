@@ -3,8 +3,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ApiError, api } from '@/lib/api-client';
 import { useUser } from '@/lib/auth';
 import { useNotifications } from '@/components/ui/notifications';
+import { saveFile } from '@/features/reports/api/download-evaluation-report';
 import {
-  DiplomaCertificate,
+  AcademicParticipation,
   StudentDashboardData,
   StudentEvaluation,
   StudentGeneralDashboardResponse,
@@ -105,23 +106,61 @@ export const updateStudentProject = async ({
 };
 
 /**
- * Endpoint 5: Descarga de Certificados Oficiales
- * GET /api/v1/certificates/:certificateId/download
+ * Endpoint 5: Diploma de premio del proyecto en un evento (PDF)
+ * GET /api/v1/events/:eventId/my-project/diploma
+ * Solo existe cuando la trayectoria trae `diplomaAvailable: true`.
  */
-export const getCertificateDownloadUrl = (
-  certificateId: string | number,
-): string => {
-  return `/api/certificates/${encodeURIComponent(String(certificateId))}/download`;
+export const getMyDiploma = (eventId: number | string) =>
+  api.download(
+    `/events/${encodeURIComponent(String(eventId))}/my-project/diploma`,
+    {
+      headers: { Accept: 'application/pdf' },
+      // El botón muestra su propio mensaje de error
+      suppressErrorNotification: true,
+    },
+  );
+
+/** Nombre del archivo cuando el backend no envía Content-Disposition */
+export const getDiplomaFallbackName = (eventId: number | string) =>
+  `diploma_evento_${eventId}.pdf`;
+
+export const downloadMyDiploma = async (eventId: number | string) => {
+  const { blob, fileName } = await getMyDiploma(eventId);
+  saveFile(blob, fileName ?? getDiplomaFallbackName(eventId));
 };
 
-export const downloadStudentCertificate = async (
-  certificateId: string | number,
-): Promise<{ downloadUrl?: string; blob?: Blob }> => {
-  const response = await api.get<any>(
-    `/certificates/${encodeURIComponent(String(certificateId))}/download`,
-  );
-  return unwrapResponse(response);
+/**
+ * Mensaje para el estudiante cuando falla la descarga del diploma. En 403 (resultados
+ * sin publicar) y 404 (sin proyecto, sin premio o evento sin diseño) el backend ya
+ * explica el motivo en español.
+ */
+export const getDiplomaErrorMessage = (error: unknown): string => {
+  if (error instanceof ApiError) {
+    switch (error.status) {
+      case 403:
+        return (
+          error.message || 'Los resultados del evento aún no se han publicado.'
+        );
+      case 404:
+        return error.message || 'Este proyecto no tiene diploma en el evento.';
+    }
+  }
+  return 'No se pudo descargar el diploma. Intenta de nuevo.';
 };
+
+/**
+ * Si el evento tiene diploma descargable según la trayectoria del dashboard
+ * (`diplomaAvailable`, que el backend calcula con la misma regla que la descarga).
+ */
+export const isDiplomaAvailableForEvent = (
+  trajectory: AcademicParticipation[] | undefined,
+  eventId: number | string | null | undefined,
+): boolean =>
+  eventId != null &&
+  (trajectory ?? []).some(
+    (item) =>
+      item.diplomaAvailable === true && String(item.eventId) === String(eventId),
+  );
 
 /**
  * Combina el dashboard general con la ficha y los resultados de un evento.
@@ -138,21 +177,8 @@ const normalizeGeneralDashboardToStudentData = (
 
   const normalizedTrajectory = trajectory.map((item) => ({
     ...item,
-    certificates: (item.certificates ?? []).map((cert) => ({
-      ...cert,
-      eventName: cert.eventName || item.eventName,
-      semester: cert.semester || item.semester,
-      downloadUrl: cert.downloadUrl || getCertificateDownloadUrl(cert.id),
-    })),
+    diplomaAvailable: Boolean(item.diplomaAvailable),
   }));
-
-  const flattenedCertificates: DiplomaCertificate[] =
-    Array.isArray(general.certificates) && general.certificates.length > 0
-      ? general.certificates.map((cert) => ({
-          ...cert,
-          downloadUrl: cert.downloadUrl || getCertificateDownloadUrl(cert.id),
-        }))
-      : normalizedTrajectory.flatMap((item) => item.certificates ?? []);
 
   const currentProjectSummary = general.currentProject;
   const sameEvent = (a?: string | number | null, b?: string | number | null) =>
@@ -234,7 +260,6 @@ const normalizeGeneralDashboardToStudentData = (
     currentProject: resolvedProject,
     evaluation: resolvedEvaluation,
     trajectory: normalizedTrajectory,
-    certificates: flattenedCertificates,
   };
 };
 
