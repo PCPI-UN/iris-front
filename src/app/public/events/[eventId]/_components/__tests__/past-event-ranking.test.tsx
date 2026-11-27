@@ -587,4 +587,188 @@ describe('PastEventDetail - Ranking en eventos finalizados (IRIS-V3-EVT-01 §3.2
     ).toBeInTheDocument();
     expect(allButton).toHaveAttribute('aria-pressed', 'true');
   });
+
+  test('muestra todos los puestos visibles a la vez (1°, 2°, 3° lugar) usando /ranking-config/by-event/:eventId y priorizando la configuración de /rankings/public', async () => {
+    const eventId = 907;
+
+    server.use(
+      http.get(`*/events/public/past/${eventId}`, () => {
+        return HttpResponse.json({
+          data: {
+            id: eventId,
+            name: 'Feria Multi-Posiciones 2025',
+            description: 'Evento con 3 puestos visibles.',
+            startDate: '2025-10-01T08:00:00Z',
+            endDate: '2025-10-03T18:00:00Z',
+            inscriptionDeadline: '2025-09-20',
+            status: 4,
+            statusName: 'CLOSED',
+            active: false,
+            resultsPublished: true,
+            eventType: 1,
+            categories: [{ id: 10, name: 'Ingeniería de Sistemas' }],
+          },
+        });
+      }),
+      http.get(`*/projects/by-event/${eventId}/with-jurors`, () => {
+        return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 });
+      }),
+      // Simula el bug anterior: /ranking-config/:id devuelve configuración de OTRO evento con positions=1 y visiblePublic=false
+      http.get(`*/events/ranking-config/${eventId}`, () => {
+        return HttpResponse.json({
+          rankingEvent: {
+            id: eventId,
+            eventId: 9999,
+            positions: 1,
+            visiblePublic: false,
+            gradeVisible: false,
+          },
+        });
+      }),
+      http.get(`*/events/ranking-config/by-event/${eventId}`, () => {
+        return HttpResponse.json({
+          rankingEvent: {
+            id: 42,
+            eventId,
+            positions: 3,
+            visiblePublic: true,
+            gradeVisible: true,
+          },
+        });
+      }),
+      http.get(`*/events/${eventId}/rankings/public`, () => {
+        return HttpResponse.json({
+          eventId,
+          scope: 'public',
+          configuration: {
+            visiblePublic: true,
+            positions: 3,
+            gradeVisible: true,
+          },
+          items: [
+            {
+              position: 1,
+              projectId: 1,
+              projectName: 'Proyecto Oro',
+              averageGrade: 4.9,
+              categoryId: 10,
+              category: 'Ingeniería de Sistemas',
+              participantNames: ['Ana'],
+            },
+            {
+              position: 2,
+              projectId: 2,
+              projectName: 'Proyecto Plata',
+              averageGrade: 4.6,
+              categoryId: 10,
+              category: 'Ingeniería de Sistemas',
+              participantNames: ['Bruno'],
+            },
+            {
+              position: 3,
+              projectId: 3,
+              projectName: 'Proyecto Bronce',
+              averageGrade: 4.3,
+              categoryId: 10,
+              category: 'Ingeniería de Sistemas',
+              participantNames: ['Carla'],
+            },
+          ],
+        });
+      }),
+    );
+
+    renderWithQueryClient(<PastEventDetail eventId={eventId} />);
+
+    // Todos los puestos se renderizan directamente en una lista ordenada (sin carrusel 1-a-1)
+    const list = await screen.findByRole('list', {
+      name: /lista de proyectos ganadores/i,
+    });
+    expect(list).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Proyecto Oro' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Proyecto Plata' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Proyecto Bronce' })).toBeInTheDocument();
+    expect(screen.getByText('1° Lugar')).toBeInTheDocument();
+    expect(screen.getByText('2° Lugar')).toBeInTheDocument();
+    expect(screen.getByText('3° Lugar')).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /siguiente ganador/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  test('mantiene oculto el ranking si resultsPublished es false aunque /rankings/public responda 200 con visiblePublic: true', async () => {
+    const eventId = 908;
+
+    server.use(
+      http.get(`*/events/public/past/${eventId}`, () => {
+        return HttpResponse.json({
+          data: {
+            id: eventId,
+            name: 'Feria Sin Publicar 2025',
+            description: 'Resultados aún no publicados.',
+            startDate: '2025-10-01T08:00:00Z',
+            endDate: '2025-10-03T18:00:00Z',
+            inscriptionDeadline: '2025-09-20',
+            status: 4,
+            statusName: 'CLOSED',
+            active: false,
+            resultsPublished: false,
+            eventType: 1,
+            categories: [{ id: 10, name: 'Ingeniería de Sistemas' }],
+          },
+        });
+      }),
+      http.get(`*/projects/by-event/${eventId}/with-jurors`, () => {
+        return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 });
+      }),
+      http.get(`*/events/ranking-config/by-event/${eventId}`, () => {
+        return HttpResponse.json({
+          rankingEvent: {
+            id: 43,
+            eventId,
+            positions: 3,
+            visiblePublic: true,
+            gradeVisible: true,
+          },
+        });
+      }),
+      http.get(`*/events/${eventId}/rankings/public`, () => {
+        return HttpResponse.json({
+          eventId,
+          scope: 'public',
+          configuration: {
+            visiblePublic: true,
+            positions: 3,
+            gradeVisible: true,
+          },
+          items: [
+            {
+              position: 1,
+              projectId: 1,
+              projectName: 'Proyecto Oculto',
+              averageGrade: 4.9,
+              categoryId: 10,
+              category: 'Ingeniería de Sistemas',
+              participantNames: ['Ana'],
+            },
+          ],
+        });
+      }),
+    );
+
+    renderWithQueryClient(<PastEventDetail eventId={eventId} />);
+
+    expect(
+      await screen.findByRole('heading', { name: /feria sin publicar 2025/i }),
+    ).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(
+        screen.queryByRole('heading', { name: /proyectos ganadores/i }),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('heading', { name: 'Proyecto Oculto' }),
+      ).not.toBeInTheDocument();
+    });
+  });
 });

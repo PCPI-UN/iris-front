@@ -912,8 +912,10 @@ export const PastEventDetail = ({ eventId }: EventDetailProps) => {
   }, [rankingQuery.data]);
 
   const effectiveRankingConfig = useMemo(() => {
-    return rankingConfigQuery.data?.data ?? event?.rankingConfig ?? publicRankingConfig ?? null;
-  }, [rankingConfigQuery.data, event?.rankingConfig, publicRankingConfig]);
+    // Prefer the authoritative configuration embedded in /events/:eventId/rankings/public
+    // so the displayed positions and visibility always match the actual public ranking response.
+    return publicRankingConfig ?? rankingConfigQuery.data?.data ?? event?.rankingConfig ?? null;
+  }, [publicRankingConfig, rankingConfigQuery.data, event?.rankingConfig]);
 
   // Reset category selection when the event changes
   useEffect(() => {
