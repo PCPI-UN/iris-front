@@ -753,6 +753,157 @@ export const eventsHandlers = [
     }
   }),
 
+  http.get(`${env.API_URL}/events/:eventId/rankings`, async ({ params, request, cookies }) => {
+    await networkDelay();
+
+    try {
+      const { error } = requireAuth(cookies);
+      if (error) {
+        return HttpResponse.json({ message: error }, { status: 401 });
+      }
+
+      const numericEventId = toPublicNumericId(String(params.eventId), "event");
+      const eventId = toInternalPrefixedId(String(params.eventId), "event");
+      const url = new URL(request.url);
+      const rawCategoryId = url.searchParams.get("categoryId") ?? url.searchParams.get("category_id");
+      const filterCategoryId = rawCategoryId ? Number(rawCategoryId) : undefined;
+
+      const event = db.event.findFirst({
+        where: {
+          id: {
+            equals: eventId,
+          },
+        },
+      }) as any;
+
+      if (!event) {
+        return HttpResponse.json({
+          eventId: numericEventId,
+          eventName: `Evento ${numericEventId}`,
+          scope: "admin",
+          categoryId: filterCategoryId,
+          items: [],
+        });
+      }
+
+      let projects = db.project
+        .findMany({
+          where: {
+            eventId: {
+              equals: event.id,
+            },
+          },
+        })
+        .filter((project: any) => String(project.state ?? "").toUpperCase() === "APPROVED");
+
+      if (filterCategoryId && Number.isFinite(filterCategoryId) && filterCategoryId > 0) {
+        projects = projects.filter((project: any) => {
+          const projCatId = toPublicNumericId(
+            String(project.categoryId ?? project.courseId ?? ""),
+            "course",
+          );
+          return projCatId === filterCategoryId || Number(project.categoryId) === filterCategoryId;
+        });
+      }
+
+      const courses = db.course?.getAll?.() ?? [];
+      const categoryNameById = new Map<number, string>();
+      courses.forEach((course: any) => {
+        const id = toPublicNumericId(String(course.id), "course");
+        if (id > 0) {
+          categoryNameById.set(id, String(course.name ?? course.code ?? `Categoría ${id}`));
+        }
+      });
+
+      const scoredProjects = projects
+        .map((project: any) => {
+          const evaluations = db.evaluation.findMany({
+            where: {
+              projectId: {
+                equals: String(project.id),
+              },
+            },
+          });
+
+          const individualGrades = evaluations.map((ev: any) =>
+            Number(Number(ev.grade ?? 0).toFixed(2)),
+          );
+          const avgScore =
+            evaluations.length > 0
+              ? Number(
+                  (
+                    evaluations.reduce((sum: number, ev: any) => sum + Number(ev.grade ?? 0), 0) /
+                    evaluations.length
+                  ).toFixed(2),
+                )
+              : typeof project.score === "number"
+                ? Number(Number(project.score).toFixed(2))
+                : undefined;
+
+          const categoryId = toPublicNumericId(
+            String(project.categoryId ?? project.courseId ?? ""),
+            "course",
+          );
+
+          return {
+            project,
+            projectId: toPublicNumericId(String(project.id), "project"),
+            avgScore,
+            individualGrades,
+            evaluationCount: evaluations.length,
+            categoryId: categoryId > 0 ? categoryId : undefined,
+          };
+        })
+        .filter((entry) => entry.avgScore !== undefined)
+        .sort((a, b) => {
+          const diff = Number(b.avgScore ?? 0) - Number(a.avgScore ?? 0);
+          return diff !== 0 ? diff : a.projectId - b.projectId;
+        });
+
+      let position = 0;
+      let previousGrade: number | undefined;
+      const items = scoredProjects.map((entry, idx) => {
+        const averageGrade = Number(entry.avgScore);
+        if (averageGrade !== previousGrade) {
+          position += 1;
+          previousGrade = averageGrade;
+        }
+
+        return {
+          projectId: entry.projectId || idx + 1,
+          projectCode: entry.project.projectCode ?? entry.project.eventNumber ?? "",
+          projectName: entry.project.name,
+          participantNames: (entry.project.participants ?? []).map(
+            (p: any) =>
+              `${p.firstName ?? ""} ${p.lastName ?? ""}`.trim() || p.email || "Participante",
+          ),
+          categoryId: entry.categoryId,
+          category:
+            (entry.categoryId ? categoryNameById.get(entry.categoryId) : undefined) ??
+            entry.project.categoryName ??
+            (entry.categoryId ? `Categoría ${entry.categoryId}` : undefined),
+          position,
+          evaluationCount: entry.evaluationCount,
+          individualGrades: entry.individualGrades,
+          averageGrade,
+        };
+      });
+
+      return HttpResponse.json({
+        eventId: numericEventId,
+        eventName: event.name ?? `Evento ${numericEventId}`,
+        scope: "admin",
+        categoryId: filterCategoryId,
+        items,
+      });
+    } catch (error: any) {
+      return HttpResponse.json(
+        { message: error?.message || "Server Error" },
+        { status: 500 }
+      );
+    }
+  }),
+
   http.get(`${env.API_URL}/events`, async ({ cookies, request }) => {
     await networkDelay();
 
