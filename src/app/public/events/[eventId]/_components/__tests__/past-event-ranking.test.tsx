@@ -435,4 +435,156 @@ describe('PastEventDetail - Ranking en eventos finalizados (IRIS-V3-EVT-01 §3.2
     ).toBeInTheDocument();
     expect(screen.getByText('4.60')).toBeInTheDocument();
   });
+
+  test('muestra el botón "Todas las categorías" para el ranking global y consulta el ranking propio de cada departamento/categoría al seleccionarlo', async () => {
+    const eventId = 906;
+    const requestedCategoryIds: Array<string | null> = [];
+
+    server.use(
+      http.get(`*/events/public/past/${eventId}`, () => {
+        return HttpResponse.json({
+          data: {
+            id: eventId,
+            name: 'Feria de Ingeniería 2025',
+            description: 'Evento con múltiples departamentos.',
+            startDate: '2025-10-01T08:00:00Z',
+            endDate: '2025-10-03T18:00:00Z',
+            inscriptionDeadline: '2025-09-20',
+            status: 4,
+            statusName: 'CLOSED',
+            active: false,
+            resultsPublished: true,
+            eventType: 1,
+            categories: [
+              { id: 10, name: 'Ingeniería de Sistemas' },
+              { id: 20, name: 'Ingeniería Mecánica' },
+              { id: 30, name: 'Ingeniería Industrial' },
+            ],
+          },
+        });
+      }),
+      http.get(`*/projects/by-event/${eventId}/with-jurors`, () => {
+        return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 });
+      }),
+      http.get(`*/events/ranking-config/${eventId}`, () => {
+        return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 });
+      }),
+      http.get(`*/events/${eventId}/rankings/public`, ({ request }) => {
+        const url = new URL(request.url);
+        const categoryId = url.searchParams.get('categoryId');
+        requestedCategoryIds.push(categoryId);
+
+        const configuration = {
+          visiblePublic: true,
+          positions: 3,
+          gradeVisible: true,
+        };
+
+        // Ranking global: solo contiene ganadores de Sistemas (id 10), NINGUNO de Mecánica (id 20)
+        if (!categoryId) {
+          return HttpResponse.json({
+            eventId,
+            scope: 'public',
+            configuration,
+            items: [
+              {
+                position: 1,
+                projectId: 101,
+                projectName: 'IA Predictiva Global',
+                averageGrade: 4.95,
+                categoryId: 10,
+                category: 'Ingeniería de Sistemas',
+                participantNames: ['Sofía Castro'],
+              },
+              {
+                position: 1,
+                projectId: 102,
+                projectName: 'Red Neuronal Distribuida',
+                averageGrade: 4.95,
+                categoryId: 10,
+                category: 'Ingeniería de Sistemas',
+                participantNames: ['Mateo Díaz'],
+              },
+            ],
+          });
+        }
+
+        // Ranking específico de Ingeniería Mecánica (id 20): tiene su propio ganador
+        // que no figuraba en el top global
+        if (categoryId === '20') {
+          return HttpResponse.json({
+            eventId,
+            scope: 'public',
+            categoryId: 20,
+            configuration,
+            items: [
+              {
+                position: 1,
+                projectId: 201,
+                projectName: 'Turbina Eólica Compacta',
+                averageGrade: 4.4,
+                categoryId: 20,
+                category: 'Ingeniería Mecánica',
+                participantNames: ['Andrés Molina'],
+              },
+            ],
+          });
+        }
+
+        // Categoría sin ganadores
+        return HttpResponse.json({
+          eventId,
+          scope: 'public',
+          categoryId: Number(categoryId),
+          configuration,
+          items: [],
+        });
+      }),
+    );
+
+    renderWithQueryClient(<PastEventDetail eventId={eventId} />);
+
+    // 1. Por defecto se selecciona "Todas las categorías" y consulta el ranking global (sin categoryId)
+    expect(
+      await screen.findByRole('heading', { name: 'IA Predictiva Global' }),
+    ).toBeInTheDocument();
+
+    const allButton = screen.getByRole('button', { name: 'Todas las categorías' });
+    expect(allButton).toHaveAttribute('aria-pressed', 'true');
+    expect(requestedCategoryIds).toEqual([null]);
+    expect(screen.getAllByText('Coganador')).toHaveLength(2);
+
+    // 2. Al seleccionar Ingeniería Mecánica, consulta ?categoryId=20 y muestra su propio ganador
+    const mecanicaButton = screen.getByRole('button', { name: 'Ingeniería Mecánica' });
+    await userEvent.click(mecanicaButton);
+
+    expect(
+      await screen.findByRole('heading', { name: 'Turbina Eólica Compacta' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('4.40')).toBeInTheDocument();
+    expect(mecanicaButton).toHaveAttribute('aria-pressed', 'true');
+    expect(allButton).toHaveAttribute('aria-pressed', 'false');
+    expect(requestedCategoryIds).toContain('20');
+
+    // 3. Una categoría sin ganadores muestra el mensaje vacío sin ocultar la sección ni los filtros
+    const industrialButton = screen.getByRole('button', { name: 'Ingeniería Industrial' });
+    await userEvent.click(industrialButton);
+
+    expect(
+      await screen.findByText(
+        'Aún no hay ganadores disponibles para la categoría seleccionada.',
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Todas las categorías' }),
+    ).toBeInTheDocument();
+
+    // 4. Al volver a "Todas las categorías", vuelve a mostrar los ganadores globales
+    await userEvent.click(allButton);
+
+    expect(
+      await screen.findByRole('heading', { name: 'IA Predictiva Global' }),
+    ).toBeInTheDocument();
+    expect(allButton).toHaveAttribute('aria-pressed', 'true');
+  });
 });
