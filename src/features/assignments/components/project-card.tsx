@@ -12,6 +12,11 @@ import { ProjectWithJurors, useProjectsWithJurors } from "@/features/projects/ap
 import { Pagination } from "@heroui/pagination";
 import { SearchProjects } from "@/components/search-project/search_projects";
 import { Spinner } from "@heroui/spinner";
+import { JurorSearchInput } from "./juror-search-input";
+import {
+  JUROR_SEARCH_EMPTY_MESSAGE,
+  useJurorProjectSearch,
+} from "../hooks/use-juror-project-search";
 
 export const ProjectsCard = () => {
 
@@ -30,9 +35,17 @@ export const ProjectsCard = () => {
   const [isSearching, setIsSearching] = useState(false);
   
   const defaultProjects = projectsQuery.data?.data ?? [];
-  const projects: ProjectWithJurors[] = filterValue
-    ? searchResults
-    : defaultProjects;
+  const jurorSearch = useJurorProjectSearch({
+    eventId,
+    state,
+    categoryId,
+    projectNameFilter: filterValue,
+  });
+  const projects: ProjectWithJurors[] = jurorSearch.isActive
+    ? jurorSearch.projects
+    : filterValue
+      ? searchResults
+      : defaultProjects;
 
   const [selectedProject, setSelectedProject] = useState<any | null>(null);
   const [selectedProjectView, setSelectedProjectView] = useState<any | null>(null);
@@ -50,7 +63,7 @@ export const ProjectsCard = () => {
 
   return (
     <div className="flex flex-col space-y-5 justify-between my-5">
-        <div className="mb-8">
+        <div className="mb-8 flex flex-col gap-3">
             <SearchProjects
                 eventId={eventId}
                 state={state}
@@ -60,10 +73,18 @@ export const ProjectsCard = () => {
                 setFilterValue={setFilterValue}
                 filterValue={filterValue}
             />
+            <JurorSearchInput
+                value={jurorSearch.jurorTerm}
+                onValueChange={jurorSearch.setJurorTerm}
+            />
         </div>
         {
-            isSearching ? (
+            isSearching || jurorSearch.isLoading ? (
                 <Spinner className="flex justify-center"/>
+            ) : jurorSearch.isActive && projects.length === 0 ? (
+                <p className="text-center text-sm text-muted-foreground">
+                    {JUROR_SEARCH_EMPTY_MESSAGE}
+                </p>
             ) : (
                 projects?.map((project) => (
             <GlassCard
@@ -121,7 +142,7 @@ export const ProjectsCard = () => {
                 </div>
             </GlassCard>
         )))}
-        {meta && meta.totalPages > 1 && (
+        {!jurorSearch.isActive && meta && meta.totalPages > 1 && (
         <div className="flex justify-center mt-6">
           <Pagination
             total={meta.totalPages}

@@ -27,12 +27,14 @@ export type DataTableProps<Entry extends { id: string | number }> = {
   data: Entry[];
   columns: TableColumn<Entry>[];
   styles?: string;
+  emptyContent?: ReactNode;
 };
 
 export function DataTable<Entry extends { id: string | number }>({
   data,
   columns,
   styles,
+  emptyContent = "No hay registros para mostrar.",
 }: DataTableProps<Entry>) {
   const [sortState, setSortState] = useState<{
     field: string;
@@ -135,7 +137,7 @@ export function DataTable<Entry extends { id: string | number }>({
             </TableColumn>
           ))}
         </TableHeader>
-        <TableBody emptyContent={"No hay registros para mostrar."}>
+        <TableBody emptyContent={emptyContent}>
           {sortedData.map((item) => (
             <TableRow key={item.id}>
               {columns.map((column, colIndex) => (
